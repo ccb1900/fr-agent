@@ -2,7 +2,7 @@
 // 自动生成（gen_laser_specs.js）：列名/类型/格式照抄直查画像；统一 SQL 分页口径（全库统一导航/面板交互）。
 // 凭据只在本机 spec 的 connections 段。
 
-load('D:/fineagent/lib/browser.js');
+load(Paths.feature('data_browser', 'browser.js'));
 
 var SPEC = BROWSER.spec({
   outName: BROWSER.env('BR_OUT', '激光数据浏览器_维护记录'),
