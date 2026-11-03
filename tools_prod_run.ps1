@@ -1,4 +1,4 @@
-# tools_prod_run.ps1 — prod staging 批量构建（报告 spec = reports_prod\br_*.js）
+﻿# tools_prod_run.ps1 — prod staging 批量构建（报告 spec = reports_prod\br_*.js）
 # 语义：BR_MODULESET=prod + BR_TPFX=t_collector_ + BR_DEPLOYDIR=<mkwh staging（动态取名避中文编码坑）>
 #       计划内不设 BR_SKIP_EXEC（本机可连 127.0.0.1 atom_live_demo 镜像库，全量执行验证更强）
 # 用法：tools_prod_run.ps1 [-SkipExec]  ; 每张一参一行落 logs\prod_<name>_out.txt，EXIT 码汇总
