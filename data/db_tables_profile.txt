@@ -1,0 +1,733 @@
+## TABLES
+laser_aaa|cols=19
+laser_aaa_gosa|cols=8
+laser_alm_log|cols=6
+laser_cnd_selct|cols=22
+laser_energy_measure|cols=8
+laser_files|cols=9
+laser_files_bak_20261020|cols=9
+laser_files_file_key_seq|cols=2
+laser_galv_mask_measure|cols=13
+laser_glv_cnd_send|cols=19
+laser_length|cols=16
+laser_m307|cols=15
+laser_m370|cols=8
+laser_m377|cols=16
+laser_mainte1|cols=6
+laser_mask_gosa|cols=9
+laser_pc_direct|cols=9
+laser_proc_state|cols=18
+laser_pwr|cols=28
+laser_pwrmulti|cols=49
+laser_sensor|cols=10
+laser_sin_statis|cols=29
+laser_sinsyuku|cols=22
+laser_table|cols=16
+laser_twin_scale_dsp|cols=72
+laser_zaxis|cols=19
+zprobe_clust_255_full_1791864260408|cols=4
+zprobe_clust_255_short_1791864260408|cols=4
+zprobe_clust_512_full_1791864260408|cols=4
+zprobe_clustered_255_1791864154910|cols=4
+zprobe_clustered_512_1791864154910|cols=4
+zprobe_nonclu_512_full_1791864260408|cols=4
+zprobe_nonclu_512_mid_1791864260408|cols=4
+zprobe_nonclust_512_1791864154910|cols=4
+
+## ROWCOUNTS + DATE RANGES
+laser_aaa|rows=122757|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:00..23:59:44] 
+laser_aaa_gosa|rows=590|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:04:03..23:54:30] 
+laser_alm_log|rows=1445|textcols=biz_date(nvarchar)[2026/09/13..2026/09/22] biz_time(nvarchar)[00:02:04..23:58:59] 
+laser_cnd_selct|rows=56048|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:04..23:59:52] 
+laser_energy_measure|rows=1220|textcols=biz_date(nvarchar)[2026/9/13..2026/9/22] biz_time(nvarchar)[00:00:18..23:58:42] 
+laser_files|rows=538|textcols=collection_date(date)[2026-09-13..2026-09-22] 
+laser_files_bak_20261020|rows=538|textcols=collection_date(date)[2026-09-13..2026-09-22] 
+laser_files_file_key_seq|rows=1|textcols=
+laser_galv_mask_measure|rows=927|textcols=biz_date(nvarchar)[2026/9/13..2026/9/22] biz_time(nvarchar)[00:25:43..23:50:00] 
+laser_glv_cnd_send|rows=22000|textcols=biz_date(nvarchar)[2026/09/14..2026/09/22] biz_time(nvarchar)[00:01:34..23:59:02] 
+laser_length|rows=26424|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:03..23:59:45] 
+laser_m307|rows=333|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:02:39..23:55:32] on_time(nvarchar)[7.0..7.0] beam_on_time(nvarchar)[1580258..3567656] blower_on_time(nvarchar)[2330997..5720732] ready_on_time(nvarchar)[2330997..5720732] 
+laser_m370|rows=614|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:03:10..23:51:28] 
+laser_m377|rows=2414|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:03:04..23:52:23] 
+laser_mainte1|rows=8|textcols=biz_date(nvarchar)[2026/9/13..2026-9-18] biz_time(nvarchar)[02:06:52..20:26:23] 
+laser_mask_gosa|rows=1540|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:29:58..23:52:23] 
+laser_pc_direct|rows=762|textcols=biz_date(nvarchar)[2026/9/13..2026/9/22] biz_time(nvarchar)[00:01:34..23:59:00] 
+laser_proc_state|rows=5410|textcols=biz_date(nvarchar)[2026/9/13..2026/9/22] biz_time(nvarchar)[00:00:09..23:59:42] start_time(nvarchar)[00:00:23..23:59:34] end_time(nvarchar)[00:00:09..23:59:42] proc_time(nvarchar)[1..99] 
+laser_pwr|rows=7257|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:03..23:59:51] on_time(nvarchar)[10.0..7.0] beam_on_time(nvarchar)[1580254..3567656] blower_on_time(nvarchar)[2330992..5720732] ready_on_time(nvarchar)[2330992..5720732] 
+laser_pwrmulti|rows=0|textcols=biz_date(nvarchar)[null..null] biz_time(nvarchar)[null..null] on_time(nvarchar)[null..null] beam_on_time(nvarchar)[null..null] blower_on_time(nvarchar)[null..null] ready_on_time(nvarchar)[null..null] prg_start_time(nvarchar)[null..null] 
+laser_sensor|rows=115434|textcols=biz_date(nvarchar)[2026/9/13..2026/9/22] biz_time(nvarchar)[00:00:01..23:59:59] 
+laser_sin_statis|rows=317|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:15:32..23:51:59] 
+laser_sinsyuku|rows=26417|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:03..23:59:45] 
+laser_table|rows=925|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:02:55..23:55:32] 
+laser_twin_scale_dsp|rows=17854|textcols=Date(nvarchar)[2026/09/13..2026/09/22] Time(nvarchar)[0:0:40..9:8:37] 
+laser_zaxis|rows=7307|textcols=biz_date(nvarchar)[2026/9/13..2026-9-22] biz_time(nvarchar)[00:00:05..23:59:42] 
+zprobe_clust_255_full_1791864260408|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+zprobe_clust_255_short_1791864260408|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+zprobe_clust_512_full_1791864260408|rows=0|textcols=collection_date(date)[null..null] 
+zprobe_clustered_255_1791864154910|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+zprobe_clustered_512_1791864154910|rows=0|textcols=collection_date(date)[null..null] 
+zprobe_nonclu_512_full_1791864260408|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+zprobe_nonclu_512_mid_1791864260408|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+zprobe_nonclust_512_1791864154910|rows=1|textcols=collection_date(date)[2026-09-09..2026-09-09] 
+
+## COLUMNS PER TABLE
+### laser_aaa
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|result_x|nvarchar|8000|true
+7|result_y|nvarchar|8000|true
+8|workpiece_x|nvarchar|8000|true
+9|workpiece_y|nvarchar|8000|true
+10|main_prog_no|nvarchar|8000|true
+11|main_prog_seq|nvarchar|8000|true
+12|main_prog_block|nvarchar|8000|true
+13|sub_prog_no|nvarchar|8000|true
+14|sub_prog_seq|nvarchar|8000|true
+15|sub_prog_block|nvarchar|8000|true
+16|machine_x|nvarchar|8000|true
+17|machine_y|nvarchar|8000|true
+18|size|nvarchar|8000|true
+19|score|nvarchar|8000|true
+### laser_aaa_gosa
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|max_err_r|nvarchar|8000|true
+7|max_err_x|nvarchar|8000|true
+8|max_err_y|nvarchar|8000|true
+### laser_alm_log
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|caption|nvarchar|8000|true
+6|alarm|nvarchar|8000|true
+### laser_cnd_selct
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|prog_path|nvarchar|8000|true
+6|cond_file|nvarchar|8000|true
+7|cond_no|nvarchar|8000|true
+8|output_power|nvarchar|8000|true
+9|frequency|nvarchar|8000|true
+10|pulse_width|nvarchar|8000|true
+11|pulse_class|nvarchar|8000|true
+12|speed|nvarchar|8000|true
+13|pulse_count|nvarchar|8000|true
+14|mask_no2|nvarchar|8000|true
+15|b_c|nvarchar|8000|true
+16|g|nvarchar|8000|true
+17|collimator_no|nvarchar|8000|true
+18|base_rate|nvarchar|8000|true
+19|cur_rate|nvarchar|8000|true
+20|base_energy|nvarchar|8000|true
+21|measured_freq|nvarchar|8000|true
+22|tolerance|nvarchar|8000|true
+### laser_energy_measure
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|base_energy_mj|nvarchar|8000|true
+6|tolerance_pct|nvarchar|8000|true
+7|zl_measured_energy_mj|nvarchar|8000|true
+8|zr_measured_energy_mj|nvarchar|8000|true
+### laser_files
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|path|nvarchar|2000|true
+5|name|nvarchar|510|true
+6|records|bigint|8|true
+7|header|nvarchar|8000|true
+8|collected_at|datetime2|8|true
+9|file_key|bigint|8|true
+### laser_files_bak_20261020
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|path|nvarchar|2000|true
+5|name|nvarchar|510|true
+6|records|bigint|8|true
+7|header|nvarchar|8000|true
+8|collected_at|datetime2|8|true
+9|file_key|bigint|8|true
+### laser_files_file_key_seq
+1|name|nvarchar|8000|false
+2|next|bigint|8|false
+### laser_galv_mask_measure
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|mask_no|nvarchar|8000|true
+6|mode|nvarchar|8000|true
+7|tol_mm|nvarchar|8000|true
+8|zl_max_err_r|nvarchar|8000|true
+9|zl_max_err_x|nvarchar|8000|true
+10|zl_max_err_y|nvarchar|8000|true
+11|zr_max_err_r|nvarchar|8000|true
+12|zr_max_err_x|nvarchar|8000|true
+13|zr_max_err_y|nvarchar|8000|true
+### laser_glv_cnd_send
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|no|nvarchar|8000|true
+6|r8162|nvarchar|8000|true
+7|r8145|nvarchar|8000|true
+8|r8144|nvarchar|8000|true
+9|r8146|nvarchar|8000|true
+10|r8147|nvarchar|8000|true
+11|r8159|nvarchar|8000|true
+12|r8156|nvarchar|8000|true
+13|r8148|nvarchar|8000|true
+14|warning|nvarchar|8000|true
+15|err|nvarchar|8000|true
+16|ref_r|nvarchar|8000|true
+17|ref_l|nvarchar|8000|true
+18|gain_no|nvarchar|8000|true
+19|r8163|nvarchar|8000|true
+### laser_length
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|stage|nvarchar|8000|true
+4|biz_date|nvarchar|8000|true
+5|biz_time|nvarchar|8000|true
+6|comp_points|nvarchar|8000|true
+7|length_15|nvarchar|8000|true
+8|length_16|nvarchar|8000|true
+9|length_17|nvarchar|8000|true
+10|length_18|nvarchar|8000|true
+11|length_19|nvarchar|8000|true
+12|length_20|nvarchar|8000|true
+13|error_msg|nvarchar|8000|true
+14|length_max_err|nvarchar|8000|true
+15|stretch_rate_min|nvarchar|8000|true
+16|stretch_rate_max|nvarchar|8000|true
+### laser_m307
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|output_power|nvarchar|8000|true
+6|frequency|nvarchar|8000|true
+7|on_time|nvarchar|8000|true
+8|measured_out|nvarchar|8000|true
+9|check_out|nvarchar|8000|true
+10|gain|nvarchar|8000|true
+11|bias|nvarchar|8000|true
+12|beam_on_time|nvarchar|8000|true
+13|blower_on_time|nvarchar|8000|true
+14|ready_on_time|nvarchar|8000|true
+15|judgement|nvarchar|8000|true
+### laser_m370
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|camera_type|nvarchar|8000|true
+6|offset_x|nvarchar|8000|true
+7|offset_y|nvarchar|8000|true
+8|offset_z|nvarchar|8000|true
+### laser_m377
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage_no|nvarchar|8000|true
+6|mask_no|nvarchar|8000|true
+7|r_xerr|nvarchar|8000|true
+8|r_yerr|nvarchar|8000|true
+9|r_circularity|nvarchar|8000|true
+10|l_xerr|nvarchar|8000|true
+11|l_yerr|nvarchar|8000|true
+12|l_circularity|nvarchar|8000|true
+13|light_a_r|nvarchar|8000|true
+14|light_b_r|nvarchar|8000|true
+15|light_a_l|nvarchar|8000|true
+16|light_b_l|nvarchar|8000|true
+### laser_mainte1
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|clear_item|nvarchar|8000|true
+6|clear_count|nvarchar|8000|true
+### laser_mask_gosa
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|max_err_r|nvarchar|8000|true
+7|max_err_x|nvarchar|8000|true
+8|max_err_y|nvarchar|8000|true
+9|mask_no|nvarchar|8000|true
+### laser_pc_direct
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|prog_path|nvarchar|8000|true
+6|size|nvarchar|8000|true
+7|search_method|nvarchar|8000|true
+8|result_summary|nvarchar|8000|true
+9|result_detail|nvarchar|8000|true
+### laser_proc_state
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|prg_filename|nvarchar|8000|true
+7|cond_file|nvarchar|8000|true
+8|start_time|nvarchar|8000|true
+9|end_time|nvarchar|8000|true
+10|proc_time|nvarchar|8000|true
+11|end_block|nvarchar|8000|true
+12|via_hole|nvarchar|8000|true
+13|utility_hole|nvarchar|8000|true
+14|proc_hole_r|nvarchar|8000|true
+15|proc_hole_l|nvarchar|8000|true
+16|total_proc_hole_r|nvarchar|8000|true
+17|total_proc_hole_l|nvarchar|8000|true
+18|total_shot|nvarchar|8000|true
+### laser_pwr
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|cond_no|nvarchar|8000|true
+7|output_power|nvarchar|8000|true
+8|frequency|nvarchar|8000|true
+9|on_time|nvarchar|8000|true
+10|base_energy|nvarchar|8000|true
+11|judgement|nvarchar|8000|true
+12|measured_energy|nvarchar|8000|true
+13|tolerance|nvarchar|8000|true
+14|collimator_no|nvarchar|8000|true
+15|base_rate|nvarchar|8000|true
+16|cur_rate|nvarchar|8000|true
+17|mask_no2|nvarchar|8000|true
+18|gain|nvarchar|8000|true
+19|bias|nvarchar|8000|true
+20|beam_on_time|nvarchar|8000|true
+21|blower_on_time|nvarchar|8000|true
+22|ready_on_time|nvarchar|8000|true
+23|measured_freq|nvarchar|8000|true
+24|freq_limit|nvarchar|8000|true
+25|shot_group|nvarchar|8000|true
+26|display_freq|nvarchar|8000|true
+27|cond_file|nvarchar|8000|true
+28|pulse_class|nvarchar|8000|true
+### laser_pwrmulti
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|cond_no|nvarchar|8000|true
+7|output_power|nvarchar|8000|true
+8|frequency|nvarchar|8000|true
+9|on_time|nvarchar|8000|true
+10|base_energy|nvarchar|8000|true
+11|tolerance_pct|nvarchar|8000|true
+12|measured_range_pct|nvarchar|8000|true
+13|judgement|nvarchar|8000|true
+14|measured_energy_1|nvarchar|8000|true
+15|measured_energy_2|nvarchar|8000|true
+16|measured_energy_3|nvarchar|8000|true
+17|measured_energy_4|nvarchar|8000|true
+18|measured_energy_5|nvarchar|8000|true
+19|measured_energy_6|nvarchar|8000|true
+20|measured_energy_7|nvarchar|8000|true
+21|measured_energy_8|nvarchar|8000|true
+22|measured_energy_9|nvarchar|8000|true
+23|measured_energy_10|nvarchar|8000|true
+24|measured_energy_11|nvarchar|8000|true
+25|measured_energy_12|nvarchar|8000|true
+26|measured_energy_13|nvarchar|8000|true
+27|measured_energy_14|nvarchar|8000|true
+28|measured_energy_15|nvarchar|8000|true
+29|measured_energy_16|nvarchar|8000|true
+30|measured_energy_17|nvarchar|8000|true
+31|collimator_no|nvarchar|8000|true
+32|base_rate|nvarchar|8000|true
+33|cur_rate|nvarchar|8000|true
+34|mask_no2|nvarchar|8000|true
+35|gain|nvarchar|8000|true
+36|bias|nvarchar|8000|true
+37|beam_on_time|nvarchar|8000|true
+38|blower_on_time|nvarchar|8000|true
+39|ready_on_time|nvarchar|8000|true
+40|measured_freq|nvarchar|8000|true
+41|freq_limit|nvarchar|8000|true
+42|shot_group|nvarchar|8000|true
+43|display_freq|nvarchar|8000|true
+44|optical_path_no|nvarchar|8000|true
+45|cond_file|nvarchar|8000|true
+46|pulse_class|nvarchar|8000|true
+47|retry_no|nvarchar|8000|true
+48|prg_start_time|nvarchar|8000|true
+49|prog_path|nvarchar|8000|true
+### laser_sensor
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|dust_air|nvarchar|8000|true
+6|table_air|nvarchar|8000|true
+7|prg|nvarchar|8000|true
+8|block_no|nvarchar|8000|true
+9|r_stage_ftheta_temp|nvarchar|8000|true
+10|l_stage_ftheta_temp|nvarchar|8000|true
+### laser_sin_statis
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|stage|nvarchar|8000|true
+4|biz_date|nvarchar|8000|true
+5|biz_time|nvarchar|8000|true
+6|manage_no|nvarchar|8000|true
+7|stretch_max_x|nvarchar|8000|true
+8|stretch_min_x|nvarchar|8000|true
+9|stretch_avg_x|nvarchar|8000|true
+10|stretch_std_x|nvarchar|8000|true
+11|stretch_max_y|nvarchar|8000|true
+12|stretch_min_y|nvarchar|8000|true
+13|stretch_avg_y|nvarchar|8000|true
+14|stretch_std_y|nvarchar|8000|true
+15|main_prog_no|nvarchar|8000|true
+16|cond_file|nvarchar|8000|true
+17|offset_max_x|nvarchar|8000|true
+18|offset_min_x|nvarchar|8000|true
+19|offset_avg_x|nvarchar|8000|true
+20|offset_std_x|nvarchar|8000|true
+21|offset_max_y|nvarchar|8000|true
+22|offset_min_y|nvarchar|8000|true
+23|offset_avg_y|nvarchar|8000|true
+24|offset_std_y|nvarchar|8000|true
+25|theta_max|nvarchar|8000|true
+26|theta_min|nvarchar|8000|true
+27|theta_avg|nvarchar|8000|true
+28|theta_std|nvarchar|8000|true
+29|sheet_count|nvarchar|8000|true
+### laser_sinsyuku
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|stage|nvarchar|8000|true
+4|biz_date|nvarchar|8000|true
+5|biz_time|nvarchar|8000|true
+6|manage_no|nvarchar|8000|true
+7|serial_no|nvarchar|8000|true
+8|stretch_rate_x|nvarchar|8000|true
+9|stretch_rate_y|nvarchar|8000|true
+10|main_prog_no|nvarchar|8000|true
+11|cond_file|nvarchar|8000|true
+12|status|nvarchar|8000|true
+13|error_msg|nvarchar|8000|true
+14|offset_x|nvarchar|8000|true
+15|offset_y|nvarchar|8000|true
+16|theta|nvarchar|8000|true
+17|manual_work_comp|nvarchar|8000|true
+18|offset_proc_x|nvarchar|8000|true
+19|offset_proc_y|nvarchar|8000|true
+20|restart_status|nvarchar|8000|true
+21|stop_block|nvarchar|8000|true
+22|end_block|nvarchar|8000|true
+### laser_table
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|rz_mm|nvarchar|8000|true
+7|rx_mm|nvarchar|8000|true
+8|ry_mm|nvarchar|8000|true
+9|lz_mm|nvarchar|8000|true
+10|lx_mm|nvarchar|8000|true
+11|ly_mm|nvarchar|8000|true
+12|rz_ave|nvarchar|8000|true
+13|lz_ave|nvarchar|8000|true
+14|rz_range|nvarchar|8000|true
+15|lz_range|nvarchar|8000|true
+16|prog_path|nvarchar|8000|true
+### laser_twin_scale_dsp
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|Date|nvarchar|8000|true
+4|Time|nvarchar|8000|true
+5|YawingAngleX|nvarchar|8000|true
+6|YawingAngleY|nvarchar|8000|true
+7|YawingOffsetXm|nvarchar|8000|true
+8|YawingOffsetXs|nvarchar|8000|true
+9|YawingOffsetYm|nvarchar|8000|true
+10|YawingOffsetYs|nvarchar|8000|true
+11|PitchOrgIndexXm|nvarchar|8000|true
+12|PitchOrgIndexXs|nvarchar|8000|true
+13|PitchOrgIndexYm|nvarchar|8000|true
+14|PitchOrgIndexYs|nvarchar|8000|true
+15|PitchMaxIndexXm|nvarchar|8000|true
+16|PitchMaxIndexXs|nvarchar|8000|true
+17|PitchMaxIndexYm|nvarchar|8000|true
+18|PitchMaxIndexYs|nvarchar|8000|true
+19|PitchMinIndexXm|nvarchar|8000|true
+20|PitchMinIndexXs|nvarchar|8000|true
+21|PitchMinIndexYm|nvarchar|8000|true
+22|PitchMinIndexYs|nvarchar|8000|true
+23|PitchScaleXm|nvarchar|8000|true
+24|PitchScaleXs|nvarchar|8000|true
+25|PitchScaleYm|nvarchar|8000|true
+26|PitchScaleYs|nvarchar|8000|true
+27|PitchSpaceXm|nvarchar|8000|true
+28|PitchSpaceXs|nvarchar|8000|true
+29|PitchSpaceYm|nvarchar|8000|true
+30|PitchSpaceYs|nvarchar|8000|true
+31|PicthIndex0Xm|nvarchar|8000|true
+32|PicthIndex0Xs|nvarchar|8000|true
+33|PicthIndex0Ym|nvarchar|8000|true
+34|PicthIndex0Ys|nvarchar|8000|true
+35|PicthIndexXm|nvarchar|8000|true
+36|PicthIndexXs|nvarchar|8000|true
+37|PicthIndexYm|nvarchar|8000|true
+38|PicthIndexYs|nvarchar|8000|true
+39|LinearScaleValXm|nvarchar|8000|true
+40|LinearScaleValXs|nvarchar|8000|true
+41|LinearScaleValYm|nvarchar|8000|true
+42|LinearScaleValYs|nvarchar|8000|true
+43|LinearScalePulsUMXm|nvarchar|8000|true
+44|LinearScalePulsUMXs|nvarchar|8000|true
+45|LinearScalePulsUMYm|nvarchar|8000|true
+46|LinearScalePulsUMYs|nvarchar|8000|true
+47|EncPosXm|nvarchar|8000|true
+48|EncPosXs|nvarchar|8000|true
+49|EncPosYm|nvarchar|8000|true
+50|EncPosYs|nvarchar|8000|true
+51|MachinePosXm|nvarchar|8000|true
+52|MachinePosXs|nvarchar|8000|true
+53|MachinePosYm|nvarchar|8000|true
+54|MachinePosYs|nvarchar|8000|true
+55|LinearOrgVaXm|nvarchar|8000|true
+56|LinearOrgVaXs|nvarchar|8000|true
+57|LinearOrgVaYm|nvarchar|8000|true
+58|LinearOrgVaYs|nvarchar|8000|true
+59|RealValXm|nvarchar|8000|true
+60|RealValXs|nvarchar|8000|true
+61|RealValYm|nvarchar|8000|true
+62|RealValYs|nvarchar|8000|true
+63|EncPosBkXm|nvarchar|8000|true
+64|EncPosBkXs|nvarchar|8000|true
+65|EncPosBkYm|nvarchar|8000|true
+66|EncPosBkYs|nvarchar|8000|true
+67|TableCenterX|nvarchar|8000|true
+68|TableCenterY|nvarchar|8000|true
+69|TableCenterEncPosX|nvarchar|8000|true
+70|TableCenterEncPosY|nvarchar|8000|true
+71|Scalewx|nvarchar|8000|true
+72|Scalewy|nvarchar|8000|true
+### laser_zaxis
+1|file_key|bigint|8|false
+2|row_number|bigint|8|false
+3|biz_date|nvarchar|8000|true
+4|biz_time|nvarchar|8000|true
+5|stage|nvarchar|8000|true
+6|result_x|nvarchar|8000|true
+7|result_y|nvarchar|8000|true
+8|workpiece_x|nvarchar|8000|true
+9|workpiece_y|nvarchar|8000|true
+10|main_prog_no|nvarchar|8000|true
+11|main_prog_seq|nvarchar|8000|true
+12|main_prog_block|nvarchar|8000|true
+13|sub_prog_no|nvarchar|8000|true
+14|sub_prog_seq|nvarchar|8000|true
+15|sub_prog_block|nvarchar|8000|true
+16|machine_x|nvarchar|8000|true
+17|machine_y|nvarchar|8000|true
+18|size|nvarchar|8000|true
+19|score|nvarchar|8000|true
+### zprobe_clust_255_full_1791864260408
+1|source_id|nvarchar|510|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|510|false
+4|row_number|bigint|8|false
+### zprobe_clust_255_short_1791864260408
+1|source_id|nvarchar|510|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|510|false
+4|row_number|bigint|8|false
+### zprobe_clust_512_full_1791864260408
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|row_number|bigint|8|false
+### zprobe_clustered_255_1791864154910
+1|source_id|nvarchar|510|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|510|false
+4|row_number|bigint|8|false
+### zprobe_clustered_512_1791864154910
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|row_number|bigint|8|false
+### zprobe_nonclu_512_full_1791864260408
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|row_number|bigint|8|false
+### zprobe_nonclu_512_mid_1791864260408
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|row_number|bigint|8|false
+### zprobe_nonclust_512_1791864154910
+1|source_id|nvarchar|256|false
+2|collection_date|date|3|false
+3|file_id|nvarchar|1024|false
+4|row_number|bigint|8|false
+
+## LOW-CARDINALITY FILTER CANDIDATES (distinct<=30, non-date)
+laser_aaa.stage (nvarchar) distinct=2 vals=L,R
+laser_aaa.main_prog_no (nvarchar) distinct=1 vals=9900
+laser_aaa.main_prog_seq (nvarchar) distinct=14 vals=0,2,34567,4,41300,5,59998,60009,68100,68103,7496,76100
+laser_aaa.main_prog_block (nvarchar) distinct=19 vals=0,1,10,13,14,17,18,19,2,24,3,31
+laser_aaa.sub_prog_no (nvarchar) distinct=8 vals=8949,8950,8976,8987,9550,9801,9858,9900
+laser_aaa.sub_prog_block (nvarchar) distinct=25 vals=0,1,10,11,12,13,14,15,16,17,18,2
+laser_aaa_gosa.stage (nvarchar) distinct=2 vals=L,R
+laser_alm_log.caption (nvarchar) distinct=7 vals=ALMM ,ALRM ,PBN_ENGY ,PBN_OFF ,PBN_PRM ,PBN_PROC ,STOP 
+laser_cnd_selct.cond_no (nvarchar) distinct=29 vals=0,1,10,11,13,14,15,2,3,31,32,33
+laser_cnd_selct.output_power (nvarchar) distinct=1 vals=5600
+laser_cnd_selct.frequency (nvarchar) distinct=2 vals=100,500
+laser_cnd_selct.pulse_width (nvarchar) distinct=15 vals=10.0,100.0,11.0,12.0,13.0,14.0,15.0,3.0,4.0,49.0,5.0,6.0
+laser_cnd_selct.pulse_class (nvarchar) distinct=2 vals=M,S
+laser_cnd_selct.speed (nvarchar) distinct=1 vals=71000
+laser_cnd_selct.pulse_count (nvarchar) distinct=7 vals=1,2,3,4,6,7,9
+laser_cnd_selct.mask_no2 (nvarchar) distinct=12 vals=1,10,11,12,2,3,4,5,6,7,8,9
+laser_cnd_selct.b_c (nvarchar) distinct=1 vals=C
+laser_cnd_selct.g (nvarchar) distinct=9 vals=0,1,11,12,13,14,2,3,4
+laser_cnd_selct.base_energy (nvarchar) distinct=30 vals=0.000,0.001,1.000,10.000,10.200,10.700,10.800,11.000,11.300,12.000,12.500,14.000
+laser_cnd_selct.measured_freq (nvarchar) distinct=2 vals=0,100
+laser_cnd_selct.tolerance (nvarchar) distinct=3 vals=10.00,3.00,5.00
+laser_energy_measure.base_energy_mj (nvarchar) distinct=23 vals=1.000,10.000,10.200,10.700,10.800,11.000,11.300,12.000,12.500,14.800,26.000,28.000
+laser_energy_measure.tolerance_pct (nvarchar) distinct=2 vals=10.00,5.00
+laser_files_file_key_seq.name (nvarchar) distinct=1 vals=laser_files
+laser_galv_mask_measure.mask_no (nvarchar) distinct=11 vals=1,10,11,2,3,4,5,6,7,8,9
+laser_galv_mask_measure.mode (nvarchar) distinct=4 vals=G-CHECK,G-COMP-5,G-COMP-81,M-CHECK
+laser_galv_mask_measure.tol_mm (nvarchar) distinct=1 vals= 0.0100
+laser_glv_cnd_send.r8162 (nvarchar) distinct=7 vals=1,2,3,4,6,7,9
+laser_glv_cnd_send.r8145 (nvarchar) distinct=4 vals=10,100,500,850
+laser_glv_cnd_send.r8144 (nvarchar) distinct=19 vals=0,12,13,14,15,16,16422,16447,18,19,22,23
+laser_glv_cnd_send.r8146 (nvarchar) distinct=17 vals=0,150,153,16,18,20,22,24,252,26,30,32
+laser_glv_cnd_send.r8147 (nvarchar) distinct=21 vals=0,1200,1300,1350,1500,1600,1800,1900,2200,2250,2400,2500
+laser_glv_cnd_send.r8159 (nvarchar) distinct=9 vals=0000,0200,0201,0202,0203,020B,020C,020D,020E
+laser_glv_cnd_send.r8156 (nvarchar) distinct=22 vals=0,1,1000,10000,10700,10800,11000,11300,12000,12500,14800,2500
+laser_glv_cnd_send.r8148 (nvarchar) distinct=4 vals=41750,46970,54000,81000
+laser_glv_cnd_send.warning (nvarchar) distinct=1 vals=2500
+laser_glv_cnd_send.err (nvarchar) distinct=1 vals=3000
+laser_glv_cnd_send.ref_r (nvarchar) distinct=16 vals=0,1138318,1172095,1303031,1329365,1455891,1489082,1499030,1535944,1582756,1713765,1941878
+laser_glv_cnd_send.ref_l (nvarchar) distinct=16 vals=0,1138318,1172095,1303031,1329365,1455891,1489082,1499030,1535944,1582756,1713765,1941878
+laser_glv_cnd_send.gain_no (nvarchar) distinct=5 vals=0,1,2,3,4
+laser_glv_cnd_send.r8163 (nvarchar) distinct=15 vals=0,10,12,14,16,20,200,22,24,26,28,30
+laser_length.stage (nvarchar) distinct=2 vals=L,R
+laser_length.comp_points (nvarchar) distinct=2 vals=2,4
+laser_length.error_msg (nvarchar) distinct=3 vals=LENGTH-ERR,LENGTH-RATE,OK
+laser_m307.output_power (nvarchar) distinct=1 vals=5600
+laser_m307.frequency (nvarchar) distinct=1 vals=500
+laser_m307.measured_out (nvarchar) distinct=2 vals=25.7,27.0
+laser_m307.gain (nvarchar) distinct=3 vals=10990,4700,4800
+laser_m307.bias (nvarchar) distinct=3 vals=18,22,8
+laser_m307.judgement (nvarchar) distinct=1 vals=OK
+laser_m370.camera_type (nvarchar) distinct=2 vals=L,R
+laser_m377.stage_no (nvarchar) distinct=3 vals=0,1,2
+laser_m377.mask_no (nvarchar) distinct=11 vals=1,10,11,2,3,4,5,6,7,8,9
+laser_m377.light_a_r (nvarchar) distinct=3 vals=0,25,60
+laser_m377.light_b_r (nvarchar) distinct=9 vals=0,54,60,65,70,75,80,83,85
+laser_m377.light_a_l (nvarchar) distinct=3 vals=0,25,60
+laser_m377.light_b_l (nvarchar) distinct=8 vals=0,55,60,65,70,75,80,85
+laser_mainte1.clear_item (nvarchar) distinct=3 vals=#03 QUICK GAS CHANGE,#09 ALL CHANGE LASER GAS,#09 ALL GAS CHANGE
+laser_mainte1.clear_count (nvarchar) distinct=8 vals=1017,1018,170,257,258,329,408,98
+laser_mask_gosa.stage (nvarchar) distinct=2 vals=L,R
+laser_mask_gosa.mask_no (nvarchar) distinct=10 vals=10,11,2,3,4,5,6,7,8,9
+laser_pc_direct.search_method (nvarchar) distinct=1 vals=C
+laser_pc_direct.result_summary (nvarchar) distinct=2 vals=1,2
+laser_pc_direct.result_detail (nvarchar) distinct=1 vals=0
+laser_proc_state.stage (nvarchar) distinct=2 vals=R,W
+laser_proc_state.cond_file (nvarchar) distinct=22 vals=C:\pban\prg\system\CND\mask12-5350-COLLIMATE-ADJ.cnd,C:\pban\prg\system\CND\mask12-5500-COLLIMATE-ADJ.cnd,M:\W2B-304-57\NO_13.cnd,m:\W2B-304-57\NO_15.cnd,m:\W2B-304-57\NO_16.cnd,m:\W2B-304-57\NO_65.cnd,m:\W2B-304-57\NO_82.cnd,m:\W2B-304-57\NO_91.cnd,m:\W2B-304-72\NO_02.cnd,M:\W2B-304-72\NO_103.cnd,m:\W2B-304-72\NO_104.cnd,m:\W2B-304-72\NO_11.cnd
+laser_proc_state.end_block (nvarchar) distinct=18 vals=0,1,137,2,3,4,6,69,70,71,72,73
+laser_proc_state.utility_hole (nvarchar) distinct=1 vals=5476
+laser_pwr.stage (nvarchar) distinct=2 vals=L,R
+laser_pwr.cond_no (nvarchar) distinct=14 vals=0,10,11,13,14,15,35,41,42,44,45,5
+laser_pwr.output_power (nvarchar) distinct=1 vals=5600
+laser_pwr.base_energy (nvarchar) distinct=26 vals=1.000,10.000,10.200,10.700,10.800,11.000,11.300,12.000,12.500,14.000,14.800,26.000
+laser_pwr.tolerance (nvarchar) distinct=2 vals=10.00,5.00
+laser_pwr.collimator_no (nvarchar) distinct=30 vals=100,11,115,13,15,16,2,22,24,26,3,33
+laser_pwr.mask_no2 (nvarchar) distinct=9 vals=1,10,2,3,4,5,6,7,9
+laser_pwr.gain (nvarchar) distinct=2 vals=0.97,1.0
+laser_pwr.bias (nvarchar) distinct=1 vals=0.0
+laser_pwr.freq_limit (nvarchar) distinct=18 vals=1200.000,1285.714,1411.922,1440.329,1600.609,1800.000,1895.306,1928.571,2117.647,2160.000,2700.000,2842.105
+laser_pwr.cond_file (nvarchar) distinct=19 vals=EM-39B-1067-12-30-100-70jh.cnd,NO_02.cnd,NO_03.cnd,NO_102.cnd,NO_103.cnd,NO_104.cnd,NO_11.cnd,NO_13.cnd,NO_15.cnd,NO_16.cnd,NO_22.cnd,NO_24.cnd
+laser_pwr.pulse_class (nvarchar) distinct=1 vals=S
+laser_sin_statis.stage (nvarchar) distinct=3 vals=-,L,R
+laser_sin_statis.cond_file (nvarchar) distinct=19 vals=EM-39B-1067-12-30-100-70jh.cnd,NO_02.cnd,NO_03.cnd,NO_102.cnd,NO_103.cnd,NO_104.cnd,NO_11.cnd,NO_13.cnd,NO_15.cnd,NO_16.cnd,NO_22.cnd,NO_24.cnd
+laser_sinsyuku.stage (nvarchar) distinct=2 vals=L,R
+laser_sinsyuku.cond_file (nvarchar) distinct=19 vals=EM-39B-1067-12-30-100-70jh.cnd,NO_02.cnd,NO_03.cnd,NO_102.cnd,NO_103.cnd,NO_104.cnd,NO_11.cnd,NO_13.cnd,NO_15.cnd,NO_16.cnd,NO_22.cnd,NO_24.cnd
+laser_sinsyuku.status (nvarchar) distinct=2 vals=  ,NG
+laser_sinsyuku.error_msg (nvarchar) distinct=1 vals=            
+laser_sinsyuku.manual_work_comp (nvarchar) distinct=1 vals=0
+laser_sinsyuku.offset_proc_x (nvarchar) distinct=1 vals=0.000
+laser_sinsyuku.offset_proc_y (nvarchar) distinct=1 vals=0.000
+laser_sinsyuku.restart_status (nvarchar) distinct=1 vals=RECOVER5
+laser_sinsyuku.stop_block (nvarchar) distinct=11 vals=0-,0-0-,0-0-0-,0-0-0-0-,0-0-0-0-0-,0-0-0-0-0-0-,0-0-4-,4-,4-4-,4-4-4-,4-4-4-4-
+laser_sinsyuku.end_block (nvarchar) distinct=23 vals=127,132,136,137,140,236,3,4,68,69,70,71
+laser_table.stage (nvarchar) distinct=2 vals=R,W
+laser_table.rz_range (nvarchar) distinct=2 vals=0.000,0.0000
+laser_table.lz_range (nvarchar) distinct=2 vals=0.000,0.0000
+laser_twin_scale_dsp.PitchOrgIndexXm (nvarchar) distinct=1 vals=0
+laser_twin_scale_dsp.PitchOrgIndexXs (nvarchar) distinct=1 vals=500
+laser_twin_scale_dsp.PitchOrgIndexYm (nvarchar) distinct=1 vals=98
+laser_twin_scale_dsp.PitchOrgIndexYs (nvarchar) distinct=1 vals=598
+laser_twin_scale_dsp.PitchMaxIndexXm (nvarchar) distinct=1 vals=90
+laser_twin_scale_dsp.PitchMaxIndexXs (nvarchar) distinct=1 vals=590
+laser_twin_scale_dsp.PitchMaxIndexYm (nvarchar) distinct=1 vals=168
+laser_twin_scale_dsp.PitchMaxIndexYs (nvarchar) distinct=1 vals=668
+laser_twin_scale_dsp.PitchMinIndexXm (nvarchar) distinct=1 vals=1
+laser_twin_scale_dsp.PitchMinIndexXs (nvarchar) distinct=1 vals=501
+laser_twin_scale_dsp.PitchMinIndexYm (nvarchar) distinct=1 vals=99
+laser_twin_scale_dsp.PitchMinIndexYs (nvarchar) distinct=1 vals=599
+laser_twin_scale_dsp.PitchScaleXm (nvarchar) distinct=1 vals=0.100000
+laser_twin_scale_dsp.PitchScaleXs (nvarchar) distinct=1 vals=0.100000
+laser_twin_scale_dsp.PitchScaleYm (nvarchar) distinct=1 vals=0.100000
+laser_twin_scale_dsp.PitchScaleYs (nvarchar) distinct=1 vals=0.100000
+laser_twin_scale_dsp.PitchSpaceXm (nvarchar) distinct=1 vals=10000
+laser_twin_scale_dsp.PitchSpaceXs (nvarchar) distinct=1 vals=10000
+laser_twin_scale_dsp.PitchSpaceYm (nvarchar) distinct=1 vals=10000
+laser_twin_scale_dsp.PitchSpaceYs (nvarchar) distinct=1 vals=10000
+laser_twin_scale_dsp.PicthIndex0Xm (nvarchar) distinct=1 vals=0
+laser_twin_scale_dsp.PicthIndex0Xs (nvarchar) distinct=1 vals=500
+laser_twin_scale_dsp.PicthIndex0Ym (nvarchar) distinct=1 vals=98
+laser_twin_scale_dsp.PicthIndex0Ys (nvarchar) distinct=1 vals=598
+laser_twin_scale_dsp.PicthIndexXm (nvarchar) distinct=19 vals=13,14,15,17,18,19,20,21,22,65,66,67
+laser_twin_scale_dsp.PicthIndexXs (nvarchar) distinct=19 vals=513,514,515,517,518,519,520,521,522,565,566,567
+laser_twin_scale_dsp.PicthIndexYm (nvarchar) distinct=14 vals=104,105,106,107,111,128,129,130,131,132,133,135
+laser_twin_scale_dsp.PicthIndexYs (nvarchar) distinct=14 vals=604,605,606,607,611,628,629,630,631,632,633,635
+laser_twin_scale_dsp.LinearScalePulsUMXm (nvarchar) distinct=1 vals=-0.500000
+laser_twin_scale_dsp.LinearScalePulsUMXs (nvarchar) distinct=1 vals=0.500000
+laser_twin_scale_dsp.LinearScalePulsUMYm (nvarchar) distinct=1 vals=-0.500000
+laser_twin_scale_dsp.LinearScalePulsUMYs (nvarchar) distinct=1 vals=0.500000
+laser_twin_scale_dsp.LinearOrgVaXm (nvarchar) distinct=3 vals=450509.187500,886964.687500,886981.687500
+laser_twin_scale_dsp.LinearOrgVaXs (nvarchar) distinct=9 vals=450512.093750,450512.593750,450513.093750,886962.625000,886963.625000,886979.125000,886980.125000,886980.625000,886981.125000
+laser_twin_scale_dsp.LinearOrgVaYm (nvarchar) distinct=3 vals=5012.899902,5022.899902,510324.906250
+laser_twin_scale_dsp.LinearOrgVaYs (nvarchar) distinct=10 vals=5012.100098,5012.600098,5013.100098,5013.600098,5014.100098,5022.600098,5023.100098,510316.593750,510317.093750,510317.593750
+laser_twin_scale_dsp.TableCenterX (nvarchar) distinct=1 vals=949999.875000
+laser_twin_scale_dsp.TableCenterY (nvarchar) distinct=1 vals=889999.125000
+laser_twin_scale_dsp.TableCenterEncPosX (nvarchar) distinct=3 vals=499489.000000,63016.500000,63033.500000
+laser_twin_scale_dsp.TableCenterEncPosY (nvarchar) distinct=3 vals=379685.000000,884987.000000,884997.000000

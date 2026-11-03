@@ -1,0 +1,140 @@
+COLUMNS laser_aaa
+file_key|bigint|8
+row_number|bigint|8
+biz_date|nvarchar|8000
+biz_time|nvarchar|8000
+stage|nvarchar|8000
+result_x|nvarchar|8000
+result_y|nvarchar|8000
+workpiece_x|nvarchar|8000
+workpiece_y|nvarchar|8000
+main_prog_no|nvarchar|8000
+main_prog_seq|nvarchar|8000
+main_prog_block|nvarchar|8000
+sub_prog_no|nvarchar|8000
+sub_prog_seq|nvarchar|8000
+sub_prog_block|nvarchar|8000
+machine_x|nvarchar|8000
+machine_y|nvarchar|8000
+size|nvarchar|8000
+score|nvarchar|8000
+
+CARDINALITY (text/short columns)
+biz_date (nvarchar) distinct=20
+biz_time (nvarchar) distinct=50158
+stage (nvarchar) distinct=2
+result_x (nvarchar) distinct=19821
+result_y (nvarchar) distinct=21636
+workpiece_x (nvarchar) distinct=56931
+workpiece_y (nvarchar) distinct=55085
+main_prog_no (nvarchar) distinct=1
+main_prog_seq (nvarchar) distinct=14
+main_prog_block (nvarchar) distinct=19
+sub_prog_no (nvarchar) distinct=8
+sub_prog_seq (nvarchar) distinct=85
+sub_prog_block (nvarchar) distinct=25
+machine_x (nvarchar) distinct=62950
+machine_y (nvarchar) distinct=63113
+size (nvarchar) distinct=4874
+score (nvarchar) distinct=537
+
+SAMPLE values of low-cardinality columns
+## biz_date
+   2026/9/14 = 12784
+   2026/9/18 = 12391
+   2026/9/13 = 10567
+   2026/9/15 = 10270
+   2026/9/21 = 9397
+   2026/9/16 = 8625
+   2026/9/17 = 8623
+   2026/9/19 = 6881
+   2026/9/20 = 6355
+   2026-9-16 = 5334
+   2026-9-13 = 4238
+   2026-9-21 = 3911
+   2026-9-14 = 3873
+   2026/9/22 = 3332
+   2026-9-19 = 3154
+   2026-9-15 = 3004
+   2026-9-20 = 2965
+   2026-9-17 = 2675
+   2026-9-18 = 2220
+   2026-9-22 = 2158
+## stage
+   R = 61600
+   L = 61157
+## main_prog_no
+   9900 = 84198
+   null = 38559
+## main_prog_seq
+   5 = 38141
+   0 = 36851
+   4 = 14663
+   68100 = 10742
+   76111 = 9200
+   41300 = 5243
+   76100 = 5124
+   60009 = 1031
+   59998 = 616
+   68103 = 590
+   2 = 448
+   34567 = 97
+   99970 = 6
+   7496 = 5
+## main_prog_block
+   1 = 38155
+   18 = 29381
+   10 = 14742
+   2 = 14548
+   5 = 13521
+   19 = 7463
+   9 = 2335
+   0 = 1548
+   7 = 400
+   6 = 374
+   13 = 184
+   4 = 43
+   14 = 40
+   17 = 7
+   38 = 5
+   3 = 4
+   8 = 3
+   24 = 3
+   31 = 1
+## sub_prog_no
+   9550 = 44166
+   9900 = 30732
+   8950 = 28489
+   9858 = 9000
+   9801 = 4660
+   8949 = 3333
+   8987 = 1596
+   8976 = 641
+   null = 140
+## sub_prog_block
+   4 = 49506
+   0 = 23582
+   2 = 18311
+   3 = 10132
+   1 = 8690
+   9 = 5210
+   7 = 4005
+   8 = 673
+   6 = 538
+   5 = 505
+   18 = 415
+   13 = 366
+   null = 140
+   12 = 101
+   11 = 94
+   16 = 93
+   17 = 91
+   15 = 87
+   14 = 87
+   10 = 81
+   29 = 34
+   28 = 9
+   30 = 3
+   31 = 2
+   37 = 1
+   20 = 1

@@ -1,0 +1,5216 @@
+[
+ {
+  "table": "laser_aaa",
+  "rows": "5451331",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 297,
+    "sample": "00:00:00 | 00:00:02 | 00:00:03 | 00:04:18 | 00:04:19 | 00:04:21 | 00:04:22 | 00:04:37"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "L | R | L | R | L | R | L | R"
+   },
+   {
+    "name": "result_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 182,
+    "sample": "-32 | 37 | 47 | 38 | -250 | 20 | -251 | 16"
+   },
+   {
+    "name": "result_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 188,
+    "sample": "-79 | -56 | -53 | 269 | -479 | -265 | 776 | 99"
+   },
+   {
+    "name": "workpiece_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 266,
+    "sample": "27790 | 555577 | 553785 | 135020 | 133225 | 585963 | 584162 | 556627"
+   },
+   {
+    "name": "workpiece_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 268,
+    "sample": "-35016 | -36680 | -35923 | 167701 | 168435 | 203699 | 204454 | 444207"
+   },
+   {
+    "name": "main_prog_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "9900 | 9900 | 9900 | 9900 | 9900 | 9900 | 9900 | 9900"
+   },
+   {
+    "name": "main_prog_seq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "4 | 4 | 4 | 0 | 0 | 0 | 0 | 4"
+   },
+   {
+    "name": "main_prog_block",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 2,
+    "sample": "10 | 10 | 10 | 19 | 19 | 19 | 19 | 10"
+   },
+   {
+    "name": "sub_prog_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "9550 | 9550 | 9550 | 9550 | 9550 | 9550 | 9550 | 9550"
+   },
+   {
+    "name": "sub_prog_seq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 3,
+    "sample": "88800 | 88800 | 88800 | 88800 | 88800 | 88800 | 88800 | 88888"
+   },
+   {
+    "name": "sub_prog_block",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "4 | 4 | 4 | 4 | 4 | 4 | 4 | 0"
+   },
+   {
+    "name": "machine_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 292,
+    "sample": "175360 | 703147 | 701355 | 147570 | 145775 | 733571 | 731770 | 704235"
+   },
+   {
+    "name": "machine_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 289,
+    "sample": "95632 | 93968 | 94725 | 335648 | 336382 | 334616 | 335371 | 575124"
+   },
+   {
+    "name": "size",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 92,
+    "sample": "1299 | 1279 | 1286 | 3154 | 3140 | 3182 | 3164 | 1284"
+   },
+   {
+    "name": "score",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 147,
+    "sample": "0.841 | 0.962 | 0.928 | 0.999 | 0.884 | 1.000 | 0.807 | 0.847"
+   },
+   {
+    "name": "corr_ratio",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "lack_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_aaa_gosa",
+  "rows": "27963",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 14,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 148,
+    "sample": "00:26:06 | 00:26:06 | 02:46:11 | 02:46:11 | 06:06:56 | 06:06:56 | 09:17:48 | 09:17:48"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | R | L | R | L | R | L"
+   },
+   {
+    "name": "max_err_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 40,
+    "sample": "0.0048 | 0.0033 | 0.0048 | 0.0032 | 0.0038 | 0.0035 | 0.0045 | 0.0036"
+   },
+   {
+    "name": "max_err_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 85,
+    "sample": "-0.0036 | -0.0023 | 0.0044 | 0.0006 | -0.0035 | -0.0029 | -0.0037 | -0.0027"
+   },
+   {
+    "name": "max_err_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 92,
+    "sample": "0.0032 | 0.0023 | 0.0018 | 0.0031 | 0.0016 | -0.0020 | 0.0025 | 0.0024"
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_alm_log",
+  "rows": "80913",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 294,
+    "sample": "01:29:17 | 01:29:18 | 01:29:30 | 01:42:57 | 02:29:31 | 02:30:46 | 02:53:58 | 02:58:25"
+   },
+   {
+    "name": "caption",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 5,
+    "sample": "ALMM  | STOP  | STOP  | ALMM  | STOP  | STOP  | STOP  | STOP "
+   },
+   {
+    "name": "alarm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 24,
+    "sample": "01261 L/UL §Ø????????? | T10 FIN WAIT          0004 | T10 FIN WAIT          0004 | 00053 PLC: ????????? | T03 BLOCK STOP        0301 | T02 FEED HOLD         0204 | T03 BLOCK STOP        0301 | T02 FEED HOLD         0204"
+   },
+   {
+    "name": "prg",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_cnd_selct",
+  "rows": "2249230",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 151,
+    "sample": "00:00:04 | 00:00:04 | 00:00:10 | 00:00:10 | 00:04:24 | 00:04:24 | 00:04:54 | 00:04:54"
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG | M:\\W2B-304-05\\1009-6009L11-12.PRG"
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd | M:\\W2B-304-05\\NO_03.cnd"
+   },
+   {
+    "name": "cond_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 7,
+    "sample": "42 | 47 | 10 | 31 | 41 | 46 | 42 | 47"
+   },
+   {
+    "name": "output_power",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600"
+   },
+   {
+    "name": "frequency",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "100 | 100 | 100 | 100 | 100 | 100 | 100 | 100"
+   },
+   {
+    "name": "pulse_width",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 2,
+    "valsDistinct": 7,
+    "sample": "15.0 | 10.0 | 11.0 | 5.0 | 13.0 | 4.0 | 15.0 | 10.0"
+   },
+   {
+    "name": "pulse_class",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "S | S | S | S | S | S | S | S"
+   },
+   {
+    "name": "speed",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 1,
+    "sample": "71000 | 71000 | 71000 | 71000 | 71000 | 71000 | 71000 | 71000"
+   },
+   {
+    "name": "pulse_count",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 4,
+    "sample": "1 | 9 | 1 | 2 | 1 | 3 | 1 | 9"
+   },
+   {
+    "name": "mask_no2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 3,
+    "sample": "4 | 4 | 1 | 1 | 10 | 10 | 4 | 4"
+   },
+   {
+    "name": "b_c",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "C | C | C | C | C | C | C | C"
+   },
+   {
+    "name": "g",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 4,
+    "sample": "12 | 12 | 1 | 1 | 11 | 11 | 12 | 12"
+   },
+   {
+    "name": "collimator_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 4,
+    "sample": "90 | 90 | 3 | 3 | 88 | 88 | 90 | 90"
+   },
+   {
+    "name": "base_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 4,
+    "sample": "380.0 | 380.0 | 245.0 | 245.0 | 270.0 | 270.0 | 380.0 | 380.0"
+   },
+   {
+    "name": "cur_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 6,
+    "sample": "386.0 | 386.0 | 242.0 | 242.0 | 286.5 | 286.5 | 386.0 | 386.0"
+   },
+   {
+    "name": "base_energy",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 2,
+    "valsDistinct": 5,
+    "sample": "26.000 | 0.000 | 7.900 | 0.000 | 11.000 | 0.000 | 26.000 | 0.000"
+   },
+   {
+    "name": "measured_freq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "100 | 100 | 100 | 100 | 100 | 100 | 100 | 100"
+   },
+   {
+    "name": "tolerance",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 2,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00"
+   },
+   {
+    "name": "optical_path_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "note",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_energy_measure",
+  "rows": "33044",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 5,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "00:10:33 | 00:12:08 | 00:13:44 | 00:15:21 | 00:16:56 | 00:21:40 | 00:23:16 | 00:24:53"
+   },
+   {
+    "name": "base_energy_mj",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 2,
+    "valsDistinct": 9,
+    "sample": "10.700 | 12.000 | 26.000 | 12.500 | 1.000 | 10.700 | 12.000 | 26.000"
+   },
+   {
+    "name": "tolerance_pct",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 2,
+    "maxInt": 2,
+    "valsDistinct": 2,
+    "sample": "5.00 | 5.00 | 5.00 | 5.00 | 10.00 | 5.00 | 5.00 | 5.00"
+   },
+   {
+    "name": "zl_measured_energy_mj",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 275,
+    "sample": "10.911 | 12.111 | 26.274 | 12.605 | 1.001 | 10.941 | 12.075 | 26.230"
+   },
+   {
+    "name": "zr_measured_energy_mj",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 277,
+    "sample": "10.892 | 12.012 | 25.914 | 12.457 | 1.007 | 10.896 | 11.983 | 25.876"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_files",
+  "rows": "22361",
+  "dateCol": "collection_date",
+  "timeCol": null,
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "source_id",
+    "dtype": "NVARCHAR",
+    "maxlen": 256,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 48,
+    "sample": "laser5-mainte1 | laser6-sin_statis | laser6-pc_direct | laser3-alm_log | laser3-table | laser6-sin_statis | laser6-sin_statis | laser6-sin_statis"
+   },
+   {
+    "name": "collection_date",
+    "dtype": "DATE",
+    "maxlen": 3,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 10,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "file_id",
+    "dtype": "NVARCHAR",
+    "maxlen": 1024,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "laser5-mainte1|\\\\192.1.181.101\\???????????\\seeddata\\5\\202609\\mainte1_260918.log|179|1789734383332808600 | laser6-sin_statis|\\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260913.log|2000|1789303048717813800 | laser6-pc_direct|\\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\PcDirect_260914.log|3147|1789395456182012900 | laser3-alm_log|\\\\192.1.181.101\\???????????\\seeddata\\3\\202609\\Almlog_260914.log|9161|1789452057890625000 | laser3-table|\\\\192.1.181.101\\???????????\\seeddata\\3\\202609\\table_260914.log|7208|1789452051843750000 | laser6-sin_statis|\\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260914.log|2004|1789389442838069300 | laser6-sin_statis|\\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260915.log|2006|1789485760367116800 | laser6-sin_statis|\\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260916.log|1275|1789560883173895600"
+   },
+   {
+    "name": "path",
+    "dtype": "NVARCHAR",
+    "maxlen": 2000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "\\\\192.1.181.101\\???????????\\seeddata\\5\\202609\\mainte1_260918.log | \\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260913.log | \\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\PcDirect_260914.log | \\\\192.1.181.101\\???????????\\seeddata\\3\\202609\\Almlog_260914.log | \\\\192.1.181.101\\???????????\\seeddata\\3\\202609\\table_260914.log | \\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260914.log | \\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260915.log | \\\\192.1.181.101\\???????????\\seeddata\\6\\202609\\Sinstatis_260916.log"
+   },
+   {
+    "name": "name",
+    "dtype": "NVARCHAR",
+    "maxlen": 510,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 134,
+    "sample": "mainte1_260918.log | Sinstatis_260913.log | PcDirect_260914.log | Almlog_260914.log | table_260914.log | Sinstatis_260914.log | Sinstatis_260915.log | Sinstatis_260916.log"
+   },
+   {
+    "name": "records",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "header",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 31,
+    "sample": "????,???,??????,???????,Sum Mark,Mainte Mode,PRG START TIME | Stage,????,???,????No.,???????(X),??????§³(X),???????(X),??????????(X),???????(Y),??????§³(Y),???????(Y),??????????(Y),????????????,???????,??????(X),?????§³(X),??????(X),????????(X),??????(Y),?????§³(Y),??????(Y),????????(Y),?????,????§³,?????,???????,??????? | ????,???,???????,???,????????,??????,?????? | DATE,TIME,CAPTION,ALARM | ????,???,Stage,RZ(mm),RX(mm),RY(mm),LZ(mm),LX(mm),LY(mm),RZ-ave,LZ-ave,RZ-range,LZ-range,??????? | Stage,????,???,????No.,???????(X),??????§³(X),???????(X),??????????(X),???????(Y),??????§³(Y),???????(Y),??????????(Y),????????????,???????,??????(X),?????§³(X),??????(X),????????(X),??????(Y),?????§³(Y),??????(Y),????????(Y),?????,????§³,?????,???????,??????? | Stage,????,???,????No.,???????(X),??????§³(X),???????(X),??????????(X),???????(Y),??????§³(Y),???????(Y),??????????(Y),????????????,???????,??????(X),?????§³(X),??????(X),????????(X),??????(Y),?????§³(Y),??????(Y),????????(Y),?????,????§³,?????,???????,??????? | Stage,????,???,????No.,???????(X),??????§³(X),???????(X),??????????(X),???????(Y),??????§³(Y),???????(Y),??????????(Y),????????????,???????,??????(X),?????§³(X),??????(X),????????(X),??????(Y),?????§³(Y),??????(Y),????????(Y),?????,????§³,?????,???????,???????"
+   },
+   {
+    "name": "collected_at",
+    "dtype": "DATETIME2",
+    "maxlen": 8,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 10,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_files_file_key_seq",
+  "rows": "1",
+  "dateCol": null,
+  "timeCol": null,
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "name",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "laser_files"
+   },
+   {
+    "name": "next",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 9,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_galv_mask_measure",
+  "rows": "23630",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 8,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "02:24:17 | 02:24:42 | 06:53:41 | 06:54:05 | 08:23:28 | 08:23:31 | 08:23:33 | 08:23:36"
+   },
+   {
+    "name": "mask_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 11,
+    "sample": "1 | 1 | 1 | 1 | 2 | 3 | 4 | 5"
+   },
+   {
+    "name": "mode",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 4,
+    "sample": "G-COMP-5 | G-CHECK | G-COMP-5 | G-CHECK | M-CHECK | M-CHECK | M-CHECK | M-CHECK"
+   },
+   {
+    "name": "tol_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": " 0.0100 |  0.0100 |  0.0100 |  0.0100 |  0.0100 |  0.0100 |  0.0100 |  0.0100"
+   },
+   {
+    "name": "zl_max_err_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 64,
+    "sample": " 0.0020 |  0.0058 |  0.0030 |  0.0057 |  0.0010 |  0.0009 |  0.0019 |  0.0006"
+   },
+   {
+    "name": "zl_max_err_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 97,
+    "sample": " 0.0007 |  0.0050 | -0.0026 | -0.0033 | -0.0008 | -0.0003 | -0.0006 |  0.0000"
+   },
+   {
+    "name": "zl_max_err_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 105,
+    "sample": "-0.0022 | -0.0029 |  0.0010 |  0.0047 |  0.0005 |  0.0009 | -0.0018 | -0.0006"
+   },
+   {
+    "name": "zr_max_err_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 75,
+    "sample": " 0.0040 |  0.0043 |  0.0040 |  0.0047 |  0.0045 |  0.0031 |  0.0057 |  0.0044"
+   },
+   {
+    "name": "zr_max_err_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 112,
+    "sample": "-0.0028 |  0.0010 |  0.0033 | -0.0002 | -0.0039 | -0.0026 | -0.0037 | -0.0037"
+   },
+   {
+    "name": "zr_max_err_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 105,
+    "sample": "-0.0027 | -0.0042 |  0.0014 | -0.0047 |  0.0023 |  0.0017 |  0.0043 |  0.0024"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_glv_cnd_send",
+  "rows": "1176750",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14 | 2026/09/14"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 5,
+    "sample": "12:36:24 | 12:36:24 | 12:36:24 | 12:36:24 | 12:36:24 | 12:36:24 | 12:36:24 | 12:36:24"
+   },
+   {
+    "name": "no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 50,
+    "sample": "1 | 2 | 3 | 4 | 5 | 6 | 7 | 8"
+   },
+   {
+    "name": "r8162",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 5,
+    "sample": "3 | 2 | 2 | 7 | 2 | 2 | 2 | 2"
+   },
+   {
+    "name": "r8145",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 4,
+    "sample": "100 | 100 | 100 | 100 | 100 | 100 | 100 | 100"
+   },
+   {
+    "name": "r8144",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 12,
+    "sample": "16422 | 16447 | 16447 | 16447 | 16422 | 16422 | 16422 | 16422"
+   },
+   {
+    "name": "r8146",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 12,
+    "sample": "153 | 252 | 252 | 252 | 153 | 153 | 153 | 153"
+   },
+   {
+    "name": "r8147",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 12,
+    "sample": "2644 | 4383 | 4383 | 4383 | 2644 | 2644 | 2644 | 2644"
+   },
+   {
+    "name": "r8159",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 6,
+    "sample": "0200 | 0200 | 0200 | 0200 | 0200 | 0200 | 0200 | 0200"
+   },
+   {
+    "name": "r8156",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 7,
+    "sample": "2500 | 1 | 1 | 1 | 1 | 1 | 1 | 1"
+   },
+   {
+    "name": "r8148",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 2,
+    "sample": "46970 | 46970 | 46970 | 46970 | 46970 | 46970 | 46970 | 46970"
+   },
+   {
+    "name": "warning",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "2500 | 2500 | 2500 | 2500 | 2500 | 2500 | 2500 | 2500"
+   },
+   {
+    "name": "err",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "3000 | 3000 | 3000 | 3000 | 3000 | 3000 | 3000 | 3000"
+   },
+   {
+    "name": "ref_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 16,
+    "sample": "0 | 0 | 0 | 0 | 1535944 | 0 | 1943764 | 0"
+   },
+   {
+    "name": "ref_l",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 16,
+    "sample": "0 | 0 | 0 | 0 | 1535944 | 0 | 1943764 | 0"
+   },
+   {
+    "name": "gain_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 5,
+    "sample": "0 | 0 | 0 | 0 | 3 | 0 | 3 | 0"
+   },
+   {
+    "name": "r8163",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 12,
+    "sample": "98 | 200 | 200 | 200 | 98 | 98 | 98 | 98"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_length",
+  "rows": "1097479",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | R | L | R | L | R | L"
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 151,
+    "sample": "00:31:08 | 00:31:08 | 00:31:28 | 00:31:28 | 00:39:17 | 00:39:17 | 00:39:36 | 00:39:36"
+   },
+   {
+    "name": "comp_points",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "2 | 2 | 4 | 4 | 2 | 2 | 4 | 4"
+   },
+   {
+    "name": "length_15",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 3,
+    "valsDistinct": 257,
+    "sample": "596.0103 | 596.0099 | 509.0181 | 509.0255 | 596.0018 | 596.0066 | 509.0127 | 509.0140"
+   },
+   {
+    "name": "length_16",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 132,
+    "sample": "500.4926 | 500.4834 | 500.5065 | 500.4867 | 500.5180 | 500.4878 | 500.5164 | 500.5174"
+   },
+   {
+    "name": "length_17",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 141,
+    "sample": "717.4014 | 717.4185 | 717.4088 | 717.3946 | 717.4579 | 717.4061 | 717.4377 | 717.4379"
+   },
+   {
+    "name": "length_18",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 142,
+    "sample": "514.0120 | 514.0332 | 514.0057 | 514.0212 | 514.0406 | 514.0179 | 514.0448 | 514.0329"
+   },
+   {
+    "name": "length_19",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 125,
+    "sample": "500.4606 | 500.4496 | 500.4853 | 500.4459 | 500.4914 | 500.4590 | 500.4778 | 500.4811"
+   },
+   {
+    "name": "length_20",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 143,
+    "sample": "713.8429 | 713.8320 | 713.8541 | 713.8389 | 713.8801 | 713.8338 | 713.8739 | 713.8658"
+   },
+   {
+    "name": "error_msg",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "OK | OK | OK | OK | OK | OK | OK | OK"
+   },
+   {
+    "name": "length_max_err",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 236,
+    "sample": "0.0103 | 0.0099 | 0.0676 | 0.0650 | 0.0018 | 0.0066 | 0.0853 | 0.0617"
+   },
+   {
+    "name": "stretch_rate_min",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 1,
+    "valsDistinct": 261,
+    "sample": "1.0000172 | 1.0000167 | 1.0000233 | 1.0000502 | 1.0000031 | 1.0000111 | 1.0000111 | 1.0000275"
+   },
+   {
+    "name": "stretch_rate_max",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 1,
+    "valsDistinct": 272,
+    "sample": "1.0000172 | 1.0000167 | 1.0001351 | 1.0001167 | 1.0000031 | 1.0000111 | 1.0001704 | 1.0001233"
+   },
+   {
+    "name": "block_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_m307",
+  "rows": "17981",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 20,
+    "sample": "2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "01:45:24 | 04:57:01 | 05:12:46 | 08:20:43 | 10:10:38 | 10:26:26 | 10:56:59 | 13:53:52"
+   },
+   {
+    "name": "output_power",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600"
+   },
+   {
+    "name": "frequency",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "500 | 500 | 500 | 500 | 500 | 500 | 500 | 500"
+   },
+   {
+    "name": "on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "7.0 | 7.0 | 7.0 | 7.0 | 7.0 | 7.0 | 7.0 | 7.0"
+   },
+   {
+    "name": "measured_out",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 2,
+    "valsDistinct": 2,
+    "sample": "25.7 | 25.7 | 25.7 | 25.7 | 25.7 | 25.7 | 25.7 | 25.7"
+   },
+   {
+    "name": "check_out",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 2,
+    "valsDistinct": 60,
+    "sample": "23.5 | 25.3 | 24.5 | 23.3 | 25.3 | 25.2 | 24.6 | 24.3"
+   },
+   {
+    "name": "gain",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 3,
+    "sample": "4700 | 4700 | 4700 | 4700 | 4700 | 4700 | 4700 | 4700"
+   },
+   {
+    "name": "bias",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 3,
+    "sample": "22 | 22 | 22 | 22 | 22 | 22 | 22 | 22"
+   },
+   {
+    "name": "beam_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 294,
+    "sample": "3557986 | 3558124 | 3558134 | 3558289 | 3558362 | 3558364 | 3558378 | 3558527"
+   },
+   {
+    "name": "blower_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 300,
+    "sample": "5707354 | 5707546 | 5707561 | 5707749 | 5707859 | 5707875 | 5707905 | 5708082"
+   },
+   {
+    "name": "ready_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 300,
+    "sample": "5707354 | 5707546 | 5707561 | 5707749 | 5707859 | 5707875 | 5707905 | 5708082"
+   },
+   {
+    "name": "judgement",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "OK | OK | OK | OK | OK | OK | OK | OK"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_m370",
+  "rows": "40760",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 9,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 244,
+    "sample": "02:23:58 | 02:23:58 | 06:53:22 | 06:53:23 | 08:23:03 | 08:23:03 | 12:11:09 | 12:11:10"
+   },
+   {
+    "name": "camera_type",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | R | L | R | L | R | L"
+   },
+   {
+    "name": "offset_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 212,
+    "sample": "134.4139 | 134.4031 | 134.4121 | 134.4030 | 134.4385 | 134.4086 | 134.4120 | 134.4006"
+   },
+   {
+    "name": "offset_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 179,
+    "sample": "-38.0530 | -38.0499 | -38.0527 | -38.0507 | -38.0660 | -38.0468 | -38.0528 | -38.0486"
+   },
+   {
+    "name": "offset_z",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 255,
+    "sample": "-51.8217 | -52.3628 | -51.8262 | -52.3682 | -51.7929 | -52.3288 | -51.8339 | -52.3743"
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_m377",
+  "rows": "119170",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 205,
+    "sample": "00:25:20 | 00:25:23 | 02:23:45 | 02:45:26 | 02:45:29 | 04:31:44 | 04:53:06 | 05:01:12"
+   },
+   {
+    "name": "stage_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 3,
+    "sample": "1 | 2 | 0 | 1 | 2 | 0 | 1 | 0"
+   },
+   {
+    "name": "mask_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 11,
+    "sample": "1 | 1 | 3 | 1 | 1 | 3 | 10 | 3"
+   },
+   {
+    "name": "r_xerr",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 39,
+    "sample": "-0.002 | 0.000 | 0.000 | 0.002 | 0.000 | -0.687 | 99999.999 | -0.028"
+   },
+   {
+    "name": "r_yerr",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 39,
+    "sample": "0.001 | 0.000 | 0.000 | 0.000 | 0.000 | -0.758 | -0.033 | -0.039"
+   },
+   {
+    "name": "r_circularity",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 41,
+    "sample": "0.976 | 0.000 | 0.956 | 0.972 | 0.000 | 0.966 | 0.966 | 0.966"
+   },
+   {
+    "name": "l_xerr",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 30,
+    "sample": "0.000 | -0.003 | 0.000 | 0.000 | 0.002 | 0.686 | 99999.999 | 0.000"
+   },
+   {
+    "name": "l_yerr",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 34,
+    "sample": "0.000 | 0.001 | -0.060 | 0.000 | 0.000 | 0.597 | 0.000 | 0.000"
+   },
+   {
+    "name": "l_circularity",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 45,
+    "sample": "0.967 | 0.985 | 0.964 | 0.964 | 0.987 | 0.975 | 0.975 | 0.975"
+   },
+   {
+    "name": "light_a_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 3,
+    "sample": "25 | 25 | 0 | 25 | 25 | 0 | 0 | 0"
+   },
+   {
+    "name": "light_b_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 4,
+    "sample": "70 | 70 | 0 | 70 | 70 | 0 | 0 | 0"
+   },
+   {
+    "name": "light_a_l",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 3,
+    "sample": "25 | 25 | 0 | 25 | 25 | 0 | 0 | 0"
+   },
+   {
+    "name": "light_b_l",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 4,
+    "sample": "70 | 70 | 0 | 70 | 70 | 0 | 0 | 0"
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_mainte1",
+  "rows": "527",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 5,
+    "sample": "2026/9/18 | 2026/9/18 | 2026-9-18 | 2026-9-18 | 2026/9/13 | 2026/9/20 | 2026/9/20 | 2026-9-16"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 5,
+    "sample": "20:26:23 | 20:26:23 | 10:04:45 | 10:04:45 | 02:06:52 | 09:21:43 | 09:21:43 | 10:32:52"
+   },
+   {
+    "name": "clear_item",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "#03 QUICK GAS CHANGE | #09 ALL GAS CHANGE | #03 QUICK GAS CHANGE | #09 ALL CHANGE LASER GAS | #03 QUICK GAS CHANGE | #03 QUICK GAS CHANGE | #09 ALL GAS CHANGE | #03 QUICK GAS CHANGE"
+   },
+   {
+    "name": "clear_count",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 8,
+    "sample": "408 | 170 | 1018 | 329 | 257 | 258 | 98 | 1017"
+   },
+   {
+    "name": "sum_mark",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "mainte_mode",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_mask_gosa",
+  "rows": "71299",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 7,
+    "sample": "2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13 | 2026-9-13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 150,
+    "sample": "10:23:10 | 10:23:10 | 10:23:13 | 10:23:13 | 10:23:17 | 10:23:17 | 10:23:20 | 10:23:20"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | R | L | R | L | R | L"
+   },
+   {
+    "name": "max_err_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 7,
+    "sample": "0.001 | 0.001 | 0.004 | 0.001 | 0.003 | 0.001 | 0.004 | 0.001"
+   },
+   {
+    "name": "max_err_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 8,
+    "sample": "0.000 | -0.001 | -0.003 | -0.001 | -0.003 | -0.001 | -0.003 | 0.000"
+   },
+   {
+    "name": "max_err_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 10,
+    "sample": "-0.001 | 0.001 | 0.002 | 0.000 | -0.001 | 0.000 | -0.002 | -0.001"
+   },
+   {
+    "name": "mask_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 9,
+    "sample": "2 | 2 | 3 | 3 | 4 | 4 | 5 | 5"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_pc_direct",
+  "rows": "20946",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 10,
+    "sample": "2026/9/14 | 2026/9/14 | 2026/9/14 | 2026/9/14 | 2026/9/14 | 2026/9/14 | 2026/9/14 | 2026/9/14"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 298,
+    "sample": "01:22:45 | 01:27:50 | 02:17:19 | 02:22:25 | 02:23:34 | 05:22:09 | 05:27:13 | 06:18:29"
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 45,
+    "sample": "c:\\pban\\prg\\system\\collimate\\collimate.prg | C:\\pban\\log\\202609\\PRG_F\\0976-0228L1-2_4A4B9782_28BBC053_82A9C0D7.prg_F | c:\\pban\\prg\\system\\collimate\\collimate.prg | c:\\pban\\prg\\system\\auto_galv\\9900.prg | C:\\pban\\log\\202609\\PRG_F\\0976-0228L9-10_F5BB8E6F_F593E306_  293B0F.prg_F | c:\\pban\\prg\\system\\collimate\\collimate.prg | C:\\pban\\log\\202609\\PRG_F\\0976-0228L9-10_F5BB8E6F_F593E306_  293B0F.prg_F | c:\\pban\\prg\\system\\collimate\\collimate.prg"
+   },
+   {
+    "name": "size",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 44,
+    "sample": "2006 | 6183 | 2006 | 26007 | 6192 | 2006 | 6192 | 2006"
+   },
+   {
+    "name": "search_method",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "C | C | C | C | C | C | C | C"
+   },
+   {
+    "name": "result_summary",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "1 | 1 | 1 | 1 | 1 | 1 | 1 | 1"
+   },
+   {
+    "name": "result_detail",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_proc_state",
+  "rows": "148408",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 299,
+    "sample": "00:01:05 | 00:03:17 | 00:05:30 | 00:07:42 | 00:09:55 | 00:12:08 | 00:14:20 | 00:16:32"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "W | W | W | W | W | W | W | W"
+   },
+   {
+    "name": "prg_filename",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 11,
+    "sample": "M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg | M:\\W2B-304-57\\1456-0016L9-10.prg"
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 12,
+    "sample": "M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd | M:\\W2B-304-57\\NO_13.cnd"
+   },
+   {
+    "name": "start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 299,
+    "sample": "23:59:00 | 00:01:12 | 00:03:24 | 00:05:37 | 00:07:49 | 00:10:02 | 00:12:15 | 00:14:27"
+   },
+   {
+    "name": "end_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 299,
+    "sample": "00:01:05 | 00:03:17 | 00:05:30 | 00:07:42 | 00:09:55 | 00:12:08 | 00:14:20 | 00:16:32"
+   },
+   {
+    "name": "proc_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 78,
+    "sample": "125 | 125 | 126 | 125 | 126 | 126 | 125 | 125"
+   },
+   {
+    "name": "end_block",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 6,
+    "sample": "72 | 72 | 72 | 72 | 72 | 72 | 72 | 72"
+   },
+   {
+    "name": "via_hole",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 12,
+    "sample": "51502 | 51502 | 51502 | 51502 | 51502 | 51502 | 51502 | 51502"
+   },
+   {
+    "name": "utility_hole",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "5476 | 5476 | 5476 | 5476 | 5476 | 5476 | 5476 | 5476"
+   },
+   {
+    "name": "proc_hole_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 11,
+    "sample": "56978 | 56978 | 56978 | 56978 | 56978 | 56978 | 56978 | 56978"
+   },
+   {
+    "name": "proc_hole_l",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 6,
+    "valsDistinct": 11,
+    "sample": "56978 | 56978 | 56978 | 56978 | 56978 | 56978 | 56978 | 56978"
+   },
+   {
+    "name": "total_proc_hole_r",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 9,
+    "valsDistinct": 280,
+    "sample": "988757579 | 988814557 | 988871535 | 988928513 | 988985491 | 989042469 | 989099447 | 989156425"
+   },
+   {
+    "name": "total_proc_hole_l",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 9,
+    "valsDistinct": 277,
+    "sample": "465849365 | 465906343 | 465963321 | 466020299 | 466077277 | 466134255 | 466191233 | 466248211"
+   },
+   {
+    "name": "total_shot",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 12,
+    "valsDistinct": 297,
+    "sample": "404471598000 | 404471817344 | 404472036672 | 404472256032 | 404472475384 | 404472694748 | 404472914124 | 404473133484"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_pwr",
+  "rows": "343125",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 299,
+    "sample": "02:03:49 | 02:04:13 | 02:04:34 | 02:04:58 | 02:05:24 | 02:05:49 | 02:06:09 | 02:06:33"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | L | R | R | L | L | R"
+   },
+   {
+    "name": "cond_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 11,
+    "sample": "10 | 10 | 10 | 10 | 41 | 41 | 41 | 41"
+   },
+   {
+    "name": "output_power",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 1,
+    "sample": "5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600 | 5600"
+   },
+   {
+    "name": "frequency",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 17,
+    "sample": "1518 | 1518 | 1518 | 1518 | 1000 | 1000 | 1000 | 1000"
+   },
+   {
+    "name": "on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 2,
+    "valsDistinct": 6,
+    "sample": "11.0 | 11.0 | 11.0 | 11.0 | 13.0 | 13.0 | 13.0 | 13.0"
+   },
+   {
+    "name": "base_energy",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 2,
+    "valsDistinct": 14,
+    "sample": "7.900 | 7.900 | 7.900 | 7.900 | 12.000 | 12.000 | 12.000 | 12.000"
+   },
+   {
+    "name": "judgement",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 245,
+    "sample": "7.838 | 7.781 | 7.792 | 7.898 | 11.933 | 11.911 | 11.912 | 11.968"
+   },
+   {
+    "name": "tolerance",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 2,
+    "maxInt": 2,
+    "valsDistinct": 2,
+    "sample": "5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00 | 5.00"
+   },
+   {
+    "name": "collimator_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 15,
+    "sample": "51 | 51 | 51 | 51 | 88 | 88 | 88 | 88"
+   },
+   {
+    "name": "base_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 15,
+    "sample": "199.0 | 199.0 | 199.0 | 199.0 | 235.0 | 235.0 | 235.0 | 235.0"
+   },
+   {
+    "name": "cur_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 34,
+    "sample": "199.1 | 199.1 | 199.1 | 199.1 | 238.5 | 238.5 | 238.5 | 238.5"
+   },
+   {
+    "name": "mask_no2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 6,
+    "sample": "9 | 9 | 9 | 9 | 10 | 10 | 10 | 10"
+   },
+   {
+    "name": "gain",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0"
+   },
+   {
+    "name": "bias",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 0.0"
+   },
+   {
+    "name": "beam_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 107,
+    "sample": "1587917 | 1587917 | 1587917 | 1587918 | 1587918 | 1587918 | 1587919 | 1587919"
+   },
+   {
+    "name": "blower_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 135,
+    "sample": "2342716 | 2342717 | 2342717 | 2342718 | 2342718 | 2342718 | 2342719 | 2342719"
+   },
+   {
+    "name": "ready_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 7,
+    "valsDistinct": 135,
+    "sample": "2342716 | 2342717 | 2342717 | 2342718 | 2342718 | 2342718 | 2342719 | 2342719"
+   },
+   {
+    "name": "measured_freq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 17,
+    "sample": "4.252 | 4.252 | 4.252 | 4.252 | 5.154 | 5.154 | 5.154 | 5.154"
+   },
+   {
+    "name": "freq_limit",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 4,
+    "valsDistinct": 9,
+    "sample": "3375.000 | 3375.000 | 3375.000 | 3375.000 | 3000.000 | 3000.000 | 3000.000 | 3000.000"
+   },
+   {
+    "name": "shot_group",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 13,
+    "sample": "357 | 357 | 357 | 357 | 194 | 194 | 194 | 194"
+   },
+   {
+    "name": "display_freq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 17,
+    "sample": "1518 | 1518 | 1518 | 1518 | 1000 | 1000 | 1000 | 1000"
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 4,
+    "sample": "NO_51.cnd | NO_51.cnd | NO_51.cnd | NO_51.cnd | NO_51.cnd | NO_51.cnd | NO_51.cnd | NO_51.cnd"
+   },
+   {
+    "name": "pulse_class",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "S | S | S | S | S | S | S | S"
+   },
+   {
+    "name": "optical_path_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "retry_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_pwrmulti",
+  "rows": "27",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "cond_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "output_power",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "frequency",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "base_energy",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "tolerance_pct",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_range_pct",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "judgement",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_1",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_3",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_4",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_5",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_6",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_7",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_8",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_9",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_10",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_11",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_12",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_13",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_14",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_15",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_16",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_energy_17",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "collimator_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "base_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "cur_rate",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "mask_no2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "gain",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "bias",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "beam_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "blower_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "ready_on_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "measured_freq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "freq_limit",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "shot_group",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "display_freq",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "optical_path_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "pulse_class",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "retry_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_sensor",
+  "rows": "3037228",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 287,
+    "sample": "00:03:49 | 00:03:50 | 00:03:51 | 00:03:52 | 00:03:54 | 00:04:05 | 00:04:06 | 00:04:07"
+   },
+   {
+    "name": "dust_air",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 16,
+    "sample": "-1.560 | -1.530 | -1.530 | -1.530 | -1.560 | -1.440 | -1.500 | -1.530"
+   },
+   {
+    "name": "table_air",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 17,
+    "sample": "-10.070 | -10.010 | -10.040 | -10.010 | -10.070 | -10.070 | -10.070 | -10.040"
+   },
+   {
+    "name": "prg",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg"
+   },
+   {
+    "name": "block_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 4,
+    "valsDistinct": 6,
+    "sample": "11 | 83 | 83 | 83 | 83 | 1 | 5 | 11"
+   },
+   {
+    "name": "r_stage_ftheta_temp",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 33,
+    "sample": "21800 | 21800 | 21800 | 21800 | 21800 | 21800 | 21800 | 21800"
+   },
+   {
+    "name": "l_stage_ftheta_temp",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 31,
+    "sample": "22430 | 22430 | 22430 | 22430 | 22430 | 22430 | 22430 | 22430"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_sin_statis",
+  "rows": "16319",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "- | - | - | - | - | - | - | -"
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 20,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/14"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 226,
+    "sample": "01:53:52 | 06:28:43 | 11:33:43 | 14:19:15 | 16:09:26 | 18:49:44 | 20:37:28 | 02:10:15"
+   },
+   {
+    "name": "manage_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 60,
+    "sample": "291027-02 | 291027-02 | 291027-02 | 291027-02 | 291027-02 | 292199-18 | 292199-18 | 291924-01"
+   },
+   {
+    "name": "stretch_max_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 225,
+    "sample": "1.0003563 | 1.0003563 | 1.0003415 | 1.0003755 | 1.0003482 | 1.0003320 | 1.0003076 | 1.0002448"
+   },
+   {
+    "name": "stretch_min_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 216,
+    "sample": "0.9998863 | 0.9998716 | 0.9998081 | 0.9998890 | 0.9997032 | 0.9996005 | 0.9996510 | 0.9999163"
+   },
+   {
+    "name": "stretch_avg_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 261,
+    "sample": "1.0001273 | 1.0001234 | 1.0001136 | 1.0001467 | 1.0001105 | 1.0000400 | 1.0000276 | 1.0000716"
+   },
+   {
+    "name": "stretch_std_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 1,
+    "valsDistinct": 260,
+    "sample": "0.0001986 | 0.0001999 | 0.0001970 | 0.0001928 | 0.0002034 | 0.0002512 | 0.0002482 | 0.0001106"
+   },
+   {
+    "name": "stretch_max_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 221,
+    "sample": "1.0003531 | 1.0003531 | 1.0003367 | 1.0003619 | 1.0003359 | 1.0003695 | 1.0003551 | 1.0005030"
+   },
+   {
+    "name": "stretch_min_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 216,
+    "sample": "0.9998863 | 0.9998716 | 0.9998081 | 0.9998890 | 0.9997032 | 0.9996005 | 0.9996510 | 0.9999163"
+   },
+   {
+    "name": "stretch_avg_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 270,
+    "sample": "1.0001204 | 1.0001165 | 1.0001088 | 1.0001352 | 1.0001018 | 1.0000592 | 1.0000481 | 1.0002080"
+   },
+   {
+    "name": "stretch_std_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 1,
+    "valsDistinct": 265,
+    "sample": "0.0001919 | 0.0001932 | 0.0001923 | 0.0001818 | 0.0001951 | 0.0002703 | 0.0002685 | 0.0002458"
+   },
+   {
+    "name": "main_prog_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 98,
+    "sample": "M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L12-13.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L12-13.prg | M:\\W2B-304-72\\2581-5040L2-3.prg | M:\\W2B-304-72\\2581-5040L6-7.prg | M:\\W2B-304-72\\0976-0228L1-2.prg"
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 19,
+    "sample": "NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_104.cnd | NO_104.cnd | NO_82.cnd"
+   },
+   {
+    "name": "offset_max_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 4,
+    "valsDistinct": 210,
+    "sample": "883.8 | 883.8 | 834.2 | 752.6 | 732.9 | 950.0 | 975.8 | 1790.6"
+   },
+   {
+    "name": "offset_min_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 4,
+    "valsDistinct": 209,
+    "sample": "-883.8 | -883.8 | -834.2 | -752.6 | -732.9 | -950.0 | -975.8 | -1790.6"
+   },
+   {
+    "name": "offset_avg_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 3,
+    "valsDistinct": 134,
+    "sample": "0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000"
+   },
+   {
+    "name": "offset_std_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 241,
+    "sample": "607.5959 | 592.0942 | 518.3114 | 524.8280 | 544.1846 | 577.4907 | 584.5200 | 747.0986"
+   },
+   {
+    "name": "offset_max_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 4,
+    "valsDistinct": 221,
+    "sample": "811.4 | 811.4 | 528.7 | 315.4 | 259.2 | 320.3 | 522.9 | 1101.6"
+   },
+   {
+    "name": "offset_min_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 4,
+    "valsDistinct": 221,
+    "sample": "-811.4 | -811.4 | -528.7 | -315.4 | -259.2 | -320.3 | -522.9 | -1101.6"
+   },
+   {
+    "name": "offset_avg_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 3,
+    "valsDistinct": 134,
+    "sample": "0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000 | 0.0000"
+   },
+   {
+    "name": "offset_std_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 241,
+    "sample": "355.7358 | 302.7868 | 142.8321 | 139.5110 | 124.0227 | 137.6458 | 160.6760 | 451.6412"
+   },
+   {
+    "name": "theta_max",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 177,
+    "sample": "0.037 | 0.045 | -0.178 | 0.053 | -0.061 | 0.015 | -0.073 | 0.060"
+   },
+   {
+    "name": "theta_min",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 174,
+    "sample": "0.017 | 0.017 | -0.209 | -0.011 | -0.101 | -0.013 | -0.100 | 0.057"
+   },
+   {
+    "name": "theta_avg",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 183,
+    "sample": "0.027 | 0.030 | -0.194 | 0.021 | -0.081 | 0.001 | -0.087 | 0.059"
+   },
+   {
+    "name": "theta_std",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 68,
+    "sample": "0.010 | 0.010 | 0.016 | 0.032 | 0.020 | 0.014 | 0.014 | 0.002"
+   },
+   {
+    "name": "sheet_count",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 92,
+    "sample": "124 | 176 | 176 | 64 | 64 | 240 | 240 | 240"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_sinsyuku",
+  "rows": "1097194",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "R | L | R | L | R | L | R | L"
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13 | 2026/9/13"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 158,
+    "sample": "00:04:08 | 00:04:08 | 00:04:27 | 00:04:27 | 00:10:14 | 00:10:14 | 00:10:33 | 00:10:33"
+   },
+   {
+    "name": "manage_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "291027-02 | 291027-02 | 291027-02 | 291027-02 | 291027-02 | 291027-02 | 291027-02 | 291027-02"
+   },
+   {
+    "name": "serial_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 90,
+    "sample": "30 | 29 | 30 | 29 | 32 | 31 | 32 | 31"
+   },
+   {
+    "name": "stretch_rate_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 261,
+    "sample": "0.9999534 | 0.9999071 | 1.0003299 | 1.0003343 | 0.9999364 | 0.9999379 | 1.0003144 | 1.0003071"
+   },
+   {
+    "name": "stretch_rate_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 7,
+    "maxInt": 0,
+    "valsDistinct": 262,
+    "sample": "0.9999534 | 0.9999071 | 1.0002939 | 1.0002981 | 0.9999364 | 0.9999379 | 1.0003167 | 1.0003218"
+   },
+   {
+    "name": "main_prog_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg | M:\\W2B-304-72\\2211-0123L2-3.prg"
+   },
+   {
+    "name": "cond_file",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd | NO_103.cnd"
+   },
+   {
+    "name": "status",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "   |    |    |    |    |    |    |   "
+   },
+   {
+    "name": "error_msg",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "             |              |              |              |              |              |              |             "
+   },
+   {
+    "name": "offset_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 292,
+    "sample": "474.6 | -474.6 | 508.1 | -508.1 | 622.3 | -622.3 | 779.2 | -779.2"
+   },
+   {
+    "name": "offset_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 1,
+    "maxInt": 3,
+    "valsDistinct": 294,
+    "sample": "-43.4 | 43.4 | 55.2 | -55.2 | -623.1 | 623.1 | -592.9 | 592.9"
+   },
+   {
+    "name": "theta",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 3,
+    "maxInt": 0,
+    "valsDistinct": 8,
+    "sample": "0.017 | 0.037 | 0.017 | 0.037 | 0.017 | 0.037 | 0.017 | 0.037"
+   },
+   {
+    "name": "status2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "manual_work_comp",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+   },
+   {
+    "name": "offset_proc_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000"
+   },
+   {
+    "name": "offset_proc_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 3,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000"
+   },
+   {
+    "name": "restart_status",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stop_block",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "end_block",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 1,
+    "sample": "82 | 82 | 82 | 82 | 82 | 82 | 82 | 82"
+   },
+   {
+    "name": "block_no",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "manual_mode",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "work_comp_type",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p1x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p1y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p2x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p2y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p3x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p3y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p4x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p4y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p5x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "p5y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stretch_set_rate_x",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "stretch_set_rate_y",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p1_p2",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p3_p4",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p2_p3",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p1_p4",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p1_p3",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rate_p2_p4",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_table",
+  "rows": "124451",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 10,
+    "sample": "2026-9-14 | 2026-9-14 | 2026-9-14 | 2026-9-14 | 2026-9-14 | 2026-9-14 | 2026-9-14 | 2026-9-14"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 300,
+    "sample": "02:28:03 | 02:28:24 | 02:30:38 | 02:39:47 | 02:52:36 | 02:52:57 | 02:58:19 | 06:58:11"
+   },
+   {
+    "name": "stage",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "W | W | W | W | W | W | W | W"
+   },
+   {
+    "name": "rz_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 114,
+    "sample": "0.004 | -0.027 | -0.311 | -0.312 | -0.001 | -0.025 | -0.309 | -0.002"
+   },
+   {
+    "name": "rx_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 0,
+    "valsDistinct": 54,
+    "sample": "674.756 | 671.182 | 256.602 | 256.602 | 674.757 | 671.181 | 256.601 | 674.756"
+   },
+   {
+    "name": "ry_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 3,
+    "valsDistinct": 219,
+    "sample": "516.997 | 394.797 | 426.397 | 426.397 | 516.197 | 393.196 | 426.396 | 515.396"
+   },
+   {
+    "name": "lz_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 107,
+    "sample": "0.005 | -0.017 | -0.694 | -0.695 | 0.000 | -0.018 | -0.688 | -0.004"
+   },
+   {
+    "name": "lx_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 56,
+    "sample": "674.756 | 671.182 | 256.602 | 256.602 | 674.757 | 671.181 | 256.601 | 674.756"
+   },
+   {
+    "name": "ly_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 3,
+    "valsDistinct": 221,
+    "sample": "516.997 | 394.797 | 426.397 | 426.397 | 516.197 | 393.196 | 426.396 | 515.396"
+   },
+   {
+    "name": "rz_ave",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 114,
+    "sample": "0.004 | -0.027 | -0.311 | -0.312 | -0.001 | -0.025 | -0.309 | -0.002"
+   },
+   {
+    "name": "lz_ave",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 107,
+    "sample": "0.005 | -0.017 | -0.694 | -0.695 | 0.000 | -0.018 | -0.688 | -0.004"
+   },
+   {
+    "name": "rz_range",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000"
+   },
+   {
+    "name": "lz_range",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 4,
+    "maxInt": 1,
+    "valsDistinct": 2,
+    "sample": "0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000 | 0.000"
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 36,
+    "sample": "c:\\pban\\prg\\system\\auto_galv\\9900.PRG | c:\\pban\\prg\\system\\auto_galv\\9900.PRG | M:\\W2B-304-05\\0904-0843L2-3.PRG | M:\\W2B-304-05\\0904-0843L2-3.PRG | c:\\pban\\prg\\system\\auto_galv\\9900.PRG | c:\\pban\\prg\\system\\auto_galv\\9900.PRG | M:\\W2B-304-05\\0904-0843L2-3.PRG | c:\\pban\\prg\\system\\auto_galv\\9900.PRG"
+   },
+   {
+    "name": "rzax_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "lzax_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "base_wk_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "ref_wk_pct",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "rz_wk_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "lz_wk_mm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_twin_scale_dsp",
+  "rows": "970766",
+  "dateCol": "Date",
+  "timeCol": "Time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "Date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "2026/09/13 | 2026/09/13 | 2026/09/13 | 2026/09/13 | 2026/09/13 | 2026/09/13 | 2026/09/13 | 2026/09/13"
+   },
+   {
+    "name": "Time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 288,
+    "sample": "0:4:5 | 0:4:6 | 0:4:7 | 0:4:8 | 0:4:22 | 0:4:23 | 0:4:25 | 0:4:26"
+   },
+   {
+    "name": "YawingAngleX",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 16,
+    "sample": "6.37696e-006 | 6.37696e-006 | 5.02078e-006 | 4.09741e-006 | 3.17405e-006 | 6.37696e-006 | 5.4536e-006 | 2.25069e-006"
+   },
+   {
+    "name": "YawingAngleY",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 11,
+    "sample": "-1.46396e-006 | -2.36486e-006 | -4.16667e-006 | -3.26577e-006 | -1.57658e-005 | -1.66667e-005 | -3.26577e-006 | -3.26577e-006"
+   },
+   {
+    "name": "YawingOffsetXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 5,
+    "maxInt": 0,
+    "valsDistinct": 298,
+    "sample": "7.34533 | 7.8273 | 7.39469 | 5.96224 | 8.19567 | 11.7748 | 8.21503 | 4.91891"
+   },
+   {
+    "name": "YawingOffsetXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 295,
+    "sample": "-4.3306 | -3.86443 | -1.34227 | -1.0881 | -1.061 | 3.13502 | -2.56694 | -0.639191"
+   },
+   {
+    "name": "YawingOffsetYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 5,
+    "maxInt": 0,
+    "valsDistinct": 296,
+    "sample": "3.64669 | 4.12866 | 4.48264 | 3.58574 | 6.35472 | 8.07612 | 5.05194 | 3.61351"
+   },
+   {
+    "name": "YawingOffsetYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 295,
+    "sample": "-4.3306 | -3.86443 | -1.34227 | -1.0881 | -1.061 | 3.13502 | -2.56694 | -0.639191"
+   },
+   {
+    "name": "PitchOrgIndexXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+   },
+   {
+    "name": "PitchOrgIndexXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "500 | 500 | 500 | 500 | 500 | 500 | 500 | 500"
+   },
+   {
+    "name": "PitchOrgIndexYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 1,
+    "sample": "98 | 98 | 98 | 98 | 98 | 98 | 98 | 98"
+   },
+   {
+    "name": "PitchOrgIndexYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "598 | 598 | 598 | 598 | 598 | 598 | 598 | 598"
+   },
+   {
+    "name": "PitchMaxIndexXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 1,
+    "sample": "90 | 90 | 90 | 90 | 90 | 90 | 90 | 90"
+   },
+   {
+    "name": "PitchMaxIndexXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "590 | 590 | 590 | 590 | 590 | 590 | 590 | 590"
+   },
+   {
+    "name": "PitchMaxIndexYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "168 | 168 | 168 | 168 | 168 | 168 | 168 | 168"
+   },
+   {
+    "name": "PitchMaxIndexYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "668 | 668 | 668 | 668 | 668 | 668 | 668 | 668"
+   },
+   {
+    "name": "PitchMinIndexXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "1 | 1 | 1 | 1 | 1 | 1 | 1 | 1"
+   },
+   {
+    "name": "PitchMinIndexXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "501 | 501 | 501 | 501 | 501 | 501 | 501 | 501"
+   },
+   {
+    "name": "PitchMinIndexYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 1,
+    "sample": "99 | 99 | 99 | 99 | 99 | 99 | 99 | 99"
+   },
+   {
+    "name": "PitchMinIndexYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "599 | 599 | 599 | 599 | 599 | 599 | 599 | 599"
+   },
+   {
+    "name": "PitchScaleXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000"
+   },
+   {
+    "name": "PitchScaleXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000"
+   },
+   {
+    "name": "PitchScaleYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000"
+   },
+   {
+    "name": "PitchScaleYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000 | 0.100000"
+   },
+   {
+    "name": "PitchSpaceXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 1,
+    "sample": "10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000"
+   },
+   {
+    "name": "PitchSpaceXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 1,
+    "sample": "10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000"
+   },
+   {
+    "name": "PitchSpaceYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 1,
+    "sample": "10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000"
+   },
+   {
+    "name": "PitchSpaceYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 1,
+    "sample": "10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000 | 10000"
+   },
+   {
+    "name": "PicthIndex0Xm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 1,
+    "valsDistinct": 1,
+    "sample": "0 | 0 | 0 | 0 | 0 | 0 | 0 | 0"
+   },
+   {
+    "name": "PicthIndex0Xs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "500 | 500 | 500 | 500 | 500 | 500 | 500 | 500"
+   },
+   {
+    "name": "PicthIndex0Ym",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 1,
+    "sample": "98 | 98 | 98 | 98 | 98 | 98 | 98 | 98"
+   },
+   {
+    "name": "PicthIndex0Ys",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 1,
+    "sample": "598 | 598 | 598 | 598 | 598 | 598 | 598 | 598"
+   },
+   {
+    "name": "PicthIndexXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 2,
+    "valsDistinct": 7,
+    "sample": "15 | 15 | 73 | 73 | 68 | 19 | 19 | 68"
+   },
+   {
+    "name": "PicthIndexXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 7,
+    "sample": "515 | 515 | 573 | 573 | 568 | 519 | 519 | 568"
+   },
+   {
+    "name": "PicthIndexYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 4,
+    "sample": "133 | 133 | 133 | 133 | 155 | 155 | 107 | 107"
+   },
+   {
+    "name": "PicthIndexYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 3,
+    "valsDistinct": 4,
+    "sample": "633 | 633 | 633 | 633 | 655 | 655 | 607 | 607"
+   },
+   {
+    "name": "LinearScaleValXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 296,
+    "sample": "92261 | 928cd | 3ff76788 | 3ff76e0a | 3ff8c9e9 | 7c58e | 7ebde | 3ff8c92a"
+   },
+   {
+    "name": "LinearScaleValXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 298,
+    "sample": "3ff6ddb4 | 3ff6d73a | 89888 | 891f8 | 73617 | 3ff83a79 | 3ff81427 | 736d5"
+   },
+   {
+    "name": "LinearScaleValYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 293,
+    "sample": "4be50 | 4be18 | 4bb15 | 4ba9d | 3ffdf47f | 3ffdf540 | cbd6f | cbcac"
+   },
+   {
+    "name": "LinearScaleValYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 296,
+    "sample": "3ffb41bb | 3ffb41f5 | 3ffb44ef | 3ffb456f | 20b7f | 20abd | 3ff3429d | 3ff34360"
+   },
+   {
+    "name": "LinearScalePulsUMXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "-0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000"
+   },
+   {
+    "name": "LinearScalePulsUMXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000"
+   },
+   {
+    "name": "LinearScalePulsUMYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "-0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000 | -0.500000"
+   },
+   {
+    "name": "LinearScalePulsUMYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000 | 0.500000"
+   },
+   {
+    "name": "EncPosXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 294,
+    "sample": "-299277.500000 | -300134.500000 | 281688.000000 | 280826.500000 | 236299.500000 | -254663.000000 | -259567.000000 | 236395.000000"
+   },
+   {
+    "name": "EncPosXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 295,
+    "sample": "-299273.500000 | -300131.000000 | 281690.500000 | 280828.000000 | 236299.500000 | -254659.500000 | -259564.500000 | 236394.500000"
+   },
+   {
+    "name": "EncPosYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 293,
+    "sample": "-155451.500000 | -155404.000000 | -155078.500000 | -154958.500000 | 67008.500000 | 66912.000000 | -417463.500000 | -417366.000000"
+   },
+   {
+    "name": "EncPosYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 294,
+    "sample": "-155445.000000 | -155397.500000 | -155073.000000 | -154952.500000 | 67007.500000 | 66910.500000 | -417457.500000 | -417359.500000"
+   },
+   {
+    "name": "MachinePosXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 294,
+    "sample": "151231.187500 | 150374.187500 | 732200.062500 | 731338.562500 | 686811.187500 | 195845.750000 | 190941.687500 | 686906.750000"
+   },
+   {
+    "name": "MachinePosXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 294,
+    "sample": "151243.343750 | 150385.875000 | 732203.125000 | 731340.625000 | 686812.125000 | 195856.968750 | 190951.812500 | 686907.125000"
+   },
+   {
+    "name": "MachinePosYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 293,
+    "sample": "354867.218750 | 354914.718750 | 355240.187500 | 355360.187500 | 577323.625000 | 577227.125000 | 92859.945313 | 92957.445313"
+   },
+   {
+    "name": "MachinePosYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 294,
+    "sample": "354867.093750 | 354914.593750 | 355239.093750 | 355359.593750 | 577312.062500 | 577227.625000 | 92859.906250 | 92957.906250"
+   },
+   {
+    "name": "LinearOrgVaXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "450509.187500 | 450509.187500 | 450509.187500 | 450509.187500 | 450509.187500 | 450509.187500 | 450509.187500 | 450509.187500"
+   },
+   {
+    "name": "LinearOrgVaXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 2,
+    "sample": "450512.593750 | 450512.593750 | 450512.593750 | 450512.593750 | 450512.593750 | 450512.593750 | 450512.593750 | 450512.593750"
+   },
+   {
+    "name": "LinearOrgVaYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "510324.906250 | 510324.906250 | 510324.906250 | 510324.906250 | 510324.906250 | 510324.906250 | 510324.906250 | 510324.906250"
+   },
+   {
+    "name": "LinearOrgVaYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "510317.093750 | 510317.093750 | 510317.093750 | 510317.093750 | 510317.093750 | 510317.093750 | 510317.093750 | 510317.093750"
+   },
+   {
+    "name": "RealValXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 294,
+    "sample": "151231.687500 | 150374.687500 | 732197.187500 | 731335.687500 | 686808.687500 | 195846.187500 | 190942.187500 | 686904.187500"
+   },
+   {
+    "name": "RealValXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 295,
+    "sample": "151239.093750 | 150381.593750 | 732203.125000 | 731340.625000 | 686812.125000 | 195853.093750 | 190948.093750 | 686907.125000"
+   },
+   {
+    "name": "RealValYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 293,
+    "sample": "354873.406250 | 354920.906250 | 355246.406250 | 355366.406250 | 577333.375000 | 577236.875000 | 92861.406250 | 92958.906250"
+   },
+   {
+    "name": "RealValYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 294,
+    "sample": "354872.093750 | 354919.593750 | 355244.093750 | 355364.593750 | 577324.625000 | 577227.625000 | 92859.593750 | 92957.593750"
+   },
+   {
+    "name": "EncPosBkXm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 295,
+    "sample": "-299277.500000 | -300134.500000 | 281688.000000 | 280826.500000 | 236299.500000 | -254663.000000 | -259567.000000 | 236395.000000"
+   },
+   {
+    "name": "EncPosBkXs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 295,
+    "sample": "-299273.500000 | -300131.000000 | 281690.500000 | 280828.000000 | 236299.500000 | -254659.500000 | -259564.500000 | 236394.500000"
+   },
+   {
+    "name": "EncPosBkYm",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 293,
+    "sample": "-155451.500000 | -155404.000000 | -155078.500000 | -154958.500000 | 67008.500000 | 66912.000000 | -417463.500000 | -417366.000000"
+   },
+   {
+    "name": "EncPosBkYs",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 293,
+    "sample": "-155445.000000 | -155397.500000 | -155073.000000 | -154952.500000 | 67007.500000 | 66910.500000 | -417457.500000 | -417359.500000"
+   },
+   {
+    "name": "TableCenterX",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "949999.875000 | 949999.875000 | 949999.875000 | 949999.875000 | 949999.875000 | 949999.875000 | 949999.875000 | 949999.875000"
+   },
+   {
+    "name": "TableCenterY",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 0,
+    "valsDistinct": 1,
+    "sample": "889999.125000 | 889999.125000 | 889999.125000 | 889999.125000 | 889999.125000 | 889999.125000 | 889999.125000 | 889999.125000"
+   },
+   {
+    "name": "TableCenterEncPosX",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 1,
+    "sample": "499489.000000 | 499489.000000 | 499489.000000 | 499489.000000 | 499489.000000 | 499489.000000 | 499489.000000 | 499489.000000"
+   },
+   {
+    "name": "TableCenterEncPosY",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 1,
+    "sample": "379685.000000 | 379685.000000 | 379685.000000 | 379685.000000 | 379685.000000 | 379685.000000 | 379685.000000 | 379685.000000"
+   },
+   {
+    "name": "Scalewx",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 77,
+    "sample": "433757.750000 | 433757.750000 | 433757.750000 | 433757.750000 | 433688.781250 | 433688.781250 | 433688.781250 | 433688.781250"
+   },
+   {
+    "name": "Scalewy",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "num",
+    "maxDec": 6,
+    "maxInt": 6,
+    "valsDistinct": 78,
+    "sample": "323443.500000 | 323443.500000 | 323443.500000 | 323443.500000 | 322418.718750 | 322418.718750 | 322418.718750 | 322418.718750"
+   }
+  ],
+  "sampleCount": 0
+ },
+ {
+  "table": "laser_zaxis",
+  "rows": "91245",
+  "dateCol": "biz_date",
+  "timeCol": "biz_time",
+  "dmin": null,
+  "dmax": null,
+  "cols": [
+   {
+    "name": "file_key",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 18,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "row_number",
+    "dtype": "BIGINT",
+    "maxlen": 8,
+    "kind": "num",
+    "maxDec": 0,
+    "maxInt": 5,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "biz_date",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "cent",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 3,
+    "sample": "2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22 | 2026/9/22"
+   },
+   {
+    "name": "biz_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 299,
+    "sample": "00:01:05 | 00:03:17 | 00:05:30 | 00:07:42 | 00:09:55 | 00:12:08 | 00:14:20 | 00:16:32"
+   },
+   {
+    "name": "zr_axis",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "zl_axis",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prog_path",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": "",
+    "minw": 24
+   },
+   {
+    "name": "plan_begin",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "plan_status",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "ld_dir",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "loadin_dir",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "sch_sheet",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "pro_sheet",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "unpro_sheet",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   },
+   {
+    "name": "prg_start_time",
+    "dtype": "NVARCHAR",
+    "maxlen": 8000,
+    "kind": "code",
+    "maxDec": 0,
+    "maxInt": 0,
+    "valsDistinct": 0,
+    "sample": ""
+   }
+  ],
+  "sampleCount": 0
+ }
+]
