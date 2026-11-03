@@ -11,11 +11,14 @@ var FAILS = 0;
 var check = function (name, cond) { if (cond) stamp('CHECK PASS: ' + name); else { FAILS++; stamp('CHECK FAIL: ' + name); } };
 
 // ---------- 0. 规格与库 ----------
+// ABR-1 路径单点：唯一装载锚（FR_AGENT_HOME 可重定向整个项目根）；其余路径一律走 runtime/paths.js
+load((J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent') + '/runtime/paths.js');
+var FR_AGENT_ROOT = Paths.root;   // 兼容读法
 var specPath = J('java.lang.System').getenv('REPORT_SPEC') || 'reports/sales_demo.js';
-load('D:/fineagent/lib/object.js');
-load('D:/fineagent/lib/ir.js');        // v3.1: spec → IR
-load('D:/fineagent/lib/cpt.js');       // v2 校验器当回归门
-load('D:/fineagent/' + specPath);
+load(Paths.lib('object.js'));
+load(Paths.lib('ir.js'));        // v3.1: spec → IR
+load(Paths.lib('cpt.js'));       // v2 校验器当回归门
+load(Paths.spec(specPath));
 if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); J('java.lang.System').exit(2); }
 if (!SPEC.dsName) SPEC.dsName = 'ds1';
 if (SPEC.IR) {
@@ -36,7 +39,7 @@ var module = J('com.fr.module.tool.ActivatorToolBox').simpleLink(
   new (J('com.fr.chart.activator.ChartBaseActivator'))());
 var SimpleWork = J('com.fr.workspace.simple.SimpleWork');
 SimpleWork.supply(Class.forName('com.fr.base.operator.common.CommonOperator'), new (J('com.fr.env.operator.CommonOperatorImpl'))());
-SimpleWork.checkIn('D:/software/FineReport_11.0/webapps/webroot/WEB-INF');
+SimpleWork.checkIn(Paths.frWebInf());   // ABR-1：FR 安装根走 FR_HOME 单点
 module.start();
 stamp('ENV READY');
 
@@ -156,7 +159,7 @@ try {
 
 // ---------- 4. 执行 + 导出 ----------
 // 2026-10-28 生产构建通道：BR_DEPLOYDIR 可指向 staging（默认演示服务器部署位不动），BR_TPFX/BR_MODULESET 配套
-var outDir = J('java.lang.System').getenv('BR_DEPLOYDIR') || 'D:/software/FineReport_11.0/webapps/webroot/WEB-INF/reportlets/fineagent';
+var outDir = J('java.lang.System').getenv('BR_DEPLOYDIR') || Paths.demoDeployDir();   // ABR-1：默认演示部署位 = FR_HOME 单点
 Files.createDirectories(J('java.nio.file.Paths').get(outDir));
 var rb = null;
 var SKIP_EXEC = J('java.lang.System').getenv('BR_SKIP_EXEC');
