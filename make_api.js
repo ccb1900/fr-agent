@@ -28,41 +28,17 @@ if (SPEC.IR) {
   check('spec.columns 与 data 列数一致', SPEC.columns.length === SPEC.data[0].length);
 }
 
-// ---------- 1. 环境（反射探面不需要 env，但对象图构建/执行需要） ----------
-var module = J('com.fr.module.tool.ActivatorToolBox').simpleLink(
-  new (J('com.fr.config.activator.BaseDBActivator'))(),
-  new (J('com.fr.config.activator.ConfigurationActivator'))(),
-  new (J('com.fr.store.StateServiceActivator'))(),
-  new (J('com.fr.report.module.ReportBaseActivator'))(),
-  new (J('com.fr.report.RestrictionActivator'))(),
-  new (J('com.fr.report.ReportActivator'))(),
-  new (J('com.fr.chart.activator.ChartBaseActivator'))());
-var SimpleWork = J('com.fr.workspace.simple.SimpleWork');
-SimpleWork.supply(Class.forName('com.fr.base.operator.common.CommonOperator'), new (J('com.fr.env.operator.CommonOperatorImpl'))());
-SimpleWork.checkIn(Paths.frWebInf());   // ABR-1：FR 安装根走 FR_HOME 单点
-module.start();
+// ---------- 1. 环境（ABR-1：runtime 门面，激活链在 runtime/bootstrap.js） ----------
+load(Paths.runtime('bootstrap.js'));
+load(Paths.runtime('datasource.js'));
+Runtime.initialize();
 stamp('ENV READY');
 
-// ---------- 1.5 数据连接注册（v3.5 DB 路线）----------
+// ---------- 1.5 数据连接注册（v3.5 DB 路线；ABR-1：runtime/datasource.js）----------
 // spec.connections 里给凭据（本机 spec 文件，cpt 只存连接名）；先真连一次，
 // 连不上直接退出——拒绝带着坏连接产出"看起来正常"的空报表。
 if (SPEC.connections && SPEC.connections.length) {
-  var dmApi = J('com.fr.file.DatasourceManager').getInstance();
-  for (var ci = 0; ci < SPEC.connections.length; ci++) {
-    var cc = SPEC.connections[ci];
-    try {
-      var jd = new (J('com.fr.data.impl.JDBCDatabaseConnection'))();
-      jd.setDriver(cc.driver); jd.setURL(cc.url); jd.setUser(cc.user); jd.setPassword(cc.password);
-      jd.testConnection();
-      dmApi.putConnection(cc.name, jd);
-      var resolved = new (J('com.fr.data.impl.NameDatabaseConnection'))(cc.name);
-      check('DB CONNECTION ' + cc.name + ' 注册+名称可解析', dmApi.getConnection(cc.name) != null);
-      stamp('DB CONNECTION READY: ' + cc.name + ' driver=' + cc.driver);
-    } catch (eDb) {
-      stamp('DB CONNECTION FAIL ' + cc.name + ': ' + eDb);
-      J('java.lang.System').exit(4);
-    }
-  }
+  Runtime.DataSource.register(SPEC.connections, { stamp: stamp, check: check });
 }
 
 // ---------- 1.6 行数保护阈值钩子（保留机制，spec 需要时显式开）----------
