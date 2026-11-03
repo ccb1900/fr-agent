@@ -16,44 +16,8 @@ replay_pid*.log
 *.webp
 *.pdf
 
-# 含数据库连接凭据的本机文件 —— 永不提交（新增含凭据文件时在此补行）
-reports/br_laser_*.js
-reports/db_laser_*.js
-reports_prod/
-probes/debug_daytop.js
-probes/debug_daytop2.js
-probes/gen_laser_specs.js
-probes/probe_br_truth.js
-probes/probe_caseexpr.js
-probes/probe_charmax.js
-probes/probe_dateshape.js
-probes/probe_dateshape2.js
-probes/probe_daytop.js
-probes/probe_dbschema.js
-probes/probe_dbschema2.js
-probes/probe_dbsurface.js
-probes/probe_dbtruth.js
-probes/probe_dbtruth2.js
-probes/probe_exp3.js
-probes/probe_exp4.js
-probes/probe_findtcollector.js
-probes/probe_machine_exec.js
-probes/probe_machine_idx_ab.js
-probes/probe_machine_idx_ab2.js
-probes/probe_machine_sqlshape.js
-probes/probe_minus.js
-probes/probe_order.js
-probes/probe_paged_ref.js
-probes/probe_pats_exec.js
-probes/probe_pats_scale.js
-probes/probe_plan_sort.js
-probes/probe_profile_all.js
-probes/probe_reads_ab.js
-probes/probe_stridx.js
-probes/probe_tables.js
-probes/probe_tcol_profile.js
-probes/probe_tryconvert.js
-probes/probe_widths.js
+# 数据库凭据单源（真密码只在此文件，永不入库；克隆仓库后自建可复跑）
+data/db_local.js
 
 # 临时
 _tmp_*.ps1

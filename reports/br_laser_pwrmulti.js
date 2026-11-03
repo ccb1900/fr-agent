@@ -1,0 +1,78 @@
+// br_laser_pwrmulti.js — 数据浏览器·功率计多路（画像源 db_laser_tables.json）
+// 自动生成（gen_laser_specs.js）：列名/类型/格式照抄直查画像；统一 SQL 分页口径（全库统一导航/面板交互）。
+// 凭据只在本机 spec 的 connections 段。
+
+load('D:/fineagent/lib/browser.js');
+
+var SPEC = BROWSER.spec({
+  outName: BROWSER.env('BR_OUT', '激光数据浏览器_功率计多路'),
+  title: '激光数据浏览器 · 功率计多路 laser_pwrmulti',
+  table: 'laser_pwrmulti',
+  selfCpt: 'fineagent/激光数据浏览器_功率计多路_api.cpt',
+  modules: BROWSER.MODULES,
+  filterCol: 'stage',
+  sqlPaging: true,
+  defaults: {
+    d1: BROWSER.env('BR_D1', '=TODAY()-6'), d2: BROWSER.env('BR_D2', '=TODAY()'),
+    machine: BROWSER.env('BR_MACHINE', ''),
+    size: +BROWSER.env('BR_SIZE', '50'), page: +BROWSER.env('BR_PAGE', '1')
+  },
+  connections: [{
+    name: 'ATOM_LIVE',
+    driver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver',
+    url: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false',
+    user: 'sa',
+    password: load('D:/fineagent/lib/dbpass.js')
+  }],
+  cols: [
+    { name: "file_key", len: 9 },
+    { name: "row_number", len: 11 },
+    { name: "biz_date", label: "日期", len: 5 },
+    { name: "biz_time", label: "时间", len: 5 },
+    { name: "stage", label: "Stage", len: 6 },
+    { name: "cond_no", label: "条件编号", len: 9 },
+    { name: "output_power", label: "输出功率", len: 9 },
+    { name: "frequency", label: "频率", len: 5 },
+    { name: "on_time", label: "ON时间", len: 7 },
+    { name: "base_energy", label: "基准能量", len: 9 },
+    { name: "tolerance_pct", label: "容许范围%", len: 10 },
+    { name: "measured_range_pct", label: "测量范围%", len: 10 },
+    { name: "judgement", label: "判断", len: 5 },
+    { name: "measured_energy_1", label: "测量能量1", len: 10 },
+    { name: "measured_energy_2", label: "测量能量2", len: 10 },
+    { name: "measured_energy_3", label: "测量能量3", len: 10 },
+    { name: "measured_energy_4", label: "测量能量4", len: 10 },
+    { name: "measured_energy_5", label: "测量能量5", len: 10 },
+    { name: "measured_energy_6", label: "测量能量6", len: 10 },
+    { name: "measured_energy_7", label: "测量能量7", len: 10 },
+    { name: "measured_energy_8", label: "测量能量8", len: 10 },
+    { name: "measured_energy_9", label: "测量能量9", len: 10 },
+    { name: "measured_energy_10", label: "测量能量10", len: 11 },
+    { name: "measured_energy_11", label: "测量能量11", len: 11 },
+    { name: "measured_energy_12", label: "测量能量12", len: 11 },
+    { name: "measured_energy_13", label: "测量能量13", len: 11 },
+    { name: "measured_energy_14", label: "测量能量14", len: 11 },
+    { name: "measured_energy_15", label: "测量能量15", len: 11 },
+    { name: "measured_energy_16", label: "测量能量16", len: 11 },
+    { name: "measured_energy_17", label: "测量能量17", len: 11 },
+    { name: "collimator_no", label: "准直NO.", len: 8 },
+    { name: "base_rate", label: "基准倍率", len: 9 },
+    { name: "cur_rate", label: "当前倍率", len: 9 },
+    { name: "mask_no2", label: "光罩编号", len: 9 },
+    { name: "gain", label: "增益", len: 5 },
+    { name: "bias", label: "偏置", len: 5 },
+    { name: "beam_on_time", label: "光束ON时间", len: 11 },
+    { name: "blower_on_time", label: "鼓风机ON时间", len: 14 },
+    { name: "ready_on_time", label: "准备ON时间", len: 11 },
+    { name: "measured_freq", label: "测量频率", len: 9 },
+    { name: "freq_limit", label: "上限频率", len: 9 },
+    { name: "shot_group", label: "shot群数", len: 9 },
+    { name: "display_freq", label: "显示测量频率", len: 14 },
+    { name: "optical_path_no", label: "光路类型NO.", len: 13 },
+    { name: "cond_file", label: "条件文件", len: 9 },
+    { name: "pulse_class", label: "脉级", len: 5 },
+    { name: "retry_no", label: "Retry No.", len: 10 },
+    { name: "prg_start_time", label: "PRG START TIME", len: 16 },
+    { name: "prog_path", label: "加工程序", len: 9 }
+  ]
+});
