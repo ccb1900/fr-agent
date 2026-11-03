@@ -3,14 +3,15 @@ $ErrorActionPreference = 'Continue'
 $base = 'D:\fineagent'
 
 function Run($spec, $out, $page, $size, $stage, $d1, $d2, $dump) {
-  $env:REPORT_SPEC = $spec  if ($out)   { $env:BR_OUT = $out }   else { Remove-Item env:BR_OUT -ErrorAction SilentlyContinue }
+  $env:REPORT_SPEC = $spec
+  if ($out)   { $env:BR_OUT = $out }   else { Remove-Item env:BR_OUT -ErrorAction SilentlyContinue }
   if ($page)  { $env:BR_PAGE = $page }  else { Remove-Item env:BR_PAGE -ErrorAction SilentlyContinue }
   if ($size)  { $env:BR_SIZE = $size }  else { Remove-Item env:BR_SIZE -ErrorAction SilentlyContinue }
   if ($stage) { $env:BR_STAGE = $stage } else { Remove-Item env:BR_STAGE -ErrorAction SilentlyContinue }
   if ($d1)    { $env:BR_D1 = $d1 }      else { Remove-Item env:BR_D1 -ErrorAction SilentlyContinue }
   if ($d2)    { $env:BR_D2 = $d2 }      else { Remove-Item env:BR_D2 -ErrorAction SilentlyContinue }
   $env:RESULT_DUMP = $dump
-  Write-Host "=== $spec out=$out page=$page size=$size stage=$stage d1=$d1 -> $dump"
+  Write-Host "=== $spec out=$out page=$size stage=$stage d1=$d1 -> $dump"
   & "$base\run.ps1" "$base\make_api.js" | Select-Object -Last 6
 }
 
