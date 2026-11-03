@@ -56,8 +56,9 @@ run.ps1 -Script make_api.js
 - 修改 spec/lib 一律用编辑器（逐字替换），**禁止 PowerShell `-replace`/`Set-Content` 批改 UTF-8 文件**——PS 5.1 按 GBK 读盘，会把中文字符串打成果酱（08:49 事故教训：outName 变 undefined、部署出 undefined_api.cpt）
 - run.ps1 会杀所有 java 进程（管线自身的既定惯例，用于释放 FineDB 锁）：跑之前先向用户打招呼；没用户允许不启动/关闭非本管线的软件
 
-## 6. 项目状态速查（2026-10-27）
+## 6. 项目状态速查（2026-11-03）
 
-- v3.x 管线：lib/object.js（API 对象图）+ ir.js（IR 编译）+ browser.js（数据浏览器构造器）+ cpt.js（v2 校验器=回归门）
-- 浏览器族三张：评分流水（12.2 万行）/GOSA 误差/功率计，统一 SQL 分页 + 面板翻页
-- 基线铁证（2026-10-27 字号单位更正后重新标定）：demo_api.cpt = D3E3C2A0…、销售明细_api.png = B24BE26C…（逐字节）
+- v4.x 管线：lib/object.js（API 对象图）+ ir.js（IR 编译）+ features/data_browser/browser.js（数据浏览器构造器，moved from lib）+ cpt.js（v2 校验器=回归门）
+- 浏览器族 24 张（演示 25 含备份表/生产 24 无备份表），统一 SQL 分页 + 面板翻页；机台过滤 + 按天 TOP 参照 README #38–44
+- **ABR-1 边界（2026-11-03）**：一级结构 = reports → features/data_browser → lib(核心三件) → runtime(Paths/bootstrap/datasource) → runner 编排；依赖规则 `docs/architecture/dependency-rules.md`（R1–R5，`scripts/check-boundaries.ps1` exit 0 才干净）；lib/browser.js 为兼容垫片唯一豁免；lib/ir.js 零运行时依赖红线
+- 基线铁证（2026-11-03 ABR-1 迁移后复验，逐字节）：demo_api.cpt = CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png = A8EF39AB648D5F00DDAE0481D0313110、v2 demo_template_final.cpt = 6161F402B340321B4ABF68B68E301828；br 六连栅格 + prod staging 24 张字节级基线副本在 logs\abr1_baseline*

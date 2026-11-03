@@ -1,0 +1,50 @@
+# ABR-1 架构边界（2026-11-03）
+
+> 本阶段改造承诺：**架构改变，报表一张不变**（迁移基线 = commit 7b74549）。
+
+## 一级边界
+
+```
+┌────────────────────────────────────────────────────────┐
+│ 业务层   reports/  reports_prod/                        │  报表 spec（数据/列/标题/凭据名）
+│ Feature  features/data_browser/                        │  业务生成器：spec/IR 词汇产出
+├────────────────────────────────────────────────────────┤
+│ Core    lib/ir.js → lib/object.js → lib/cpt.js          │  编译核心：IR → 对象图 → 校验器
+│         lib/index.js（CORE 门面，事实契约：Ir/Obj/Cpt）  │
+├────────────────────────────────────────────────────────┤
+│ Runtime runtime/paths.js（路径单点）                     │
+│         runtime/bootstrap.js（FR 激活链）                │
+│         runtime/datasource.js（连接注册）                │
+├────────────────────────────────────────────────────────┤
+│ Runner  make_api.js（v3）/ make_report.js（v2 对照）     │  流程编排，不实现业务细节
+│ 工具    tools_*.ps1 / scripts/check-boundaries.ps1      │
+└────────────────────────────────────────────────────────┘
+```
+
+## 调用链（v3）
+
+```
+make_api.js
+  → Runtime.initialize()            # runtime/bootstrap.js（FR 激活链，路径来自 Paths）
+  → Runtime.DataSource.register()   # runtime/datasource.js（testConnection → 注册，失败 exit 4）
+  → CORE.ir.compile/validate        # lib/ir.js（纯 JS，零 FR 依赖）
+  → CORE.backend.finereport.build   # lib/object.js（IR→FR 对象图）
+  → wb.export() → cpt；CORE.artifact.cpt 校验器过回归门
+  → execute/ImageExporter/PDFExporter 导出
+```
+
+## 归属规则摘要
+
+- `lib/browser.js` = ABR-1 兼容垫片（唯一豁免），真实模块 = `features/data_browser/browser.js`。
+- Feature 只产出报表规格；不初始化 FR、不执行、不导出。
+- Runtime 只初始化环境/注册连接；不含报表业务知识。
+- 默认路径检查工具：`scripts/check-boundaries.ps1`（R1–R5）。
+
+## 环境变量口子（职责分离）
+
+| 变量 | 语义 | 默认 | 定义点 |
+|---|---|---|---|
+| FR_AGENT_HOME | 项目根 | D:/fineagent | runtime/paths.js |
+| FR_HOME | FR 安装根 | D:/software/FineReport_11.0 | runtime/paths.js |
+| REPORT_SPEC | 报表规格路径（root 相对） | reports/sales_demo.js | make_api.js |
+| BR_DEPLOYDIR | 部署输出目录 | FR_HOME 下演示部署位 | make_api.js |
