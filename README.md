@@ -476,3 +476,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **踩坑留痕**：PS 函数 `$rc = Run-Js ...` 把 java stdout 吞进返回值致 verb 无输出→改直接调用；PS 写出 JSON 带 BOM→validate 读取剥 `\uFEFF`；R7b 连注释里的 `Java.type` 字样也误报→改写注释。
 - **验证**：fast 12 套件 GREEN、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变。
 - **按审查结论冻结底层架构**：后续不再扩 Validator/编译链；开放项=运行期参数/派生比率排序/条件格式（属报表表达力新迭代）与工具服务化（HTTP/MCP）。
+
+#67 r8.md「全局架构审查」执行批（2026-11-04，用户投 `docs/gpt/r8.md` 并令执行；按审查自身顺序 **A1 统一创作契约 → A3 已由 r7 交付 → A2 留后**，不搬迁目录、不反编译、不重写引擎）：
+- **A1 统一产物契约**：新增 `application/contracts.js`（纯函数零 Java）定义 `ReportArtifact v1`：`{artifactVersion, artifactId, sourceType(generated|patched|duplicated), outName, createdAt, cptPath/pngPath/pdfPath, execution{ok,exit,stages,failedStage,source}, validation{ok,checks}, preview, diagnostics[{code,path,message,stage,severity}], spec, patch, staging}`；`executionFromRunResult/diagnosticsFromRunResult/executionFromPatch/diagnosticsFromPatch` 把 RunResult 字符串诊断与 patch 回归结果归一；`validate` 校结构（generated 必带 spec、patched 必带 patch）；`acceptance` = 执行成功 + 无 error 诊断 + validation 不为 false（warn 不阻断）。
+- **Create/Modify 同形**：`application/create_report.js` 读 compile.json+runresult（仅 `AGENT_WITH_VALIDATION=1` 才并入本轮 validate，防陈旧验收）→ artifact(generated)；`application/modify_report.js` 读 patch.json+manifest（diff/执行/渲染/数据集检查→validation.checks）→ artifact(patched)。工具层 `compile`/`patch` 自动生成并回传 `"artifact":"logs/agent/artifact.json"`；`validate` 完成后刷新 artifact.validation。
+- **架构口径统一**：新增 `docs/architecture/authoring.md`（六层目标视图 + ReportArtifact 契约 + 冻结项 + A2 启动条件），明确"Semantic 依赖解耦 ≠ 不参与创作链"；`docs/architecture/probes-inventory.md` 先登记正式证据探针/业务真值/一次性探索三类（172 个探针只登记不搬迁）。
+- **测试**：新增 `verify/fast_contracts.js`（13 项：契约合法/非法、诊断结构化、失败段、patch 诊断、验收口径、输入不可变）；fast 套件升至 **13**，fast_parse 纳入 application/*。
+- **验证**：fast 13 套件 GREEN；真实链路 compile（机台日报，11 阶段 passed）→ artifact generated，validate 后含 validation.ok=true；patch rename → artifact patched，与 Create 同形；R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变。
+- **明确不做（r8 §十二）**：A2 能力等价迁移（需先做 5 类报表新旧路径对照）、目录搬迁、CPT→IR 反编译、Agent Runtime、多后端/OWL/TS/ANTLR。

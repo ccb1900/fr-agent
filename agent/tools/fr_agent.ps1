@@ -51,6 +51,12 @@ switch ($Verb) {
     if ($ExpectTotals) { $env:AGENT_EXPECT_TOTALS = $ExpectTotals }
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\agent\tools\validate.js"
     $rc = $LASTEXITCODE
+    # 把本轮验收并入统一产物（仅此时允许读 validate.json，避免陈旧验收）
+    if (Test-Path "$agentDir\compile.json") {
+      $env:AGENT_WITH_VALIDATION = '1'
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js" | Out-Null
+      Remove-Item env:AGENT_WITH_VALIDATION -ErrorAction SilentlyContinue
+    }
     Remove-Item env:AGENT_COMPILE -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_EXPECT_TOTALS -ErrorAction SilentlyContinue
     exit $rc
@@ -78,7 +84,10 @@ switch ($Verb) {
       cptExists = (Test-Path $cpt); pngExists = (Test-Path $png)
     }
     [System.IO.File]::WriteAllText("$agentDir\compile.json", ($obj | ConvertTo-Json -Depth 6), [System.Text.Encoding]::UTF8)
-    Emit ($rc -eq 0) 'compile'
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
+    $artRc = $LASTEXITCODE
+    $okAll = ($rc -eq 0) -and ($artRc -eq 0)
+    Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"result":"logs/agent/compile.json","artifact":"logs/agent/artifact.json"}')
     exit $rc
   }
   'patch' {
@@ -93,7 +102,10 @@ switch ($Verb) {
     if (Test-Path $manifest) { $mf = [System.IO.File]::ReadAllText($manifest, [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
     $obj = [ordered]@{ tool = 'patch'; ok = ($rc -eq 0); exit = $rc; patch = $Patch; log = $log; manifestPath = $manifest; manifest = $mf }
     [System.IO.File]::WriteAllText("$agentDir\patch.json", ($obj | ConvertTo-Json -Depth 8), [System.Text.Encoding]::UTF8)
-    Emit ($rc -eq 0) 'patch'
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
+    $artRc = $LASTEXITCODE
+    $okAll = ($rc -eq 0) -and ($artRc -eq 0)
+    Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"result":"logs/agent/patch.json","artifact":"logs/agent/artifact.json"}')
     exit $rc
   }
   default { Write-Output '{"ok":false,"error":"unknown verb"}'; exit 2 }

@@ -12,6 +12,7 @@ var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/run
   'semantic/preflight.js',
   'semantic/planner/capability.js', 'semantic/planner/planner.js', 'semantic/query/sqlbuilder.js', 'semantic/closure/loopguard.js',
   'agent/tools/discover.js', 'agent/tools/resolve.js', 'agent/tools/validate.js', 'agent/tools/preview.js',
+  'application/contracts.js', 'application/create_report.js', 'application/modify_report.js',
   'template/ops.js', 'template/validator.js', 'template/locator.js', 'template/diff.js', 'template/regression.js',
   'template/inspector.js', 'template/reader.js', 'template/patch.js', 'template/patch_main.js',  'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;
