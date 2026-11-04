@@ -25,6 +25,7 @@ try { rspec = JSON.parse(rspecText); check('sales_demo.json 合法 JSON', true);
 
 load(ROOT + '/lib/ir.js');
 load(ROOT + '/lib/report_spec.js');
+load(ROOT + '/lib/isodate.js');
 load(ROOT + '/lib/spec_validator.js');
 load(ROOT + '/lib/spec_compiler.js');
 

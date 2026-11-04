@@ -8,6 +8,7 @@ var ModelValidator = (function () {
   function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
   function isStr(v) { return typeof v === 'string'; }
+  function isNum(v) { return typeof v === 'number' && isFinite(v); }
 
   function schemaIndex(schema) {
     var idx = {};
@@ -41,6 +42,7 @@ var ModelValidator = (function () {
       };
       if (exp.numerator == null) E(errs, 'REQUIRED', path + '.numerator', 'ratio 缺 numerator（r2 §3.2 明确聚合语义）'); else checkOperand(exp.numerator, path + '.numerator');
       if (exp.denominator == null) E(errs, 'REQUIRED', path + '.denominator', 'ratio 缺 denominator'); else checkOperand(exp.denominator, path + '.denominator');
+      if (exp.scale != null && !isNum(exp.scale)) E(errs, 'INVALID_NUMBER', path + '.scale', 'ratio scale 须为有限数（r3 任务5 指标参数严格）');
       return;
     }
     // count/countThreshold/sum/weightedAvg 的必带字段

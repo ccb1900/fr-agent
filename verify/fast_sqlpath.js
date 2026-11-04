@@ -16,6 +16,7 @@ function codeAt(errs, code, frag) { return errs.some(function (e) { return e.cod
 });
 load(ROOT + '/lib/ir.js');
 load(ROOT + '/lib/report_spec.js');
+load(ROOT + '/lib/isodate.js');
 load(ROOT + '/lib/spec_validator.js');
 load(ROOT + '/lib/spec_compiler.js');
 load(ROOT + '/semantic/query/sqlbuilder.js');

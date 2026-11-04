@@ -43,12 +43,15 @@ var ReportPlanner = (function () {
         return out;
       }
       var dims = namesIn(dsn.dimensions, 'dimensions'), mets = namesIn(dsn.metrics, 'metrics');
+      var memberMissing = 0;   // I5.1 P2：模型成员缺失计数——有缺失即不得 ready（语义未决不塞给生成链）
       if (ctx.model) {
         var dset = {}, mset = {};
         (ctx.model.dimensions || []).forEach(function (d) { dset[d.name] = 1; });
         (ctx.model.metrics || []).forEach(function (m) { mset[m.name] = 1; });
-        dims.forEach(function (dn) { if (dn && !hasOwn(dset, dn)) validationWarnings.push({ term: dn, reason: '维度不在模型，未编造', owner: '模型缺口(I3)' }); });
-        mets.forEach(function (mn) { if (mn && !hasOwn(mset, mn)) validationWarnings.push({ term: mn, reason: '指标不在模型，未编造', owner: '模型缺口(I3)' }); });
+        var keepDim = [], keepMet = [];
+        dims.forEach(function (dn) { if (dn && hasOwn(dset, dn)) keepDim.push(dn); else { validationWarnings.push({ term: dn, reason: '维度不在模型，未编造', owner: '模型缺口(I3)' }); memberMissing++; } });
+        mets.forEach(function (mn) { if (mn && hasOwn(mset, mn)) keepMet.push(mn); else { validationWarnings.push({ term: mn, reason: '指标不在模型，未编造', owner: '模型缺口(I3)' }); memberMissing++; } });
+        dims = keepDim; mets = keepMet;
       }
       var sqlSpec = {
         specVersion: '1', outName: intent.outName || 'planner_sql',
@@ -58,7 +61,8 @@ var ReportPlanner = (function () {
       };
       assumptions.push({ key: 'dataset.kind', value: 'sql', why: '模型驱动 SQL 由 sqlbuilder 生成（非自由文本）' });
       var sqlErrs = ctx.validateSpec(sqlSpec);
-      var sqlStatus = (sqlErrs && sqlErrs.length) ? 'rejected' : 'ready';
+      // I5.1 P2：成员缺失（幽灵维度/指标）→ 绝不 ready；否则 validateSpec 决定 ready/rejected
+      var sqlStatus = memberMissing ? 'rejected' : ((sqlErrs && sqlErrs.length) ? 'rejected' : 'ready');
       if (sqlErrs && sqlErrs.length) sqlErrs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
       return { status: sqlStatus, reportSpec: sqlStatus === 'ready' ? sqlSpec : null, assumptions: assumptions, unresolvedQuestions: unresolvedQuestions, validationWarnings: validationWarnings };
     }

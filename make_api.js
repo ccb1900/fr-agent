@@ -81,6 +81,7 @@ try {
     //   旧 .js spec 走原 load() 路径一行不动（新旧入口互不破坏，r2 §1.3）。
     //   凭据面：JSON 结构上无处放 connections（天然满足"Agent 不接触密码"）；目录由 BR_DEPLOYDIR env 控，spec 无权指路径。
     load(Paths.lib('report_spec.js'));
+    load(Paths.lib('isodate.js'));      // I5.1 P4 单点：spec_validator 与 sqlbuilder 共用日历有效性（须在 spec_validator 前）
     load(Paths.lib('spec_validator.js'));
     load(Paths.lib('spec_compiler.js'));
     var rsText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(specPath))), 'UTF-8'));
@@ -99,6 +100,21 @@ try {
       function genv(k, d) { var v = J('java.lang.System').getenv(k); return (v == null || String(v) === '') ? d : String(v); }
       var modelPath = genv('SCHEMA_MODEL', 'models/production/model.json');
       var modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
+      // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
+      load(Paths.semantic('model/validator.js'));
+      var schemaName = 'schema_' + (rs.dataset.schema || modelObj.source || 'atom_live_demo') + '.json';
+      var schemaAbs = Paths.data(schemaName);
+      if (!J('java.nio.file.Files').exists(J('java.nio.file.Paths').get(schemaAbs))) {
+        RR.diag('SCHEMA MISSING: ' + schemaName + '（先跑 semantic/schema/inspect_main.js 生成结构快照）');
+        RR.fail('input_load'); stamp('SCHEMA SNAPSHOT MISSING: refusing to generate from unvalidated model'); finishRun(2);
+      }
+      var schemaObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(schemaAbs)), 'UTF-8')));
+      var mvErrs = ModelValidator.validate(modelObj, schemaObj);
+      if (mvErrs.length) {
+        mvErrs.forEach(function (e) { var t = irErrText(e); stamp('MODEL ISSUE: ' + t); RR.diag('MODEL ISSUE: ' + t); });
+        RR.fail('input_load'); stamp('MODEL/SCHEMA MISMATCH: 模型引用对不上结构快照(' + schemaName + ')，拒（结构漂移或未刷新快照）'); finishRun(2);
+      }
+      stamp('MODEL↔SCHEMA 对齐校验通过（' + schemaName + '）');
       compiledIR = SpecCompiler.compile(rs, { model: modelObj, SqlBuilder: SqlBuilder });
       SPEC = { outName: rs.outName, IR: compiledIR };
       // 凭据本地注入：sql 数据集引用的连接名 → 非敏感 driver/url + dbpass 密码合成 SPEC.connections（密码只在本机、绝不入 JSON/cpt）

@@ -17,6 +17,7 @@ function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 });
 
 load(ROOT + '/lib/report_spec.js');       // caps（AGGREGATIONS/AGG_UNIMPLEMENTED/REJECTED）
+load(ROOT + '/lib/isodate.js');           // I5.1 spec_validator 的 dateRange 单点（sql intent 校验需）
 load(ROOT + '/lib/spec_validator.js');    // I1 权威校验（注入 planner）
 load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/semantic/model/registry.js');
@@ -112,7 +113,9 @@ check('SQL 意图→ready 且 reportSpec.dataset.kind=sql', sqlPlan.status === '
 check('SQL reportSpec 过 I1 SpecValidator 0 err', sqlPlan.reportSpec && SpecValidator.validate(sqlPlan.reportSpec).length === 0);
 check('SQL 意图 metrics 引用模型指标（含 ratio 不再 deferred）', sqlPlan.reportSpec.dataset.metrics.indexOf('completionRate') >= 0 && !hasWarn(sqlPlan, /deferred|I5/));
 var sqlGhost = plan({ outName: 'g', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['___幽灵维___'], metrics: ['planned'] } });
-check('SQL 意图幽灵维度→warning 模型缺口，不编造', hasWarn(sqlGhost, /模型缺口/));
+check('I5.1-P2 SQL 幽灵维度：非 ready + warning + 不入 spec', sqlGhost.status !== 'ready' && hasWarn(sqlGhost, /模型缺口/) && (!sqlGhost.reportSpec || sqlGhost.reportSpec.dataset.dimensions.indexOf('___幽灵维___') < 0));
+var sqlGhostM = plan({ outName: 'g2', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['幽灵指标'] } });
+check('I5.1-P2 SQL 幽灵指标：非 ready（语义未决不塞生成链）', sqlGhostM.status !== 'ready' && hasWarn(sqlGhostM, /模型缺口/));
 check('SQL 意图不改输入（纯）', (function () { var s = JSON.stringify(sqlIntent); plan(sqlIntent); return JSON.stringify(sqlIntent) === s; })());
 
 print('SELFTEST END, failures=' + FAILS);

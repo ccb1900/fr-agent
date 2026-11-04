@@ -6,7 +6,6 @@ var SqlBuilder = (function () {
   function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function isStr(v) { return typeof v === 'string'; }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
-  var DATE_RE = /^\d{4}-\d{2}-\d{2}$/;                 // 定日期字面，防注入（配合 ir.js SQL_READONLY 无 ; 单语句）
 
   function E(errs, code, path, message) { errs.push({ code: code, path: path, message: message }); }
   function numCast(col) { return 'TRY_CAST(' + col + ' AS float)'; }
@@ -48,6 +47,8 @@ var SqlBuilder = (function () {
       var d = dimsByName[dn];
       var path = 'dimensions[' + i + ']';
       if (!d) { E(errs, 'UNKNOWN_REF', path, '维度不在模型: ' + dn); return; }
+      // I5.1 P1：跨实体表字段拒绝（JOIN 属 I5.2）——维度所属表必须=实体主表，否则宁拒不产错 SQL
+      if (d.table && d.table !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '维度 ' + dn + ' 属表 ' + d.table + '，与实体主表 ' + table + ' 跨表，当前不支持（JOIN=I5.2）'); return; }
       var col = String(d.column || '').split('.').pop();
       var normalize = d.rule === 'dateNormalize';
       if (normalize) {
@@ -64,6 +65,9 @@ var SqlBuilder = (function () {
       var path = 'metrics[' + i + ']';
       var m = metricsByName[mn];
       if (!m) { E(errs, 'UNKNOWN_REF', path, '指标不在模型: ' + mn); return; }
+      // I5.1 P1：指标度量表必须=实体主表（跨表如 fileCount 走 laser_files → 拒，不产静默错 SQL）
+      var mtable = m.expression && m.expression.table;
+      if (mtable && mtable !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '指标 ' + mn + ' 度量表 ' + mtable + ' 与实体主表 ' + table + ' 跨表，当前不支持（JOIN=I5.2）'); return; }
       var frag = metricSelect(m, errs, path);
       if (!frag) return;
       if (frag.base) {
@@ -91,9 +95,9 @@ var SqlBuilder = (function () {
       (sel.dimensions || []).forEach(function (dn) { var d = dimsByName[dn]; if (d && d.rule === 'dateNormalize') dateCol = String(d.column || '').split('.').pop(); });
       if (!dateCol) E(errs, 'INVALID_SHAPE', 'dateRange', 'dateRange 需选中 dateNormalize 维度');
       else {
-        var f = sel.dateRange.from, t = sel.dateRange.to;
-        if (!(DATE_RE.test(String(f)) && DATE_RE.test(String(t)))) { E(errs, 'INVALID_TYPE', 'dateRange', '日期范围必须 yyyy-MM-dd 定字面: ' + f + '..' + t); }
-        else where.push('TRY_CAST(' + dateCol + ' AS date) BETWEEN ' + "'" + f + "' AND '" + t + "'");
+        var dr = IsoDate.range(sel.dateRange);   // I5.1 P4：与 spec_validator 同一日期真相（严格双边+日历有效+from<=to）
+        if (dr.ok) where.push('TRY_CAST(' + dateCol + ' AS date) BETWEEN ' + "'" + sel.dateRange.from + "' AND '" + sel.dateRange.to + "'");
+        else dr.errors.forEach(function (e) { E(errs, e.code, 'dateRange' + (e.path.indexOf('.') >= 0 ? '.' + e.path.split('.').pop() : ''), e.message); });
       }
     }
 

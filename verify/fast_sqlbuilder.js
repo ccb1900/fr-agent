@@ -11,6 +11,7 @@ function jt(f) { return JSON.parse(src(f)); }
 function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 check('PARSE semantic/query/sqlbuilder.js', (function () { try { new Function(src('semantic/query/sqlbuilder.js')); return true; } catch (e) { print('' + e); return false; } })());
 
+load(ROOT + '/lib/isodate.js');
 load(ROOT + '/semantic/query/sqlbuilder.js');
 var model = jt('models/production/model.json');
 function codeAt(res, code, frag) { return (res.errors || []).some(function (e) { return e.code === code && String(e.path).indexOf(frag) >= 0; }); }
@@ -42,6 +43,20 @@ check('未知实体→UNKNOWN_REF', codeAt(SqlBuilder.build(model, { entity: 'No
 check('坏日期格式→INVALID_TYPE（防注入）', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: "2026-9-13' --", to: '2026-09-22' } }), 'INVALID_TYPE', 'dateRange'));
 check('ratio 分子未选→UNKNOWN_REF（口径闭合）', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'completionRate'] }), 'UNKNOWN_REF', 'ratio'));
 check('dateRange 无 date 维→INVALID_SHAPE', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: [], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }), 'INVALID_SHAPE', 'dateRange'));
+
+// I5.1-P1 跨表拒绝闸（宁拒不静默出错 SQL）
+var xdim = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
+check('P1 跨表维度(machine→laser_files)→UNSUPPORTED_CROSS_TABLE 且不产 SQL', codeAt(xdim, 'UNSUPPORTED_CROSS_TABLE', 'dimensions') && !xdim.sql);
+var xmet = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['fileCount'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
+check('P1 跨表指标(fileCount→laser_files)→UNSUPPORTED_CROSS_TABLE', codeAt(xmet, 'UNSUPPORTED_CROSS_TABLE', 'metrics') && !xmet.sql);
+// I5.1-P4 日期严格双边 + 日历有效性
+var oneSided = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-09-13' } });
+check('P4 单边 dateRange→拒', codeAt(oneSided, 'REQUIRED', 'dateRange') && !oneSided.sql);
+var badCal = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-99-99', to: '2026-09-22' } });
+check('P4 假日期(2026-99-99)→拒', codeAt(badCal, 'INVALID_TYPE', 'dateRange') && !badCal.sql);
+var revDate = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-09-22', to: '2026-09-13' } });
+check('P4 from>to→拒', !revDate.sql && (revDate.errors || []).some(function (e) { return e.code === 'INVALID_SHAPE'; }));
+check('P4 同表正常查询仍过（跨表闸不误伤）', (SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate', 'stage'], metrics: ['planned', 'done', 'completionRate'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }).sql || '').indexOf('FROM laser_aaa') >= 0);
 
 // 纯函数/确定序/输入不可变/抗炸
 var snap = JSON.stringify(sel);
