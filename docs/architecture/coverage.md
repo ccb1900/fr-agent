@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 00:49:23 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 01:39:35 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 
@@ -127,7 +127,7 @@
 | com.fr.data.condition.ObjectCondition | 506 | partial | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrLabelDetail | 150 | partial | 批B |
 | com.fr.plugin.chart.attr.axis.VanChartValueAxis | 129 | partial | (漏账：批排期时人工归入) |
-| com.fr.base.iofileattr.TemplateIdAttrMark | 23 | partial | 批C |
+| com.fr.base.iofileattr.TemplateIdAttrMark | 23 | partial | 批C 已收(2026-11-05) |
 | com.fr.chart.chartattr.ValueAxis | 10 | partial | (漏账：批排期时人工归入) |
 | com.fr.report.web.ui.impl.page.First | 1 | partial | (漏账：批排期时人工归入) |
 | com.fr.report.web.ui.impl.Email | 1 | partial | (漏账：批排期时人工归入) |
@@ -169,8 +169,8 @@
 | hyperlink | partial (缺: ParameterJavaScript+ReportletHyperlinkDialogAttr+Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
 | jsEvents | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #?/#45 |
 | freeze | partial (缺: FrozenState+RepeatAndCollapsible) | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
-| headerfooter | missing (缺: PageAttrProperty+headerfooter+HeaderFooter) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| template marks | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| headerfooter | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
+| template marks | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
 | submit (填报) | missing (缺: BuiltInSQLSubmiter+IntelliDMLConfig+VerifyItem+ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | reg 校验族 | missing (缺: NoneReg+PhoneReg+IDCardReg) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | sort | missing (缺: CellSortAttr) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 受阻断 |
@@ -190,7 +190,7 @@
 |---|---|---|
 | background | 240 | full |
 | sheet | 240 | full |
-| headerfooter | 207 | missing 0x3 |
+| headerfooter | 207 | full |
 | condition | 163 | full |
 | funcgroup | 133 | full |
 | webpage | 117 | full |

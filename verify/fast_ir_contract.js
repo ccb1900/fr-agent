@@ -271,6 +271,32 @@ check('批B stack 仅 vbar/varea', codeAt(chartIR('vline', { stack: { stacked: t
 check('批B cond then 键白名单', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { bg: 1 } }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].conditions[0].then.bg'));
 check('批B cond alpha 越界', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { alpha: 1.5 } }] }), 'INVALID_NUMBER', 'sheets[0].blocks[1].conditions[0].then.alpha'));
 check('批B axisY.unit 缺加成（老键不受扰）', errsOf(chartIR('vbar', { axisY: { min: 0, max: 100 } })).length === 0);
+// ===== 批C（2026-11-05）页眉页脚 + 模板级 attrMark =====
+//   探针依据 probe_pagehf/_hf7/9（sheet.setHeader/setFooter(int,ReportHF)；裸 classpath 撞 license 墙、env 后可用）。
+function hfIR(hf, extra) {
+  var ir = { sheets: [{ name: 's1', widthsPt: [120], blocks: [
+    { type: 'cells', heightPt: 30, items: [{ c: 0, text: 'x' }] }
+  ] }], datasets: [{ name: 'd', columns: [{ name: 'v', type: 'text' }], rows: [['a']] }] };
+  if (hf) ir.sheets[0].headerFooter = hf;
+  if (extra) Object.keys(extra).forEach(function (k) { ir[k] = extra[k]; });
+  return ir;
+}
+check('批C headerFooter 全形零误报', errsOf(hfIR({
+  header: { center: [{ text: '页眉', fontPt: 10, bold: true }], bg: 0xEEF3FA },
+  footer: { center: [{ formula: '"第" + $$page_number + "页"', fontPt: 9 }, { date: 'yyyy-MM-dd', newLine: true }], right: [{ text: 'fineagent' }] }
+})).length === 0);
+check('批C pageNumber/totalPages 零误报', errsOf(hfIR({ footer: { center: [{ pageNumber: true }, { totalPages: true }] } })).length === 0);
+check('批C 空 headerFooter 拒', codeAt(hfIR({}), 'REQUIRED', 'sheets[0].headerFooter'));
+check('批C side 空三列拒', codeAt(hfIR({ header: {} }), 'REQUIRED', 'sheets[0].headerFooter.header'));
+check('批C 元素双键拒', codeAt(hfIR({ footer: { center: [{ text: 'a', formula: '=1' }] } }), 'INVALID_TYPE', 'sheets[0].headerFooter.footer.center[0]'));
+check('批C 元素全空拒', codeAt(hfIR({ footer: { center: [{ fontPt: 9 }] } }), 'REQUIRED', 'sheets[0].headerFooter.footer.center[0]'));
+check('批C text 非串拒', codeAt(hfIR({ footer: { left: [{ text: 3 }] } }), 'INVALID_TYPE', 'sheets[0].headerFooter.footer.left[0].text'));
+check('批C list 空数组拒', codeAt(hfIR({ footer: { center: [] } }), 'INVALID_ARRAY', 'sheets[0].headerFooter.footer.center'));
+check('批C templateId 非串拒', codeAt(hfIR(null, { templateId: 42 }), 'INVALID_TYPE', 'templateId'));
+check('批C templateId 合法零误报', errsOf(hfIR(null, { templateId: 'b7e3f2a1' })).length === 0);
+check('批C templateTheme 缺 name 拒', codeAt(hfIR(null, { templateTheme: { dark: false } }), 'REQUIRED', 'templateTheme.name'));
+check('批C templateTheme 全形零误报', errsOf(hfIR(null, { templateTheme: { name: '兼容主题', dark: false } })).length === 0);
+check('批C templateTheme dark 非布拒', codeAt(hfIR(null, { templateTheme: { name: 'x', dark: 'yes' } }), 'INVALID_TYPE', 'templateTheme.dark'));
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {

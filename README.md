@@ -525,3 +525,12 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **诚实边界（挂接完成、渲染端未达，后续批补）**：stack 堆叠渲染未生效（序列化在、渲染仍分组）、label 数值显示未出现、条件系列色 AttrColor 挂上未染、vline2 加趋势线后 x 轴刻度缩至 2 档（auto 收缩，可读）、vpie 图例 4 见 3 未解（#46 遗留维持）。
 - **门禁**：fast 13 GREEN、scan 43+1、负门 5 路 GREEN、R1–R8、默认双铁证逐字节复原；coverage missing 131→116。
 
+
+#73 批C 页眉页脚 + 模板级 attrMark（2026-11-05，demo 车道批 C——headerfooter 207/240 + TemplateId 166/TemplateTheme 79）：
+- **词汇**：`sheets[].headerFooter{header|footer: {left|center|right: [{text|formula|pageNumber|totalPages|date, fontPt?, bold?, newLine?}], bg?}}`（sheet 级）+ `templateId: 'uuid'` / `templateTheme{name,dark}`（workbook 级）；ir.js checkHeaderFooter/checkHFList 结构化闸 + fast +13 项（红→绿）。
+- **挂接一手**（probe_pagehf/_hf7/9）：`sheet.setHeader/setFooter(int, ReportHF)`——**ReportHF 裸 classpath 静态初始化撞 license 墙（LicenseContext ClassNotFound），env 全激活后可用**（管线 env 恒满足，与 CellSortAttr 同墙不同命）；attrMark 走水印同路 addAttrMark（TemplateIdAttrMark(String) ctor/TemplateThemeAttrMark().setName/setDark）。
+- **教案（便捷 API 假象）**：ReportHF.addCenterText/addCenterPageNumber 等**便捷 add 不落 list**（首版页眉 CenterList 空的根因；getCenterList() 读回 [] 也是副本假象）——元素必须 HFElement 直构造 + `setXxxList` 回写：TextHFElement(text,font)/FormulaHFElement(content)/DateHFElement(font,dateFormat)；页码=公式 `"第" + $$page_number + "页"`（官方 档案式报表.cpt 同款）。
+- **教案二（v2 spec 透传）**：新 sheet 级/workbook 级词汇若只写 rawIR 直通会「validate 看得见、build 看不见」——v2 默认 compile 路径是**逐字段白名单构造**，新键必须在 extrasOut 显式透传（本轮 headerFooter/templateId/templateTheme 三键补齐；DBG 分支不打印即为信号）。
+- **像素实证**（PDF 文本层逐字命中）：页眉「激光检测中心 · 页眉（批C 自检）」+页眉底色、页脚「第1页/共1页」+「2026-11-05」日期 + 右列「fineagent 管线」；部署 XML Header/Footer(reportPageType=0)/TextHFElement 3/FormulaHFElement 1/DateHFElement 1/TemplateIdAttrMark/TemplateThemeAttrMark 全在；execute 不清页眉页脚（pre/post 导出同构——与批 B 条件集同墙不同命）。
+- **门禁**：scan 44 张（43+1）、fast 13 GREEN、负门 5 路 GREEN、R1–R8、默认 CBEB42E3 逐字节复原；coverage missing 维持 116（headerfooter 家族类不落类级账，tag 层待批收尾重扫）。
+
