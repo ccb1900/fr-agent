@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 02:30:54 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 02:39:01 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 
@@ -41,7 +41,6 @@
 | com.fr.plugin.chart.map.VanChartMapPlot | 6 | missing | 批I |
 | com.fr.plugin.chart.base.AttrAreaSeriesFillColorBackground | 6 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.map.line.condition.AttrLineEffect | 6 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.cell.cellattr.BarcodePresent | 5 | missing | 批G |
 | com.fr.chart.chartattr.CategoryAxis | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.MultiFileEditor | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.general.date.FineDateFormat | 5 | missing | (漏账：批排期时人工归入) |
@@ -51,7 +50,6 @@
 | com.fr.plugin.chart.kpi.KPIDataConfig | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.bubble.VanChartBubblePlot | 4 | missing | 批I |
 | com.fr.report.poly.PolyECBlock | 4 | missing | 批J |
-| com.fr.report.cell.cellattr.core.group.CustomGrouper | 4 | missing | 批G |
 | com.fr.plugin.chart.kpi.KPIElectronChart | 3 | missing | (漏账：批排期时人工归入) |
 | com.fr.write.config.DeleteConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.meter.MeterDataConfig | 2 | missing | (漏账：批排期时人工归入) |
@@ -155,14 +153,14 @@
 | submit (填报) | partial (缺: ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | reg 校验族 | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | sort | missing (缺: CellSortAttr) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 受阻断 |
-| subreport | missing (缺: SubReport) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| subreport | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | diagonal | missing (缺: Diagonal) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| barcode | missing (缺: BarcodePresent) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
 | map | missing (缺: VanChartMapPlot+AttrMapLabel+VanMapMoreNameCDDefinition) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | specialcharts | missing (缺: MeterChart+KPIChart+VanChartHeatMapPlot+CarouselPieChart+VanChartBubblePlot) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| group (自定义分组) | missing (缺: CustomGrouper) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | 局部样式(样式肾上) | partial (缺: stylesOf) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
 
 ## C. feature 标签层三色表（demo 普查 27 tag → 当前状态；tag 经 ALIAS 并到语义族）
@@ -187,11 +185,11 @@
 | chartdata | 25 | full |
 | freeze | 21 | partial 0x2 |
 | richtext | 21 | full |
-| subreport | 18 | missing 0x1 |
+| subreport | 18 | full |
 | float | 18 | full |
 | diagonal | 15 | missing 0x1 |
 | watermark | 7 | full |
 | map | 7 | missing 0x3 |
-| barcode | 4 | missing 0x1 |
+| barcode | 4 | full |
 | image | 2 | full |
-| group | 1 | missing 0x1 |
+| group | 1 | full |

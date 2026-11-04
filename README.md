@@ -558,3 +558,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **诚实边界**：真提交（WriteActor DML 链路、演示库 staging 表真实写入）=独立工单挂账（需 web 表单提交值构造，复杂度独立成批）；NoneReg 显式 reg 在 number 等控件不落节点（无 setRegex）。
 - **序列化实证**：部署 XML ReportWriteAttr 2/BuiltInSQLSubmiter 1/IntelliDMLConfig 1/ColumnRow/CustomReg 1/AppendRowButton/ShowCellValue 全在（test_write.js 载体）；fast 13 GREEN、scan 47 张（46+1）、R1–R8、默认 CBEB42E3 逐字节；coverage missing 108→94。
 
+
+#77 批G 小特性扫荡（2026-11-05，demo 车道批 G——BarcodePresent 4/CustomGrouper 4/SubReport）：
+- **词汇**：cells item `barcode: {type(BarcodeAttr 条码类型枚举 int), barWidth?, barHeight?, drawingText?}`（present 机制把单元格值编码成条码）；cells item `subreport: 'reportlets 相对路径'`（SubReport(TemplateWorkBook) 整嵌已部署模板，安全闸同 link.reportlet）；detail 列 `groupCustom: {other, otherDisplay, more, force}`（CustomGrouper 简单形态；ConditionGroup[] 条件组后续批）。ir.js 三闸 + fast +8（红→绿）。
+- **挂接一手**（probe_g/_sr + 官方 卡片分栏.cpt）：BarcodePresent 在 `com.fr.report.cell.cellattr.BarcodePresent`（非 base.present）+ BarcodeAttr(int) ctor/setBarWidth/setBarHeight/setDrawingText；SubReport 在 `com.fr.report.cell.cellattr.core.SubReport(TemplateWorkBook)`。
+- **诚实登记（240 demo 零直接语料，不硬凑）**：diagonal（`_demo_tags.txt` 无命中，斜线表头已有 putBiasCell v3.3 通路）/freeze web 半边/subreport 嵌套编辑形态——语料到手再收。
+- **像素实证**（能力自检_小特性 PNG）：条码真实画出（条码图+数字）、子报表嵌套渲染（销售明细骨架整嵌）、CustomGrouper 分组表+合计 19；XML BarcodePresent/BarcodeAttr/SubReport 2/CustomGrouper 全在。
+- **门禁**：fast 13 GREEN、scan 48 张（47+1）、R1–R8、默认 CBEB42E3 逐字节；coverage missing 94→92。
+

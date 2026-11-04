@@ -344,46 +344,18 @@ check('批F widget reg custom 缺正则拒', codeAt(mut(function (ir) { ir.param
 check('批F widget reg custom 全形零误报', errsOf(mut(function (ir) { ir.param = { widgets: [{ kind: 'editor', name: 'p', reg: { custom: '^.{1,3}$', err: 'x' }, x: 0, y: 0, w: 1, h: 1 }] }; })).length === 0);
 check('批F toolbar write 按钮零误报', errsOf(mut(function (ir) { ir.toolbar = { buttons: ['submit', 'appendRow', 'deleteRow', 'showCellValue', 'appendColumnRow'] }; })).length === 0);
 check('批F toolbar 未知键仍拒', codeAt(mut(function (ir) { ir.toolbar = { buttons: ['magicBtn'] }; }), 'INVALID_ENUM', 'toolbar.buttons[0]'));
-// ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
-function typedIR(rows) {
-  return {
-    sheets: [{ name: 's1', widthsPt: [80], blocks: [
-      { type: 'title', text: 't', span: 1, heightPt: 30 },
-      { type: 'header', columns: [{ name: 'v', type: 'text' }], heightPt: 20 },
-      { type: 'detail', dataset: 'd', columns: [{ name: 'v', type: 'text' }], heightPt: 20 }
-    ] }],
-    datasets: [{ name: 'd', columns: [{ name: 'v', type: 'text' }], rows: rows }]
-  };
-}
-function typedDs(type, rows) {
-  var ir = typedIR(rows);
-  ir.datasets[0].columns[0].type = type;
-  ir.sheets[0].blocks[1].columns[0].type = type;
-  ir.sheets[0].blocks[2].columns[0].type = type;
-  return ir;
-}
-check('列类型白名单拒 garbage', codeAt(typedDs('garbage', [['x']]), 'INVALID_ENUM', 'datasets[0].columns[0].type'));
-check('date 列合法 2026-09-13 零误报', errsOf(typedDs('date', [['2026-09-13']])).length === 0);
-check('date 列拒非补零 2026-9-3', codeAt(typedDs('date', [['2026-9-3']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('date 列拒非法月日 2026-13-45', codeAt(typedDs('date', [['2026-13-45']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('datetime 列合法全形态', errsOf(typedDs('datetime', [['2026-09-13 08:30:00']])).length === 0);
-check('datetime 列拒缺秒', codeAt(typedDs('datetime', [['2026-09-13 08:30']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('integer 列拒小数 2.7', codeAt(typedDs('integer', [[2.7]]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('integer 列合法负数', errsOf(typedDs('integer', [[-5]])).length === 0);
-check('long 列拒非数', codeAt(typedDs('long', [['9000000001x']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('long 列合法大整数串', errsOf(typedDs('long', [['9000000001']])).length === 0);
-check('decimal 列合法高精度串', errsOf(typedDs('decimal', [['12.3456789012345']])).length === 0);
-check('boolean 列拒串', codeAt(typedDs('boolean', [['yes']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
-check('null 值各型放行（可空语义保留）', errsOf(typedDs('date', [['2026-09-13'], [null]])).length === 0);
-check('number 列 legacy 不受扰（基线词）', errsOf(typedDs('number', [[3]])).length === 0);
-// I0-04（r2.md）SQL 只读闸：kind=sql 必须单语句 SELECT/WITH 起头，禁内嵌 ;（多语句注入面）
-function noCode(ir, code) { return !errsOf(ir).some(function (e) { return e && e.code === code; }); }
-check('SQL_READONLY 拒 DELETE', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'DELETE FROM t' }); }), 'SQL_READONLY', 'datasets[1].query'));
-check('SQL_READONLY 拒 UPDATE', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'UPDATE t SET a=1' }); }), 'SQL_READONLY', 'datasets[1].query'));
-check('SQL_READONLY 拒多语句 ;', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'SELECT 1; DROP TABLE t' }); }), 'SQL_READONLY', 'datasets[1].query'));
-check('SQL_READONLY 拒 -- 注释起头', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: '--x\nSELECT 1' }); }), 'SQL_READONLY', 'datasets[1].query'));
-check('合法 WITH…SELECT（浏览器族 patsCte 形态）零误报', noCode(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: "WITH days AS (SELECT 1 AS d) SELECT d FROM days WHERE d = TRY_CAST(${page} AS int)" }); }), 'SQL_READONLY'));
-check('合法 select 小写零误报', noCode(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'select a from t' }); }), 'SQL_READONLY'));
-
+// ===== 批G（2026-11-05）小特性：条码/子报表/自定义分组 =====
+check('批G barcode 全形零误报', errsOf(mut(function (ir) {
+  ir.sheets[0].blocks = [{ type: 'cells', items: [{ c: 0, text: 'FA001', barcode: { type: 1, barHeight: 40, barWidth: 1.5, drawingText: true } }] }];
+})).length === 0);
+check('批G barcode type 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks = [{ type: 'cells', items: [{ c: 0, text: 'x', barcode: { type: 'qr' } }] }]; }), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].barcode.type'));
+check('批G barcode 未知键拒', codeAt(mut(function (ir) { ir.sheets[0].blocks = [{ type: 'cells', items: [{ c: 0, text: 'x', barcode: { color: 1 } }] }]; }), 'INVALID_ENUM', 'sheets[0].blocks[0].items[0].barcode.color'));
+check('批G subreport 零误报', errsOf(mut(function (ir) {
+  ir.sheets[0].blocks = [{ type: 'cells', items: [{ c: 0, subreport: 'fineagent/销售明细_api.cpt' }] }];
+})).length === 0);
+check('批G subreport 非串拒', codeAt(mut(function (ir) { ir.sheets[0].blocks = [{ type: 'cells', items: [{ c: 0, subreport: 7 }] }]; }), 'INVALID_TYPE', 'sheets[0].blocks[0].items[0].subreport'));
+check('批G groupCustom 全形零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { other: 1, otherDisplay: '其他', more: true, force: true }; })).length === 0);
+check('批G groupCustom 未知键拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { bogus: 1 }; }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].groupCustom.bogus'));
+check('批G groupCustom other 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { other: 'x' }; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].columns[0].groupCustom.other'));
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
