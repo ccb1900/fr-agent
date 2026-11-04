@@ -9,6 +9,7 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
 function src(f) { return String(new (J('java.lang.String'))(Files.readAllBytes(P.get(ROOT + '/' + f)), 'UTF-8')); }
 function jt(f) { return JSON.parse(src(f)); }
 function codeAt(errs, code, frag) { return errs.some(function (e) { return e.code === code && String(e.path).indexOf(frag) >= 0; }); }
+function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 
 ['lib/report_spec.js', 'lib/spec_validator.js', 'lib/spec_compiler.js'].forEach(function (f) {
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
@@ -58,6 +59,18 @@ check('模型指标 format 流到 ratio 格（I5 子代理发现并修的展示�
   var rate = detail.items.filter(function (i) { return i.formula; })[0];
   return !!rate && rate.st && rate.st.format === '#,##0.00';
 })());
+// ===== I5.3-C 图表：presentation.chart → IR chart 块 =====
+var chSpec = JSON.parse(JSON.stringify(spec));
+chSpec.presentation.chart = { kind: 'bar', category: 'bizDate', value: 'planned' };
+check('chart spec 过 spec_validator 0 err', SpecValidator.validate(chSpec).length === 0);
+var chIr = SpecCompiler.compile(chSpec, { model: model, SqlBuilder: SqlBuilder });
+check('chart IR 过 Ir.validate 0 err 且含 chart 块', (function () {
+  var e = Ir.validate(chIr); if (e.length) print('  IR ERRS: ' + JSON.stringify(e).slice(0, 300));
+  var cb = chIr.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
+  return e.length === 0 && !!cb && cb.kind === 'bar' && cb.dataset === 'ds1' && cb.category === 'bizDate' && cb.value === 'planned';
+})());
+check('chart.kind 非法→拒', codeAt(SpecValidator.validate((function () { var s = JSON.parse(JSON.stringify(chSpec)); s.presentation.chart.kind = 'sunburst'; return s; })()), 'INVALID_ENUM', 'presentation.chart.kind'));
+check('chart.value 用派生比率→编译期抛（不静默）', threw(function () { var s = JSON.parse(JSON.stringify(chSpec)); s.presentation.chart.value = 'completionRate'; SpecCompiler.compile(s, { model: model, SqlBuilder: SqlBuilder }); }));
 check('sql IR 确定序 + 输入不可变', (function () {
   var snap = JSON.stringify(spec);
   var a = JSON.stringify(SpecCompiler.compile(spec, { model: model, SqlBuilder: SqlBuilder }));

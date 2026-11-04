@@ -1,0 +1,11 @@
+{
+  "specVersion": "1",
+  "report": { "name": "激光生产日报 · 计划柱状图（I5.3-C 图表）" },
+  "outName": "生产日报_图",
+  "dataset": {
+    "kind": "sql", "connection": "ATOM_LIVE", "entity": "InspectionRecord",
+    "dimensions": ["bizDate"], "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true, "chart": { "kind": "bar", "category": "bizDate", "value": "planned", "title": "每日计划数" } }
+}

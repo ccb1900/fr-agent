@@ -287,7 +287,8 @@ try {
   var chartBlock = null;
   (IR.sheets[0].blocks || []).forEach(function (b) { if (b.type === 'chart') chartBlock = b; });
   if (chartBlock) {
-    var nameIn = function (v) { return xmlText.indexOf('CDATA[' + v) >= 0 || xmlText.indexOf('valueName="' + v + '"') >= 0; };
+    // 系列名序列化三形态（一手证据）：内嵌 legacy=CDATA[名]、Van=valueName="名"、SQL 数据集 legacy chart=ChartSummaryColumn name/customName="名"（I5.3-C）
+    var nameIn = function (v) { return xmlText.indexOf('CDATA[' + v) >= 0 || xmlText.indexOf('valueName="' + v + '"') >= 0 || xmlText.indexOf('name="' + v + '"') >= 0 || xmlText.indexOf('customName="' + v + '"') >= 0; };
     var firstVal = (chartBlock.values && chartBlock.values.length) ? chartBlock.values[0] : chartBlock.value;
     check('CHART SERIALIZED', /<O t="CC">/.test(xmlText)
       && /MoreNameCDDefinition/.test(xmlText)
