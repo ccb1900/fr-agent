@@ -190,7 +190,7 @@ try {
     if (chartBlock.values && chartBlock.values.length > 1) check('CHART MULTI-SERIES N=' + chartBlock.values.length, nameIn(chartBlock.values[chartBlock.values.length - 1]));
   }
 } catch (e) {
-  FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e);
+  FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);
   var sw2 = new (J('java.lang.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
   e.printStackTrace(pw2); stamp(String(sw2.toString()).split('\n').slice(0, 15).join(' || '));
 }
@@ -217,6 +217,7 @@ if (SKIP_EXEC) {
     stamp('EXECUTED: ' + rb);
   } catch (e) {
     stamp('EXECUTE FAIL: ' + e);
+    RR.diag('EXECUTE FAIL: ' + e);   // 迭代4修补：execute 根因（如 InterpreterError no function）进 RESULT.diagnostics，Agent 不必翻 run.out
     var sw3 = new (J('java.io.StringWriter'))(); var pw3 = new (J('java.io.PrintWriter'))(sw3);
     e.printStackTrace(pw3); stamp(String(sw3.toString()).split('\n').slice(0, 20).join(' || '));
     FAILS++;
@@ -226,7 +227,7 @@ if (SKIP_EXEC) {
 }
 gateAt('deploy');
 var deployed = false;
-try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); deployed = true; stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); FAILS++; }
+try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); deployed = true; stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); RR.diag('CPT DEPLOY FAIL: ' + e); FAILS++; }
 RR.set('deploy', deployed ? 'passed' : 'failed');
 var failsBeforeRender = FAILS;   // 迭代 4：render 段（PNG/PDF）以 FAILS 增量判 passed/failed
 if (rb) {
@@ -250,9 +251,9 @@ if (rb) {
       stamp('VAN LOCALE zh_CN (was ' + loc0 + '), I18nResource active, clientProvider=' +
         J('com.fr.locale.InterProviderFactory').getClientProvider().getClass().getName());
     }
-  } catch (eLoc) { stamp('VAN LOCALE FAIL: ' + eLoc); FAILS++; }
-  try { var osP = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.png'); new (J('com.fr.io.exporter.ImageExporter'))().export(osP, rb); osP.close(); stamp('PNG DONE'); } catch (e) { stamp('PNG FAIL: ' + e); FAILS++; }
-  try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); FAILS++; }
+  } catch (eLoc) { stamp('VAN LOCALE FAIL: ' + eLoc); RR.diag('VAN LOCALE FAIL: ' + eLoc); FAILS++; }
+  try { var osP = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.png'); new (J('com.fr.io.exporter.ImageExporter'))().export(osP, rb); osP.close(); stamp('PNG DONE'); } catch (e) { stamp('PNG FAIL: ' + e); RR.diag('PNG FAIL: ' + e); FAILS++; }
+  try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); RR.diag('PDF FAIL: ' + e); FAILS++; }
   try { if (loc0 != null) J('com.fr.general.GeneralContext').setLocale(loc0); } catch (eL) { }
 }
 if (rb) RR.set('render', FAILS > failsBeforeRender ? 'failed' : 'passed');   // 迭代 4：出图段裁决
@@ -325,7 +326,7 @@ try {
   stamp('DIAG RowHeight = ' + (rh ? rh[1] : 'n/a'));
   stamp('DIAG ColumnWidth = ' + (cw ? cw[1] : 'n/a'));
   stamp('DIAG Style count = ' + (diagTxt.match(/<Style[ >]/g) || []).length);
-} catch (e) { FAILS++; stamp('ROUNDTRIP FAIL: ' + e); }
+} catch (e) { FAILS++; stamp('ROUNDTRIP FAIL: ' + e); RR.diag('ROUNDTRIP FAIL: ' + e); }
 
 // ---------- 6. 数值自检（默认路径；rawIR 自带勾稽账，不适用） ----------
 var expectSum = 0, lastNum = built.totalCol;

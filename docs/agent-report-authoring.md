@@ -70,6 +70,12 @@ $env:FR_AGENT_RESULT = 'logs/last_run.json'       # RESULT 落盘点（可选，
 
 - **凭据不进你写的 spec/IR，更不进交付的 cpt**：连接名写 `datasets[].connection`；`driver/url/user/password` 只放本机 `spec.connections` 段（用户环境受信任配置）。交付前对产物 `grep 'whmeiko\|password'` 必须 0 命中。
 - **不许产出的输入**（后端会拒，别试）：`toolbar` 用 `className` 指任意 Java 类；`nav`/`iframe`/`linkTo` 用绝对/外部 URL（`scheme://`、`javascript:`）——只允许相对路径；`floats.imageFile` 越出 `FR_AGENT_HOME`；SQL 里手拼凭据或未授权数据源。
+- **SQL 里的参数**：`${param}` 是 FR 的**文本替换不是绑定变量**（AGENTS §3），经 `wb.execute` 这条 API 路径**不会**被替换 → 会原样进 SQL 把日期/数值炸成空集（0 行）。日期/机台等筛选把值**烤成字面量**进 SQL（语料 browser 族 `dc >= lo AND dc <= hi` 就这么做）；运行期交互筛选是浏览器族 `br_*` 的专职，独立报表别重造。脏日期（混 `2026/9/14` 与 `2026-9-13`）先 `TRY_CAST(col AS date)` 规范化再比。
+- **公式函数词汇**（实测，见 `Ir.capabilities().formula`）：FR 嵌入式解释器只有 `SUM/AVERAGE/MAX/MIN/COUNT/round()/row()/col()` 这个量级——**`SUMPRODUCT`、`VLOOKUP`、`IFERROR` 等 Excel 专有函数会 `InterpreterError: no function found` 让 execute 段炸**。加权平均用 `SUM(x)/SUM(n)` 或独立聚合行，别想当然写 Excel 函数。
+
+## 5.5 已知坑（迭代 4 现成 Agent 实跑学费，别重踩）
+- 列宽/字号经验值随渲染管线标尺变（当前约 0.667 px/pt、SimHei attr=112）——照旧 spec 注释拍宽常折行，按当前 PNG 实测重标；粗体表头、`完成率(%)` 这类长文案要更宽。
+- execute 段失败根因现在会进 `RESULT.diagnostics`（如上面 `SUMPRODUCT`）；照 diagnostics 直接定位，不必翻 `run.out` 全量日志。
 - **改 `lib/`（尤其 ir.js/object.js/cpt.js）后必须跑回归**：`run.ps1 -Script make_api.js`（默认 spec），`demo_api.cpt` MD5 必须 `CBEB42E3CE48E46E362B9AE80168026F`、`销售明细_api.png` `A8EF39AB648D5F00DDAE0481D0313110` 逐字节，`failures=0`。最后一步用默认 spec 收尾（别把基线踩脏）。
 - **不许“validate 绿了就说完成”**：交付面 = RESULT 全 stage passed（或 BR_SKIP_EXEC 下 execute/render=skipped 且构建/校验/部署 passed）+ 渲染件（PNG/PDF）真实存在 + 真库报表的数值经 RESULT_DUMP 逐格对过真值。
 - 排版红线（字体/边框/对齐/列宽反算）见 `AGENTS.md` §2 与 `TABLE_DESIGN_STANDARD.md` 落地清单。
