@@ -341,3 +341,16 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **R2 边界事件（诚实留痕）**：B 的 ir.js 注释写了 `com.fr.stable.InterpreterError` 字面量→触发 `check-boundaries` R2（ir.js 禁 `Java.type`/`com.fr.` 是**文本级**红线）exit 1。去 `com.fr.` 前缀（改 "InterpreterError"）恢复绿。教训入记忆：**ir.js 连注释都别写 banned token**（沿用 runresult 注释去字面同一纪律）。
 - **回归**：默认 `run.ps1 make_api.js` failures=0、`demo_api.cpt CBEB42E3` + `销售明细_api.png A8EF39AB` 逐字节 True（A/B/C 零字节风险实证）；R1–R6 绿；离线快速层 `logs/_ir_neg_selftest.js` 57 + `logs/_runresult_selftest.js` 16 全 failures=0；部署 cpt 凭据 0 命中。
 - **暂缓守约**：仍未做 MCP/Codex/Claude（按 §九"待接口被真 Agent 用过再定"——现已用过一次，结论是接口够用、先扩能力与真样本，MCP 不急）；ANTLR/通用 CPT→IR/多 Sheet 后端/自研 Agent 继续暂缓。迭代 3 已交一张真实报表（日报）+ 迭代 4 已证 Agent 独立创作（工序汇总），下一步可扩：类型后端 decimal/long 统一（迭代 3 尾）、更多真样本覆盖能力矩阵、以及把两报做成可复用 spec 模板。
+
+
+#53 总计划 r1.md 对照主分 + 分层验证体系落地为持久资产（2026-11-04，用户重贴 master plan `docs/gpt/r1.md` 并要求 ub-mode；本单元零 lib/基线改动，纯 Subtract/加杠杆，不引新架构）：
+- **Attack the Premise — 先对齐"计划 vs 现状"（证据制，不凭记忆）**：r1.md 的 §九 迭代 1–4 与 §十一 四资产，经 #48–#52 已落。逐节核对：
+  - §二 迭代 1 可靠性修复：validate 两段式/缺容器短路(#48)、detail.link 可达(#48)、条件属性严格化+列成员(#49)、Runner IR FAIL 即停 EXIT9(#48)、部署/PDF 计入退出码+gateAt 三闸(#49)、参数默认值全控件 paramDefaults(#49)、localCpt 单点(#48)——**全 DONE**。
+  - §三 IR 稳定化：irVersion 认版/拒版(#50)、compile 输入不可变+幂等(#50)、CAPABILITIES 能力清单(#50/#52 扩 formula)、multi-sheet `UNSUPPORTED_CAPABILITY:multi_sheet`(#50)——**DONE**；仅"统一数据类型定义"随类型后端缓到 §五.1。
+  - §五 后端可靠性：安全三端口(nav/iframe 相对、toolbar 去 className、imageFile 钳制)(#48) **DONE**；**仍开放**=类型映射 decimal/long/boolean/date（object.js，需真实内嵌用例+逐函数探针，别一上来全实现）、消除 `try{dsc.setColumn}catch{}` 静默失败（object.js，字节风险，须配回归）、样式缓存跨格污染回归用例、字体单位 v2×21/v3×8 显式函数+9/10.5/12/14/18/24 标尺（§三.3，知识资产化，AGENTS §2/§3 现两条 attr 口径须以标尺实证厘清）。
+  - §四 object/cpt 职责三分（v2 Builder / Legacy Validator / 通用 Artifact Validator）：**认知已明**（cpt.js 兼旧产物校验+回环），未拆文件（遵"不轻易动验证过的代码"）。
+  - §八 CPT→IR / Template Patch、§六 240 模板能力覆盖矩阵（从"发现特性"转"证明已支持特性可稳定组合"）、SQL 只读源/凭据引用化（Agent 只选连接名）——**按计划开放/暂缓**。
+- **本单元落地 §六"分层验证体系"为持久产品资产（此前 fast 测试散在 gitignore 的 logs/，克隆即失）**：`verify/` 纳入并 track 三层——**快速层(无引擎)** `verify/fast_parse.js`(9 文件 parse 门)+`verify/fast_ir_contract.js`(57 契约)+`verify/fast_runresult.js`(16 契约)，聚合门 `scripts/run-fast-tests.ps1`（只 nashorn.jar，不启动 FR/不碰 FineDB/不产字节，任一 rc≠0 整体 exit 1）；**引擎负测层** `verify/neg_ir_full.js`(#48/#52 _bad_ir_test 持久化)+`verify/neg_exec_formula.js`(#52 execute-fail 探针持久化)。
+- **Test Behavior + TDD 自检**：快速门跑绿（57+16+9 parse，failures=0，gate exit 0）；**红证**=独立失败套件 rc=1（证明聚合真能判失败，非假绿）；重定位的引擎负测 `verify/neg_ir_full.js` 实跑 EXIT 9、`ir_validate:failed`+下游 skipped、20 IR ISSUE 命中（证明 track 后的持久资产可跑）。`check-boundaries` R1–R6 绿（verify/scripts 不在受限扫描集）。
+- **PS 编码教训（AGENTS §5 同源，留痕）**：`run-fast-tests.ps1` 首版经 `cat<<EOF` 写成 UTF-8 **无 BOM**，Windows PowerShell 5.1 按系统 ANSI(GBK) 读 `.ps1`，中文/em-dash/引号注释使解析器错位吞掉 `$FR=` 赋值 → java 路径变 `\jre\bin\java.exe`（"命令未找到"）。修=**该 .ps1 全 ASCII 注释**（脚本内注释加 NOTE 警示）。纪律：**新 .ps1 要么纯 ASCII 要么带 BOM**，别指望 5.1 认无 BOM UTF-8。
+- **诚实边界**：本单元未跑 FR 引擎整链字节回归——因为**没改任何影响产物的 lib/spec/runner 代码**（只新增 verify/ 测试与 scripts/ 门），`demo_api.cpt`/PNG 基线逻辑上不可能变；A/B/C 那批（改 lib/ir.js + make_api.js）的基线回归已在 f57b8df 复验 CBEB42E3/A8EF39AB True。快速门每次可跑（秒级、不占引擎）。
