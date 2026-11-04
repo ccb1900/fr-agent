@@ -9,7 +9,7 @@
 | # | 报表 | 旧路径（JS Feature / rawIR） | 新路径（ReportSpec） | 数据 | 结构 | 渲染 | 结论 |
 |---|---|---|---|---|---|---|---|
 | 1 | `sales_demo`（内嵌 rows） | `reports/sales_demo.js` | `examples/report-spec/sales_demo.json` | 等价 | **IR JSON 全等** | 字节铁证 `A8EF39AB…` | **已迁移（等价）** |
-| 2 | 生产日报（SQL 单实体） | `reports/agent_daily_report.js`（手写 SQL rawIR） | `examples/report-spec/daily_report.sql.json` | **逐日+合计完全相等** | 仅标题/表头文案/脚注行不同 | PNG 不同（结构差异导致） | **可迁移**（需对齐文案） |
+| 2 | 生产日报（SQL 单实体） | `reports/agent_daily_report.js`（手写 SQL rawIR） | `examples/report-spec/daily_report.sql.json` | **逐日+合计完全相等** | **文本栅格逐格全等（15 行 0 diff）** | PNG 仍不同（JS 有自定义底色/边框样式） | **已迁移（数据+文本全等）** |
 | 3 | 机台生产日报（JOIN 双维） | 无（新能力） | `examples/report-spec/machine_daily_demo.json` | 33531/26531 对真值 | — | PNG 1587×2245 | **ReportSpec 独有**（新增能力，无旧路径） |
 | 4 | 浏览器族 24/25 张 | `reports/br_*.js` + `features/data_browser/browser.js` | 无 | — | — | — | **不迁移**（缺 SQL 分页/参数面板/机台过滤/TOP） |
 | 5 | 图表 | `reports/test_vanchart.js`（VanChart 6 图种） | `presentation.chart` 仅 legacy bar\|pie\|line | — | — | — | **部分**：legacy 可迁；VanChart 不迁（登记缺口） |
@@ -27,13 +27,13 @@ $env:REPORT_SPEC='reports/agent_daily_report.js';       $env:RESULT_DUMP='logs/a
 java -cp nashorn.jar jdk.nashorn.tools.Shell verify/compare_paths.js
 ```
 
-结果（`logs/agent/a2_compare.json`）：
+结果（`logs/agent/a2_compare.json`，对齐后）：
 
 - 两条路径 RunResult 均 `success=true`、11 阶段全 passed；
 - **10 个日期明细逐格相等**（planned/done/rate 均 0 差），差异列表为空；
 - **合计相等**：`[33531, 26531, 79.1237958903701]` vs `[33531, 26531, 79.1237958903701]`；
-- 结构差异仅 3 处：标题后缀（`·I5 语义自撰`）、表头文案（`业务日期` vs `加工日期`、`完成率` vs `完成率(%)`）、JS 路多一行口径脚注（13 行 vs 15 行）；
-- PNG 不一致（SHA-256 不同）：属上述结构差异，不是数据差异。
+- **文本栅格全等**：15 行 × 4 列逐格一致（标题、表头、明细、总计、空行、脚注），`grid.equal=true, diffs=[]`；
+- PNG 仍不一致（SHA-256 不同）：旧路有自定义底色/边框样式，属样式差异，不是数据或结构差异。
 
 ## 3. 能力缺口登记（不迁移的原因，不是 bug）
 
@@ -55,6 +55,21 @@ java -cp nashorn.jar jdk.nashorn.tools.Shell verify/compare_paths.js
 
 **结论**：ReportSpec 足以承担"新建报表 + 日报类结构化报表"的长期契约；浏览器族/交互式报表仍由 Feature 承担。
 下一步 A2 若继续，按 #2 做文案对齐并双跑验收；其余等能力补齐后再谈。
+
+### A2 收尾（2026-11-04，日报类已全等）
+
+为对齐旧日报，ReportSpec 增加了三个**加性**表达（缺省不改变任何既有产物）：
+
+1. `dataset.dimensions/metrics` 列引用可带 `{term,label,widthPt}`——表头文案与列宽覆盖（未知键/坏类型仍结构化拒）；
+2. `presentation.footnote`——脚注行（发射 `space(10pt) + cells(24pt)`，对齐旧口径说明）；
+3. `lib/spec_compiler` 表头/列宽优先取覆盖值，缺省仍走模型标签 + 110pt。
+
+对齐后双跑结果（`logs/agent/a2_compare.json`）：
+
+- 栅格 **15 行 × 4 列逐格全等**（标题/表头/10 日明细/总计/空行/脚注，`diffs=[]`）；
+- 合计仍为 `33531 / 26531 / 79.1237958903701`；
+- PNG 仍不同：旧 JS 路径有自定义表头底色、边框、标题字号，ReportSpec 目前不带样式表达——属**样式差异**，
+  不是数据/结构差异（已登记；若需要像素级一致，下一步给 ReportSpec 加 style 覆盖，优先级低于业务能力）。
 
 ## 5. 复跑入口
 

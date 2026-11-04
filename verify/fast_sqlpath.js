@@ -38,6 +38,16 @@ check('IR 数据集 kind=sql + connection=ATOM_LIVE + 单语句无分号', (func
   var d = ir.datasets[0];
   return d && d.kind === 'sql' && d.connection === 'ATOM_LIVE' && /^SELECT\b/.test(d.query) && d.query.indexOf(';') < 0 && /GROUP BY/.test(d.query) && /BETWEEN '2026-09-13' AND '2026-09-22'/.test(d.query);
 })());
+// r8 A2：表头文案/列宽覆盖 + 脚注（对齐旧 JS 日报；缺省行为不变）
+check('r8-A2 表头文案覆盖（加工日期/完成率(%)）', (function () {
+  var header = ir.sheets[0].blocks.filter(function (b) { return b.type === 'cells' && !b.dataset && b.items.some(function (i) { return i.text === '加工日期'; }); })[0];
+  return !!header && header.items[0].text === '加工日期' && header.items[3].text === '完成率(%)';
+})());
+check('r8-A2 列宽覆盖 [130,96,96,118]', JSON.stringify(ir.sheets[0].widthsPt) === JSON.stringify([130, 96, 96, 118]));
+check('r8-A2 脚注发射 space+cells（对齐旧口径行）', (function () {
+  var bs = ir.sheets[0].blocks, last = bs[bs.length - 1], prev = bs[bs.length - 2];
+  return last.type === 'cells' && /^口径：/.test(last.items[0].text) && last.heightPt === 24 && prev.type === 'space';
+})());
 check('IR 明细含 base 列 ds 绑定（bizDate/planned/done）', (function () {
   var detail = ir.sheets[0].blocks.filter(function (b) { return b.dataset === 'ds1'; })[0];
   var bound = detail.items.filter(function (i) { return i.ds; }).map(function (i) { return i.ds.column; });

@@ -1,17 +1,25 @@
 {
   "specVersion": "1",
   "report": {
-    "name": "激光生产日报（计划 / 完成 / 完成率）·I5 语义自撰",
-    "description": "I5 端到端靶：仅声明模型实体/维度/指标引用 + 日期范围，SQL 由 semantic/query/sqlbuilder 依 model 生成（不写一行 SQL/IR）；口径同 agent_daily_report 真值"
+    "name": "激光生产日报（计划 / 完成 / 完成率）",
+    "description": "I5 端到端靶：仅声明模型实体/维度/指标引用 + 日期范围，SQL 由 semantic/query/sqlbuilder 依 model 生成（不写一行 SQL/IR）；口径同 agent_daily_report 真值。r8 A2：表头文案/列宽/脚注对齐旧 JS 路径"
   },
   "outName": "生产日报_I5闭环",
   "dataset": {
     "kind": "sql",
     "connection": "ATOM_LIVE",
     "entity": "InspectionRecord",
-    "dimensions": ["bizDate"],
-    "metrics": ["planned", "done", "completionRate"],
+    "dimensions": [{ "term": "bizDate", "label": "加工日期", "widthPt": 130 }],
+    "metrics": [
+      { "term": "planned", "label": "计划数", "widthPt": 96 },
+      { "term": "done", "label": "完成数", "widthPt": 96 },
+      { "term": "completionRate", "label": "完成率(%)", "widthPt": 118 }
+    ],
     "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
   },
-  "presentation": { "type": "table", "showTotal": true }
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "footnote": "口径：计划=当日有效评分记录数；完成=评分≥0.9 的记录数；完成率=完成/计划×100。数据区间 2026-09-13～2026-09-22。"
+  }
 }

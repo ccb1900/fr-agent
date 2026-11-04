@@ -492,3 +492,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **缺口登记**：SQL 分页与运行期参数（需 FR 参数面板读回探针）、VanChart 入口、条件格式高亮、派生比率排序——均登记为能力缺口，不做静默降级。
 - **决策**：ReportSpec 承担"新建 + 日报类结构化报表"长期契约；交互式浏览器族与 VanChart 仍由 Feature 承担；A2 若继续，先做日报文案对齐并双跑验收。
 - **验证**：fast 13 套件 GREEN、R1–R8 clean、scan 42/43；本轮无产品路径改动，基线 `CBEB42E3` 未动（复核见提交前哈希）。
+
+#69 r8 A2 收尾「日报类双路径全等」（2026-11-04，承接 #68；ReportSpec 加三个加性表达，缺省不改变既有产物）：
+- **列引用覆盖**：`dataset.dimensions/metrics` 支持 `{term,label,widthPt}`（表头文案/列宽）；validator 白名单 term|label|widthPt，未知键/坏类型结构化拒；compiler 优先取覆盖值，缺省仍模型标签+110pt。
+- **脚注**：`presentation.footnote` 发射 `space(10pt)+cells(24pt, sizePt 8)`，对齐旧日报口径行；validator 拒非字符串/空串。
+- **对照结果**：`examples/report-spec/daily_report.sql.json` 对齐旧 `agent_daily_report.js` 后，双跑栅格 **15 行×4 列逐格全等（diffs=[]）**、合计 33531/26531/79.1238、两路 11 阶段 passed；PNG 仍不同（旧路自定义底色/边框样式），已登记为样式差异而非数据/结构差异。
+- **测试**：fast_report_spec +4（footnote/未知键/widthPt/label 负项）、fast_sqlpath +3（表头覆盖/列宽覆盖/脚注块）。
+- **验证**：fast 13 套件 GREEN、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、`demo_api.cpt` 恢复 CBEB42E3。

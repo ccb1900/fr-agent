@@ -70,8 +70,8 @@
             "entity": { "type": "string", "description": "Semantic Model 实体名（须在 model 中存在）" },
             "connection": { "type": "string", "description": "数据连接名；凭据只在本机 runner dbpass，JSON/cpt 零凭据" },
             "schema": { "type": "string", "description": "I2 schema 快照名（缺省取 model.source）" },
-            "dimensions": { "type": "array", "items": { "type": "string" }, "description": "模型维度名（或 {term}）" },
-            "metrics": { "type": "array", "items": { "type": "string" }, "description": "模型指标名（或 {term}）" },
+            "dimensions": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": false, "required": ["term"], "properties": { "term": { "type": "string" }, "label": { "type": "string" }, "widthPt": { "type": "number" } } }] }, "description": "模型维度名；可带 {term,label,widthPt} 覆盖表头文案/列宽" },
+            "metrics": { "type": "array", "items": { "oneOf": [{ "type": "string" }, { "type": "object", "additionalProperties": false, "required": ["term"], "properties": { "term": { "type": "string" }, "label": { "type": "string" }, "widthPt": { "type": "number" } } }] }, "description": "模型指标名；可带 {term,label,widthPt} 覆盖表头文案/列宽" },
             "dateRange": {
               "type": "object",
               "additionalProperties": false,
@@ -126,6 +126,7 @@
       "properties": {
         "type": { "type": "string", "enum": ["table"], "default": "table" },
         "showTotal": { "type": "boolean", "default": true },
+        "footnote": { "type": "string", "description": "脚注文案（sql 路发射 space+cells 行；缺省不发射）" },
         "heightsPt": {
           "type": "object",
           "additionalProperties": false,

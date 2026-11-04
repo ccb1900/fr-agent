@@ -116,6 +116,11 @@ check('I1.1 presentation 未知键→UNSUPPORTED_CAPABILITY（写了不生效故
 check('I1.1 sql 路 chart 合法形状零误报', errsOf(JSON.parse(src('examples/report-spec/daily_chart.sql.json'))).length === 0);
 check('I1.1 sql 路 chart.value 缺失→REQUIRED', codeAt(mutSql(function (r) { r.presentation.chart = { kind: 'bar', category: 'bizDate' }; }), 'REQUIRED', 'presentation.chart.value'));
 check('I1.1 rows 路 presentation.chart→UNSUPPORTED_CAPABILITY（compiler 不读=不静默丢图）', codeAt(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart'));
+// r8 A2：表头文案/列宽覆盖 + 脚注（迁移旧报表用；未知键/坏类型明确拒）
+check('r8-A2 footnote 非字符串→INVALID_TYPE', codeAt(mutSql(function (r) { r.presentation.footnote = 123; }), 'INVALID_TYPE', 'presentation.footnote'));
+check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', foo: 1 }]; }), 'UNSUPPORTED_CAPABILITY', 'dataset.dimensions[0].foo'));
+check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
+check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
 check('I1.1 capabilities：sql 路 chart bar|pie|line 已支持', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
