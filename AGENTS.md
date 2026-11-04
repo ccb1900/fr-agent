@@ -21,7 +21,7 @@ run.ps1 -Script make_api.js
 - 记住 make_api.js 每轮**只回写当前 spec**，最后一步必须用默认 spec 收尾，否则基线铁证被踩
 - 交付核对面=渲染 PNG 人工过目 + TABLE_DESIGN_STANDARD 检查清单，**不许"validator 绿了就报完成"**
 - **分层门（README #53/#54，改 lib/ir/object/runresult/browser 必跑）**：
-  - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（fast_parse + fast_ir_contract + fast_runresult + fast_browser_sql，任一 rc≠0 整体 exit 1）
+  - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（fast_parse + fast_ir_contract + fast_runresult + fast_browser_sql + fast_report_spec 五套件，任一 rc≠0 整体 exit 1）
   - 零误伤扫描（无引擎）：`nashorn.jar ... Shell probes/scan_all_specs.js`（reports/ 全量 compile+validate，合法报表=回归门）
   - 引擎负门（需 java/FineDB，会杀 java）：`scripts/run-engine-negative-tests.ps1`——断言"失败必非零退出码、无假绿"，末步自动回补默认 spec 护基线
 
@@ -60,13 +60,14 @@ run.ps1 -Script make_api.js
 - 修改 spec/lib 一律用编辑器（逐字替换），**禁止 PowerShell `-replace`/`Set-Content` 批改 UTF-8 文件**——PS 5.1 按 GBK 读盘，会把中文字符串打成果酱（08:49 事故教训：outName 变 undefined、部署出 undefined_api.cpt）
 - run.ps1 会杀所有 java 进程（管线自身的既定惯例，用于释放 FineDB 锁）：跑之前先向用户打招呼；没用户允许不启动/关闭非本管线的软件
 
-## 6. 项目状态速查（2026-11-04，I0 可靠性收尾已落地）
+## 6. 项目状态速查（2026-11-04，I0 可靠性收尾 + I1 ReportSpec 接口已落地）
 
 - v4.x 管线：lib/object.js（API 对象图）+ ir.js（IR 编译）+ features/data_browser/browser.js（数据浏览器构造器，moved from lib）+ cpt.js（v2 校验器=回归门）
 - **IR 契约（2026-11-04，README #49/#50/#54）**：ir.js 有 `IR_VERSION='1'`（validate 认当前版/拒未知版）+ `Ir.capabilities()` 机器读能力清单；`validate()` 输出结构化 `{code,path(JSON),message}`（I0-01，code 词汇见 lib/ir.js E码表），自炸路全堵+数值有限闸+枚举白名单+超链/SQL/凭据边界。`compile()` 输入不可变+幂等；multi-sheet 报 `UNSUPPORTED_CAPABILITY:multi_sheet`。object.js `build()` 只按具名键消费 IR。改 IR 断言前先读 object 消费语义（#48 铁律）。无引擎自检：`scripts/run-fast-tests.ps1` + `probes/scan_all_specs.js`
 - **RunResult 契约（I0-02）**：11 段全序 `input_load→runtime_initialize→datasource_connect→ir_validate→object_build→cpt_export→cpt_validate→execute→render→deploy→roundtrip`（deploy 现居 render 后）；无 connections 时 datasource_connect=skipped；崩/坏输入都写初始快照 success:null（灭陈旧假绿）；run.ps1 透传退出码
 - **数据类型（I0-05）**：embedded 列词表 text/string/number/integer/long/float/decimal/boolean/date/datetime（object.js DS_JTYPE，probe_typemap 实机证保真）；行值形态 ir.js checkRowValue 逐格闸；legacy number=硬转 Integer 不变
 - 浏览器族 24 张（演示 25 含备份表/生产 24 无备份表），统一 SQL 分页 + 面板翻页；机台过滤 + 按天 TOP 参照 README #38–44
+- **ReportSpec JSON 入口（2026-11-04 I1，README #55）**：`REPORT_SPEC=*.json` → make_api.js §0 后缀分支 → `lib/report_spec.js`(词汇/能力名册)+`lib/spec_validator.js`(校验，沿用 I0-01 {code,path,message})+`lib/spec_compiler.js`(→现有 ReportIR) → 包 `SPEC={outName,IR}` 复用 rawIR 直通路；v1 sum-only（dimensions/metrics(sum)/内嵌 rows/table+showTotal），filters/chart/semantic query/非 sum 聚合=v1 结构化拒（指向 I2-I5）；`schemas/report-spec.schema.json` 是声明式镜像、`spec_validator.js` 是权威（Nashorn 无 JSON-Schema 库）；旧 .js spec 路径一行不动。等价铁证：sales_demo.json 产出与 sales_demo.js 逐字节相等（CBEB42E3/A8EF39AB）；引擎负门含 json-bad-spec 第 5 路
 - **ABR-1 边界（2026-11-03）**：一级结构 = reports → features/data_browser → lib(核心三件) → runtime(Paths/bootstrap/datasource) → runner 编排；依赖规则 `docs/architecture/dependency-rules.md`（R1–R5，`scripts/check-boundaries.ps1` exit 0 才干净）；lib/browser.js 为兼容垫片唯一豁免；lib/ir.js 零运行时依赖红线
 - 基线铁证（2026-11-04 I0 批逐单元复验，逐字节）：demo_api.cpt = CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png = A8EF39AB648D5F00DDAE0481D0313110、v2 demo_template_final.cpt = 6161F402B340321B4ABF68B68E301828；br 六连栅格 + prod staging 24 张字节级基线副本在 logs\abr1_baseline*（PDF 含 CreationDate 非确定项，不作铁证）
-- **I0 后仍开放（不装完成）**：`?` 值绑定接线（浏览器族 SQL 全参数化，会改 24 张 SQL 文本+重录基线，列 I1 前工单）；r2.md I1~I6（ReportSpec/Schema Inspector/Semantic Model/Planner/NL 闭环/Template Patch）按"前一迭代验收过再开下一迭代"推进
+- **I1 后仍开放（不装完成）**：`?` 值绑定接线（浏览器族 SQL 全参数化，会改 24 张 SQL 文本+重录基线，工单待排）；r2.md **I2~I6**（Schema Inspector/Semantic Model/Planner/NL 闭环/Template Patch）按"前一迭代验收过再开下一迭代"推进——I0（可靠性）+I1（ReportSpec 接口）已验收，下一站 I2；I1 v1 留白（filters/chart/非 sum 聚合/dataset.query semantic）待 I2/I3 接管

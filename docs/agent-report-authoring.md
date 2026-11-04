@@ -30,9 +30,10 @@
 
 ## 2. 你要产出的东西（ReportIR）
 
-两条路径，二选一：
-- **传统 spec**（简单报表）：`{ title, columns:[{name,label,type,widthPt,format?}], heightsPt, data:[[...]], dsName?, paramPanel?, highlight?/conditions?/link?/chart?, connections? }`
-- **IR 直通**（复杂/贴近官方形态）：`{ IR: { sheets:[{blocks:[...], widthsPt:[...], floats?}], datasets:[...], param?, watermark?, toolbar?, webPage? } }`
+三条路径，选一：
+- **JSON ReportSpec（I1，推荐——不写 JS）**：受约束的 dimensions/metrics/dataset.rows/presentation，见 §3.5。runner 自动编译成 IR。
+- **传统 spec**（简单报表，JS）：`{ title, columns:[{name,label,type,widthPt,format?}], heightsPt, data:[[...]], dsName?, paramPanel?, highlight?/conditions?/link?/chart?, connections? }`
+- **IR 直通**（复杂/贴近官方形态，JS）：`{ IR: { sheets:[{blocks:[...], widthsPt:[...], floats?}], datasets:[...], param?, watermark?, toolbar?, webPage? } }`
 
 数据集两种形态：
 - 内嵌自包含：`{ name, columns:[{name,type,format?}], rows:[[...]] }`——列 `type` 全词表（I0-05 定案，`Ir.capabilities().columnType.embedded`）：`text|string|number|integer|long|float|decimal|boolean|date|datetime`；`number`=legacy（硬转 Integer）。行值形态被逐格校验：`date` 必须字面 `yyyy-MM-dd`（补零）、`datetime` 必须 `yyyy-MM-dd HH:mm:ss`、`integer/long` 必须整值（long 可用纯数字串保精度）、`decimal` 用数字串保高精度、`boolean` 只认 `true|false`、`null` 合法（可空语义保留）。
@@ -52,6 +53,18 @@ $env:FR_AGENT_RESULT = 'logs/last_run.json'       # RESULT 落盘点（可选，
 - 只想烘 SQL+导出、不做执行/出图（生产构建通道）：`$env:BR_SKIP_EXEC='1'`（此时 RESULT 的 `execute/render` = `skipped`，仍算 success）。
 - 换部署目录：`$env:BR_DEPLOYDIR`（默认演示服务器 reportlets/fineagent）。
 - 根/引擎位置：`$env:FR_AGENT_HOME`（项目根）、`$env:FR_HOME`（FineReport 安装）。
+
+## 3.5 JSON 入口（ReportSpec，I1——你更该用的形态，不写 JS）
+
+若你不想写 Nashorn JS，提交**纯 JSON ReportSpec**（`examples/report-spec/sales_demo.json` 是等价范例），同一 runner 走 `.json` 分支：
+```powershell
+$env:REPORT_SPEC = 'examples/report-spec/你的报表.json'
+.\run.ps1 -Script make_api.js
+```
+- 链路：`JSON.parse → SpecValidator（结构+语义，拒则 exit 2）→ SpecCompiler（ReportSpec→ReportIR）→ 复用既有 Ir.validate/build/CPT/门禁`。JSON 里**无处放凭据**，连接/目录仍由本机 env 控制。
+- **v1 词汇（sum-only）**：`{ specVersion:"1", report:{name}, outName, dimensions:[{field,label,widthPt?,format?}], metrics:[{field,label,aggregation:"sum",dataType?,widthPt?,format?}], dataset:{rows:[[...]]}, presentation:{type:"table",showTotal?,heightsPt?} }`。列顺序=维度在前、度量在后；`dataset.rows` 每行宽度须等于列数。
+- **v1 明确不支持**（写了必被结构化拒，别试）：`filters`、`chart`、`dataset.query/type:semantic`（→ I2/I3）、非 `sum` 聚合（avg/count/ratio_of_sums…→I3）、多 Sheet。契约镜像见 `schemas/report-spec.schema.json`（权威执行者=`lib/spec_validator.js`，Nashorn 无 JSON-Schema 库）。
+- 修复信号同上 §4：`SPEC ISSUE: <CODE> @ <JSON路径>: <message>` 照路径改 JSON 重跑。
 
 ## 4. 读结果（你的修复信号）
 
@@ -85,4 +98,4 @@ $env:FR_AGENT_RESULT = 'logs/last_run.json'       # RESULT 落盘点（可选，
 
 **查能力 → 拿真列名写受约束 IR → validate → 跑 runner → 读 RESULT 的 failed stage + diagnostics 定点修 → 全绿才交付，附 CPT + 预览图 + 验证摘要。**
 
-> 闭环已有现成 Agent 实跑记录（README #52：ZCode 子代理独立产出两张真库报表并经 RESULT 自修）；I0 可靠性收尾（README #54）后，validate/边界/退出码契约均已硬化。是否加 MCP 仍以真实体验定夺（暂不做）。
+> 闭环已有现成 Agent 实跑记录（README #52：ZCode 子代理独立产出两张真库报表并经 RESULT 自修）；I0 可靠性收尾（README #54）后，validate/边界/退出码契约均已硬化；I1（README #55）新增 JSON ReportSpec 入口（§3.5），Agent 可不写 JS 直接提交受约束 JSON。是否加 MCP 仍以真实体验定夺（暂不做）。

@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "fr-agent ReportSpec (I1, v1 sum-only)",
+  "description": "声明式机器契约（文档 + 未来外部工具面）。注意：Nashorn ES5 运行期无 JSON-Schema 校验库，实际执行者是 lib/spec_validator.js（与 lib/ir.js 手写校验同先例，README #55 留痕）。本 schema 与 spec_validator 必须同步演进；spec_validator 是权威，本文件是它的可读镜像。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["outName", "dimensions", "metrics", "dataset"],
+  "properties": {
+    "specVersion": { "type": "string", "enum": ["1"], "description": "缺省视为当前版；未知版被 spec_validator 拒（UNSUPPORTED_SPEC_VERSION）" },
+    "report": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "description": "报表标题（编译进 IR title）" },
+        "description": { "type": "string" }
+      }
+    },
+    "outName": { "type": "string", "description": "裸文件名，禁路径分隔/.. /盘符（INVALID_PATH 闸）；落目录由 BR_DEPLOYDIR env 控制，spec 无权指路径" },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "分组键，恒 text 列，不得带 aggregation",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "label"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "widthPt": { "type": "number" },
+          "format": { "type": "string" }
+        }
+      }
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "description": "度量列，v1 聚合仅 sum；avg/count/min/max/ratio_of_sums=已规划未实现（UNSUPPORTED_CAPABILITY）",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "label", "aggregation"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "aggregation": { "type": "string", "enum": ["sum", "avg", "average", "count", "min", "max", "ratio_of_sums"], "x-implemented": ["sum"] },
+          "dataType": { "type": "string", "enum": ["text", "number", "integer", "long", "float", "decimal"], "default": "number" },
+          "widthPt": { "type": "number" },
+          "format": { "type": "string" }
+        }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rows"],
+      "description": "v1 只内嵌 rows；query/source(semantic)=UNSUPPORTED_CAPABILITY（I2/I3 落地）",
+      "properties": {
+        "rows": { "type": "array", "items": { "type": "array" }, "description": "每行列数须等于 dimensions+metrics 总数（INVALID_SHAPE）" }
+      }
+    },
+    "presentation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["table"], "default": "table" },
+        "showTotal": { "type": "boolean", "default": true },
+        "heightsPt": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "title": { "type": "number" }, "header": { "type": "number" }, "row": { "type": "number" }, "total": { "type": "number" } }
+        }
+      }
+    },
+    "filters": { "x-unsupported": "I2/I3 — 存在即被 spec_validator 拒（UNSUPPORTED_CAPABILITY）", "type": "array" },
+    "chart": { "x-unsupported": "I4/I5 — 存在即被拒", "type": "object" }
+  },
+  "x-v1-scope": {
+    "supported": ["dimensions(text 分组键)", "metrics(sum 聚合)", "内嵌 dataset.rows", "presentation.table + showTotal", "widthPt/format/heightsPt 透传"],
+    "rejectedByDesign": ["filters (I2/I3)", "chart (I4/I5)", "dataset.query.type=semantic (I2/I3)", "非 sum 聚合 (I3)", "multiSheet (同 IR 边界)"],
+    "entrypoint": "REPORT_SPEC=<path>.json run.ps1 make_api.js — make_api.js §0 后缀分支：JSON.parse→SpecValidator→SpecCompiler→SPEC={outName,IR} 复用 rawIR 直通路；旧 .js spec 走原 load() 路径不变"
+  }
+}
