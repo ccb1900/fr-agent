@@ -499,3 +499,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **对照结果**：`examples/report-spec/daily_report.sql.json` 对齐旧 `agent_daily_report.js` 后，双跑栅格 **15 行×4 列逐格全等（diffs=[]）**、合计 33531/26531/79.1238、两路 11 阶段 passed；PNG 仍不同（旧路自定义底色/边框样式），已登记为样式差异而非数据/结构差异。
 - **测试**：fast_report_spec +4（footnote/未知键/widthPt/label 负项）、fast_sqlpath +3（表头覆盖/列宽覆盖/脚注块）。
 - **验证**：fast 13 套件 GREEN、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、`demo_api.cpt` 恢复 CBEB42E3。
+
+
+#70 demo240 能力覆盖率看板落地（2026-11-04，r8 收官后「下一步只剩能力缺口」车道首件——批 0）：
+- **工具**：`probes/coverage_report.js`（纯 nashorn 零引擎）→ 幂等重写 `docs/architecture/coverage.md`；状态源=`logs/_demo_classes.txt`（223 个 com.fr.* 类频次）+ `logs/_demo_feature_scan.txt`（27 tag 计数）+ lib 引擎源码两类 token 命中规则（全限定名 / 带引号短名——兼容 object.js 的 `H+'X'` 前缀拼接形态）。
+- **首批全景**：missing=135 / partial=13（noncore=3 圈定不追：esd/云分析/widgettheme）。TOP 缺口按频次：ValueHighlightAction 717、AttrTooltip 族 ~2.9k、ParameterJavaScript 589、ConditionAttr 299、NoneReg 153、AttrLabel 族 259、AttrBorder 93、VanChartAxis 92、DatabaseDictionary 60、BuiltInSQLSubmiter 55、SimpleDateFormatThreadSafe 53、IntelliDMLConfig 53、AttrAlpha 52——与批 A/B/C/D/E/F/H/I/J 排期一一对应。
+- **用意**：r1.md §六口径「demo 覆盖=证明已支持特性可稳定组合」——看板双列即此：A 节缺口账（排期依据，按类频次倒序）、B 节已实现族的组合稳定证据（载体 spec+13 快速套件+引擎负门+字节基线）、C 节 27 tag 三色表。每批收尾重跑该 probe 即刷新，覆盖增量即刻可见。
+
