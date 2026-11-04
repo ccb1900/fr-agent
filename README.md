@@ -566,3 +566,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **像素实证**（能力自检_小特性 PNG）：条码真实画出（条码图+数字）、子报表嵌套渲染（销售明细骨架整嵌）、CustomGrouper 分组表+合计 19；XML BarcodePresent/BarcodeAttr/SubReport 2/CustomGrouper 全在。
 - **门禁**：fast 13 GREEN、scan 48 张（47+1）、R1–R8、默认 CBEB42E3 逐字节；coverage missing 94→92。
 
+
+#78 批H CellSortAttr 排序墙重攻（2026-11-05，demo 车道批 H——定性修正 + 诚实挂账）：
+- **定性修正（#45 结论更新）**：`com.fr.report.core.sort.common.CellSortAttr`/`SortHeader` 在 **env 全激活后可正常加载**——#45「静态初始化需 license 上下文」的墙与 ReportHF 同命（裸 classpath 才撞，管线 env 恒满足）。
+- **挂点已证**：`CellExpandAttr.setCellSortAttr(CellSortAttr)` / `setSortFormula(String)` / `setResultSortHeader(SortHeader)` 均存在；CellSortAttr API=setSortExpressions(List)/setExpandExpressions/setResultSortExpressions/setSortHeader。
+- **诚实挂账（不盲写）**：`setSortFormula` 直塞**不序列化**（本地/部署 XML 双 0、渲染顺序不变的探针实证）；`SortHeader` 组合面（SortHeaderIndex/Direction/SortItem[]/SortRule/SortArea 字符串区）**240 demo 无非空 cellSortAttr 语料**（#45 已记，本轮复核同）——组合形态无参照，按不硬凑纪律 **IR `sort` 词汇结构化拒**（UNSUPPORTED_CAPABILITY；一处真相红线：build 不生效的词汇不许放行），等真实排序 cpt 语料到手后批收。
+- **门禁**：fast 13 GREEN（批H 断言=结构化拒 1 项）、scan 48、默认 CBEB42E3 逐字节。
+

@@ -359,3 +359,7 @@ check('批G groupCustom 未知键拒', codeAt(mut(function (ir) { ir.sheets[0].b
 check('批G groupCustom other 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { other: 'x' }; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].columns[0].groupCustom.other'));
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
+// ===== 批H（2026-11-05）单元格排序（license 墙 env 后已破；setSortFormula v1 通路） =====
+check('批H sort 结构化拒（一处真相：墙破缺语料不盲写）', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[1].sort = { formula: '=-C3' }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[2].columns[1].sort'));
+
+
