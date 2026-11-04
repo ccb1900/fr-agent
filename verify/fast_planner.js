@@ -30,7 +30,8 @@ var ctx = {
   resolve: function (t) { return ModelResolver.resolve(idx, t); },
   validateSpec: function (s) { return SpecValidator.validate(s); },
   capability: PlannerCapability,
-  caps: ReportSpec
+  caps: ReportSpec,
+  model: model
 };
 function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
 
@@ -103,6 +104,16 @@ check('planner 自吐的 ready spec 必过 I1（无非法外泄）', (function (
   var rr = plan({ outName: 'q', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1) });
   return rr.reportSpec && SpecValidator.validate(rr.reportSpec).length === 0;
 })());
+
+// —— I5：SQL 意图 opt-in（内嵌矩阵不受影响；模型成员校验不编造）
+var sqlIntent = { outName: 'daily', reportName: '生产日报', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'done', 'completionRate'], dateRange: { from: '2026-09-13', to: '2026-09-22' } } };
+var sqlPlan = plan(sqlIntent);
+check('SQL 意图→ready 且 reportSpec.dataset.kind=sql', sqlPlan.status === 'ready' && sqlPlan.reportSpec && sqlPlan.reportSpec.dataset.kind === 'sql' && sqlPlan.reportSpec.dataset.connection === 'ATOM_LIVE');
+check('SQL reportSpec 过 I1 SpecValidator 0 err', sqlPlan.reportSpec && SpecValidator.validate(sqlPlan.reportSpec).length === 0);
+check('SQL 意图 metrics 引用模型指标（含 ratio 不再 deferred）', sqlPlan.reportSpec.dataset.metrics.indexOf('completionRate') >= 0 && !hasWarn(sqlPlan, /deferred|I5/));
+var sqlGhost = plan({ outName: 'g', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['___幽灵维___'], metrics: ['planned'] } });
+check('SQL 意图幽灵维度→warning 模型缺口，不编造', hasWarn(sqlGhost, /模型缺口/));
+check('SQL 意图不改输入（纯）', (function () { var s = JSON.stringify(sqlIntent); plan(sqlIntent); return JSON.stringify(sqlIntent) === s; })());
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

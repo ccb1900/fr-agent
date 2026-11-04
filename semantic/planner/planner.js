@@ -29,6 +29,40 @@ var ReportPlanner = (function () {
       return { status: 'rejected', reportSpec: null, assumptions: assumptions, unresolvedQuestions: unresolvedQuestions, validationWarnings: validationWarnings };
     }
 
+    // ===== I5：SQL 数据集意图（模型驱动）→ 直通 sql ReportSpec（opt-in；内嵌路径不受影响）=====
+    if (intent.dataset && intent.dataset.kind === 'sql') {
+      var dsn = intent.dataset;
+      if (hasOwn(intent, 'filters')) validationWarnings.push({ feature: 'filters', reason: '非日期筛选暂不接', owner: 'I2/I3' });
+      // 模型成员校验（维度/指标名须在模型中；不在→unresolvedQuestions/unknown，不编造）
+      function namesIn(list, key) {
+        var out = [];
+        (list || []).forEach(function (x) {
+          var name = typeof x === 'string' ? x : (x && x.term);
+          out.push(name);
+        });
+        return out;
+      }
+      var dims = namesIn(dsn.dimensions, 'dimensions'), mets = namesIn(dsn.metrics, 'metrics');
+      if (ctx.model) {
+        var dset = {}, mset = {};
+        (ctx.model.dimensions || []).forEach(function (d) { dset[d.name] = 1; });
+        (ctx.model.metrics || []).forEach(function (m) { mset[m.name] = 1; });
+        dims.forEach(function (dn) { if (dn && !hasOwn(dset, dn)) validationWarnings.push({ term: dn, reason: '维度不在模型，未编造', owner: '模型缺口(I3)' }); });
+        mets.forEach(function (mn) { if (mn && !hasOwn(mset, mn)) validationWarnings.push({ term: mn, reason: '指标不在模型，未编造', owner: '模型缺口(I3)' }); });
+      }
+      var sqlSpec = {
+        specVersion: '1', outName: intent.outName || 'planner_sql',
+        report: { name: intent.reportName || intent.outName || 'planner_sql' },
+        dataset: { kind: 'sql', connection: dsn.connection, entity: dsn.entity, dimensions: dims, metrics: mets, dateRange: dsn.dateRange },
+        presentation: { type: 'table', showTotal: !(intent.presentation && intent.presentation.showTotal === false) }
+      };
+      assumptions.push({ key: 'dataset.kind', value: 'sql', why: '模型驱动 SQL 由 sqlbuilder 生成（非自由文本）' });
+      var sqlErrs = ctx.validateSpec(sqlSpec);
+      var sqlStatus = (sqlErrs && sqlErrs.length) ? 'rejected' : 'ready';
+      if (sqlErrs && sqlErrs.length) sqlErrs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
+      return { status: sqlStatus, reportSpec: sqlStatus === 'ready' ? sqlSpec : null, assumptions: assumptions, unresolvedQuestions: unresolvedQuestions, validationWarnings: validationWarnings };
+    }
+
     // 能力越权键（filters/chart/semantic 源）→ deferred + owner，不降级
     (['filters', 'chart']).forEach(function (feat) {
       if (hasOwn(intent, feat) && intent[feat] != null) {
