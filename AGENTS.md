@@ -59,6 +59,7 @@ run.ps1 -Script make_api.js
 ## 6. 项目状态速查（2026-11-03）
 
 - v4.x 管线：lib/object.js（API 对象图）+ ir.js（IR 编译）+ features/data_browser/browser.js（数据浏览器构造器，moved from lib）+ cpt.js（v2 校验器=回归门）
+- **IR 契约（2026-11-04，README #49/#50）**：ir.js 有 `IR_VERSION='1'`（validate 认当前版/拒未知版）+ `Ir.capabilities()` 机器读能力清单（multiSheet/reverseFromCpt=unsupported，控件/图种/thenActions 白名单边界）；`compile()` 输入不可变+幂等（rawIR 深拷贝）；multi-sheet 报 `UNSUPPORTED_CAPABILITY:multi_sheet`。object.js `build()` 只按具名键消费 IR（从不遍历顶层）→ 新增顶层键不入序列化、不碰字节基线。改 IR 断言前先读 object 消费语义（#48 铁律）。无引擎快速自检：`nashorn.jar jdk.nashorn.tools.Shell logs/_ir_neg_selftest.js`
 - 浏览器族 24 张（演示 25 含备份表/生产 24 无备份表），统一 SQL 分页 + 面板翻页；机台过滤 + 按天 TOP 参照 README #38–44
 - **ABR-1 边界（2026-11-03）**：一级结构 = reports → features/data_browser → lib(核心三件) → runtime(Paths/bootstrap/datasource) → runner 编排；依赖规则 `docs/architecture/dependency-rules.md`（R1–R5，`scripts/check-boundaries.ps1` exit 0 才干净）；lib/browser.js 为兼容垫片唯一豁免；lib/ir.js 零运行时依赖红线
 - 基线铁证（2026-11-03 ABR-1 迁移后复验，逐字节）：demo_api.cpt = CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png = A8EF39AB648D5F00DDAE0481D0313110、v2 demo_template_final.cpt = 6161F402B340321B4ABF68B68E301828；br 六连栅格 + prod staging 24 张字节级基线副本在 logs\abr1_baseline*
