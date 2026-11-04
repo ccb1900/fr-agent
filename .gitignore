@@ -21,3 +21,6 @@ data/db_local.js
 
 # 临时
 _tmp_*.ps1
+
+# ZCode 会话内部状态（不属于仓库）
+.zcode/
