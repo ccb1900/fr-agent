@@ -52,10 +52,28 @@ if (Select-String -Path "$root\make_api.js" -Pattern "load\('D:" -Quiet) {
   $viol += "R6c make_api.js 出现硬编码绝对 load 路径（应走 Paths / FR_AGENT_HOME 单点）"
 }
 
+# R7 语义层边界（I2，docs/architecture/dependency-rules.md R7）：semantic/ 独立于 Core/Feature/Runtime
+#   R7a semantic/** 禁 com.fr. 与 FR 激活链三词、禁真·load 后端三件(lib/object|ir|cpt)——语义层只依赖 java.sql+dbpass+纯 JS，
+#        未来换报表引擎可整体复用（r2 I3 初衷）。runtime/paths.js(纯路径助手)与 dbpass(凭据外围件)属允许面，不判。
+#        注意：R7a 词表刻意【不含裸 Java.type】——inspector 必然 Java.type('java.sql.DriverManager')，
+#        与 R2(禁 Java.type) 词表不同是有意为之，别"统一词表"误杀合法实现。反向依赖要求真 load( 调用，避免命中注释里的路径名。
+$coreFiles = @('metadata.js', 'relation.js', 'serializer.js')
+Get-ChildItem "$root\semantic" -Recurse -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
+  if (Select-String -Path $_.FullName -Pattern 'com\.fr\.|ActivatorToolBox|SimpleWork|DatasourceManager' -Quiet) {
+    $viol += "R7a semantic/$($_.Name) 含 FR 依赖（com.fr./激活链）"
+  }
+  if (Select-String -Path $_.FullName -Pattern "load\([^)]*lib/(object|cpt|ir)\.js" -Quiet) {
+    $viol += "R7a semantic/$($_.Name) 真 load 了后端三件"
+  }
+  if ($coreFiles -contains $_.Name -and (Select-String -Path $_.FullName -Pattern 'Java\.type' -Quiet)) {
+    $viol += "R7b semantic core/$($_.Name) 出现 Java.type（零运行时依赖红线，等同 R2）"
+  }
+}
+
 if ($viol.Count -gt 0) {
   Write-Host 'BOUNDARY VIOLATIONS:'
   $viol | ForEach-Object { Write-Host "  $_" }
   exit 1
 }
-Write-Host 'BOUNDARIES OK (R1-R6 clean)'
+Write-Host 'BOUNDARIES OK (R1-R7 clean)'
 exit 0

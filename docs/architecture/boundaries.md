@@ -18,6 +18,9 @@
 ├────────────────────────────────────────────────────────┤
 │ Runner  make_api.js（v3）/ make_report.js（v2 对照）     │  流程编排，不实现业务细节
 │ 工具    tools_*.ps1 / scripts/check-boundaries.ps1      │
+├────────────────────────────────────────────────────────┤
+│ 语义层  semantic/schema/（I2，独立旁路，不在主链上）      │  只依赖 java.sql+dbpass+纯 JS；换引擎可整体复用
+│   inspector.js(唯一触库薄壳) → metadata/relation/serializer(core 零运行时依赖) → data/schema_*.json │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -45,7 +48,7 @@ runner 改走门面 = ABR-2 触发器（届时 R6a 断言与本图同步下移�
 - `lib/browser.js` = ABR-1 兼容垫片（唯一豁免），真实模块 = `features/data_browser/browser.js`。
 - Feature 只产出报表规格；不初始化 FR、不执行、不导出。
 - Runtime 只初始化环境/注册连接；不含报表业务知识。
-- 默认路径检查工具：`scripts/check-boundaries.ps1`（R1–R6，R6 = Runner 接线断言）。
+- 默认路径检查工具：`scripts/check-boundaries.ps1`（R1–R7，R6 = Runner 接线断言，R7 = 语义层独立边界）。
 
 ## 环境变量口子（职责分离）
 

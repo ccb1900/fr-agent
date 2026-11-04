@@ -7,6 +7,7 @@ var ROOT = J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent';
 var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/runresult.js',
   'lib/report_spec.js', 'lib/spec_validator.js', 'lib/spec_compiler.js',
   'semantic/schema/metadata.js', 'semantic/schema/relation.js', 'semantic/schema/serializer.js',
+  'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
   'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;
 FILES.forEach(function (f) {

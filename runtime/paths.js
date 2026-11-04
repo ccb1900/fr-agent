@@ -32,6 +32,7 @@ var Paths = (function () {
     lib: function (name) { return join(root, 'lib/' + name); },
     feature: function (dir, name) { return join(root, 'features/' + dir + '/' + name); },
     runtime: function (name) { return join(root, 'runtime/' + name); },
+    semantic: function (rel) { return join(root, 'semantic/' + rel); },   // I2 语义层（schema/…），纯路径解析
     spec: function (rel) { return join(root, rel); },        // REPORT_SPEC 同语义：root 相对
     data: function (name) { return join(root, 'data/' + name); },
     // FR 环境落点

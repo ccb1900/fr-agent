@@ -48,6 +48,9 @@ D:\fineagent\
   logs\      ← 运行日志（*_run.txt）、结果栅格 dump（*_grid.txt）、普查表、临时脚本——只增不改，可随时清空
   shots\     ← 渲染 PNG / 裁切 / 像素 diff 热图（人工过目材料）
   verify_png\← 官方 demo 全量普查 PNG（make_verify.js 产物，证据勿删）
+  semantic\  ← I2 语义层（独立旁路，只依赖 java.sql+dbpass+纯 JS）：schema/{inspector(唯一触库),metadata,relation,serializer,inspect_main} → data\schema_*.json
+  schemas\   ← I1 ReportSpec 声明式机器契约（report-spec.schema.json；权威执行者=lib/spec_validator.js）
+  examples\  ← I1 report-spec/*.json（等价靶 sales_demo.json 等）
 ```
 
 注意：
@@ -372,3 +375,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **契约文档化**：`schemas/report-spec.schema.json`=声明式机器契约（draft-07 形态，x-* 标注拒项；**认知留痕：Nashorn 运行期无 JSON-Schema 校验库，权威执行者=spec_validator.js，schema 是它的可读镜像，二者须同步演进**——与 ir.js 手写校验同先例）；`examples/report-spec/sales_demo.json`=等价靶；playbook 新增 §3.5 JSON 入口+§2 三路径+尾注。
 - **r2 I1 验收对照**：① sales_demo.js 照旧可用（路径未动+负门回补铁证）② JSON ReportSpec 生成同等报表（字节级相等）③ 无需 Nashorn 代码（纯 JSON）④ 无效 Spec 结构化错误（exit2+CODE@path）⑤ 同一 Spec 多次执行稳定（compile 纯函数+幂等断言+引擎 JSON 全等）。scan_all_specs 42/43 照旧、R1–R6 绿（新 lib 零运行时依赖方向合规）。
 - **诚实边界/仍开放**：v1 词汇= sum-only，filters/chart/semantic query/非 sum 聚合为**设计留白**（结构化拒，非遗忘），I2 Schema Inspector + I3 Semantic Model 落地后逐项开闸；列宽反算（AGENTS §2）不在 I1 重建（widthPt 由 spec 透传，交付级排版仍走人工红线）；`?` 绑定工单不变。
+
+#56 r2.md I2「Schema Inspector 数据库结构检查器」落地批（2026-11-04，I1 验收后按"前一迭代验收过再开下一迭代"推进；用户拍板两口径：**DatabaseMetaData 机制**（本仓零先例，JDBC 标准、引擎无关，贴合"换库可复用"初衷）+ **v1 纯结构不采样**（r2 §2.3 采样本就默认关，且现 db_laser_tables.json 把业务样本写进 JSON 恰是 §2.3 反例）；semantic/ 是 ABR-1 规则真空区，先登记再动码）：
+- **W0 实机定性探针（先证据后设计，AGENTS §5）**：`probes/probe_metadate.js`（runraw 跑，classpath 含 mssql-jdbc，不杀 java/不启 FR/只读元数据）实测演示库(SQL Server 15.00/JDBC 9.4.1) DatabaseMetaData 能力面+关键未知数"库里有无 PK/FK"，落 `data/schema_probe_truth.txt`（sanitized 零凭据）。硬结论：**26 表、25 有 PK（50 列，典型 (file_key,row_number)）、FK=0 全库**（推摇"可能无 PK"猜测、证实"多半无 FK"）、`COLUMN_SIZE`=字符长(nvarchar 4000) vs `sys.max_length`=字节(8000)=归一取前者解旧画像字节-vs-字符陷阱、`getIndexInfo` 含 INDEX_NAME=null 统计伪行须滤、`getCatalog` 非 DatabaseMetaData 方法（护栏修）。此 truth 是 W1/W2 设计与 I3 语义层的一手底座。
+- **W1 纯函数三件（零 java，离线可测）**：`semantic/schema/metadata.js`（列/键归一：IS_NULLABLE→bool、DATA_TYPE 有限整数、ordinal 升序、COLUMN_DEF null 不折串，沿用 I0-01 `{code,path,message}` 抗炸；**刻意不掺 num/cent 业务 kind**=派生语义归 I3）+ `relation.js`（r2 §2.2 三分桶硬隔离：structural=PK事实 / fk=getImportedKeys 两端列齐才入 / unconfirmedNaming=file_key→laser_files 命名推导候选 `requires_confirmation` 永不进事实·FK 桶）+ `serializer.js`（表名排序+确定序+relations 三键；toJson 前 assertClean 递归扫 key/value 命中 password/url/jdbc/:// 即抛拒落盘=I0-04 凭据纪律的 schema 面镜像；v1 无采样字段非法态不可表达）。`verify/fast_schema.js` 22 项对拍 W0 真实行形态全绿。
+- **W2 inspector 薄壳+入口+实机产出对拍**：`inspector.js`（唯一触 `java.sql`，DatabaseMetaData typed getter 边界一次抽原生行→交零-java 核心；滤 W0 实测统计伪行）+ `inspect_main.js`（runraw 入口，env 覆盖默认演示库+dbpass 单源，UTF-8 落 `data/schema_<source>.json`，机器摘要 print 零凭据）。实跑=26表/25PK/0FK/27命名推导/0归一错（吻合 W0）。`verify/verify_schema_profile.js`（数据纪律 §4，纯 JDK 无引擎）schema↔`db_tables_profile.txt` **489 列逐列 dtype/nullable 零偏差**、FK=0、structural 非空、命名推导全 requires_confirmation、输出无 password——限 laser_ 表集（排 profile 内 zprobe 临时表）全绿。
+- **W3 ABR-1 登记**：`runtime/paths.js` 加 `semantic()` 访问子（纯路径解析）；`scripts/check-boundaries.ps1` 新增 **R7**（R7a semantic 禁 com.fr./激活链/真 load 后端三件，**词表刻意不含裸 `Java.type`**——与 R2 不同是有意，防"统一词表"误杀 inspector 的 java.sql，注释写死理由；R7b core 三件禁 Java.type=零运行时依赖红线等同 R2）；`dependency-rules.md` 允许表+禁止表 R7a/R7b+事实契约 `SchemaInspector`/`Paths.semantic()`；`boundaries.md` 插语义层旁路带；AGENTS §4（画像权威源升级：`data/schema_*.json`=机器直查一级、txt=历史参照，verify 持续对拍）+§6；README 目录结构三新目录。踩坑留痕：R7a 首版把"注释里提到 lib/ir.js"和"load runtime/paths.js"误判反向依赖——收紧为「真 `load(` 后端三件」且 runtime 助手/dbpass 属允许面。
+- **r2 I2 验收对照**：① 真实 SQL Server 源→完整准确结构描述（26 表全要素：类型/长度/可空/PK/索引，489 列对拍零偏差）② 三态严格区分（结构事实 PK / FK 推导=本库实测空 / 未确认业务关系=命名推导 27 条带 requires_confirmation，桶间硬隔离，置信度只排序不替代确认=r2 §3.3）③ 只读 SQL Server 优先、Adapter 面靠 DatabaseMetaData 天然方言无关但不建未验证驱动 ④ 采样=设计不做（§2.3 默认关）。终验：fast **7 套件** GREEN、**R1–R7** GREEN、scan_all_specs 42/43 照旧、schema↔profile 对拍 GREEN。
+- **仍开放**：视图/索引已在结构事实面覆盖但演示库 0 视图；生产库画像（`SCHEMA_URL` 指生产+生产连接）留待有环境时一键复跑（机制已通，非缺码）；I3 Semantic Model 消费本 schema 建业务语义（把 unconfirmedNaming 逐条转确认关系）；gen_laser_specs 从私有画像迁到标准 schema = I5 创作闭环期。

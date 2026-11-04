@@ -46,7 +46,7 @@ run.ps1 -Script make_api.js
 
 ## 4. 数据纪律（不臆造）
 
-- 列名/类型/格式一律照抄 `data/db_tables_profile.txt` 与 `data/db_br_truth.txt` 的直查画像；fmt 逐列从样本推导（同列唯一）
+- 列名/类型/格式一律照抄**机器直查画像**：`data/schema_<source>.json`（I2 Schema Inspector 产，结构事实级：类型/可空/PK/FK 三分桶，`runraw.ps1 -Script semantic/schema/inspect_main.js` 重生成）为一级权威；`data/db_tables_profile.txt` / `data/db_br_truth.txt` 为历史真值参照（I2 前的手工画像，verify_schema_profile 持续对拍）；fmt 逐列从样本推导（同列唯一）
 - 真值对拍用 probe 直查同一条 SQL（如 probe_dbtruth2.js），栅格 dump（RESULT_DUMP）逐格等值
 - 凭据只在本机 spec 的 connections 段；交付前 grep 部署 cpt：`whmeiko|password` 必须 0 命中——**自 README #54 起管线有凭据自动门**（make_api §5.9：deploy 后扫部署件，命中密钥 token 即撤回+deploy failed+非零退出），人工纪律降为兜底；SQL 数据集受只读闸（单语句 SELECT/WITH、禁 `;`），浏览器族表/列名受标识符白名单闸（README #54 I0-04）
 
@@ -68,6 +68,7 @@ run.ps1 -Script make_api.js
 - **数据类型（I0-05）**：embedded 列词表 text/string/number/integer/long/float/decimal/boolean/date/datetime（object.js DS_JTYPE，probe_typemap 实机证保真）；行值形态 ir.js checkRowValue 逐格闸；legacy number=硬转 Integer 不变
 - 浏览器族 24 张（演示 25 含备份表/生产 24 无备份表），统一 SQL 分页 + 面板翻页；机台过滤 + 按天 TOP 参照 README #38–44
 - **ReportSpec JSON 入口（2026-11-04 I1，README #55）**：`REPORT_SPEC=*.json` → make_api.js §0 后缀分支 → `lib/report_spec.js`(词汇/能力名册)+`lib/spec_validator.js`(校验，沿用 I0-01 {code,path,message})+`lib/spec_compiler.js`(→现有 ReportIR) → 包 `SPEC={outName,IR}` 复用 rawIR 直通路；v1 sum-only（dimensions/metrics(sum)/内嵌 rows/table+showTotal），filters/chart/semantic query/非 sum 聚合=v1 结构化拒（指向 I2-I5）；`schemas/report-spec.schema.json` 是声明式镜像、`spec_validator.js` 是权威（Nashorn 无 JSON-Schema 库）；旧 .js spec 路径一行不动。等价铁证：sales_demo.json 产出与 sales_demo.js 逐字节相等（CBEB42E3/A8EF39AB）；引擎负门含 json-bad-spec 第 5 路
-- **ABR-1 边界（2026-11-03）**：一级结构 = reports → features/data_browser → lib(核心三件) → runtime(Paths/bootstrap/datasource) → runner 编排；依赖规则 `docs/architecture/dependency-rules.md`（R1–R5，`scripts/check-boundaries.ps1` exit 0 才干净）；lib/browser.js 为兼容垫片唯一豁免；lib/ir.js 零运行时依赖红线
+- **ABR-1 边界（2026-11-03，I2 扩 R7）**：一级结构 = reports → features/data_browser → lib(核心三件) → runtime(Paths/bootstrap/datasource) → runner 编排；**语义层 semantic/schema/（I2）= 独立旁路**（只依赖 java.sql+dbpass+纯 JS，换引擎可复用）；依赖规则 `docs/architecture/dependency-rules.md`（**R1–R7**，`scripts/check-boundaries.ps1` exit 0 才干净；R7 词表刻意不含裸 Java.type，与 R2 不同是有意的）；lib/browser.js 为兼容垫片唯一豁免；lib/ir.js 零运行时依赖红线
+- **Schema Inspector（2026-11-04 I2，README #56）**：`semantic/schema/{metadata,relation,serializer}.js`（core 零 java）+ `inspector.js`（唯一触 java.sql 薄壳）+ `inspect_main.js`（runraw 入口，不杀 java/不启 FR/只读元数据）→ `data/schema_<source>.json`（无凭据）。r2 三分桶**实机坐实**：演示库 26 表 25 有 PK、**FK=0** → 结构事实(PK)/FK推导(空)/未确认命名推导(file_key 等, requires_confirmation)三态硬隔离；COLUMN_SIZE 取字符长口径解旧画像字节-vs-字符陷阱；`verify/fast_schema.js`(22)+`verify/verify_schema_profile.js`(489 列 dtype/nullable 对拍 profile txt) 双门；采样不做（r2 §2.3 默认关）。下一站 I3 语义模型建在其上
 - 基线铁证（2026-11-04 I0 批逐单元复验，逐字节）：demo_api.cpt = CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png = A8EF39AB648D5F00DDAE0481D0313110、v2 demo_template_final.cpt = 6161F402B340321B4ABF68B68E301828；br 六连栅格 + prod staging 24 张字节级基线副本在 logs\abr1_baseline*（PDF 含 CreationDate 非确定项，不作铁证）
 - **I1 后仍开放（不装完成）**：`?` 值绑定接线（浏览器族 SQL 全参数化，会改 24 张 SQL 文本+重录基线，工单待排）；r2.md **I2~I6**（Schema Inspector/Semantic Model/Planner/NL 闭环/Template Patch）按"前一迭代验收过再开下一迭代"推进——I0（可靠性）+I1（ReportSpec 接口）已验收，下一站 I2；I1 v1 留白（filters/chart/非 sum 聚合/dataset.query semantic）待 I2/I3 接管
