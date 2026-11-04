@@ -283,3 +283,15 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **治本建议（用户侧，未自动执行）**：①不用 WSL 时 `wsl --shutdown` 立回收 ~7.7GB；需要常驻则在 `%UserProfile%\.wslconfig` 设 `[wsl2] memory=3GB`；②页文件迁 D 盘加大（D 盘空 60G）：sysdm.cpl → 性能设置 → 虚拟内存 → C: 关小、D: 自定义 16384–32768 → 重启，额度升 ~50G；③闲置 ZCode 会话窗口关掉几个。
 - **真实环境回归（经 -Xmx1200m，run.ps1 全新链路）**：默认路径重跑 failures=0、EXPECTED TOTAL=26420、ROUNDTRIP ASSERT PASS、PNG/PDF 出图；demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 逐字节复原。
 - **README #28–#35 乱码段修复（本日，commit 5073c15）**：中文被批量置换 U+FFFD 且入库前既有，四通道反演不可逆（probes/_readme_moji_probe1–5 定性）；按幸存 ASCII 锚点逐字保真 + 工件交叉校验（make_verify.js 源码、logs/verify_table.txt 普查实测 selfOK=153/renderOK=221/renderMismatch=19/readFail=21/total=261、部署实名、frdemo dump 列名）存证重描，失考段显式标注；字节级拼接写回（前段 13933B=DC27BF37…、后段 21120B=8E0B8BFB… 改写前后一致），破损原件备份 logs/README.md.fix_backup_20261103。基线口径提示已入段落尾注：#28–#35 所记 101700BB/E2391200 为 2026-10-26 当期基线，现行见 AGENTS.md。
+
+
+#48 外部审计修复批（2026-11-04，用户拍板 A+B 一批全修、URL 口径=仅相对路径）：
+- **静态审查五连指控全属实并修复**（来源=第三方源码审计，行号级核实）。
+- **P1 validate 两段式重构（lib/ir.js）**：结构层（容器/必填/类型——缺容器短路返回，validator 永不再被无效 IR 自炸，审计 P1-2）+ 语义层（跨对象引用完整性，审计 P1-3）：block/chart `dataset ∈ IR.datasets`；chart category/value/values/scatter x/y 列成员校验（kind=sql 数据集列运行期可变→自动豁免）；cells item 对象形态数据集真绑定名=`it.ds.ds||b.dataset`（字符串形态属历史遗留语义，object 层零回归、ir 层不断言）；param `filters.parameter ∈ widgets[].name`、`f.column ∈ 任意内嵌数据集列`。
+- **detail.link 校验不可达修复（审计 P1-1，最重档）**：原校验困在 chart 分支 `if (b.type !== 'chart') return` 之后的 `detail` 分支——永不可达；现独立成段，drill/subtotal 真实 link 规格过新校验零误报。
+- **make_api：IR 校验失败即停（审计 P1-4）**：打印全部 IR ISSUE 后 **EXIT 9**，不再调用 Obj.build 半成品。退出码序：2 SPEC 缺失 / 4 testConnection / 5 rowControl / 8 提交额度预检 / **9 IR VALIDATE FAILED**。
+- **multi-sheet 口径**：IR 形态允许多 sheets、backend 单 sheet（object.js v3.2 预留 throw 受实查证）——validate 即报 `multi-sheet unsupported`；能力注记 **multi-sheet: unsupported（backend 预留）**。
+- **安全三端口（批 B）**：① nav JavaScriptImpl 拼接链与 iframe 嵌页目标**仅相对路径**——ir.js isRelUrl 验形态 + object.js checkRelUrl 强制（scheme:// 全拒、反斜杠/引号/分号/反引号/换行拒；cells linkTo.web/web 走原生 WebHyperlink.setURL 非 JS 拼接，无此端口）② toolbar `b.className` 逃生口**移除**——只认 TOOLBAR_BUTTONS 白名单键（ir 层 TOOLBAR_KEYS 同步同报）③ `floats.imageFile` 路径**钳制在 FR_AGENT_HOME**（checkLocalPath：禁 .. 穿越与外部绝对路径）。现网 49 spec 的 className/imageFile 使用 = 0，收紧零漂移。
+- **ABR-1 收尾**：make_api `localCpt = 'D:/fineagent/demo_api.cpt'` 硬编码 → `Paths.root` 拼接（本机默认值不变=零漂移）；lib/browser.js 垫片 Nashorn 分支走 FR_AGENT_HOME、Node 分支修正 `../features/data_browser/`（原路径必 404；管线 49 spec 走 Paths.feature，垫片仅服务旧第三方 load）。
+- **回归**：负测试（logs/_bad_ir_test.js）7 项诊断全命中 + `IR VALIDATE FAILED: refusing to build`；正回归 7 连（默认+db_laser_subtotal+db_laser_drill+br_laser_aaa+rebuild_first+test_cellattrs+test_v41）全 failures=0；默认铁证 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 逐字节复原；R1–R6 全绿。
+- 校准事故（诚实留痕）：首版 cells item 数据集断言按字符串形臆造 → br/subtotal 6 项 `[object Object]` 误报（exit 9 按设计落地=拦截生效）；读 object.js 568–581 + putDSCell 定位真实绑定语义后校准修正，再全绿。教训升格：**ir 层新增断言前必须先读 object 层字段的真实消费语义**，不许凭审查文字臆写。

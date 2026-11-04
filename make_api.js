@@ -68,7 +68,12 @@ try {
   var IR = Ir.compile(SPEC);
   var irErrs = Ir.validate(IR);
   check('IR VALIDATE (blocks/datasets 结构)', irErrs.length === 0);
-  if (irErrs.length) irErrs.forEach(function (e) { stamp('IR ISSUE: ' + e); });
+  if (irErrs.length) {
+    irErrs.forEach(function (e) { stamp('IR ISSUE: ' + e); });
+    // 审计批 A（README #48）：IR 校验失败即停——保留全部诊断，不产出不合格中间产物。EXIT 9 = IR VALIDATE FAILED
+    stamp('IR VALIDATE FAILED: refusing to build');
+    J('java.lang.System').exit(9);
+  }
   built = Obj.build(IR);
   stamp('ASSEMBLED: styles=' + built.styleCount + ' totalCol=' + built.totalCol + ' rows=' + built.sheets[0].rows);
 } catch (e) {
@@ -81,7 +86,7 @@ var wb = built.wb;
 var Files = J('java.nio.file.Files');
 
 // ---------- 3. 导出产物 cpt（FR 自序列化）+ v2 校验器过回归门 ----------
-var localCpt = 'D:/fineagent/demo_api.cpt';
+var localCpt = Paths.root + '/demo_api.cpt';   // ABR-1 路径单点（外部审计批 A：原硬编码绝对路径）
 try {
   var osC = new (J('java.io.FileOutputStream'))(localCpt);
   wb.export(osC); osC.close();
