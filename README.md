@@ -581,3 +581,9 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **ChartHyperRelateCellLink（18）**：挂接点在图表热链（chart 级 setHyperLink 面未探完），随地图批。
 - **门禁**：fast 13 GREEN、scan 48、默认 CBEB42E3 逐字节；coverage missing 92→91。
 
+
+#80 批J 聚合报表 Poly 定性 + demo 车道阶段收官（2026-11-05）：
+- **Poly 一手定性**：PolyWorkSheet/PolyECBlock 可构造（env 后），**PolyWorkSheet instanceof TemplateReport——wb.addReport(poly) 通路存在**；但块构建面（AbstractPolyECBlock 网格 API）未探全、demo 仅 5 处语料、渲染走独立聚合链——按不硬凑挂账（通路已证，块面 API 到手即收）。
+- **阶段收官账**（批 0/A/B/C/D/E/F/G/H/I/J 全过一遍）：coverage missing **135→91**（223 类账本）；落库批次=0/A/B/C/D/E/F/G/I（8 批实现）+H/J（定性挂账 2 批）；**诚实登记渲染端待达/挂账清单**：批 B stack 渲染/label 显示/条件系列色、vpie 图例 4 见 3、批 F WriteActor DML 真提交/Verifier 家族/多格 ColumnRowGroup、批 H SortHeader 语料、批 I vmap GIS 底图/极端图族/ChartHyperRelateCellLink、批 J Poly 块面、批 D Database|DynamicSQLDict 凭据注入批——全在 coverage.md 缺口账+README 对应条目。
+- **终局门禁（十载体连跑 + 全套）**：test_hla2/vanchart/pagehf/dict2/jsev/write/g/cellattrs/widgets/types **10/10 failures=0**；fast 13 GREEN、scan 48（47+1）、负门 5 路 GREEN、R1–R8、默认双铁证 CBEB42E3/A8EF39AB 逐字节。
+
