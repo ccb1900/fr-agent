@@ -51,6 +51,11 @@ check('总计块含 SUM(base) + ratio 引用总计行', (function () {
   var fm = tot.items.filter(function (i) { return i.formula; }).map(function (i) { return i.formula; });
   return fm.some(function (f) { return /SUM\(/.test(f); }) && fm.some(function (f) { return /\*100\//.test(f.replace(/\s/g, '')); });
 })());
+check('模型指标 format 流到 ratio 格（I5 子代理发现并修的展示层 gap）', (function () {
+  var detail = ir.sheets[0].blocks.filter(function (b) { return b.dataset === 'ds1'; })[0];
+  var rate = detail.items.filter(function (i) { return i.formula; })[0];
+  return !!rate && rate.st && rate.st.format === '#,##0.00';
+})());
 check('sql IR 确定序 + 输入不可变', (function () {
   var snap = JSON.stringify(spec);
   var a = JSON.stringify(SpecCompiler.compile(spec, { model: model, SqlBuilder: SqlBuilder }));

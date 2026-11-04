@@ -1,0 +1,17 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "激光生产日报（计划 / 完成 / 完成率）",
+    "description": "统计 2026-09-13 至 2026-09-22 每日：计划数=当天有效评分记录数（planned/COUNT），完成数=评分≥0.9 记录数（done），完成率=完成/计划×100 百分比（completionRate）；按业务日期分行，末行总计。仅声明模型实体/维度/指标 + 日期范围，SQL 由 semantic/query/sqlbuilder 依 models/production/model.json 生成。"
+  },
+  "outName": "生产日报_自动",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}

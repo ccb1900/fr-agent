@@ -16,6 +16,8 @@
 | semantic/schema/* → java.sql + lib/dbpass.js + runtime/paths.js | I2 语义层：inspector 薄壳用 java.sql 直连元数据；入口经 dbpass 取凭据、Paths 解析路径（皆非后端） |
 | semantic/model/* → models/**/*.json（声明式业务模型，数据非代码）+ I2 schema JSON | I3 语义模型：core 四件零 java，吃 model.json + I2 schema 做结构校验+回溯性+术语解析；不接生成链（I4/I5 域） |
 | semantic/planner/* →（**注入**，不 load）I3 ModelResolver + I1 SpecValidator + ReportSpec 词表 | I4 planner：纯函数编排（意图→ReportSpec+假设/追问/警告），零 load/零 Java/零 com.fr 满足 R7；能力判定/合法性一处真相复用 I1/I3，不重造 |
+| semantic/query/sqlbuilder.js → models/**/*.json（模型语义） | I5 模型→SQL 生成器：只把 model 已声明的维度/指标 expression 编译成受控 SQL（禁自由文本），纯函数零 java；生成 SQL 过 ir.js SQL_READONLY |
+| semantic/closure/loopguard.js → 无（纯函数，判决入参） | I5 闭环守卫：把 RunResult 判决翻成 done/retry/reject（§5.2 五上限），零依赖、可喂 fake 证伪；不改代码/真值 |
 
 ## 禁止的依赖
 
@@ -43,6 +45,8 @@
 | SchemaInspector | inspect({url,user,password,like,source}) → {source,dialect,tables[],relations{structural,fk,unconfirmedNaming},errors[]}（I2；行对象抽入后由零-java 核心 SchemaMeta/SchemaRelation/SchemaSerializer 处理） |
 | SemanticModel（I3，零 java core 四件） | ModelVocab.capabilities() / ModelRegistry.index(model) / ModelValidator.validate(model,i2Schema)→{code,path,message}[] / ModelResolver.resolve(idx,term)→{status:resolved|ambiguous|unknown,candidates[],requiresConfirmation}——独立于 FineReport，只吃模型 JSON + I2 schema；不接生成链 |
 | ReportPlanner（I4，零 java core） | ReportPlanner.plan(intent,{resolve,validateSpec,capability,caps})→{status:ready\|ambiguous\|rejected, reportSpec\|null, assumptions[], unresolvedQuestions[], validationWarnings[]} + PlannerCapability.classify*；外部件全经 ctx 注入，自身零 load |
+| SqlBuilder（I5，零 java） | build(model, sel{entity,dimensions,metrics,dateRange}) → {sql, baseAliases[], derived[], groupDims[], errors[]}；模型指标→受控单语句 SQL（ratio 不入 SQL） |
+| LoopGuard（I5，零 java） | nextAction(result,state,caps{maxFixCount,deadlineMs,modifiableFields}) → {action:done\|retry-fix-spec\|reject, attempt, fixTargets[], reason} |
 
 ## 垫片政策
 
