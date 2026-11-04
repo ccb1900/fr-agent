@@ -1,0 +1,5695 @@
+{
+ "specVersion": "1",
+ "source": "atom_live_demo",
+ "dialect": {
+  "product": "Microsoft SQL Server",
+  "productVersion": "15.00.4490",
+  "driver": "Microsoft JDBC Driver 9.4 for SQL Server",
+  "driverVersion": "9.4.1.0"
+ },
+ "capturedAt": null,
+ "tables": [
+  {
+   "name": "laser_aaa",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "result_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "result_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "workpiece_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "workpiece_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_seq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_seq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "machine_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "machine_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "size",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "score",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_aa__9E842E84468DBF06",
+     "table": "laser_aaa"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_aa__9E842E84468DBF06",
+     "table": "laser_aaa"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_aaa_gosa",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_aa__9E842E849162FE6C",
+     "table": "laser_aaa_gosa"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_aa__9E842E849162FE6C",
+     "table": "laser_aaa_gosa"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_alm_log",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "caption",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "alarm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_al__9E842E84C8206F71",
+     "table": "laser_alm_log"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_al__9E842E84C8206F71",
+     "table": "laser_alm_log"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_cnd_selct",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "prog_path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "output_power",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "frequency",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "pulse_width",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "pulse_class",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "speed",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "pulse_count",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no2",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "b_c",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "g",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "collimator_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "base_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "cur_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "base_energy",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_freq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "tolerance",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_cn__9E842E84AF9DA33D",
+     "table": "laser_cnd_selct"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_cn__9E842E84AF9DA33D",
+     "table": "laser_cnd_selct"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_energy_measure",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "base_energy_mj",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "tolerance_pct",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "zl_measured_energy_mj",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "zr_measured_energy_mj",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_en__9E842E847C3E0D4A",
+     "table": "laser_energy_measure"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_en__9E842E847C3E0D4A",
+     "table": "laser_energy_measure"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_files",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "source_id",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 128,
+     "decimalDigits": null,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "collection_date",
+     "jdbcType": 91,
+     "typeName": "date",
+     "length": 10,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "file_id",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 512,
+     "decimalDigits": null,
+     "nullable": false,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 1000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "name",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 255,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "records",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "header",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "collected_at",
+     "jdbcType": 93,
+     "typeName": "datetime2",
+     "length": 27,
+     "decimalDigits": 7,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "source_id",
+     "seq": 1,
+     "name": "PK__laser_fi__55D69A573CA584B8",
+     "table": "laser_files"
+    },
+    {
+     "column": "collection_date",
+     "seq": 2,
+     "name": "PK__laser_fi__55D69A573CA584B8",
+     "table": "laser_files"
+    },
+    {
+     "column": "file_id",
+     "seq": 3,
+     "name": "PK__laser_fi__55D69A573CA584B8",
+     "table": "laser_files"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_files_bak_20261020",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "source_id",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 128,
+     "decimalDigits": null,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "collection_date",
+     "jdbcType": 91,
+     "typeName": "date",
+     "length": 10,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "file_id",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 512,
+     "decimalDigits": null,
+     "nullable": false,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 1000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "name",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 255,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "records",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "header",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "collected_at",
+     "jdbcType": 93,
+     "typeName": "datetime2",
+     "length": 27,
+     "decimalDigits": 7,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_files_file_key_seq",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "name",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "next",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "name",
+     "seq": 1,
+     "name": "PK__laser_fi__72E12F1A8D296486",
+     "table": "laser_files_file_key_seq"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_galv_mask_measure",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "mode",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "tol_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "zl_max_err_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "zl_max_err_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "zl_max_err_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "zr_max_err_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "zr_max_err_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "zr_max_err_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_ga__9E842E846335651A",
+     "table": "laser_galv_mask_measure"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_ga__9E842E846335651A",
+     "table": "laser_galv_mask_measure"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_glv_cnd_send",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "r8162",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "r8145",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "r8144",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "r8146",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "r8147",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "r8159",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "r8156",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "r8148",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "warning",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "err",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "ref_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "ref_l",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "gain_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "r8163",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_gl__9E842E84D3EF4122",
+     "table": "laser_glv_cnd_send"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_gl__9E842E84D3EF4122",
+     "table": "laser_glv_cnd_send"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_length",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "comp_points",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "length_15",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "length_16",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "length_17",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "length_18",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "length_19",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "length_20",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "error_msg",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "length_max_err",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_rate_min",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_rate_max",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_le__9E842E84B00630CF",
+     "table": "laser_length"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_le__9E842E84B00630CF",
+     "table": "laser_length"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_m307",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "output_power",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "frequency",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_out",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "check_out",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "gain",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "bias",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "beam_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "blower_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "ready_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "judgement",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_m3__9E842E8424D2F49A",
+     "table": "laser_m307"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_m3__9E842E8424D2F49A",
+     "table": "laser_m307"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_m370",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "camera_type",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_z",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_m3__9E842E8408740A0D",
+     "table": "laser_m370"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_m3__9E842E8408740A0D",
+     "table": "laser_m370"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_m377",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "r_xerr",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "r_yerr",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "r_circularity",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "l_xerr",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "l_yerr",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "l_circularity",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "light_a_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "light_b_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "light_a_l",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "light_b_l",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_m3__9E842E8415C794FA",
+     "table": "laser_m377"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_m3__9E842E8415C794FA",
+     "table": "laser_m377"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_mainte1",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "clear_item",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "clear_count",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_ma__9E842E847BAC48D0",
+     "table": "laser_mainte1"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_ma__9E842E847BAC48D0",
+     "table": "laser_mainte1"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_mask_gosa",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "max_err_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_ma__9E842E840D74BBC9",
+     "table": "laser_mask_gosa"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_ma__9E842E840D74BBC9",
+     "table": "laser_mask_gosa"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_pc_direct",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "prog_path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "size",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "search_method",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "result_summary",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "result_detail",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_pc__9E842E84AA8406DA",
+     "table": "laser_pc_direct"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_pc__9E842E84AA8406DA",
+     "table": "laser_pc_direct"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_proc_state",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "prg_filename",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "start_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "end_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "proc_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "end_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "via_hole",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "utility_hole",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "proc_hole_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "proc_hole_l",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "total_proc_hole_r",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "total_proc_hole_l",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "total_shot",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_pr__9E842E84159BE926",
+     "table": "laser_proc_state"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_pr__9E842E84159BE926",
+     "table": "laser_proc_state"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_pwr",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "output_power",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "frequency",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "base_energy",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "judgement",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "tolerance",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "collimator_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "base_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "cur_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no2",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "gain",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "bias",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "beam_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "blower_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "ready_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_freq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 23,
+     "defaultValue": null
+    },
+    {
+     "name": "freq_limit",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 24,
+     "defaultValue": null
+    },
+    {
+     "name": "shot_group",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 25,
+     "defaultValue": null
+    },
+    {
+     "name": "display_freq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 26,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 27,
+     "defaultValue": null
+    },
+    {
+     "name": "pulse_class",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 28,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_pw__9E842E8464435B42",
+     "table": "laser_pwr"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_pw__9E842E8464435B42",
+     "table": "laser_pwr"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_pwrmulti",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "output_power",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "frequency",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "base_energy",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "tolerance_pct",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_range_pct",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "judgement",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_1",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_2",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_3",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_4",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_5",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_6",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_7",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_8",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_9",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_10",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 23,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_11",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 24,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_12",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 25,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_13",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 26,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_14",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 27,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_15",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 28,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_16",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 29,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_energy_17",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 30,
+     "defaultValue": null
+    },
+    {
+     "name": "collimator_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 31,
+     "defaultValue": null
+    },
+    {
+     "name": "base_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 32,
+     "defaultValue": null
+    },
+    {
+     "name": "cur_rate",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 33,
+     "defaultValue": null
+    },
+    {
+     "name": "mask_no2",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 34,
+     "defaultValue": null
+    },
+    {
+     "name": "gain",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 35,
+     "defaultValue": null
+    },
+    {
+     "name": "bias",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 36,
+     "defaultValue": null
+    },
+    {
+     "name": "beam_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 37,
+     "defaultValue": null
+    },
+    {
+     "name": "blower_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 38,
+     "defaultValue": null
+    },
+    {
+     "name": "ready_on_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 39,
+     "defaultValue": null
+    },
+    {
+     "name": "measured_freq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 40,
+     "defaultValue": null
+    },
+    {
+     "name": "freq_limit",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 41,
+     "defaultValue": null
+    },
+    {
+     "name": "shot_group",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 42,
+     "defaultValue": null
+    },
+    {
+     "name": "display_freq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 43,
+     "defaultValue": null
+    },
+    {
+     "name": "optical_path_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 44,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 45,
+     "defaultValue": null
+    },
+    {
+     "name": "pulse_class",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 46,
+     "defaultValue": null
+    },
+    {
+     "name": "retry_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 47,
+     "defaultValue": null
+    },
+    {
+     "name": "prg_start_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 48,
+     "defaultValue": null
+    },
+    {
+     "name": "prog_path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 49,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_pw__9E842E84AD0731DA",
+     "table": "laser_pwrmulti"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_pw__9E842E84AD0731DA",
+     "table": "laser_pwrmulti"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_sensor",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "dust_air",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "table_air",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "prg",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "block_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "r_stage_ftheta_temp",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "l_stage_ftheta_temp",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_se__9E842E8453B2BDE6",
+     "table": "laser_sensor"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_se__9E842E8453B2BDE6",
+     "table": "laser_sensor"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_sin_statis",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "manage_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_max_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_min_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_avg_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_std_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_max_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_min_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_avg_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_std_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_max_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_min_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_avg_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_std_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_max_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_min_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_avg_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 23,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_std_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 24,
+     "defaultValue": null
+    },
+    {
+     "name": "theta_max",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 25,
+     "defaultValue": null
+    },
+    {
+     "name": "theta_min",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 26,
+     "defaultValue": null
+    },
+    {
+     "name": "theta_avg",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 27,
+     "defaultValue": null
+    },
+    {
+     "name": "theta_std",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 28,
+     "defaultValue": null
+    },
+    {
+     "name": "sheet_count",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 29,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_si__9E842E84EECD9523",
+     "table": "laser_sin_statis"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_si__9E842E84EECD9523",
+     "table": "laser_sin_statis"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_sinsyuku",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "manage_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "serial_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_rate_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "stretch_rate_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "cond_file",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "status",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "error_msg",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "theta",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "manual_work_comp",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_proc_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "offset_proc_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "restart_status",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "stop_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "end_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_si__9E842E848A24A91F",
+     "table": "laser_sinsyuku"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_si__9E842E848A24A91F",
+     "table": "laser_sinsyuku"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_table",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "rz_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "rx_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "ry_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "lz_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "lx_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "ly_mm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "rz_ave",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "lz_ave",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "rz_range",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "lz_range",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "prog_path",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_ta__9E842E84F28F1185",
+     "table": "laser_table"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_ta__9E842E84F28F1185",
+     "table": "laser_table"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_twin_scale_dsp",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "Date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "Time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingAngleX",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingAngleY",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingOffsetXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingOffsetXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingOffsetYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "YawingOffsetYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchOrgIndexXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchOrgIndexXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchOrgIndexYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchOrgIndexYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMaxIndexXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMaxIndexXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMaxIndexYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMaxIndexYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMinIndexXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMinIndexXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 20,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMinIndexYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 21,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchMinIndexYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 22,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchScaleXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 23,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchScaleXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 24,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchScaleYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 25,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchScaleYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 26,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchSpaceXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 27,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchSpaceXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 28,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchSpaceYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 29,
+     "defaultValue": null
+    },
+    {
+     "name": "PitchSpaceYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 30,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndex0Xm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 31,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndex0Xs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 32,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndex0Ym",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 33,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndex0Ys",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 34,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndexXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 35,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndexXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 36,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndexYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 37,
+     "defaultValue": null
+    },
+    {
+     "name": "PicthIndexYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 38,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScaleValXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 39,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScaleValXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 40,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScaleValYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 41,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScaleValYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 42,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScalePulsUMXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 43,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScalePulsUMXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 44,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScalePulsUMYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 45,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearScalePulsUMYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 46,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 47,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 48,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 49,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 50,
+     "defaultValue": null
+    },
+    {
+     "name": "MachinePosXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 51,
+     "defaultValue": null
+    },
+    {
+     "name": "MachinePosXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 52,
+     "defaultValue": null
+    },
+    {
+     "name": "MachinePosYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 53,
+     "defaultValue": null
+    },
+    {
+     "name": "MachinePosYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 54,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearOrgVaXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 55,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearOrgVaXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 56,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearOrgVaYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 57,
+     "defaultValue": null
+    },
+    {
+     "name": "LinearOrgVaYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 58,
+     "defaultValue": null
+    },
+    {
+     "name": "RealValXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 59,
+     "defaultValue": null
+    },
+    {
+     "name": "RealValXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 60,
+     "defaultValue": null
+    },
+    {
+     "name": "RealValYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 61,
+     "defaultValue": null
+    },
+    {
+     "name": "RealValYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 62,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosBkXm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 63,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosBkXs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 64,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosBkYm",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 65,
+     "defaultValue": null
+    },
+    {
+     "name": "EncPosBkYs",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 66,
+     "defaultValue": null
+    },
+    {
+     "name": "TableCenterX",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 67,
+     "defaultValue": null
+    },
+    {
+     "name": "TableCenterY",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 68,
+     "defaultValue": null
+    },
+    {
+     "name": "TableCenterEncPosX",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 69,
+     "defaultValue": null
+    },
+    {
+     "name": "TableCenterEncPosY",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 70,
+     "defaultValue": null
+    },
+    {
+     "name": "Scalewx",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 71,
+     "defaultValue": null
+    },
+    {
+     "name": "Scalewy",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 72,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_tw__9E842E843E358855",
+     "table": "laser_twin_scale_dsp"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_tw__9E842E843E358855",
+     "table": "laser_twin_scale_dsp"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  },
+  {
+   "name": "laser_zaxis",
+   "schema": "dbo",
+   "type": "TABLE",
+   "columns": [
+    {
+     "name": "file_key",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 1,
+     "defaultValue": null
+    },
+    {
+     "name": "row_number",
+     "jdbcType": -5,
+     "typeName": "bigint",
+     "length": 19,
+     "decimalDigits": 0,
+     "nullable": false,
+     "ordinal": 2,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_date",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 3,
+     "defaultValue": null
+    },
+    {
+     "name": "biz_time",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 4,
+     "defaultValue": null
+    },
+    {
+     "name": "stage",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 5,
+     "defaultValue": null
+    },
+    {
+     "name": "result_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 6,
+     "defaultValue": null
+    },
+    {
+     "name": "result_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 7,
+     "defaultValue": null
+    },
+    {
+     "name": "workpiece_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 8,
+     "defaultValue": null
+    },
+    {
+     "name": "workpiece_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 9,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 10,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_seq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 11,
+     "defaultValue": null
+    },
+    {
+     "name": "main_prog_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 12,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_no",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 13,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_seq",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 14,
+     "defaultValue": null
+    },
+    {
+     "name": "sub_prog_block",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 15,
+     "defaultValue": null
+    },
+    {
+     "name": "machine_x",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 16,
+     "defaultValue": null
+    },
+    {
+     "name": "machine_y",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 17,
+     "defaultValue": null
+    },
+    {
+     "name": "size",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 18,
+     "defaultValue": null
+    },
+    {
+     "name": "score",
+     "jdbcType": -9,
+     "typeName": "nvarchar",
+     "length": 4000,
+     "decimalDigits": null,
+     "nullable": true,
+     "ordinal": 19,
+     "defaultValue": null
+    }
+   ],
+   "primaryKey": [
+    {
+     "column": "file_key",
+     "seq": 1,
+     "name": "PK__laser_za__9E842E842E3ADCB1",
+     "table": "laser_zaxis"
+    },
+    {
+     "column": "row_number",
+     "seq": 2,
+     "name": "PK__laser_za__9E842E842E3ADCB1",
+     "table": "laser_zaxis"
+    }
+   ],
+   "foreignKeys": [],
+   "indexes": []
+  }
+ ],
+ "relations": {
+  "structural": [
+   {
+    "table": "laser_aaa",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_aaa_gosa",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_alm_log",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_cnd_selct",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_energy_measure",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_files",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "source_id",
+     "collection_date",
+     "file_id"
+    ]
+   },
+   {
+    "table": "laser_files_file_key_seq",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "name"
+    ]
+   },
+   {
+    "table": "laser_galv_mask_measure",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_glv_cnd_send",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_length",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_m307",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_m370",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_m377",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_mainte1",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_mask_gosa",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_pc_direct",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_proc_state",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_pwr",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_pwrmulti",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_sensor",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_sin_statis",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_sinsyuku",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_table",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_twin_scale_dsp",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   },
+   {
+    "table": "laser_zaxis",
+    "kind": "PRIMARY_KEY",
+    "columns": [
+     "file_key",
+     "row_number"
+    ]
+   }
+  ],
+  "fk": [],
+  "unconfirmedNaming": [
+   {
+    "table": "laser_aaa",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_aaa_gosa",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_alm_log",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_cnd_selct",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_energy_measure",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_files",
+    "column": "file_id",
+    "candidates": [
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_id 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_files",
+    "column": "file_key",
+    "candidates": [
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_files_bak_20261020",
+    "column": "file_id",
+    "candidates": [
+     "laser_files",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_id 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_files_bak_20261020",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_galv_mask_measure",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_glv_cnd_send",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_length",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_m307",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_m370",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_m377",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_mainte1",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_mask_gosa",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_pc_direct",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_proc_state",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_pwr",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_pwrmulti",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_sensor",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_sin_statis",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_sinsyuku",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_table",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_twin_scale_dsp",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   },
+   {
+    "table": "laser_zaxis",
+    "column": "file_key",
+    "candidates": [
+     "laser_files",
+     "laser_files_bak_20261020",
+     "laser_files_file_key_seq"
+    ],
+    "status": "ambiguous",
+    "requires_confirmation": true,
+    "reason": "列名 file_key 命名推导，非库内声明约束"
+   }
+  ]
+ }
+}
