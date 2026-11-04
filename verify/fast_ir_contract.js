@@ -363,3 +363,5 @@ J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
 check('批H sort 结构化拒（一处真相：墙破缺语料不盲写）', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[1].sort = { formula: '=-C3' }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[2].columns[1].sort'));
 
 
+// ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
+check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);

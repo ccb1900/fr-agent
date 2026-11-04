@@ -573,3 +573,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **诚实挂账（不盲写）**：`setSortFormula` 直塞**不序列化**（本地/部署 XML 双 0、渲染顺序不变的探针实证）；`SortHeader` 组合面（SortHeaderIndex/Direction/SortItem[]/SortRule/SortArea 字符串区）**240 demo 无非空 cellSortAttr 语料**（#45 已记，本轮复核同）——组合形态无参照，按不硬凑纪律 **IR `sort` 词汇结构化拒**（UNSUPPORTED_CAPABILITY；一处真相红线：build 不生效的词汇不许放行），等真实排序 cpt 语料到手后批收。
 - **门禁**：fast 13 GREEN（批H 断言=结构化拒 1 项）、scan 48、默认 CBEB42E3 逐字节。
 
+
+#79 批I 图表族扩容·vbubble + 地图/极端族定性（2026-11-05，demo 车道批 I——BubblePlot 4/Map 7/极端图 1-4 张族）：
+- **vbubble 收编**：VK 表 + VanChartBubblePlot（BubblePlot 构造一手探针 OK）；绑定=**BubbleTableDefinition（vscatter 同法）**——`vscatter||vbubble` 分支共享（seriesName/bubbleX/bubbleY/bubbleSize）；ir.js CHART_KINDS/必填分支/CAPABILITIES 同步 + fast +1。引擎 XML VanChartBubblePlot 2（test_vanchart 载体第 11 块）。
+- **vmap 诚实挂账**：VanChartMapPlot 可构造，但绑定 ctor 10 参（TableData,分类,CSC[],boolean,5×String,**MapMatchResult**）——区域名匹配依赖 GIS 底图资源与地图数据，无轻量通路；7 张地图书料的 MapMatchResult 形态待专门批。
+- **极端图族登记**（heatmap/3D globe/carousel/meter/kpi/wisdomtree 等各 1-4 张）：同为绑定形深水区，随地图批一并。
+- **ChartHyperRelateCellLink（18）**：挂接点在图表热链（chart 级 setHyperLink 面未探完），随地图批。
+- **门禁**：fast 13 GREEN、scan 48、默认 CBEB42E3 逐字节；coverage missing 92→91。
+
