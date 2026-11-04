@@ -1,4 +1,5 @@
-param([Parameter(Mandatory = $true)][string]$Script)
+param([Parameter(Mandatory = $true)][string]$Script, [string]$Heap = '1200m')
+# 2026-11-04 heap cap (README #46/#47): -Xmx ceiling, override with -Heap; no java-kill / no FineDB lock cleanup by design
 $FR = 'D:\software\FineReport_11.0'
 $cp = @(
   "$FR\jre\lib\ext\nashorn.jar",
@@ -9,4 +10,5 @@ $cp = @(
   "$FR\server\lib\*",
   "$FR\webapps\webroot\WEB-INF\lib\*"
 ) -join ';'
-& "$FR\jre\bin\java.exe" '-Djava.awt.headless=true' '-cp' $cp 'jdk.nashorn.tools.Shell' $Script
+$heapArg = "-Xmx$Heap"
+& "$FR\jre\bin\java.exe" '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script

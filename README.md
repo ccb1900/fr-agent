@@ -274,3 +274,12 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - 流程教训升格：①结构与像素双验收——上午自检石 PNG 带病没人看，下午靠像素定案；②run.ps1 未传 -Xmx，内存紧张机器建议给 run.ps1 加 $Heap 参数锚上限（今日全部 java 用 -Xmx1200m 跑绿，待拍板入 run.ps1）；③demo_api.cpt 中间状态（c0c2b275…）曾被自检轮覆盖又由默认 spec 收尾复原（CBEB42E3…）——基线只认默认路径重跑后的值。
 - 遗留细目：vscatter 右下悬一颗大蓝点（bubbleSize 未设，语义待查）；vpie 图例 4 分类只见 3（legend 高度/分栏待查）；240pt 画区下 auto tick 只给 0/150 两级（密度语义正确可读，先接受）。
 - 收尾铁证：默认 spec 复跑 demo_api.cpt = CBEB42E3CE48E46E362B9AE80168026F（逐字节）；销售明细_api.png = A8EF39AB648D5F00DDAE0481D0313110 ——与 #45 记载完全一致，**PNG 漂移疑案闭环无需重标定**（漂移系上一会话产物对照误差）。
+
+
+#47 -Xmx 限堆入库 + 提交额度预检 + 乱码修复（2026-11-04，用户拍板"入"）：
+- **编排层限堆**：run.ps1/runraw.ps1 增 `$Heap` 参数（默认 1200m，可 `-Heap` 覆盖），全部 java 调用点注入 `-Xmx$Heap`；tools_br/tools_prod 不直起 java、经 run.ps1 自动继承。动机链：#46 内存紧张机器 j2v8 原生崩连环（-Xmx1200m 逆种活）+ 本日探针经 runraw 复现 JVM 原生崩（hs_err 归档 logs/）。
+- **提交额度预检**：run.ps1 落 JVM 前查 `Win32_OperatingSystem.FreeVirtualMemory`，低于 heap+900MB 即报 `COMMIT_LIMIT_LOW: free=… need~…` 并 exit 8——把 "Could not reserve enough space for object heap" 变成可执行指令（logs/_commit_probe.ps1 可随时复核水位）。
+- **定性补全（“机器提交额度”）**：提交额度 = 物理 RAM + 页文件上限的承诺总账，与"物理占用"是两层；本机实测页文件 C:\pagefile.sys initial 4G/max 16G（自动生长至 ~10.6G，peak 4G），额度 ~35G；两位大户 = `vmmemWSL` ~6.9GB(+CmZygote 0.8G) 与 ZCode 会话族 ~3.6GB（九进程）——commit 满 80% 时 1.2G 堆即预留失败，瞬时峰值连 PowerShell 拉线程都失败（同分钟两现象，非管线故障）。
+- **治本建议（用户侧，未自动执行）**：①不用 WSL 时 `wsl --shutdown` 立回收 ~7.7GB；需要常驻则在 `%UserProfile%\.wslconfig` 设 `[wsl2] memory=3GB`；②页文件迁 D 盘加大（D 盘空 60G）：sysdm.cpl → 性能设置 → 虚拟内存 → C: 关小、D: 自定义 16384–32768 → 重启，额度升 ~50G；③闲置 ZCode 会话窗口关掉几个。
+- **真实环境回归（经 -Xmx1200m，run.ps1 全新链路）**：默认路径重跑 failures=0、EXPECTED TOTAL=26420、ROUNDTRIP ASSERT PASS、PNG/PDF 出图；demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F、销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 逐字节复原。
+- **README #28–#35 乱码段修复（本日，commit 5073c15）**：中文被批量置换 U+FFFD 且入库前既有，四通道反演不可逆（probes/_readme_moji_probe1–5 定性）；按幸存 ASCII 锚点逐字保真 + 工件交叉校验（make_verify.js 源码、logs/verify_table.txt 普查实测 selfOK=153/renderOK=221/renderMismatch=19/readFail=21/total=261、部署实名、frdemo dump 列名）存证重描，失考段显式标注；字节级拼接写回（前段 13933B=DC27BF37…、后段 21120B=8E0B8BFB… 改写前后一致），破损原件备份 logs/README.md.fix_backup_20261103。基线口径提示已入段落尾注：#28–#35 所记 101700BB/E2391200 为 2026-10-26 当期基线，现行见 AGENTS.md。
