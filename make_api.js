@@ -96,6 +96,7 @@ try {
     if (rs.dataset && rs.dataset.kind === 'sql') {
       // I5 模型驱动 SQL：载 model + sqlbuilder，编译成含 kind:sql 数据集的 cells IR；连接名→凭据本地注入
       load(Paths.lib('report_spec.js'));
+      load(Paths.semantic('model/vocab.js'));   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY，前置加载
       load(Paths.semantic('query/sqlbuilder.js'));
       function genv(k, d) { var v = J('java.lang.System').getenv(k); return (v == null || String(v) === '') ? d : String(v); }
       var modelPath = genv('SCHEMA_MODEL', 'models/production/model.json');

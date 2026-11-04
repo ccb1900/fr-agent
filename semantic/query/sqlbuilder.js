@@ -10,20 +10,21 @@ var SqlBuilder = (function () {
   function E(errs, code, path, message) { errs.push({ code: code, path: path, message: message }); }
   function numCast(col) { return 'TRY_CAST(' + col + ' AS float)'; }
 
-  // 单指标 → SQL SELECT 片段（alias 用指标 name，稳定可预测）
-  function metricSelect(m, errs, path) {
+  // 单指标 → SQL SELECT 片段（alias 用指标 name，稳定可预测）；joinsPresent 时度量列限定实体表名避免歧义
+  function metricSelect(m, errs, path, entTable, joinsPresent) {
     var e = m.expression;
+    var QC = function (col) { return joinsPresent && entTable ? entTable + '.' + col : col; };
     if (!isObj(e)) { E(errs, 'INVALID_TYPE', path + '.expression', '指标缺 expression'); return null; }
     switch (e.kind) {
       case 'count':          return { alias: m.name, sql: 'COUNT(*) AS ' + m.name, base: true };
       case 'countThreshold':
         if (!isStr(e.column) || !isStr(e.op) || e.value == null) { E(errs, 'REQUIRED', path + '.expression', 'countThreshold 需 column/op/value'); return null; }
         return { alias: m.name, base: true, measureCol: e.column,
-          sql: 'SUM(CASE WHEN ' + numCast(e.column) + ' ' + e.op + ' ' + e.value + ' THEN 1 ELSE 0 END) AS ' + m.name };
+          sql: 'SUM(CASE WHEN ' + numCast(QC(e.column)) + ' ' + e.op + ' ' + e.value + ' THEN 1 ELSE 0 END) AS ' + m.name };
       case 'sum':            if (!isStr(e.column)) { E(errs, 'REQUIRED', path + '.expression.column', 'sum 需 column'); return null; }
-        return { alias: m.name, base: true, measureCol: e.column, sql: 'SUM(' + numCast(e.column) + ') AS ' + m.name };
+        return { alias: m.name, base: true, measureCol: e.column, sql: 'SUM(' + numCast(QC(e.column)) + ') AS ' + m.name };
       case 'weightedAvg':    if (!isStr(e.column)) { E(errs, 'REQUIRED', path + '.expression.column', 'weightedAvg 需 column'); return null; }
-        return { alias: m.name, base: true, measureCol: e.column, sql: 'AVG(' + numCast(e.column) + ') AS ' + m.name };
+        return { alias: m.name, base: true, measureCol: e.column, sql: 'AVG(' + numCast(QC(e.column)) + ') AS ' + m.name };
       case 'ratio':          return { alias: m.name, base: false, numerator: e.numerator, denominator: e.denominator, scale: e.scale == null ? 1 : e.scale };
       default: E(errs, 'INVALID_ENUM', path + '.expression.kind', 'sqlbuilder 不支持的指标 kind: ' + e.kind); return null;
     }
@@ -41,34 +42,58 @@ var SqlBuilder = (function () {
     var metricsByName = {}; (model.metrics || []).forEach(function (m) { if (m && m.name) metricsByName[m.name] = m; });
     var dimsByName = {}; (model.dimensions || []).forEach(function (d) { if (d && d.name) dimsByName[d.name] = d; });
 
-    var selectBits = [], groupBits = [], measures = {}, baseCols = [];
+    // I5.2：可安全 JOIN 的确认可用关系索引（confirmed + N:1/1:1，from.table=实体表）→ to.table
+    var joinByTable = {};
+    (model.relationships || []).forEach(function (r) {
+      if (!r || r.source !== 'confirmed') return;
+      if (!ModelVocab.JOIN_SAFE_CARDINALITY[r.cardinality]) return;
+      if (!r.from || !r.to || r.from.table !== table) return;
+      if (!joinByTable[r.to.table]) joinByTable[r.to.table] = { refTable: r.to.table, onEnt: r.from.column, onRef: r.to.column };
+    });
+
+    var selectBits = [], groupBits = [], measures = {}, baseCols = [], joins = [], joinSeen = {};
+    function ensureJoin(refTable) {
+      var j = joinByTable[refTable];
+      if (!j) return null;
+      if (!joinSeen[refTable]) { joinSeen[refTable] = 1; joins.push('INNER JOIN ' + refTable + ' ON ' + table + '.' + j.onEnt + ' = ' + refTable + '.' + j.onRef); }
+      return j;
+    }
+    // 有 JOIN 才限定表名（避免歧义），单表查询逐字保持原样（向后兼容既有断言）
+    function q(tbl, col) { return joins.length || Object.keys(joinSeen).length ? tbl + '.' + col : col; }
+
     // 维度：dim.column 为 table.column，取列名；命中 dateNormalize 规则则 TRY_CAST date 归一（#52 口径）
     (sel.dimensions || []).forEach(function (dn, i) {
       var d = dimsByName[dn];
       var path = 'dimensions[' + i + ']';
       if (!d) { E(errs, 'UNKNOWN_REF', path, '维度不在模型: ' + dn); return; }
-      // I5.1 P1：跨实体表字段拒绝（JOIN 属 I5.2）——维度所属表必须=实体主表，否则宁拒不产错 SQL
-      if (d.table && d.table !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '维度 ' + dn + ' 属表 ' + d.table + '，与实体主表 ' + table + ' 跨表，当前不支持（JOIN=I5.2）'); return; }
-      var col = String(d.column || '').split('.').pop();
+      var leaf = String(d.column || '').split('.').pop();
+      var col, colTable;
+      if (!d.table || d.table === table) { col = leaf; colTable = table; }
+      else {
+        // I5.2：跨表维度——仅当存在 confirmed 安全关系才 INNER JOIN 带出，否则维持 I5.1 跨表拒绝
+        var j = ensureJoin(d.table);
+        if (!j) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '维度 ' + dn + ' 属表 ' + d.table + '，与实体主表 ' + table + ' 无 confirmed 安全关系，拒绝跨表（JOIN 需确认关系，r3 I5.2）'); return; }
+        col = leaf; colTable = d.table;
+      }
+      var qual = joins.length ? colTable + '.' + col : col;
       var normalize = d.rule === 'dateNormalize';
       if (normalize) {
-        selectBits.push('convert(varchar(10), TRY_CAST(' + col + ' AS date), 23) AS ' + d.name);
-        groupBits.push('TRY_CAST(' + col + ' AS date)');
+        selectBits.push('convert(varchar(10), TRY_CAST(' + qual + ' AS date), 23) AS ' + d.name);
+        groupBits.push('TRY_CAST(' + qual + ' AS date)');
       } else {
-        selectBits.push(col + ' AS ' + d.name);
-        groupBits.push(col);
+        selectBits.push(qual + ' AS ' + d.name);
+        groupBits.push(qual);
       }
       baseCols.push({ alias: d.name, role: 'dim', column: col });
     });
-    // 指标
+    // 指标（度量必须落在实体主表；跨表度量改 grain → 仍拒，JOIN 只用于带出维度不放大度量）
     (sel.metrics || []).forEach(function (mn, i) {
       var path = 'metrics[' + i + ']';
       var m = metricsByName[mn];
       if (!m) { E(errs, 'UNKNOWN_REF', path, '指标不在模型: ' + mn); return; }
-      // I5.1 P1：指标度量表必须=实体主表（跨表如 fileCount 走 laser_files → 拒，不产静默错 SQL）
       var mtable = m.expression && m.expression.table;
-      if (mtable && mtable !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '指标 ' + mn + ' 度量表 ' + mtable + ' 与实体主表 ' + table + ' 跨表，当前不支持（JOIN=I5.2）'); return; }
-      var frag = metricSelect(m, errs, path);
+      if (mtable && mtable !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '指标 ' + mn + ' 度量表 ' + mtable + ' 与实体主表 ' + table + ' 跨表（度量 grain 改变，JOIN 不承载跨表度量）'); return; }
+      var frag = metricSelect(m, errs, path, table, joins.length);
       if (!frag) return;
       if (frag.base) {
         selectBits.push(frag.sql);
@@ -89,14 +114,14 @@ var SqlBuilder = (function () {
 
     // WHERE：基筛（有度量列 → IS NOT NULL）+ 可选日期范围（定字面，禁 ${}）
     var where = [];
-    Object.keys(measures).forEach(function (mc) { where.push(numCast(mc) + ' IS NOT NULL'); });
+    Object.keys(measures).forEach(function (mc) { where.push('TRY_CAST(' + (joins.length ? table + '.' + mc : mc) + ' AS float) IS NOT NULL'); });
     if (sel.dateRange && (sel.dateRange.from || sel.dateRange.to)) {
       var dateCol = null;
       (sel.dimensions || []).forEach(function (dn) { var d = dimsByName[dn]; if (d && d.rule === 'dateNormalize') dateCol = String(d.column || '').split('.').pop(); });
       if (!dateCol) E(errs, 'INVALID_SHAPE', 'dateRange', 'dateRange 需选中 dateNormalize 维度');
       else {
         var dr = IsoDate.range(sel.dateRange);   // I5.1 P4：与 spec_validator 同一日期真相（严格双边+日历有效+from<=to）
-        if (dr.ok) where.push('TRY_CAST(' + dateCol + ' AS date) BETWEEN ' + "'" + sel.dateRange.from + "' AND '" + sel.dateRange.to + "'");
+        if (dr.ok) where.push('TRY_CAST(' + (joins.length ? table + '.' + dateCol : dateCol) + ' AS date) BETWEEN ' + "'" + sel.dateRange.from + "' AND '" + sel.dateRange.to + "'");
         else dr.errors.forEach(function (e) { E(errs, e.code, 'dateRange' + (e.path.indexOf('.') >= 0 ? '.' + e.path.split('.').pop() : ''), e.message); });
       }
     }
@@ -107,6 +132,7 @@ var SqlBuilder = (function () {
     if (!selectBits.length) { E(errs, 'REQUIRED', 'sel', '无可选维度/指标'); return { errors: errs }; }
 
     var sql = 'SELECT ' + selectBits.join(', ') + ' FROM ' + table +
+      (joins.length ? ' ' + joins.join(' ') : '') +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') +
       (groupBits.length ? ' GROUP BY ' + groupBits.join(', ') : '') +
       ' ORDER BY 1';

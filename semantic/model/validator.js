@@ -108,8 +108,15 @@ var ModelValidator = (function () {
     else model.relationships.forEach(function (r, i) {
       var rp = 'relationships[' + i + ']';
       if (!isObj(r)) { E(errs, 'INVALID_TYPE', rp, '关系须对象'); return; }
-      if (!hasOwn(ModelVocab.RELATION_SOURCES, r.source)) E(errs, 'INVALID_ENUM', rp + '.source', '关系 source 越枚举: fk|pk|naming-derived');
+      if (!hasOwn(ModelVocab.RELATION_SOURCES, r.source)) E(errs, 'INVALID_ENUM', rp + '.source', '关系 source 越枚举: fk|pk|naming-derived|confirmed');
       if (r.source === 'naming-derived' && r.requiresConfirmation !== true) E(errs, 'REQUIRED', rp + '.requiresConfirmation', 'naming-derived 关系必须 requiresConfirmation=true（r2 §3.3 不替代业务确认）');
+      // I5.2：confirmed 关系必带合法 cardinality（JOIN 前查基数，不硬拼）
+      if (r.source === 'confirmed') {
+        if (!hasOwn(ModelVocab.CARDINALITYS, r.cardinality)) E(errs, 'REQUIRED', rp + '.cardinality', 'confirmed 关系必须声明合法基数(1:1/N:1/1:N/N:M)');
+        if (!isStr(r.confirmedBy) || !r.confirmedBy) E(errs, 'REQUIRED', rp + '.confirmedBy', 'confirmed 关系必须记 confirmedBy 证据（谁确认、依据什么）');
+      } else if (r.cardinality != null && !hasOwn(ModelVocab.CARDINALITYS, r.cardinality)) {
+        E(errs, 'INVALID_ENUM', rp + '.cardinality', '基数越枚举: ' + r.cardinality);
+      }
       ['from', 'to'].forEach(function (side) {
         var s = r[side];
         if (!isObj(s)) { E(errs, 'INVALID_TYPE', rp + '.' + side, side + ' 须 {table,column}'); return; }

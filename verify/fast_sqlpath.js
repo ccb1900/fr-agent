@@ -19,6 +19,7 @@ load(ROOT + '/lib/report_spec.js');
 load(ROOT + '/lib/isodate.js');
 load(ROOT + '/lib/spec_validator.js');
 load(ROOT + '/lib/spec_compiler.js');
+load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/semantic/query/sqlbuilder.js');
 var model = jt('models/production/model.json');
 var spec = jt('examples/report-spec/daily_report.sql.json');

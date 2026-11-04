@@ -46,7 +46,7 @@ check('幽灵列→UNKNOWN_REF', codeAt(ModelValidator.validate(mut(function (m)
 check('ratio 缺分母→REQUIRED', codeAt(ModelValidator.validate(mut(function (m) { delete m.metrics[2].expression.denominator; }), schema), 'REQUIRED', 'denominator'));
 check('I5.1-T5 ratio scale 非数→INVALID_NUMBER', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[2].expression.scale = '很多'; }), schema), 'INVALID_NUMBER', 'scale'));
 check('裸 formula 串→INVALID_TYPE（禁不可验证黑箱）', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[0].expression = { formula: 'COUNT(*)' }; }), schema), 'INVALID_TYPE', 'expression'));
-check('naming-derived 缺 requiresConfirmation→REQUIRED', codeAt(ModelValidator.validate(mut(function (m) { delete m.relationships[0].requiresConfirmation; }), schema), 'REQUIRED', 'requiresConfirmation'));
+check('naming-derived 缺 requiresConfirmation→REQUIRED', codeAt(ModelValidator.validate(mut(function (m) { delete m.relationships[2].requiresConfirmation; }), schema), 'REQUIRED', 'requiresConfirmation'));
 check('未知 metric kind→INVALID_ENUM', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[0].expression = { kind: 'median', table: 'laser_aaa', column: 'score' }; }), schema), 'INVALID_ENUM', 'kind'));
 check('validator 抗炸：垃圾输入不抛只产诊断', (function () { try { return Array.isArray(ModelValidator.validate(null, null)) && Array.isArray(ModelValidator.validate(42, {})); } catch (e) { return false; } })());
 check('validator 确定序（同输入两次全等）', JSON.stringify(ModelValidator.validate(model, schema)) === JSON.stringify(ModelValidator.validate(model, schema)));

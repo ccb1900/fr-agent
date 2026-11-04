@@ -12,6 +12,7 @@ function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 check('PARSE semantic/query/sqlbuilder.js', (function () { try { new Function(src('semantic/query/sqlbuilder.js')); return true; } catch (e) { print('' + e); return false; } })());
 
 load(ROOT + '/lib/isodate.js');
+load(ROOT + '/semantic/model/vocab.js');   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY
 load(ROOT + '/semantic/query/sqlbuilder.js');
 var model = jt('models/production/model.json');
 function codeAt(res, code, frag) { return (res.errors || []).some(function (e) { return e.code === code && String(e.path).indexOf(frag) >= 0; }); }
@@ -44,11 +45,22 @@ check('坏日期格式→INVALID_TYPE（防注入）', codeAt(SqlBuilder.build(m
 check('ratio 分子未选→UNKNOWN_REF（口径闭合）', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'completionRate'] }), 'UNKNOWN_REF', 'ratio'));
 check('dateRange 无 date 维→INVALID_SHAPE', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: [], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }), 'INVALID_SHAPE', 'dateRange'));
 
-// I5.1-P1 跨表拒绝闸（宁拒不静默出错 SQL）
-var xdim = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
-check('P1 跨表维度(machine→laser_files)→UNSUPPORTED_CROSS_TABLE 且不产 SQL', codeAt(xdim, 'UNSUPPORTED_CROSS_TABLE', 'dimensions') && !xdim.sql);
+// I5.1-P1 / I5.2：跨表度量仍拒；跨表维度经 confirmed 安全关系→INNER JOIN（fan-out 由基数守卫拦）
 var xmet = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['fileCount'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
-check('P1 跨表指标(fileCount→laser_files)→UNSUPPORTED_CROSS_TABLE', codeAt(xmet, 'UNSUPPORTED_CROSS_TABLE', 'metrics') && !xmet.sql);
+check('跨表度量(fileCount→laser_files)→仍拒（JOIN 不改度量 grain）', codeAt(xmet, 'UNSUPPORTED_CROSS_TABLE', 'metrics') && !xmet.sql);
+var jdim = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned', 'done', 'completionRate'] });
+var jsql = jdim.sql || '';
+check('I5.2 跨表维度(machine)经 confirmed N:1 关系→INNER JOIN laser_files ON file_key',
+  /INNER JOIN laser_files ON laser_aaa\.file_key = laser_files\.file_key/.test(jsql) && /laser_files\.source_id AS machine/.test(jsql) && !jdim.sql0 && (jdim.errors || []).length === 0);
+check('I5.2 JOIN 查询度量列限定实体表(避歧义)', /TRY_CAST\(laser_aaa\.score AS float\)/.test(jsql) && /GROUP BY laser_files\.source_id/.test(jsql));
+check('I5.2 单表查询不受影响（无 JOIN、列裸名）', (function () { var s = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'done'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }).sql || ''; return s.indexOf('JOIN') < 0 && /TRY_CAST\(score AS float\)/.test(s); })());
+// fan-out 守卫：把 recordToFile 基数改成 1:N（非安全）→ machine 维应回退拒绝，不产放大 SQL
+var fanModel = JSON.parse(JSON.stringify(model));
+fanModel.relationships.forEach(function (r) { if (r.name === 'recordToFile') r.cardinality = '1:N'; });
+var fanOut = SqlBuilder.build(fanModel, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'] });
+check('I5.2 fan-out 守卫：非安全基数(1:N)→machine 仍拒、不产放大 SQL', codeAt(fanOut, 'UNSUPPORTED_CROSS_TABLE', 'dimensions') && !fanOut.sql);
+
+// 纯函数/确定序/输入不可变/抗炸
 // I5.1-P4 日期严格双边 + 日历有效性
 var oneSided = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-09-13' } });
 check('P4 单边 dateRange→拒', codeAt(oneSided, 'REQUIRED', 'dateRange') && !oneSided.sql);
