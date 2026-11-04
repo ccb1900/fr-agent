@@ -7,7 +7,7 @@
 
 | 依赖 | 说明 |
 |---|---|
-| make_api.js → runtime/* | 加载顺序：paths → bootstrap → datasource → lib 三件 → spec |
+| make_api.js → runtime/* | 实际加载顺序：paths → lib 三件 → spec → bootstrap → datasource（spec 先载 = fail-fast：SPEC 缺失 exit 2，env 未启动） |
 | make_api.js → lib/*（经 load） | 收敛在 make_api 内，业务层不直接加载 |
 | reports*/*.js → features/data_browser | spec 只需要 feature 的 `spec/MODULES/env` |
 | reports*/*.js → lib/dbpass.js | 凭据外围件（非后端，指针在 data/db_local.js） |
@@ -46,7 +46,7 @@ R1–R5 只查"禁区"，证明不了"接线"。R6 把 Runner 与 Runtime 的实
 
 | 断言 | 内容 |
 |---|---|
-| R6a 必含 | make_api.js 必含 `Paths.runtime('bootstrap.js')`、`Paths.runtime('datasource.js')`、`Runtime.initialize()`、`Paths.lib(`、`runtime/paths.js`（加载顺序 = paths → lib 三件 → bootstrap/datasource → spec，锚在 make_api.js 头部） |
+| R6a 必含 | make_api.js 必含 `Paths.runtime('bootstrap.js')`、`Paths.runtime('datasource.js')`、`Runtime.initialize()`、`Paths.lib(`、`runtime/paths.js`（实际顺序 = paths → lib 三件 → spec → bootstrap → datasource；spec 先载为有意 fail-fast） |
 | R6b 必不含 | make_api.js 不得内联 FR 激活链/连接注册（`ActivatorToolBox` / `SimpleWork` / `DatasourceManager`）——这些只属 runtime/* |
 | R6c 必不含 | make_api.js 不得出现 `load('D:…` 硬编码绝对路径（路径单点收在 runtime/paths.js + FR_AGENT_HOME） |
 
