@@ -10,6 +10,17 @@ var TemplateValidator = (function () {
   function isStr(v) { return typeof v === 'string'; }
   function isNonNegInt(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v && v >= 0; }
   function unsafePath(s) { return /[\\]|:|\.\.|^\/|\/|\\/.test(String(s)) ; }   // 含分隔符/盘符/.. 皆拒（相对 reportlets 根名单段除外由 caller 传合法 rel）
+  // r5 P2：列型 ↔ 值型的严格对应（validator 阶段定死；patch 层只做转换，boolean 禁静默 truthy）
+  function valueOk(t, v) {
+    if (v == null) return true;                                    // 允许空值（保持原列空语义）
+    if (t === 'text' || t === 'string') return typeof v === 'string';
+    if (t === 'integer' || t === 'long') return typeof v === 'number' && isFinite(v) && Math.floor(v) === v;
+    if (t === 'number' || t === 'float' || t === 'decimal') return typeof v === 'number' && isFinite(v);
+    if (t === 'boolean') return typeof v === 'boolean';
+    if (t === 'date') return isStr(v) && /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(v);
+    if (t === 'datetime') return isStr(v) && /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[ T]\d{2}:\d{2}:\d{2}$/.test(v);
+    return false;
+  }
 
   function validate(patch) {
     var errs = [];
@@ -47,11 +58,27 @@ var TemplateValidator = (function () {
       } else if (kind === 'replace_dataset') {
         if (!isStr(op.name) || !op.name) E(errs, 'REQUIRED', p + '.name', '数据集 name 必填');
         if (!isArr(op.columns) || !op.columns.length) E(errs, 'INVALID_ARRAY', p + '.columns', 'columns 须非空数组');
+        else {
+          var names = {};
+          op.columns.forEach(function (c, ci) {
+            var cp = p + '.columns[' + ci + ']';
+            if (!isObj(c)) { E(errs, 'INVALID_TYPE', cp, '列须 {name,type}'); return; }
+            if (!isStr(c.name) || !c.name) E(errs, 'REQUIRED', cp + '.name', '列名必填');
+            else if (names[c.name]) E(errs, 'INVALID_SHAPE', cp + '.name', '列名重复: ' + c.name);
+            else names[c.name] = 1;
+            if (!isStr(c.type) || !hasOwn(TemplateOps.DS_TYPES, c.type)) E(errs, 'INVALID_ENUM', cp + '.type', '列型须 ∈ ' + Object.keys(TemplateOps.DS_TYPES).join('|'));
+          });
+        }
         if (isArr(op.columns) && isArr(op.rows)) op.rows.forEach(function (r, ri) {
-          if (!isArr(r)) E(errs, 'INVALID_ARRAY', p + '.rows[' + ri + ']', 'row 须数组');
-          else if (r.length !== op.columns.length) E(errs, 'INVALID_SHAPE', p + '.rows[' + ri + ']', 'row 宽度≠columns');
+          if (!isArr(r)) { E(errs, 'INVALID_ARRAY', p + '.rows[' + ri + ']', 'row 须数组'); return; }
+          if (r.length !== op.columns.length) { E(errs, 'INVALID_SHAPE', p + '.rows[' + ri + ']', 'row 宽度≠columns'); return; }
+          for (var ci2 = 0; ci2 < r.length; ci2++) {
+            var col = op.columns[ci2];
+            if (!isObj(col) || !hasOwn(TemplateOps.DS_TYPES, col.type)) continue;   // 列型错已在上面报，避免重复噪声
+            if (!valueOk(col.type, r[ci2])) E(errs, 'INVALID_TYPE', p + '.rows[' + ri + '][' + ci2 + ']', '值型不符列型 ' + col.type + ': ' + JSON.stringify(r[ci2]));
+          }
         });
-        else E(errs, 'INVALID_ARRAY', p + '.rows', 'rows 须数组');
+        else if (!isArr(op.rows)) E(errs, 'INVALID_ARRAY', p + '.rows', 'rows 须数组');
       }
     });
     return errs;

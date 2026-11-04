@@ -4,16 +4,27 @@
 //     ③ 关键节点计数 profile（r4 P1：structDelta 必须纳入 clean）
 //   按 op 分类允许的结构变化：replace_cell_value→结构计数全守恒；replace_dataset→仅数据集相关结构可变。
 var TemplateDiff = (function () {
-  function isNoise(t) {
-    if (/^[\d,\s.]+$/.test(t)) return true;                        // 纯数字/逗号数组（列宽/行高）
-    if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t)) return true;         // UUID
-    if (/^\d{10,}$/.test(t.trim())) return true;                   // 长数字串（epoch/雪花键）
-    return false;
+  // r5 P2：数字噪声只在已证实的引擎序列化节点上忽略（RowHeight/ColumnWidth 是数字数组），
+  //   绝不全局过滤 CDATA——否则数字型业务单元格（123→456）会被当成噪声，真实数据变化漏检。
+  var NUMERIC_NOISE_TAGS = { RowHeight: 1, ColumnWidth: 1, Height: 1, Width: 1 };
+  function isNumericNoise(t) { return /^[\d,\s.]+$/.test(t) || /^\d{10,}$/.test(t.trim()); }
+  function isUuidNoise(t) { return /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t); }
+  // 取 CDATA 前最近的开标签名（节点上下文；找不到则视为无上下文，不享受数字噪声豁免）
+  function ownerTag(s, idx) {
+    var head = s.slice(0, idx), m, last = null;
+    var re = /<([A-Za-z_][\w:.-]*)/g;
+    while ((m = re.exec(head))) last = m[1];
+    return last;
   }
   function tokens(xml) {
     var s = String(xml), m, out = [];
     var re = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
-    while ((m = re.exec(s))) { var t = m[1]; if (!isNoise(t)) out.push(t); }
+    while ((m = re.exec(s))) {
+      var t = m[1], tag = ownerTag(s, m.index);
+      if (isUuidNoise(t)) continue;                                   // UUID 全局噪声（引擎生成 ID）
+      if (tag && NUMERIC_NOISE_TAGS[tag] && isNumericNoise(t)) continue;   // 列宽/行高数字数组
+      out.push(t);
+    }
     return out;
   }
   // I6.1-B：关键属性签名（只取语义稳定属性，排除 UUID/时间戳等噪声值）
@@ -22,16 +33,21 @@ var TemplateDiff = (function () {
   // r4 I6.1-B：re-export 时引擎会附加内部标记属性（主题/ForkId/TemplateId），非用户语义变化→噪声过滤
   var ENGINE_CLASS_NOISE = /^com\.fr\.base\.iofile\.attr\.(TemplateThemeAttrMark|ForkIdAttrMark|TemplateIdAttrMark)$/;
   var ENGINE_NAME_NOISE = /兼容主题|TemplateId|ForkId|兼容|mark/i;
+  // r5 P2：属性签名带节点上下文（tag/attr=value）——属性在两个节点间移动、总量不变也能被识别
   function attrTokens(xml) {
-    var s = String(xml), m, out = [];
-    var re = /([A-Za-z_][\w:.-]*)\s*=\s*"([^"]*)"/g;
-    while ((m = re.exec(s))) {
-      if (!SEMANTIC_ATTRS.test(m[1])) continue;
-      var v = m[2];
-      if (isNoise(v) || NOISE_ATTR_VAL.test(v)) continue;
-      if (m[1] === 'class' && ENGINE_CLASS_NOISE.test(v)) continue;
-      if (m[1] === 'name' && ENGINE_NAME_NOISE.test(v)) continue;
-      out.push(m[1] + '=' + v);
+    var s = String(xml), tm, out = [];
+    var tagRe = /<([A-Za-z_][\w:.-]*)([^>]*)>/g;
+    while ((tm = tagRe.exec(s))) {
+      var tag = tm[1], attrs = tm[2] || '', am;
+      var attrRe = /([A-Za-z_][\w:.-]*)\s*=\s*"([^"]*)"/g;
+      while ((am = attrRe.exec(attrs))) {
+        if (!SEMANTIC_ATTRS.test(am[1])) continue;
+        var v = am[2];
+        if (isUuidNoise(v) || NOISE_ATTR_VAL.test(v)) continue;
+        if (am[1] === 'class' && ENGINE_CLASS_NOISE.test(v)) continue;
+        if (am[1] === 'name' && ENGINE_NAME_NOISE.test(v)) continue;
+        out.push(tag + '/' + am[1] + '=' + v);
+      }
     }
     return out;
   }

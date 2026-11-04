@@ -11,7 +11,7 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
 function src(f) { return String(new (J('java.lang.String'))(Files.readAllBytes(P.get(ROOT + '/' + f)), 'UTF-8')); }
 function jt(f) { return JSON.parse(src(f)); }
 
-['semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js'].forEach(function (f) {
+['semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js', 'semantic/model/evidence.js'].forEach(function (f) {
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
   check('PARSE ' + f, ok);
 });
@@ -24,6 +24,7 @@ load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/semantic/model/registry.js');
 load(ROOT + '/semantic/model/validator.js');
 load(ROOT + '/semantic/model/resolver.js');
+load(ROOT + '/semantic/model/evidence.js');
 
 function codeAt(errs, code, pathFrag) { return errs.some(function (e) { return e && e.code === code && String(e.path).indexOf(pathFrag) >= 0; }); }
 
@@ -44,6 +45,32 @@ check('I5.5 错误标注 1:N 为 confirmed→UNSUPPORTED_CARDINALITY', (function
   m2.relationships.forEach(function (r) { if (r.name === 'recordToFile') r.cardinality = '1:N'; });
   return codeAt(ModelValidator.validate(m2, schema, { uniqueKeyEvidence: EVID }), 'UNSUPPORTED_CARDINALITY', 'cardinality');
 })());
+
+// ===== I5.5-r5：唯一键必须区分单列/复合（复合 PK/UNIQUE 只保证组合唯一，不证明任一单列唯一）=====
+function schemaWith(mut) { var s2 = JSON.parse(JSON.stringify(schema)); mut(s2); return s2; }
+function fileTable(s2) { var t = null; s2.tables.forEach(function (x) { if (x.name === 'laser_files') t = x; }); return t; }
+function relKeyRejected(s2) { return codeAt(ModelValidator.validate(model, s2, { uniqueKeyEvidence: {} }), 'UNSUPPORTED_RELATION_KEY', 'to.column'); }
+check('r5 单列 PK→认可', !relKeyRejected(schemaWith(function (s) { fileTable(s).primaryKey = [{ column: 'file_key', seq: 1 }]; })));
+check('r5 复合 PK→不认可其中任意单列', relKeyRejected(schemaWith(function (s) { fileTable(s).primaryKey = [{ column: 'file_key', seq: 1 }, { column: 'source_id', seq: 2 }]; })));
+check('r5 单列 UNIQUE index→认可', !relKeyRejected(schemaWith(function (s) { fileTable(s).indexes = [{ unique: true, columns: [{ name: 'file_key' }] }]; })));
+check('r5 复合 UNIQUE index→不认可其中任意单列', relKeyRejected(schemaWith(function (s) { fileTable(s).indexes = [{ unique: true, columns: [{ name: 'file_key' }, { name: 'source_id' }] }]; })));
+
+// ===== I5.5-r5：证据绑定（schema 源 + 关系 + 时效），数据快照≠永久约束 =====
+var NOW_MS = Date.parse('2026-11-04T12:00:00Z');
+function evRaw(mut) {
+  var r = { schema: 'atom_live_demo', probedAt: '2026-11-04T11:00:00Z', checks: [{ table: 'laser_files', column: 'file_key', rows: 538, distinct: 538, unique: true, relation: 'recordToFile' }] };
+  if (mut) mut(r);
+  return r;
+}
+function evFilter(mut, src) { return ModelEvidence.filter(evRaw(mut), { schemaSource: src || 'atom_live_demo', model: model, nowMs: NOW_MS, maxAgeDays: 30 }); }
+check('r5 证据合格→注入 unique 并记录 accepted', (function () { var e = evFilter(); return e.unique['laser_files.file_key'] === true && e.accepted.length === 1; })());
+check('r5 证据过期(40 天)→不注入 + stale', (function () { var e = evFilter(function (r) { r.probedAt = '2026-09-20T11:00:00Z'; }); return !e.unique['laser_files.file_key'] && e.stale.length >= 1; })());
+check('r5 数据源不匹配→不注入 + mismatched', (function () { var e = evFilter(null, 'other_db'); return !e.unique['laser_files.file_key'] && e.mismatched.length >= 1; })());
+check('r5 关系不存在/不匹配→不注入', (function () { var e = evFilter(function (r) { r.checks[0].relation = 'ghostRel'; }); return !e.unique['laser_files.file_key'] && e.mismatched.length >= 1; })());
+check('r5 unique=false→rejected（快照不唯一不采信）', (function () { var e = evFilter(function (r) { r.checks[0].unique = false; r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
+check('r5 rows!=distinct 自相矛盾→rejected', (function () { var e = evFilter(function (r) { r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
+check('r5 probedAt 缺失→malformed 不注入', (function () { var e = evFilter(function (r) { delete r.probedAt; }); return !e.unique['laser_files.file_key'] && e.malformed.length >= 1; })());
+check('r5 证据解析抗炸（坏 JSON/空值）', ModelEvidence.parse('{') === null && ModelEvidence.filter(null, {}).malformed.length >= 1);
 
 // ===== ⑤ 验收计数 =====
 var propCount = model.entities.reduce(function (a, e) { return a + (e.properties || []).length; }, 0);

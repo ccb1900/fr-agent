@@ -8,7 +8,7 @@ var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 load('D:/fineagent/runtime/paths.js');
 var R = Paths.root;
 load(R + '/template/ops.js'); load(R + '/template/validator.js'); load(R + '/template/locator.js'); load(R + '/template/diff.js');
-load(R + '/template/inspector.js'); load(R + '/template/reader.js'); load(R + '/template/patch.js');
+load(R + '/template/inspector.js'); load(R + '/template/reader.js'); load(R + '/template/patch.js'); load(R + '/template/regression.js');
 load(Paths.runtime('bootstrap.js')); Runtime.initialize();
 
 var out = [], FAIL = 0;
@@ -42,6 +42,12 @@ try {
   var c0 = '?';
   try { c0 = String(td.getColumnClass(0).getName()); } catch (eC) { c0 = '(classread ' + eC + ')'; }
   ck('再读回 ds1 首列为 java.lang.Integer（新集列型保真）', c0 === 'java.lang.Integer');
+  // r5 P1：数据集内容必须逐列/逐格等于 PatchSpec（不是"能读回"就算过）
+  var snap = TemplateInspector.datasetSnapshot(wb2, 'ds1');
+  var dr = TemplateRegression.dataset({ columns: op.columns, rows: op.rows }, snap);
+  out.push((dr.pass ? 'PASS ' : 'FAIL ') + 'r5 dataset 逐列/逐格 == PatchSpec（' + dr.reason + '）');
+  if (!dr.pass) FAIL++;
+  ck('r5 快照含 2 列 2 行', !!snap && snap.columns.length === 2 && snap.rows.length === 2);
   // 原基线件未被覆盖
   ck('原始基线件未被写（demo_api.cpt 不变量另行终验）', Files.exists(Pth.get(Paths.root + '/demo_api.cpt')));
 } catch (e) { out.push('FAIL 异常: ' + e); FAIL++; }

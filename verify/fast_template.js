@@ -91,23 +91,83 @@ check('I6.1-B dataset op 仍拒"单元格文本"未预期改动（非数据集�
   return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === false;
 })());
 
-// ===== I6.1-C 执行/渲染回归裁决（纯函数，禁假 PASS） =====
-check('C 两边都执行失败且错误串相同→FAIL（非假 PASS）', (function () {
-  var f = { ok: false, grid: '', error: 'boom' };
-  return TemplateRegression.execution(f, { ok: false, grid: '', error: 'boom' }, false).pass === false;
+// ===== I6.1-C/r5 执行/渲染回归裁决（纯函数，禁假 PASS） =====
+var BAD = { ok: false, rows: null, error: 'boom' };
+check('C 两边都执行失败且错误串相同→FAIL（非假 PASS）', TemplateRegression.execution(BAD, { ok: false, rows: null, error: 'boom' }, {}).pass === false);
+check('C 单边执行失败→FAIL', TemplateRegression.execution({ ok: true, rows: [['a']], error: null }, BAD, {}).pass === false);
+check('r5 指定坐标屏蔽后其余不变→PASS（标题改 (0,0)）', (function () {
+  var b = { ok: true, rows: [['旧标题', '表头'], ['d', '1']], error: null };
+  var a = { ok: true, rows: [['新标题', '表头'], ['d', '1']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0 }] }).pass === true;
 })());
-check('C 单边执行失败→FAIL', TemplateRegression.execution({ ok: true, grid: 'a|b\n', error: null }, { ok: false, grid: '', error: 'x' }, false).pass === false);
-check('C 标题行变化但数据区不变→PASS', (function () {
-  var b = { ok: true, grid: '旧标题|旧标题\n表头|表头\nd|1\n', error: null };
-  var a = { ok: true, grid: '新标题|新标题\n表头|表头\nd|1\n', error: null };
-  return TemplateRegression.execution(b, a, false).pass === true;
+check('r5 合并标题格的重复列同变→PASS（同旧值→同新值）', (function () {
+  var b = { ok: true, rows: [['旧标题', '旧标题'], ['d', '1']], error: null };
+  var a = { ok: true, rows: [['新标题', '新标题'], ['d', '1']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0, oldText: '旧标题', newText: '新标题' }] }).pass === true;
 })());
-check('C 数据区变化→FAIL', (function () {
-  var b = { ok: true, grid: 'h|h\n表头|表头\nd|1\n', error: null };
-  var a = { ok: true, grid: 'h|h\n表头|表头\nd|999\n', error: null };
-  return TemplateRegression.execution(b, a, false).pass === false;
+check('r5 同值重复但非合并语义（别的格改成同新值）→仍 FAIL', (function () {
+  var b = { ok: true, rows: [['旧标题', 'x'], ['d', '1']], error: null };
+  var a = { ok: true, rows: [['新标题', '新标题'], ['d', '1']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0, oldText: '旧标题', newText: '新标题' }] }).pass === false;
 })());
-check('C 渲染 -1/失败→FAIL', TemplateRegression.render({ ok: false, bytes: -1, error: 'e' }, { ok: true, bytes: 40000, error: null }).pass === false);
+check('r5 第 5 行未指定坐标变化→FAIL（不再固定跳前两行）', (function () {
+  var b = { ok: true, rows: [['h', 'h'], ['h', 'h'], ['h', 'h'], ['h', 'h'], ['h', 'h'], ['d', '1']], error: null };
+  var a = { ok: true, rows: [['h', 'h'], ['h', 'h'], ['h', 'h'], ['h', 'h'], ['h', 'h'], ['d', '999']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0 }] }).pass === false;
+})());
+check('r5 前两行非指定格意外变化→FAIL（旧实现会整体跳过）', (function () {
+  var b = { ok: true, rows: [['h', 'x'], ['hh', 'y']], error: null };
+  var a = { ok: true, rows: [['h', 'CHANGED'], ['hh', 'y']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0 }] }).pass === false;
+})());
+check('r5 dataset op：执行差异交 dataset 回归（不在这里误判）', TemplateRegression.execution({ ok: true, rows: [['a']], error: null }, { ok: true, rows: [['b']], error: null }, { hasDatasetOp: true }).pass === true);
+// r5 渲染：像素 diff 必须真的执行（尺寸/比例/bbox）
+var POK = { ok: true, bytes: 40000, error: null };
+check('C 渲染失败→FAIL', TemplateRegression.render({ ok: false, bytes: -1, error: 'e' }, POK, null, {}).pass === false);
+check('r5 像素 diff 未执行（stats 缺失）→FAIL', TemplateRegression.render(POK, POK, null, {}).pass === false);
+check('r5 渲染尺寸变化→FAIL', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 120, heightAfter: 50, diffPixels: 0, ratio: 0 }, {}).pass === false);
+check('r5 像素差异超阈值→FAIL', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 500, ratio: 0.10 }, {}).pass === false);
+check('r5 像素差异在阈值内→PASS + bbox', (function () { var r = TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 84, ratio: 0.0168, bbox: '1,2 - 5,6' }, {}); return r.pass === true && r.reason.indexOf('1,2') >= 0; })());
+
+// ===== r5 数据集替换回归（列名/列型/行数/逐格；快照缺失=失败）=====
+var DS_EXP = { columns: [{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }], rows: [[7, 'I61'], [8, 'OK']] };
+function dsAct(mut) {
+  var a = { columns: [{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }], rows: [['7', 'I61'], ['8', 'OK']] };
+  if (mut) mut(a);
+  return a;
+}
+check('r5 dataset 逐格一致（数值归一 7≡"7"）→PASS', TemplateRegression.dataset(DS_EXP, dsAct()).pass === true);
+check('r5 dataset 列名不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.columns[1].name = 'zz'; })).pass === false);
+check('r5 dataset 列型不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.columns[0].type = 'text'; })).pass === false);
+check('r5 dataset 行数不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.rows = [['7', 'I61']]; })).pass === false);
+check('r5 dataset 值不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.rows[1][1] = 'WRONG'; })).pass === false);
+check('r5 dataset 快照缺失→FAIL', TemplateRegression.dataset(DS_EXP, null).pass === false);
+check('r5 dataset 复合列型 number⊃integer 等价', TemplateRegression.dataset({ columns: [{ name: 'a', type: 'number' }], rows: [[]] }, { columns: [{ name: 'a', type: 'integer' }], rows: [[]] }).pass === true);
+
+// ===== r5 diff：数字噪声按节点上下文；属性签名带节点 =====
+check('r5 数字型业务单元格变化→不 clean（旧实现全局过滤数字=漏检）', (function () {
+  var b = '<R><O c="0"><![CDATA[123]]></O></R>', a = '<R><O c="0"><![CDATA[456]]></O></R>';
+  return TemplateDiff.diff(b, a, {}).clean === false;
+})());
+check('r5 RowHeight 数字数组变化→仍 clean（节点级噪声不误报）', (function () {
+  var b = '<R><RowHeight defaultValue="1"><![CDATA[1,2,3]]></RowHeight></R>';
+  var a = '<R><RowHeight defaultValue="1"><![CDATA[1,4,3]]></RowHeight></R>';
+  return TemplateDiff.diff(b, a, {}).clean === true;
+})());
+check('r5 属性跨节点移动（总量不变）→不 clean', (function () {
+  var b = '<R><O name="x"><![CDATA[k]]></O><P><![CDATA[k]]></P></R>';
+  var a = '<R><O><![CDATA[k]]></O><P name="x"><![CDATA[k]]></P></R>';
+  return TemplateDiff.diff(b, a, {}).clean === false;
+})());
+
+// ===== r5 PatchSpec 列/值类型严格校验（boolean 不再静默 truthy）=====
+function dsOp(cols, rows) { return { op: 'replace_dataset', name: 'ds1', columns: cols, rows: rows }; }
+check('r5 未知列型→INVALID_ENUM', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'blob' }], [[1]])]; })), 'INVALID_ENUM', 'columns[0].type'));
+check('r5 列名重复→INVALID_SHAPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }, { name: 'a', type: 'text' }], [[1, 'x']])]; })), 'INVALID_SHAPE', 'columns[1].name'));
+check('r5 boolean 列传字符串 "false"→INVALID_TYPE（防 truthy 翻转）', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'boolean' }], [['false']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
+check('r5 integer 列传字符串→INVALID_TYPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }], [['7']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
+check('r5 date 列非法月份→INVALID_TYPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'date' }], [['2026-13-01']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
+check('r5 合法类型值零误报（integer/text/boolean）', TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }, { name: 'c', type: 'boolean' }], [[7, 'x', false]])]; })).length === 0);
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

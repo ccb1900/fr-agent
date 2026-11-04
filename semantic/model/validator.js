@@ -21,11 +21,14 @@ var ModelValidator = (function () {
     return idx;
   }
   // I5.5：目标表"声明唯一键"（PK 列 + unique index 单列）→ 供关系基数机器验证
+  //   r5 P1：只有**单列** PK / **单列** unique index 才能证明"该列自身唯一"；
+  //   复合 PK/UNIQUE 只保证组合唯一，把其中任一列当单列唯一会让 JOIN fan-out 误判（laser_files 即三列复合 PK）。
   function declaredUniqueKeys(schema, tableName) {
     var keys = {};
     ((schema && schema.tables) || []).forEach(function (t) {
       if (!t || t.name !== tableName) return;
-      (t.primaryKey || []).forEach(function (k) { if (k && k.column) keys[k.column] = 1; });
+      var pk = t.primaryKey || [];
+      if (pk.length === 1 && pk[0] && pk[0].column) keys[pk[0].column] = 1;
       (t.indexes || []).forEach(function (ix) {
         if (ix && ix.unique && ix.columns && ix.columns.length === 1 && ix.columns[0].name) keys[ix.columns[0].name] = 1;
       });

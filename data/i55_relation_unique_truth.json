@@ -1,0 +1,15 @@
+{
+ "schema": "atom_live_demo",
+ "probedAt": "2026-11-04T11:43:34.043Z",
+ "checks": [
+  {
+   "table": "laser_files",
+   "column": "file_key",
+   "rows": 538,
+   "distinct": 538,
+   "unique": true,
+   "relation": "recordToFile"
+  }
+ ],
+ "note": "数据快照证据；不是数据库唯一约束，runner 按 schema 源/关系归属/时效过滤"
+}

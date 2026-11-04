@@ -27,5 +27,37 @@ var TemplateInspector = (function () {
   function cellText(wb, sheet, c, r) {
     try { var ce = wb.getReport(sheet).getCellElement(c, r); var v = ce && ce.getValue(); return v == null ? '' : String(v); } catch (e) { return ''; }
   }
-  return { describe: describe, datasetExists: datasetExists, cellExists: cellExists, cellText: cellText };
+  // r5 P1：数据集只读快照（列名/列型/逐格值）——供 replace_dataset 结果回归（不靠"能执行"担保）
+  //   API 已由 probes/probe_tabledata_api.js 实证：getColumnCount/getColumnName(i)/getColumnClass(i)/getRowCount/getValueAt(r,c)
+  var CLASS_TYPE = {
+    'java.lang.Integer': 'integer', 'java.lang.Long': 'long', 'java.lang.Double': 'float', 'java.lang.Float': 'float',
+    'java.math.BigDecimal': 'decimal', 'java.lang.Boolean': 'boolean', 'java.sql.Date': 'date',
+    'java.sql.Timestamp': 'datetime', 'java.lang.String': 'text'
+  };
+  function datasetSnapshot(wb, name) {
+    var td = null;
+    try { td = wb.getTableData(name); } catch (e) { return null; }
+    if (!td) return null;
+    var nc = 0, nr = 0;
+    try { nc = +td.getColumnCount(); } catch (e1) { nc = 0; }
+    try { nr = +td.getRowCount(); } catch (e2) { nr = 0; }
+    var cols = [], rows = [];
+    for (var c = 0; c < nc; c++) {
+      var nm = '', ty = 'text';
+      try { nm = String(td.getColumnName(c)); } catch (eN) { nm = ''; }
+      try { var cn = String(td.getColumnClass(c).getName()); ty = CLASS_TYPE[cn] || 'text'; } catch (eC) { ty = 'text'; }
+      cols.push({ name: nm, type: ty });
+    }
+    for (var r = 0; r < nr; r++) {
+      var row = [];
+      for (var c2 = 0; c2 < nc; c2++) {
+        var v = null;
+        try { v = td.getValueAt(r, c2); } catch (eV) { v = null; }
+        row.push(v == null ? '' : String(v));
+      }
+      rows.push(row);
+    }
+    return { columns: cols, rows: rows };
+  }
+  return { describe: describe, datasetExists: datasetExists, cellExists: cellExists, cellText: cellText, datasetSnapshot: datasetSnapshot };
 })();

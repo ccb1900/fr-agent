@@ -8,16 +8,22 @@ var TemplatePatch = (function () {
   var J = function (n) { return Java.type(n); };
   var Class = J('java.lang.Class');
   var DS_JTYPE = { text: 'java.lang.String', string: 'java.lang.String', number: 'java.lang.Integer', integer: 'java.lang.Integer', long: 'java.lang.Long', float: 'java.lang.Double', decimal: 'java.math.BigDecimal', boolean: 'java.lang.Boolean', date: 'java.sql.Date', datetime: 'java.sql.Timestamp' };
+  // r5 P2：类型转换只做"已由 validator 定死"的转换；未知列型/错误值型一律抛（不静默回退 String、
+  //   boolean 不再用 !!v——字符串 "false" 是 truthy，会把 false 写成本 true）。
   function javaValue(t, v) {
     if (v == null) return null;
     if (t === 'number' || t === 'integer') return J('java.lang.Integer').valueOf(v);
-    if (t === 'long') return J('java.lang.Long').valueOf(String(v));
+    if (t === 'long') return J('java.lang.Long').valueOf(v);
     if (t === 'float') return J('java.lang.Double').valueOf(v);
     if (t === 'decimal') return new (J('java.math.BigDecimal'))(String(v));
-    if (t === 'boolean') return J('java.lang.Boolean').valueOf(!!v);
+    if (t === 'boolean') {
+      if (typeof v !== 'boolean') throw new Error('[patch] boolean 列收到非布尔值: ' + JSON.stringify(v));
+      return J('java.lang.Boolean').valueOf(v);
+    }
     if (t === 'date') return J('java.sql.Date').valueOf(String(v));
-    if (t === 'datetime') return J('java.sql.Timestamp').valueOf(String(v));
-    return String(v);
+    if (t === 'datetime') return J('java.sql.Timestamp').valueOf(String(v).replace('T', ' '));
+    if (t === 'text' || t === 'string') return String(v);
+    throw new Error('[patch] 未知列型（validator 应已拦）: ' + t);
   }
 
   // 返回 {applied:bool, before:{...}}（before 供 diff 预期集：改了哪个格/哪个集旧值）
@@ -37,7 +43,11 @@ var TemplatePatch = (function () {
       if (!TemplateInspector.datasetExists(wb, op.name)) throw new Error('[patch] 数据集不存在（不静默新建）: ' + op.name);
       var etd = new (J('com.fr.data.impl.EmbeddedTableData'))();
       etd.setDsName(op.name);
-      op.columns.forEach(function (c) { etd.addColumn(c.name, Class.forName(DS_JTYPE[c.type] || 'java.lang.String')); });
+      op.columns.forEach(function (c) {
+        var jt = DS_JTYPE[c.type];
+        if (!jt) throw new Error('[patch] 未知列型（validator 应已拦）: ' + c.type);
+        etd.addColumn(c.name, Class.forName(jt));
+      });
       op.rows.forEach(function (src) {
         var row = [];
         for (var i = 0; i < src.length; i++) row.push(javaValue(op.columns[i].type, src[i]));

@@ -104,6 +104,7 @@ try {
       // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
       load(Paths.semantic('model/vocab.js'));
       load(Paths.semantic('model/validator.js'));
+      load(Paths.semantic('model/evidence.js'));   // r5：证据解析/绑定/时效（纯函数，本 runner 仍零连库）
       var schemaName = 'schema_' + (rs.dataset.schema || modelObj.source || 'atom_live_demo') + '.json';
       var schemaAbs = Paths.data(schemaName);
       if (!J('java.nio.file.Files').exists(J('java.nio.file.Paths').get(schemaAbs))) {
@@ -111,12 +112,27 @@ try {
         RR.fail('input_load'); stamp('SCHEMA SNAPSHOT MISSING: refusing to generate from unvalidated model'); finishRun(2);
       }
       var schemaObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(schemaAbs)), 'UTF-8')));
-      // I5.5：注入数据侧唯一性探针证据（真值文件含 VERDICT ... PASS 才认；本 runner 不连库、纯读文件）
+      // I5.5/r5：数据侧唯一性证据必须绑定 schema 源 + 关系归属 + 时效（ModelEvidence 纯函数过滤）。
+      //   数据快照 ≠ 数据库唯一约束 → 过期/源不匹配/关系不符一律不注入；需要它的 JOIN 由 validator 拒（不静默放行）。
       var uniqEvidence = {};
+      var evSource = rs.dataset.schema || modelObj.source || 'atom_live_demo';
       try {
-        var truth = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.data('i55_relation_unique_truth.txt'))), 'UTF-8'));
-        if (/laser_files\.file_key rows=\d+ distinct=\d+ unique=true/.test(truth) && /VERDICT recordToFile target-key-unique=PASS/.test(truth)) uniqEvidence['laser_files.file_key'] = true;
-      } catch (eTruth) { /* 证据缺失 → validator 会据 Schema 声明判；无声明即拒，不静默 */ }
+        var evText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.data('i55_relation_unique_truth.json'))), 'UTF-8'));
+        var evMaxAge = parseFloat(genv('I55_EVIDENCE_MAX_AGE_DAYS', '30'));
+        var ev = ModelEvidence.filter(ModelEvidence.parse(evText), {
+          schemaSource: evSource, model: modelObj, nowMs: new Date().getTime(),
+          maxAgeDays: isFinite(evMaxAge) ? evMaxAge : ModelEvidence.DEFAULT_MAX_AGE_DAYS
+        });
+        uniqEvidence = ev.unique;
+        ev.accepted.forEach(function (s) { stamp('UNIQUE EVIDENCE accepted: ' + s); });
+        ev.rejected.concat(ev.stale, ev.mismatched, ev.malformed).forEach(function (s) {
+          var m = 'UNIQUE EVIDENCE rejected: ' + s;
+          RR.diag(m); stamp(m);
+        });
+      } catch (eEv) {
+        RR.diag('UNIQUE EVIDENCE MISSING: data/i55_relation_unique_truth.json（先跑 probes/probe_relation_unique.js）');
+        stamp('UNIQUE EVIDENCE MISSING: 无 DB 单列唯一键的 JOIN 关系将被拒');
+      }
       var mvErrs = ModelValidator.validate(modelObj, schemaObj, { uniqueKeyEvidence: uniqEvidence });
       if (mvErrs.length) {
         mvErrs.forEach(function (e) { var t = irErrText(e); stamp('MODEL ISSUE: ' + t); RR.diag('MODEL ISSUE: ' + t); });

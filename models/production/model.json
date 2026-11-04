@@ -56,7 +56,7 @@
     { "name": "recordToFile", "label": "检测记录归属文件",
       "from": { "table": "laser_aaa", "column": "file_key" }, "to": { "table": "laser_files", "column": "file_key" },
       "source": "confirmed", "cardinality": "N:1",
-      "confirmedBy": "browser.js fullSql 生产级 laser_*⋈laser_files ON file_key（README #41）+ I2 schema: file_key 是 laser_files 主键 → 多记录:一文件，无 fan-out",
+      "confirmedBy": "browser.js fullSql 生产级 laser_*⋈laser_files ON file_key（README #41）；file_key 无 DB 唯一约束（laser_files PK=source_id+collection_date+file_id 复合，r5 更正旧文本），唯一性由 probes/probe_relation_unique.js 数据侧探针 538/538 证明（带 schema 源+关系+时效绑定，过期即失效）",
       "requiresConfirmation": false, "confidence": "high" },
     { "name": "fileToMachine", "label": "文件来源机台",
       "from": { "table": "laser_files", "column": "source_id" }, "to": { "table": "laser_files", "column": "source_id" },

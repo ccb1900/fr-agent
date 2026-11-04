@@ -24,11 +24,16 @@ var TemplateOps = (function () {
   // 禁写目标（字节基线件 + 任何绝对/越界路径）——patch 只能写 staging，绝不覆盖这些
   var FORBIDDEN_TARGETS = ['demo_api.cpt', 'demo_template_final.cpt'];
 
+  // r5 P2：replace_dataset 列型词表（与 patch.js DS_JTYPE 同一集合，一处真相）；
+  //   validator 在此阶段把列型/值型定死，patch 层只做转换、不再猜测（禁未知类型回退 String）
+  var DS_TYPES = { text: 1, string: 1, number: 1, integer: 1, long: 1, float: 1, decimal: 1, boolean: 1, date: 1, datetime: 1 };
+
   return {
     PATCH_VERSION: PATCH_VERSION,
     WHITELIST: WHITELIST,
     UNIMPLEMENTED: UNIMPLEMENTED,
     FORBIDDEN_TARGETS: FORBIDDEN_TARGETS,
+    DS_TYPES: DS_TYPES,
     capabilities: function () {
       return {
         patchVersion: PATCH_VERSION,

@@ -1,2 +1,2 @@
-laser_files.file_key rows=538 distinct=538 unique=true
-VERDICT recordToFile target-key-unique=PASS
+laser_files.file_key relation=recordToFile rows=538 distinct=538 unique=true
+VERDICT PASS checks=1

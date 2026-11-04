@@ -5,4 +5,6 @@ PASS Locator 用真实 describe 描述符放行 ds1（断层修好）
 PASS apply 返回数据集 before 描述
 PASS 再读回 ds1 列数=2（替换落地）
 PASS 再读回 ds1 首列为 java.lang.Integer（新集列型保真）
+PASS r5 dataset 逐列/逐格 == PatchSpec（读回数据集与 PatchSpec 逐列/逐格一致（2列×2行））
+PASS r5 快照含 2 列 2 行
 PASS 原始基线件未被写（demo_api.cpt 不变量另行终验）
