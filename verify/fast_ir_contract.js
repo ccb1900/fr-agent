@@ -151,11 +151,11 @@ function baseIR() {
   return {
     sheets: [{ name: 's1', widthsPt: [100, 100], blocks: [
       { type: 'title', text: 't', span: 2, heightPt: 30 },
-      { type: 'header', columns: BC, heightPt: 20 },
-      { type: 'detail', dataset: 'ds1', columns: BC, heightPt: 20 },
+      { type: 'header', columns: JSON.parse(JSON.stringify(BC)), heightPt: 20 },
+      { type: 'detail', dataset: 'ds1', columns: JSON.parse(JSON.stringify(BC)), heightPt: 20 },
       { type: 'total', label: '合计', span: 1, aggregate: { fn: 'sum', col: 1 }, heightPt: 20 }
     ] }],
-    datasets: [{ name: 'ds1', columns: BC, rows: [['A', 1]] }]
+    datasets: [{ name: 'ds1', columns: JSON.parse(JSON.stringify(BC)), rows: [[('A'), 1]] }]
   };
 }
 function mut(f) { var ir = baseIR(); f(ir); return ir; }
@@ -315,6 +315,18 @@ check('批D dict formula 零误报', errsOf(dictColIR({ formula: '=CONCATENATE(�
 check('批D dict formula 非串拒', codeAt(dictColIR({ formula: 7 }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].dict.formula'));
 check('批D dict 混形态拒', codeAt(dictColIR({ formula: '=1', tableData: { ds: 'd' } }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].dict.formula'));
 check('批D dict 空对象拒', codeAt(dictColIR({}), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].dict'));
+// ===== 批E（2026-11-05）事件 JS 体系：linkTo.js/参数回填 + dialog 弹窗 + width/height/title =====
+check('批E linkTo js/dialog 全形零误报', errsOf(mut(function (ir) {
+  ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', title: '看',
+    width: 800, height: 500, dialog: { title: '钻取窗', center: true, left: 100, top: 50 },
+    js: [{ name: '回填', recalc: true, params: [{ name: 'p1', formula: '=$$$' }, { name: 'p2', value: 'x' }] }] };
+})).length === 0);
+check('批E dialog 未知键拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', dialog: { zoom: true } }; }), 'INVALID_ENUM', 'sheets[0].blocks[2].link.dialog.zoom'));
+check('批E dialog center 非布拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', dialog: { center: 'yes' } }; }), 'INVALID_TYPE', 'sheets[0].blocks[2].link.dialog.center'));
+check('批E width 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', width: 'wide' }; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].link.width'));
+check('批E js 缺 params.name 拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', js: [{ params: [{ value: 1 }] }] }; }), 'REQUIRED', 'sheets[0].blocks[2].link.js[0].params[0].name'));
+check('批E js.recalc 非布拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', js: [{ recalc: 1 }] }; }), 'INVALID_TYPE', 'sheets[0].blocks[2].link.js[0].recalc'));
+check('批E then.link 同享 js/dialog 闸', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: { reportlet: 'a.cpt', dialog: { bad: 1 } } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].conditions[0].then.link.dialog.bad'));
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {

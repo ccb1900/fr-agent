@@ -542,3 +542,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **像素实证**（能力自检_字典格式 PNG）：custom 字典 A/B/C→合格/返修/报废、tableData 字典 M1/M2、日期列「2026年11月05日」、formula 字典「A-档说明」式产出；XML 计数 TableDataDictionary 1/FormulaDictionary 1/SimpleDateFormatThreadSafe 1。
 - **门禁**：fast 13 GREEN、scan 45 张（44+1）、负门 5 路 GREEN、默认 CBEB42E3 逐字节；coverage missing 116→110。
 
+
+#75 批E 事件 JS 体系（2026-11-05，demo 车道批 E——ParameterJavaScript 589/DialogAttr 26）：
+- **词汇**（linkTo/detail.link/then.link 三路共享）：`js: [{name?, params:[{name,value|formula}], recalc?}]`（超链组多件=钻取主件+动态参数回填件）、`dialog: {title,center,left,top}`（ReportletHyperlinkDialogAttr 经 setAttr）、`width/height`（Hyperlink 基类）、`title`（setLinkTitle）；ir.js checkLinkShape 扩四字段闸 + fast +7（红→绿）。
+- **挂接一手**（probe_jsev/_rh）：ParameterJavaScript() 无参 ctor + setParameters(ppArray)+setShouldRecalculate；DialogAttr 经 **ReportletHyperlink.setAttr(da)**（探针定名）；NameJavaScriptGroup 数组构造（NameJavaScript[]）挂多件。
+- **教案（路径统一）**：detail.link 走老 applyLink 未接 buildLinkGroup——批 E 组装只在 cellLink 路径生效，部署件节点 0 的根因；统一后 applyLink 缺省名保 '钻取'（字节防漂移）。**审查轮 2 顺手抓出测试基建潜伏 bug**：fast 的 baseIR 共享 BC 数组引用——批 A 负控把 then.widget:'editor' 写进共享列对象污染后续全部 mut 断言（批 A/C/D 各轮零误报是被「后写覆盖」掩盖的假绿）——baseIR 改 JSON 深拷贝（columns/datasets 三处）。
+- **诚实边界**：setLinkTitle/setShowParameterInterface 序列化节点未现（属性名待查，低频不追）；Commit2DBJavaScript 挪批 F 填报章；ChartHyperRelateCellLink（18）挂接点在图表侧，批 I 一并。
+- **像素/序列化实证**：部署 XML ParameterJavaScript 1/DialogAttr 1（test_jsev.js 载体，超链组两件+弹窗窗属性）；fast 13 GREEN、scan 46 张（45+1）、默认 CBEB42E3 逐字节；coverage missing 110→108。
+

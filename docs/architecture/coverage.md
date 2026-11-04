@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 01:48:08 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 01:58:44 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 
@@ -8,7 +8,6 @@
 
 | demo类 | 频次 | 状态 | 参考批次 |
 |---|---|---|---|
-| com.fr.js.ParameterJavaScript | 589 | missing | 批E(缺3) |
 | com.fr.plugin.chart.base.AttrTooltipRichText | 192 | missing | (漏账：批排期时人工归入) |
 | com.fr.base.chart.chartdata.model.NormalDataModel | 180 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.reg.NoneReg | 153 | missing | 批F |
@@ -20,7 +19,6 @@
 | com.fr.write.config.IntelliDMLConfig | 53 | missing | 批F |
 | com.fr.report.mobile.DefaultMobileParamStyle | 27 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrSeriesImageBackground | 26 | missing | (漏账：批排期时人工归入) |
-| com.fr.js.ReportletHyperlinkDialogAttr | 26 | missing | 批E(缺3) |
 | com.fr.extended.chart.ExtendedTableDataSet | 25 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipSummaryValueFormat | 24 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.web.ChartHyperRelateCellLink | 18 | missing | (漏账：批排期时人工归入) |
@@ -162,7 +160,7 @@
 | chartDeco | partial (缺: AttrBorder) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | chartdata | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
 | webpage | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| hyperlink | partial (缺: ParameterJavaScript+ReportletHyperlinkDialogAttr+Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
+| hyperlink | partial (缺: Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
 | jsEvents | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #?/#45 |
 | freeze | partial (缺: FrozenState+RepeatAndCollapsible) | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
 | headerfooter | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
@@ -198,7 +196,7 @@
 | dict | 39 | full |
 | summary | 38 | full |
 | submit | 35 | missing 0x12 |
-| hyperlink | 27 | partial 0x3 |
+| hyperlink | 27 | partial 0x1 |
 | chartdata | 25 | full |
 | freeze | 21 | partial 0x2 |
 | richtext | 21 | full |
