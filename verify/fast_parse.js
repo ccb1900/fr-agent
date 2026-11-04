@@ -9,7 +9,7 @@ var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/run
   'semantic/schema/metadata.js', 'semantic/schema/relation.js', 'semantic/schema/serializer.js',
   'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
   'semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js',
-  'semantic/planner/capability.js', 'semantic/planner/planner.js',
+  'semantic/planner/capability.js', 'semantic/planner/planner.js', 'semantic/query/sqlbuilder.js',
   'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;
 FILES.forEach(function (f) {
