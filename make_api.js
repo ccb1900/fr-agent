@@ -386,6 +386,41 @@ try {
 } catch (e) { FAILS++; stamp('ROUNDTRIP FAIL: ' + e); RR.diag('ROUNDTRIP FAIL: ' + e); }
 RR.set('roundtrip', FAILS > failsBeforeRT ? 'failed' : 'passed');
 
+// ---------- 5.9 凭据自动门（I0-04；AGENTS §4"交付前 grep 凭据 0 命中"从人工纪律升级为管线硬门） ----------
+// 扫描面 = 本轮写入部署目录的产物（主 cpt + 渲染件 + diag 件）；token 源 = SPEC.connections 的 user/password
+//   实值（凭据本只在本机 spec，此门防的是"SQL/标题文本把它们抄进产物"事故）+ 通用词 password。
+//   命中 → 撤回件 + deploy 段 failed + FAILS++（退出码非 0；泄漏面绝不留部署目录）。短 token（<4 字符，如 'sa'）
+//   跳过防误伤——真库凭据用户均 ≥4，通用 'password' 兜底；日志只报第几个 token，不落密钥明文。
+(function () {
+  var mainCpt = outDir + '/' + SPEC.outName + '_api.cpt';
+  var targets = [mainCpt, outDir + '/' + SPEC.outName + '_api.png', outDir + '/' + SPEC.outName + '_api.pdf', outDir + '/diag_api.cpt'];
+  var toks = ['password'];
+  (SPEC.connections || []).forEach(function (cc) {
+    if (cc.user && String(cc.user).length >= 4) toks.push(String(cc.user));
+    if (cc.password && String(cc.password).length >= 4) toks.push(String(cc.password));
+  });
+  var hits = 0;
+  targets.forEach(function (fp) {
+    var pth = J('java.nio.file.Paths').get(fp);
+    if (!J('java.nio.file.Files').exists(pth)) return;
+    var low;
+    try { low = String(new (J('java.lang.String'))(Files.readAllBytes(pth), 'UTF-8')).toLowerCase(); }
+    catch (eRd) { return; }   // 二进制读失败不判（主面是文本级 cpt/png 元数据）
+    var hitTok = -1;
+    for (var ti = 0; ti < toks.length; ti++) {
+      if (low.indexOf(String(toks[ti]).toLowerCase()) >= 0) { hitTok = ti; break; }
+    }
+    if (hitTok >= 0) {
+      hits++;
+      stamp('SECRET GATE DENY: token#' + (hitTok + 1) + ' found in ' + fp);
+      RR.diag('SECRET GATE DENY: credential token found in ' + fp + ' -> artifact retracted');
+      try { J('java.nio.file.Files').deleteIfExists(pth); } catch (eDel2) { RR.diag('SECRET GATE RETRACT FAIL: ' + eDel2); }
+    }
+  });
+  if (hits) { RR.set('deploy', 'failed'); FAILS++; }
+  else stamp('SECRET GATE: deployed artifacts clean (' + toks.length + ' tokens)');
+})();
+
 // ---------- 6. 数值自检（默认路径；rawIR 自带勾稽账，不适用） ----------
 var expectSum = 0, lastNum = built.totalCol;
 if (SPEC.data) { for (var di = 0; di < SPEC.data.length; di++) expectSum += (lastNum >= 0 ? SPEC.data[di][lastNum] : 0); stamp('EXPECTED TOTAL = ' + expectSum); }

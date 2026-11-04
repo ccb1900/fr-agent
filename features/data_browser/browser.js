@@ -290,6 +290,30 @@ var BROWSER = (function () {
   }
 
   function browserSpec(cfg) {
+    // I0-04（r2.md，2026-11-04）标识符入口白名单：cfg 表/列/日期列/排序键直进 [] 包裹拼 SQL——
+    //   边界一次校验、内部信任（ub-mode Boundary Discipline）。合法集=SQL Server 常规标识符
+    //   （字母_@#$ 起头 + 字母数字_@#$ 体，≤128）；引号/分号/括号/方括号/空格全拒（'] 闭合逃逸是主面）。
+    //   值参数（${machine}/${stage}/${d1}/${d2}）= FR 文本替换，形态不可离线预验——文件头已知边界照旧；
+    //   对外必须接 ? 绑定（ppArray 通道已具备），工单见 README #54（用户拍板最小加固口径）。
+    var IDENT_RE = /^[A-Za-z_@#$][A-Za-z0-9_@#$]{0,127}$/;
+    function ident(v, ctx) {
+      if (v == null || v === '') return v;
+      if (!IDENT_RE.test(String(v))) throw new Error('[BROWSER] invalid identifier (' + ctx + '): ' + v);
+      return v;
+    }
+    ident(cfg.table, 'cfg.table'); ident(TPFX, 'BR_TPFX');
+    ident(cfg.dateCol, 'cfg.dateCol'); ident(cfg.timeCol, 'cfg.timeCol');
+    ident(cfg.filterCol, 'cfg.filterCol'); ident(cfg.machineCol, 'cfg.machineCol');
+    (cfg.sortKeys || []).forEach(function (n) { ident(n, 'cfg.sortKeys'); });
+    (cfg.cols || []).forEach(function (c, i) { ident(c && c.name, 'cfg.cols[' + i + '].name'); });
+    // I0-04 数值闸：page/size 进 '+pageExpr() 文本拼接位（TRY_CAST 未加引号）——先收形态再拼，
+    //   坏值（NaN/负/小数/天文数字）当场拒，不漂进 SQL。size 上界 5000 对齐行数保护口径。
+    function numGate(v, ctx, lo, hi) {
+      var n = +v;
+      if (!(typeof n === 'number' && isFinite(n) && Math.floor(n) === n && n >= lo && n <= hi))
+        throw new Error('[BROWSER] ' + ctx + ' must be integer in [' + lo + ',' + hi + '], got: ' + v);
+      return n;
+    }
     // effLen 全角感知（与 gen_laser_specs.js 同款）：中文/全角 2 半角位（'行号' 等 4 半角，直数 .length 腰斩）
     var effLen = function (s) {
       var w = 0;
@@ -318,7 +342,7 @@ var BROWSER = (function () {
     });
     while (widths.length < ncol) widths.push(Math.round(6 * ADV + 14));
     var D = cfg.defaults || {};
-    var rowsPerPage = Math.max(1, +env('BR_SIZE', String(D.size || 50)));
+    var rowsPerPage = numGate(env('BR_SIZE', String(D.size || 50)), 'size/BR_SIZE', 1, 5000);   // I0-04 数值闸（原 Math.max(1,+env) 遇坏值漂 NaN 进 SQL）
     var rowH = 141;                    // 明细行高（生产 V2 同值 141pt）：attr112 数据行引擎自适应地板≈138pt（92px×50 行像素标尺实测），
                                        // 预写 112 会被顶到 138 → 纸面装不下 50 行永远切 2 页；预写 141≥地板按预写直出，纸面预算闭合
     var HDR_H = 224;                   // 表头/口径注 2 行文本带（112×2）：静态格实测不膨胀（223px 对账）
@@ -339,7 +363,7 @@ var BROWSER = (function () {
         top: 190500, left: 228600, bottom: 190500, right: 228600
       };
     }
-    var page0 = Math.max(1, +env('BR_PAGE', String(D.page || 1)));
+    var page0 = numGate(env('BR_PAGE', String(D.page || 1)), 'page/BR_PAGE', 1, 1000000);   // I0-04 数值闸
     // 公式默认值（=TODAY()-6 / =TODAY()）：web 端由面板控件公式求值；管线 PNG 静态路径用字面日期兜底
     function calStr(off) {
       var cal = J('java.util.Calendar').getInstance();

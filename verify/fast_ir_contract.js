@@ -207,6 +207,14 @@ check('REQUIRED link.params[].name', codeAt(mut(function (ir) { ir.sheets[0].blo
 check('REQUIRED ds.params[].name', codeAt(mut(function (ir) { ir.datasets[0].params = [{ formula: '=$$$' }]; }), 'REQUIRED', 'datasets[0].params[0].name'));
 check('合法 ds.params 零误报（drill 实形）', errsOf(mut(function (ir) { ir.datasets[0].params = [{ name: 'day', value: '2026-09-13' }]; })).length === 0);
 check('UNKNOWN_REF 未知 dataset 引用仍命中', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].dataset = 'ghost'; }), 'UNKNOWN_REF', 'sheets[0].blocks[2].dataset'));
+// I0-04（r2.md）SQL 只读闸：kind=sql 必须单语句 SELECT/WITH 起头，禁内嵌 ;（多语句注入面）
+function noCode(ir, code) { return !errsOf(ir).some(function (e) { return e && e.code === code; }); }
+check('SQL_READONLY 拒 DELETE', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'DELETE FROM t' }); }), 'SQL_READONLY', 'datasets[1].query'));
+check('SQL_READONLY 拒 UPDATE', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'UPDATE t SET a=1' }); }), 'SQL_READONLY', 'datasets[1].query'));
+check('SQL_READONLY 拒多语句 ;', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'SELECT 1; DROP TABLE t' }); }), 'SQL_READONLY', 'datasets[1].query'));
+check('SQL_READONLY 拒 -- 注释起头', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: '--x\nSELECT 1' }); }), 'SQL_READONLY', 'datasets[1].query'));
+check('合法 WITH…SELECT（浏览器族 patsCte 形态）零误报', noCode(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: "WITH days AS (SELECT 1 AS d) SELECT d FROM days WHERE d = TRY_CAST(${page} AS int)" }); }), 'SQL_READONLY'));
+check('合法 select 小写零误报', noCode(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'select a from t' }); }), 'SQL_READONLY'));
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
