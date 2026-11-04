@@ -8,6 +8,8 @@ var TemplateLocator = (function () {
     var d = descriptor || {};
     var si = op.sheet;
     if (op.op === 'replace_dataset') {
+      // I6.1-A：优先走 Inspector 注入的活断言（真实 WorkBook 链）；离线测仍可喂 datasetNames 静态表
+      if (typeof d.hasDataset === 'function') return d.hasDataset(op.name) ? { ok: true } : { ok: false, reason: '数据集不存在(WorkBook 实查)，拒绝新建: ' + op.name };
       var names0 = d.datasetNames || [];
       return (names0.indexOf(op.name) >= 0) ? { ok: true } : { ok: false, reason: '数据集不存在，拒绝新建: ' + op.name };
     }

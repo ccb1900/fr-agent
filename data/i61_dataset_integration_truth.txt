@@ -1,0 +1,8 @@
+PASS describe 返回 hasDataset 活断言
+PASS describe.hasDataset(ds1) 真实 WorkBook 实查为真
+PASS describe.hasDataset(ghost) 为假
+PASS Locator 用真实 describe 描述符放行 ds1（断层修好）
+PASS apply 返回数据集 before 描述
+PASS 再读回 ds1 列数=2（替换落地）
+PASS 再读回 ds1 首列为 java.lang.Integer（新集列型保真）
+PASS 原始基线件未被写（demo_api.cpt 不变量另行终验）

@@ -40,8 +40,12 @@ check('validator 错误形状 {code,path,message}', TemplateValidator.validate({
 var desc = { sheetCount: 1, sheets: [{ rows: 5, cols: 4 }], datasetNames: ['ds1'] };
 check('locator 格在网格内→ok', TemplateLocator.exists({ op: 'replace_cell_value', sheet: 0, cell: { c: 3, r: 4 } }, desc).ok === true);
 check('locator 越界→拒', TemplateLocator.exists({ op: 'replace_cell_value', sheet: 0, cell: { c: 9, r: 0 } }, desc).ok === false);
-check('locator 数据集存在→ok', TemplateLocator.exists({ op: 'replace_dataset', name: 'ds1' }, desc).ok === true);
 check('locator 数据集不存在→拒（不静默新建）', TemplateLocator.exists({ op: 'replace_dataset', name: 'ghost' }, desc).ok === false);
+// I6.1-A：真实 describe() 形态（hasDataset 活断言）必须被 Locator 消费，否则 replace_dataset 在真实链永拒
+var realDesc = { sheetCount: 1, sheets: [{ rows: 5, cols: 4 }], datasetNames: [], hasDataset: function (n) { return n === 'ds1'; } };
+check('I6.1-A describe 形态(hasDataset) ds1→ok', TemplateLocator.exists({ op: 'replace_dataset', name: 'ds1' }, realDesc).ok === true);
+check('I6.1-A describe 形态(hasDataset) ghost→拒', TemplateLocator.exists({ op: 'replace_dataset', name: 'ghost' }, realDesc).ok === false);
+check('I6.1-A hasDataset 优先于空 datasetNames（不回退误拒）', TemplateLocator.exists({ op: 'replace_dataset', name: 'ds1' }, realDesc).ok === true);
 check('locator sheet 越界→拒', TemplateLocator.exists({ op: 'replace_cell_value', sheet: 7, cell: { c: 0, r: 0 } }, desc).ok === false);
 
 // ===== diff（未改部分不变的判据）=====
