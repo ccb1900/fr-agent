@@ -9,7 +9,7 @@ var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 load('D:/fineagent/runtime/paths.js');
 var R = Paths.root;
 load(R + '/template/ops.js'); load(R + '/template/validator.js'); load(R + '/template/locator.js'); load(R + '/template/diff.js');
-load(R + '/template/inspector.js'); load(R + '/template/reader.js'); load(R + '/template/patch.js');
+load(R + '/template/inspector.js'); load(R + '/template/reader.js'); load(R + '/template/patch.js'); load(R + '/template/regression.js');
 load(Paths.runtime('bootstrap.js')); Runtime.initialize();    // 激活链：readTemplateWorkBook 相对名可用
 
 function readUtf(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(p)), 'UTF-8')); }
@@ -49,40 +49,54 @@ try {
       Runtime.DataSource.register([{ name: 'ATOM_LIVE', driver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver', url: url, user: usr, password: load(Paths.lib('dbpass.js')) }], { stamp: function () { }, check: function () { } });
     }
   } catch (eReg) { print('  conn register skip: ' + eReg); }
-  // 原始件执行栅格（改前基线）——重新读一份未改的 wb 执行
+  // I6.1-C：执行/渲染回归结构化，杜绝"两边都失败且错误串相同→假 PASS"
   function execGrid(w) {
     try {
       var rb = w.execute(new (J('java.util.HashMap'))(), new (J('com.fr.stable.PageActor'))());
       var rp = rb.getResultReport(0), s = '';
-      for (var r = 0; r < rp.getRowCount(); r++) { for (var c = 0; c < rp.getColumnCount(); c++) { var cel = rp.getCellElement(c, r); s += (cel ? String(cel.getText()) : '') + '|'; } s += '\n'; }
-      return s;
-    } catch (e) { return '(exec-fail ' + e + ')'; }
+      for (var r = 0; r < rp.getRowCount(); r++) {
+        for (var c = 0; c < rp.getColumnCount(); c++) {
+          var cel = rp.getCellElement(c, r), txt = '';
+          if (cel != null) {
+            if (typeof cel.getText === 'function') txt = String(cel.getText());
+            else if (typeof cel.getValue === 'function' && cel.getValue() != null) txt = String(cel.getValue());
+            else if (typeof cel.toString === 'function') txt = String(cel.toString());
+          }
+          s += txt + '|';
+        }
+        s += '\n';
+      }
+      return { ok: true, grid: s, error: null };
+    } catch (e) { return { ok: false, grid: '', error: String(e) }; }
   }
-  var hasDatasetOp = (patch.ops || []).some(function (o) { return o.op === 'replace_dataset'; });
-  var gridBefore = execGrid(TemplateReader.readCpt(patch.sourceCpt));   // 未改原件执行
-  var descriptor = TemplateInspector.describe(wb);
-  var expected = { added: [], removed: [] };
-  patch.ops.forEach(function (op) {
-    var res = TemplatePatch.apply(wb, op, descriptor);
-    if (res.before.cell) { expected.removed.push(res.before.cell.oldText); expected.added.push(res.before.cell.newText); }
-    if (res.before.dataset) { expected.added.push('/*replace_dataset ' + res.before.dataset.name + ' rows=' + res.before.dataset.rowCount + '*/'); }
-  });
-  var gridAfter = execGrid(wb);   // 打补丁后执行
-  // 渲染回归：改前/改后各出 PNG 到 staging（供 make_pixel_diff 判"视觉差异只在标题区"）
   function renderPng(w, file) {
     try {
       var rbx = w.execute(new (J('java.util.HashMap'))(), new (J('com.fr.stable.PageActor'))());
       var os = new (J('java.io.FileOutputStream'))(file);
       new (J('com.fr.io.exporter.ImageExporter'))().export(os, rbx); os.close();
-      return J('java.nio.file.Files').size(Pth.get(file));
-    } catch (e) { return -1; }
+      var sz = J('java.nio.file.Files').size(Pth.get(file));
+      return { ok: sz > 1000, bytes: sz, error: sz > 1000 ? null : 'PNG 过小(疑似空白/未渲染)' };
+    } catch (e) { return { ok: false, bytes: -1, error: String(e) }; }
   }
+  var hasDatasetOp = (patch.ops || []).some(function (o) { return o.op === 'replace_dataset'; });
+  var before = execGrid(TemplateReader.readCpt(patch.sourceCpt));   // 未改原件执行基线
+  var descriptor = TemplateInspector.describe(wb);
+  var expected = { added: [], removed: [], ops: patch.ops.slice() };   // I6.1-B：ops 决定允许的结构变化类别
+  patch.ops.forEach(function (op) {
+    var res = TemplatePatch.apply(wb, op, descriptor);
+    if (res.before.cell) { expected.removed.push(res.before.cell.oldText); expected.added.push(res.before.cell.newText); }
+    if (res.before.dataset) { expected.added.push('/*replace_dataset ' + res.before.dataset.name + ' rows=' + res.before.dataset.rowCount + '*/'); }
+  });
+  var after = execGrid(wb);   // 打补丁后执行
   var pngBefore = renderPng(TemplateReader.readCpt(patch.sourceCpt), staging + '/_pre.png');
   var pngAfter = renderPng(wb, staging + '/_post.png');
-  print('  render png before=' + pngBefore + 'B after=' + pngAfter + 'B（差异应仅标题区）');
-  var execRegression = hasDatasetOp ? 'DATA-CHANGED(expected)' : (gridBefore === gridAfter ? 'PASS(数据栅格逐格不变)' : 'FAIL(数据意外变动)');
-  print('  execution regression=' + execRegression + ' (rows=' + gridBefore.split('\n').length + ')');
-  if (!hasDatasetOp && gridBefore !== gridAfter) FAIL = 1;
+
+  // 任一执行/渲染失败 = 回归失败（不比错误文本、不拿 -1 当成功）；裁决逻辑在 template/regression.js 纯函数（离线可证）
+  var ev = TemplateRegression.execution(before, after, hasDatasetOp);
+  var rv = TemplateRegression.render(pngBefore, pngAfter);
+  print('  execution regression=' + (ev.pass ? 'PASS(' : 'FAIL(') + ev.reason + ') (rows=' + before.grid.split('\n').length + ')');
+  print('  render regression=' + (rv.pass ? 'PASS(' : 'FAIL(') + rv.reason + ')');
+  if (!ev.pass || !rv.pass) FAIL = 1;
 
   var outAbs = staging + '/' + (patch.outName || (baseName + '.patched.cpt'));
   if (!/\.cpt$/.test(outAbs)) outAbs += '.cpt';

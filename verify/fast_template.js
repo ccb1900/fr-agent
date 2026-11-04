@@ -12,7 +12,7 @@ function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
   check('PARSE ' + f, ok);
 });
-load(ROOT + '/template/ops.js'); load(ROOT + '/template/validator.js'); load(ROOT + '/template/locator.js'); load(ROOT + '/template/diff.js');
+load(ROOT + '/template/ops.js'); load(ROOT + '/template/validator.js'); load(ROOT + '/template/locator.js'); load(ROOT + '/template/diff.js'); load(ROOT + '/template/regression.js');
 function codeAt(errs, code, frag) { return errs.some(function (e) { return e.code === code && String(e.path).indexOf(frag) >= 0; }); }
 function hasE(errs, frag) { return errs.some(function (e) { return (e.code + ' ' + e.path + ' ' + e.message).indexOf(frag) >= 0; }); }
 
@@ -59,6 +59,55 @@ var d2 = TemplateDiff.diff(beforeXml, afterBad, { added: ['新标题'], removed:
 check('diff 有未预期改动→不 clean + 列出', d2.clean === false && d2.unintended.removed.indexOf('保持') >= 0 && d2.unintended.added.indexOf('被误改') >= 0);
 check('diff namedStyles 命中', TemplateDiff.namedStyles('<a style_name="s1"/><b style_name="s2"/>') === 2);
 check('diff profile 计数', TemplateDiff.profile(beforeXml).colDefs === 1 && TemplateDiff.profile(beforeXml).cells === 2);
+// I6.1-B 红→绿：结构变化 / 属性变化必须让 clean=false（此前只比 CDATA，会假 clean）
+var afterStruct = afterXml.replace('<ColumnDefinition num="288"/>', '');   // 少一个 ColumnDefinition
+var d3 = TemplateDiff.diff(beforeXml, afterStruct, { added: ['新标题'], removed: ['旧标题'] });
+check('I6.1-B 结构计数变化→clean=false + unintended.struct 列出', d3.clean === false && d3.unintended.struct.length >= 1 && !!d3.structDelta.colDefs);
+var afterAttr = afterXml.replace('<![CDATA[保持]]>', '<![CDATA[保持]]><O c="2" r="0" name="注入格"><![CDATA[保持2]]></O>');
+// 通过新增一个带语义属性 name= 的节点，制造属性签名变化
+var d4 = TemplateDiff.diff(beforeXml, afterAttr, { added: ['新标题', '保持2'], removed: ['旧标题'] });
+check('I6.1-B 属性签名变化→clean=false', d4.clean === false && (d4.unintended.attrAdded.length > 0 || d4.unintended.struct.length > 0));
+// replace_dataset：数据集相关结构(dataCols)变化允许，其余(cells/styles)不许
+var beforeDs = '<Report><TableData name="ds1"><ColumnDescriptor name="a"/><ColumnDescriptor name="b"/></TableData></Report>';
+var afterDs = '<Report><TableData name="ds1"><ColumnDescriptor name="x"/></TableData></Report>';
+var d5 = TemplateDiff.diff(beforeDs, afterDs, { added: [], removed: [], ops: [{ op: 'replace_dataset', name: 'ds1' }] });
+check('I6.1-B 引擎属性标记(Theme/Fork/TemplateId)作噪声过滤', (function () {
+  var x = '<Report><O c="0"><![CDATA[k]]></O></Report>';
+  var y = '<Report class="com.fr.base.iofile.attr.TemplateThemeAttrMark" name="兼容主题"><O c="0"><![CDATA[k]]></O></Report>';
+  return TemplateDiff.diff(x, y, {}).clean === true;
+})());
+check('I6.1-B dataset op 允许 dataCols 结构变化（不进 unintended.struct）',
+  d5.structDelta.dataCols === '2→1' && d5.unintended.struct.every(function (x) { return x.indexOf('dataCols') < 0; }));
+var d6 = TemplateDiff.diff(beforeDs + '<O c="0"><![CDATA[k]]></O>', afterDs, { added: [], removed: ['k'], ops: [{ op: 'replace_dataset', name: 'ds1' }] });
+check('I6.1-B dataset op 仍禁止 cells 等非数据集结构变化', d6.clean === false && d6.unintended.struct.some(function (x) { return x.indexOf('cells') >= 0; }));
+check('I6.1-B dataset op 放行 SQL/列名 CSV 等数据集本体变化', (function () {
+  var b = '<R><TableData><![CDATA[SELECT a FROM t]]></TableData><O><![CDATA[标题]]></O></R>';
+  var a = '<R><TableData><![CDATA[SELECT x FROM y]]></TableData><O><![CDATA[标题]]></O></R>';
+  return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === true;
+})());
+check('I6.1-B dataset op 仍拒"单元格文本"未预期改动（非数据集本体）', (function () {
+  var b = '<R><TableData><![CDATA[SELECT a FROM t]]></TableData><O><![CDATA[标题]]></O></R>';
+  var a = '<R><TableData><![CDATA[SELECT x FROM y]]></TableData><O><![CDATA[被偷偷改的标题]]></O></R>';
+  return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === false;
+})());
+
+// ===== I6.1-C 执行/渲染回归裁决（纯函数，禁假 PASS） =====
+check('C 两边都执行失败且错误串相同→FAIL（非假 PASS）', (function () {
+  var f = { ok: false, grid: '', error: 'boom' };
+  return TemplateRegression.execution(f, { ok: false, grid: '', error: 'boom' }, false).pass === false;
+})());
+check('C 单边执行失败→FAIL', TemplateRegression.execution({ ok: true, grid: 'a|b\n', error: null }, { ok: false, grid: '', error: 'x' }, false).pass === false);
+check('C 标题行变化但数据区不变→PASS', (function () {
+  var b = { ok: true, grid: '旧标题|旧标题\n表头|表头\nd|1\n', error: null };
+  var a = { ok: true, grid: '新标题|新标题\n表头|表头\nd|1\n', error: null };
+  return TemplateRegression.execution(b, a, false).pass === true;
+})());
+check('C 数据区变化→FAIL', (function () {
+  var b = { ok: true, grid: 'h|h\n表头|表头\nd|1\n', error: null };
+  var a = { ok: true, grid: 'h|h\n表头|表头\nd|999\n', error: null };
+  return TemplateRegression.execution(b, a, false).pass === false;
+})());
+check('C 渲染 -1/失败→FAIL', TemplateRegression.render({ ok: false, bytes: -1, error: 'e' }, { ok: true, bytes: 40000, error: null }).pass === false);
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

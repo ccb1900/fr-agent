@@ -1,18 +1,38 @@
-// template/diff.js — I6 纯函数：结构 diff（判"未改部分不变"）+ 命名样式守卫（零依赖，离线可测）
-//   导出字节 MD5 不可用（官方件含 <UUID> 非确定，87/240 self=false，README:126）→ 改用语义 token diff：
-//     CDATA 文本值多重集 + 关键节点计数（<O/<Style/Row/ColumnDefinition/TableData）→ 只有预期改动出现才算"未改部分不变"。
+// template/diff.js — I6.1 结构 diff（判"未改部分不变"）+ 命名样式守卫（零依赖，离线可测）
+//   导出字节 MD5 不可用（官方件含 <UUID> 非确定，87/240 self=false，README:126）→ 用语义比较：
+//     ① CDATA 文本多重集  ② 关键 XML 属性签名多重集（r4 P1：此前只看 CDATA，属性/非CDATA 改动漏检）
+//     ③ 关键节点计数 profile（r4 P1：structDelta 必须纳入 clean）
+//   按 op 分类允许的结构变化：replace_cell_value→结构计数全守恒；replace_dataset→仅数据集相关结构可变。
 var TemplateDiff = (function () {
   function isNoise(t) {
-    // 序列化噪声（README:126 官方件 re-export 非字节稳定：RowHeight/ColumnWidth 数字数组、UUID、时间戳）
     if (/^[\d,\s.]+$/.test(t)) return true;                        // 纯数字/逗号数组（列宽/行高）
     if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t)) return true;         // UUID
-    if (/^\d{10,}$/.test(t.trim())) return true;                   // 长数字串（epoch/雪花键内部）
+    if (/^\d{10,}$/.test(t.trim())) return true;                   // 长数字串（epoch/雪花键）
     return false;
   }
   function tokens(xml) {
     var s = String(xml), m, out = [];
     var re = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
-    while ((m = re.exec(s))) { var t = m[1]; if (!isNoise(t)) out.push(t); }   // I6：只比语义内容，忽略序列化噪声
+    while ((m = re.exec(s))) { var t = m[1]; if (!isNoise(t)) out.push(t); }
+    return out;
+  }
+  // I6.1-B：关键属性签名（只取语义稳定属性，排除 UUID/时间戳等噪声值）
+  var SEMANTIC_ATTRS = /^(class|name|customName|columnName|dsName|value|t|type|function|style_name|formula|op|kind|aggregation|cardinality|source)$/;
+  var NOISE_ATTR_VAL = /^[0-9a-f]{8}-[0-9a-f]{4}|^\d{10,}$|^\d{4}-\d\d-\d\dT/i;
+  // r4 I6.1-B：re-export 时引擎会附加内部标记属性（主题/ForkId/TemplateId），非用户语义变化→噪声过滤
+  var ENGINE_CLASS_NOISE = /^com\.fr\.base\.iofile\.attr\.(TemplateThemeAttrMark|ForkIdAttrMark|TemplateIdAttrMark)$/;
+  var ENGINE_NAME_NOISE = /兼容主题|TemplateId|ForkId|兼容|mark/i;
+  function attrTokens(xml) {
+    var s = String(xml), m, out = [];
+    var re = /([A-Za-z_][\w:.-]*)\s*=\s*"([^"]*)"/g;
+    while ((m = re.exec(s))) {
+      if (!SEMANTIC_ATTRS.test(m[1])) continue;
+      var v = m[2];
+      if (isNoise(v) || NOISE_ATTR_VAL.test(v)) continue;
+      if (m[1] === 'class' && ENGINE_CLASS_NOISE.test(v)) continue;
+      if (m[1] === 'name' && ENGINE_NAME_NOISE.test(v)) continue;
+      out.push(m[1] + '=' + v);
+    }
     return out;
   }
   function countAll(xml, re) { return (String(xml).match(re) || []).length; }
@@ -28,34 +48,71 @@ var TemplateDiff = (function () {
   }
   function namedStyles(xml) { return countAll(xml, /style_name=/g); }
 
-  // 多重集差（added=after 有 before 无 的净增，removed 反之），忽略次序
-  function multisetDiff(before, after) {
+  function multisetDiff(listB, listA) {
     var b = {}, a = {};
-    tokens(before).forEach(function (t) { b[t] = (b[t] || 0) + 1; });
-    tokens(after).forEach(function (t) { a[t] = (a[t] || 0) + 1; });
+    listB.forEach(function (t) { b[t] = (b[t] || 0) + 1; });
+    listA.forEach(function (t) { a[t] = (a[t] || 0) + 1; });
     var added = [], removed = [], k;
     for (k in a) if (Object.prototype.hasOwnProperty.call(a, k)) { var d = a[k] - (b[k] || 0); if (d > 0) for (var i = 0; i < d; i++) added.push(k); }
-    for (k in b) if (Object.prototype.hasOwnProperty.call(b, k)) { var d2 = b[k] - (a[k] || 0); if (d2 > 0) for (var j = 0; j < d2; j++) removed.push(b[k] && k); }
+    for (k in b) if (Object.prototype.hasOwnProperty.call(b, k)) { var d2 = b[k] - (a[k] || 0); if (d2 > 0) for (var j = 0; j < d2; j++) removed.push(k); }
     return { added: added, removed: removed };
   }
-  // expected: {added:[token], removed:[token]} 预期改动；返回 unintended（超出预期的 CDATA 变化）+ 结构计数是否守恒
+  function consume(bag, list) { var out = []; list.forEach(function (x) { var idx = bag.indexOf(x); if (idx >= 0) bag.splice(idx, 1); else out.push(x); }); return out; }
+
+  // expected: {added,removed, ops:[{op:name,...}]} —— ops 决定哪些结构变化被允许
+  //   replace_cell_value: 任何结构计数变化都不允许；replace_dataset: 仅 dataCols/tableData 允许变（其余守恒）。
   function diff(beforeXml, afterXml, expected) {
     expected = expected || {};
+    var ms = multisetDiff(tokens(beforeXml), tokens(afterXml));
+    var ams = multisetDiff(attrTokens(beforeXml), attrTokens(afterXml));
     var eA = (expected.added || []).slice(), eR = (expected.removed || []).slice();
-    var ms = multisetDiff(beforeXml, afterXml);
-    function consume(bag, list) { var out = []; list.forEach(function (x) { var idx = bag.indexOf(x); if (idx >= 0) bag.splice(idx, 1); else out.push(x); }); return out; }
+    var eAttrA = (expected.attrAdded || []).slice(), eAttrR = (expected.attrRemoved || []).slice();
     var unintendedAdded = consume(eA.slice(), ms.added);
     var unintendedRemoved = consume(eR.slice(), ms.removed);
+    var unintendedAttrAdded = consume(eAttrA.slice(), ams.added);
+    var unintendedAttrRemoved = consume(eAttrR.slice(), ams.removed);
+
     var pb = profile(beforeXml), pa = profile(afterXml);
-    var structDelta = {};
-    Object.keys(pb).forEach(function (k) { if (pb[k] !== pa[k]) structDelta[k] = pb[k] + '→' + pa[k]; });
+    var structDelta = {}, unintendedStruct = [];
+    var ops = expected.ops || [];
+    var hasDatasetOp = ops.some(function (o) { return o.op === 'replace_dataset'; });
+    // I6.1-B：replace_dataset 时数据集本体（SQL/连接/列名/Java 类/行值/序列化属性）预期整体替换，
+    //   这些 token 从 unintended 豁免；但单元格/样式/其它语义 token 仍严格守恒（不静默放过未改部分）。
+    function isDatasetToken(t) {
+      var s = String(t).trim();
+      if (s === '' || /^(ds\d+|ATOM_LIVE)$/.test(s)) return true;        // 空占位 / 数据集名 / 连接名
+      if (/SELECT\s|FROM\s|GROUP BY|ORDER BY|TRY_CAST|BETWEEN/.test(s)) return true;
+      if (/java\.lang\.|java\.math\.|java\.sql\./.test(s)) return true;
+      if (/EmbeddedTableData|DBTableData|NameDatabaseConnection|ATOM_LIVE/.test(s)) return true;
+      if (/[,]/.test(s) && /^[\w,.\s"'\-]+$/.test(s)) return true;   // 列名 CSV / 行值 CSV（旧/新集）
+      if (/^[\x20-\x7E]{10,}$/.test(s) && /[>"'~$]/.test(s)) return true;  // 内嵌行序列化串（trim 后）
+      return false;
+    }
+    if (hasDatasetOp) {
+      unintendedAdded = unintendedAdded.filter(function (t) { return !isDatasetToken(t); });
+      unintendedRemoved = unintendedRemoved.filter(function (t) { return !isDatasetToken(t); });
+      unintendedAttrAdded = unintendedAttrAdded.filter(function (t) { return !/class=com\.fr\.data\.impl\.(EmbeddedTableData|DBTableData|NameDatabaseConnection)/.test(t); });
+      unintendedAttrRemoved = unintendedAttrRemoved.filter(function (t) { return !/class=com\.fr\.data\.impl\.(DBTableData|NameDatabaseConnection)/.test(t); });
+    }
+    var datasetAllowed = { dataCols: 1, tableData: 1 };   // 数据集替换允许变化的结构项
+    Object.keys(pb).forEach(function (k) {
+      if (pb[k] !== pa[k]) {
+        structDelta[k] = pb[k] + '→' + pa[k];
+        if (!(hasDatasetOp && datasetAllowed[k])) unintendedStruct.push(k + ':' + structDelta[k]);
+      }
+    });
+
+    var clean = unintendedAdded.length === 0 && unintendedRemoved.length === 0 &&
+      unintendedAttrAdded.length === 0 && unintendedAttrRemoved.length === 0 &&
+      unintendedStruct.length === 0;
     return {
       added: ms.added, removed: ms.removed,
-      unintended: { added: unintendedAdded, removed: unintendedRemoved },
+      attrAdded: ams.added, attrRemoved: ams.removed,
+      unintended: { added: unintendedAdded, removed: unintendedRemoved, attrAdded: unintendedAttrAdded, attrRemoved: unintendedAttrRemoved, struct: unintendedStruct },
       structDelta: structDelta,
       namedStyleRisk: { before: namedStyles(beforeXml), after: namedStyles(afterXml) },
-      clean: unintendedAdded.length === 0 && unintendedRemoved.length === 0
+      clean: clean
     };
   }
-  return { diff: diff, namedStyles: namedStyles, profile: profile, tokens: tokens };
+  return { diff: diff, namedStyles: namedStyles, profile: profile, tokens: tokens, attrTokens: attrTokens };
 })();

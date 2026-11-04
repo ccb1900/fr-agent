@@ -1,0 +1,11 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报_I5闭环_api.cpt",
+  "outName": "日报_I6换集.cpt",
+  "description": "I6.1 A+B+C 合链：真 WorkBook replace_dataset（已存在 ds1）",
+  "ops": [
+    { "op": "replace_dataset", "name": "ds1",
+      "columns": [{"name":"biz_day","type":"text"},{"name":"plan_cnt","type":"integer"}],
+      "rows": [["2026-09-13", 4238], ["2026-09-14", 3873]] }
+  ]
+}
