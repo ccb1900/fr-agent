@@ -63,13 +63,16 @@ var ReportArtifact = (function () {
     return out;
   }
 
-  // parts: {sourceType, outName, cptPath, pngPath, pdfPath, execution, validation, preview, diagnostics, spec, patch, staging, createdAt}
+  // parts: {sourceType, runId, outName, cptPath, pngPath, pdfPath, execution, validation, preview, diagnostics, spec, patch, staging, createdAt}
+  //   runId（r10-A）：每次操作的独立身份——artifactId 唯一化 + 任务目录隔离（logs/agent/runs/{runId}/），防并发/陈旧污染
   function create(parts) {
     parts = parts || {};
     var sourceType = SOURCE_TYPES[parts.sourceType] ? parts.sourceType : 'generated';
+    var runId = isStr(parts.runId) && parts.runId ? parts.runId : '';
     return {
       artifactVersion: ARTIFACT_VERSION,
-      artifactId: sourceType + ':' + (parts.outName || 'unknown'),
+      artifactId: sourceType + ':' + (parts.outName || 'unknown') + '@' + (runId || 'norun'),
+      runId: runId,
       sourceType: sourceType,
       outName: parts.outName || null,
       createdAt: parts.createdAt || new Date().toISOString(),
@@ -94,6 +97,7 @@ var ReportArtifact = (function () {
     if (String(art.artifactVersion) !== ARTIFACT_VERSION) E('artifactVersion', '不支持: ' + art.artifactVersion);
     if (!SOURCE_TYPES[art.sourceType]) E('sourceType', '须 generated|patched|duplicated: ' + art.sourceType);
     if (!isStr(art.artifactId) || !art.artifactId) E('artifactId', '必填');
+    if (!isStr(art.runId) || !art.runId) E('runId', '必填（r10-A：每次操作独立身份）');
     if (!isStr(art.outName) || !art.outName) E('outName', '必填');
     if (!isStr(art.cptPath) || !art.cptPath) E('cptPath', '必填');
     if (!isObj(art.execution) || typeof art.execution.ok !== 'boolean') E('execution', '须 {ok:bool,...}');

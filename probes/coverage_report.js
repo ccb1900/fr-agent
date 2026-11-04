@@ -83,7 +83,9 @@ var FAMILIES = [
   { tag: 'barcode',     keys: ['BarcodePresent'], batch: '批G', carriers: '', readme: '待回填' },
   { tag: 'image',       keys: ['ImageWithSuffix'], batch: '既有(floats 路径)', carriers: 'floats imageFile 规格面', readme: '#45 观察' },
   { tag: 'map',         keys: ['VanChartMapPlot', 'AttrMapLabel', 'VanMapMoreNameCDDefinition'], batch: '批I', carriers: '', readme: '待回填' },
-  { tag: 'specialcharts', keys: ['MeterChart', 'KPIChart', 'VanChartHeatMapPlot', 'CarouselPieChart', 'VanChartBubblePlot'], batch: '批I', carriers: '', readme: '待回填' },
+  // specialcharts 收窄（2026-11-05 FVS 不做）：Meter/KPI/CarouselPie 三族物理定义于 FVS bigScreen 插件 → noncore 不再入键；
+  //   本族只余核心 jar 的 HeatMap（批I 挂账）+ 已收编 Bubble(#79)
+  { tag: 'specialcharts', keys: ['VanChartHeatMapPlot', 'VanChartBubblePlot'], batch: '批I(HeatMap)/FVS三族不追', carriers: '', readme: '#79(bubble)' },
   { tag: 'poly',        keys: ['PolyECBlock', 'PolyWorkSheet'], batch: '批J', carriers: '', readme: '待回填' },
   { tag: 'group (自定义分组)', keys: ['CustomGrouper'], batch: '批G', carriers: '', readme: '待回填' },
   { tag: '局部样式(样式肾上)', keys: ['style_', 'stylesOf'], batch: '既有(引擎内建)', carriers: 'rebuild_basicA.js 20 样式', readme: '#31' }
@@ -112,10 +114,15 @@ classesText.split('\n').forEach(function (ln) {
   if (m && /^com\./.test(m[2])) cls.push({ n: parseInt(m[1], 10), fq: m[2] });
 });
 var NONCORE = /^com\.fr\.(esd|plugin\.cloud|widgettheme)\./; // 插件配置/云分析不追
+// FVS（FineVis 大屏）扩展图族不追（2026-11-05 用户拍板"涉及 FVS 的不做"）：
+//   判据=类物理定义于 FVS 插件 plugin-com.fr.plugin.bigScreen.v11-4.6.16 / fr-plugin-extendedCharts-4.6.16.jar
+//   （缺口账 108 类中 36 类命中，全部在下列包内；14 个包在 fine-* 核心 jar 零交叉，常规图表 gauge/heatmap/map 全在核心不受影响）
+var NONCORE_FVS = /^com\.fr\.plugin\.chart\.(kpi|meter|wisdomtree|globe|catalog|fluid|time|particlecounter|multidata)\.|^com\.fr\.plugin\.chart\.(map\.groupmap|column\.(arccolumn|carouselbar|shapecolumn)|pie\.carouselpie)\./;
 var SKIP_FURTHER = 0;
 var ledger = cls.map(function (c) {
   var cat;
   if (NONCORE.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
+  else if (NONCORE_FVS.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
   else cat = classifyToken(c.fq);
   return { n: c.n, fq: c.fq, cat: cat };
 });
@@ -206,7 +213,8 @@ var HEAD =
   '# demo240 能力覆盖率看板\n\n' +
   '> 由 `probes/coverage_report.js` 生成（' + dateStr + '），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。\n' +
   '> 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。\n' +
-  '> 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。\n\n';
+  '> 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。\n' +
+  '> FVS 不追（2026-11-05 拍板"涉及 FVS 的不做"）：FineVis 大屏扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie），判据=类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）。\n\n';
 
 var doc = HEAD + A.join('\n') + '\n\n' + B.join('\n') + '\n\n' + C.join('\n') + '\n';
 

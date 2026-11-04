@@ -1,8 +1,9 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 03:12:28 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 07:23:58 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
+> FVS 不追（2026-11-05 拍板"涉及 FVS 的不做"）：FineVis 大屏扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie），判据=类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）。
 
 ## A. 缺口总账（demo 类级，按演示库 240 张 cpt 引用频次倒序；也是批计划排期依据）
 
@@ -47,57 +48,21 @@
 | com.fr.report.mobile.EmptyMobileParamStyle | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.form.TreeNodeToggleButton | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.DeleteColumnRow | 4 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.kpi.KPIDataConfig | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.poly.PolyECBlock | 4 | missing | 批J |
-| com.fr.plugin.chart.kpi.KPIElectronChart | 3 | missing | (漏账：批排期时人工归入) |
 | com.fr.write.config.DeleteConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.meter.MeterDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.write.config.UpdateConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.wisdomtree.WisdomTreeDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.CustomizeImportExcelData | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.CustomToolBarButton | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.data.impl.ExcelTableData | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.globe.Bar3DOnGlobeDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.js.Commit2DBJavaScript | 2 | missing | 批E(缺3) |
-| com.fr.plugin.chart.map.groupmap.GroupMapPointDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.write.ValueVerifier | 2 | missing | 批F |
 | com.fr.data.impl.RecursionTableData | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.catalog.CatalogDataConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.fluid.FluidDataConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.catalog.CatalogChart | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.meter.MeterChart | 2 | missing | 批I |
-| com.fr.plugin.chart.globe.slideshowmap.SlideShowMapChart | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrMarkerAlpha | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.globe.slideshowmap.SlideShowMapDataConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.time.TimeGearChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.arccolumn.ArcColumnChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.meter.pixelgrid.PixelGridChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.globe.scatter3D.Scatter3DOnGlobeChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.arccolumn.ArcColumnDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.map.groupmap.GroupMapAreaDataConfig | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.ClearStashedButton | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.pie.carouselpie.CarouselPieChart | 1 | missing | 批I |
-| com.fr.plugin.chart.globe.lines3D.Lines3DOnGlobeDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.particlecounter.ParticleCounterChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.map.groupmap.GroupMapChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.carouselbar.CarouselBarChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.carouselbar.CarouselBarChartDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.multidata.ExtendedMultiDataSet | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.globe.lines3D.Lines3DOnGlobeChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.particlecounter.ParticleCounterDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.shapecolumn.ShapeColumnFieldCollection | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.wisdomtree.WisdomTreeModel | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.StashButton | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.fluid.FluidChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.globe.bar3D.Bar3DOnGlobeChart | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.base.io.FileAttrErrorMarker | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.poly.PolyWorkSheet | 1 | missing | 批J |
-| com.fr.plugin.chart.kpi.KPIChart | 1 | missing | 批I |
-| com.fr.plugin.chart.map.groupmap.GroupMapLineDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.column.shapecolumn.ShapeColumnChart | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.heatmap.VanChartHeatMapPlot | 1 | missing | 批I |
-| com.fr.plugin.chart.pie.carouselpie.CarouselPieDataConfig | 1 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.wisdomtree.WisdomTreeElectron | 1 | missing | (漏账：批排期时人工归入) |
+| com.fr.plugin.chart.heatmap.VanChartHeatMapPlot | 1 | missing | 批I(HeatMap)/FVS三族不追 |
 | com.fr.chartx.data.DataSetDefinition | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.data.condition.ObjectCondition | 506 | partial | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrLabelDetail | 150 | partial | 批B |
@@ -157,7 +122,7 @@
 | barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
 | map | missing (缺: VanChartMapPlot+AttrMapLabel+VanMapMoreNameCDDefinition) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| specialcharts | partial (缺: MeterChart+KPIChart+VanChartHeatMapPlot+CarouselPieChart) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| specialcharts | partial (缺: VanChartHeatMapPlot) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
 | poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | 局部样式(样式肾上) | partial (缺: stylesOf) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |

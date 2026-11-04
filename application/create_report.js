@@ -1,26 +1,40 @@
-// application/create_report.js — r8 A1：Create 操作（把 compile 产物封装成统一 ReportArtifact；零引擎）
-//   输入：logs/agent/compile.json（compile verb 产物）+ runresult + validate.json + preview.json（后两者可选）
-//   输出：logs/agent/artifact.json（ReportArtifact v1）+ 一行 ASCII JSON。
+// application/create_report.js — r8 A1 + r10-A：Create 操作（compile 产物 → 统一 ReportArtifact；零引擎）
+//   r10-A：AGENT_RUN_ID 必需；输入/输出全部走 logs/agent/runs/{runId}/；validate.json/preview.json 必须带同一 runId
+//   （防陈旧验收硬校验）；artifact 原子写；任何失败 exit 1（不产成功假象）。
 var J = function (n) { return Java.type(n); };
-var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 var System = J('java.lang.System');
 var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
+load(ROOT + '/agent/tools/_lib.js');
 load(ROOT + '/application/contracts.js');
-function readUtf(abs) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(abs)), 'UTF-8')).replace(/^\uFEFF/, ''); }
-function exists(abs) { return Files.exists(Pth.get(abs)); }
-function absOf(p) { return /^[A-Za-z]:[\\\/]/.test(String(p)) ? String(p) : (ROOT + '/' + String(p)); }
-function tryJson(abs) { try { return JSON.parse(readUtf(abs)); } catch (e) { return null; } }
 
-var comp = tryJson(System.getenv('AGENT_COMPILE') || (ROOT + '/logs/agent/compile.json'));
-if (!comp) { print('{"ok":false,"error":"compile.json missing; run compile verb first"}'); System.exit(2); }
+var runId = System.getenv('AGENT_RUN_ID');
+if (!runId) { print('{"ok":false,"error":"AGENT_RUN_ID required (r10-A: per-run isolation)"}'); System.exit(2); }
+var runDir = runDirOf(runId);
+
+var comp = tryJson(runDir + '/compile.json');
+if (!comp) { writeJson(runDir + '/artifact.json', { ok: false, error: 'compile.json missing in run dir; run compile verb first', runId: runId }); print('{"ok":false,"error":"compile.json missing"}'); System.exit(1); }
+if (comp.runId && String(comp.runId) !== String(runId)) { print('{"ok":false,"error":"compile.json belongs to run ' + comp.runId + ', not ' + runId + '"}'); System.exit(1); }
 var rr = tryJson(absOf(comp.runResult));
-// 防止"上一轮 validate.json"被误当本轮验收：只有 validate verb 显式开启时才并入
-var val = (System.getenv('AGENT_WITH_VALIDATION') === '1') ? tryJson(ROOT + '/logs/agent/validate.json') : null;
-var prev = tryJson(ROOT + '/logs/agent/preview.json');
+// r10-A ③：validate.json 必须属于本 run（带 runId 且一致）才并入验收
+var valPath = runDir + '/validate.json';
+var val = null;
+if (exists(valPath)) {
+  var vj = tryJson(valPath);
+  if (vj && String(vj.runId) === String(runId)) val = vj;
+  else if (vj) { print('{"ok":false,"error":"validate.json runId mismatch: ' + vj.runId + ' vs ' + runId + '"}'); System.exit(1); }
+}
+// r10-A ③：preview.json 同 run 才并入
+var prevPath = runDir + '/preview.json';
+var prev = null;
+if (exists(prevPath)) {
+  var pj2 = tryJson(prevPath);
+  if (pj2 && String(pj2.runId) === String(runId)) prev = pj2;
+}
 
 var art = ReportArtifact.create({
   sourceType: 'generated',
   outName: comp.outName,
+  runId: runId,
   cptPath: comp.cptPath, pngPath: comp.pngPath, pdfPath: comp.pdfPath,
   execution: ReportArtifact.executionFromRunResult(rr),
   validation: val ? { ok: val.ok === true, checks: val.checks || [] } : null,
@@ -34,6 +48,5 @@ var shape = ReportArtifact.validate(art);
 shape.issues.forEach(function (i) { art.diagnostics.push(ReportArtifact.normalizeDiagnostic(i)); });
 var acc = ReportArtifact.acceptance(art);
 var ok = shape.ok && acc.ok;
-Files.createDirectories(Pth.get(ROOT + '/logs/agent'));
-Files.write(Pth.get(ROOT + '/logs/agent/artifact.json'), J('java.lang.String').valueOf(JSON.stringify(art, null, 1)).getBytes('UTF-8'));
+atomicWriteUtf(runDir + '/artifact.json', JSON.stringify(art, null, 1));
 System.exit(ok ? 0 : 1);

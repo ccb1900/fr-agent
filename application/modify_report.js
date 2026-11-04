@@ -1,17 +1,19 @@
-// application/modify_report.js — r8 A1：Modify 操作（把 patch 产物封装成统一 ReportArtifact；零引擎）
-//   输入：logs/agent/patch.json（patch verb 产物，含 manifest 的结构/执行/渲染/数据集检查）
-//   输出：logs/agent/artifact.json（sourceType=patched；与 Create 同形态，Agent 不必区分两套结果）
+// application/modify_report.js — r8 A1 + r10-A：Modify 操作（patch 产物 → 统一 ReportArtifact；零引擎）
+//   r10-A：AGENT_RUN_ID 必需；patch.json 从 runDir 读且必须带同一 runId；artifact 原子写；失败 exit 1。
 var J = function (n) { return Java.type(n); };
 var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 var System = J('java.lang.System');
 var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
+load(ROOT + '/agent/tools/_lib.js');
 load(ROOT + '/application/contracts.js');
-function readUtf(abs) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(abs)), 'UTF-8')).replace(/^\uFEFF/, ''); }
-function exists(abs) { return Files.exists(Pth.get(abs)); }
-function tryJson(abs) { try { return JSON.parse(readUtf(abs)); } catch (e) { return null; } }
 
-var pj = tryJson(System.getenv('AGENT_PATCH') || (ROOT + '/logs/agent/patch.json'));
-if (!pj) { print('{"ok":false,"error":"patch.json missing; run patch verb first"}'); System.exit(2); }
+var runId = System.getenv('AGENT_RUN_ID');
+if (!runId) { print('{"ok":false,"error":"AGENT_RUN_ID required (r10-A: per-run isolation)"}'); System.exit(2); }
+var runDir = runDirOf(runId);
+
+var pj = tryJson(runDir + '/patch.json');
+if (!pj) { writeJson(runDir + '/artifact.json', { ok: false, error: 'patch.json missing in run dir; run patch verb first', runId: runId }); print('{"ok":false,"error":"patch.json missing"}'); System.exit(1); }
+if (pj.runId && String(pj.runId) !== String(runId)) { print('{"ok":false,"error":"patch.json belongs to run ' + pj.runId + ', not ' + runId + '"}'); System.exit(1); }
 var mf = pj.manifest || {};
 var outAbs = mf.out || null;
 var postPng = ROOT + '/logs/template_staging/_post.png';
@@ -34,6 +36,7 @@ if (exists(postPng)) {
 var art = ReportArtifact.create({
   sourceType: 'patched',
   outName: mf.out ? String(mf.out).replace(/^.*\//, '').replace(/\.cpt$/, '') : (pj.patch || 'patched'),
+  runId: runId,
   cptPath: outAbs,
   pngPath: preview ? preview.path : null,
   pdfPath: null,
@@ -49,6 +52,5 @@ var shape = ReportArtifact.validate(art);
 shape.issues.forEach(function (i) { art.diagnostics.push(ReportArtifact.normalizeDiagnostic(i)); });
 var acc = ReportArtifact.acceptance(art);
 var ok = shape.ok && acc.ok;
-Files.createDirectories(Pth.get(ROOT + '/logs/agent'));
-Files.write(Pth.get(ROOT + '/logs/agent/artifact.json'), J('java.lang.String').valueOf(JSON.stringify(art, null, 1)).getBytes('UTF-8'));
+atomicWriteUtf(runDir + '/artifact.json', JSON.stringify(art, null, 1));
 System.exit(ok ? 0 : 1);

@@ -1,4 +1,4 @@
-// verify/fast_contracts.js — r8 A1 统一创作契约离线测（零引擎）
+// verify/fast_contracts.js — r8 A1 统一创作契约离线测（零引擎）；r10-A 扩 runId 唯一性/四层能力状态
 //   标尺：Create/Modify 产出同形 ReportArtifact；结构校验能抓非法；RunResult/patch 诊断统一为 {code,path,message,stage,severity}；
 //   验收口径 = 执行成功 + 无 error 诊断 + validation 不为 false（warn 不阻断）。
 var J = function (n) { return Java.type(n); };
@@ -7,24 +7,27 @@ var ROOT = J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent';
 var FAILS = 0;
 function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAILS++; print('CHECK FAIL: ' + name); } }
 function src(f) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(ROOT + '/' + f)), 'UTF-8')); }
-['application/contracts.js', 'application/create_report.js', 'application/modify_report.js'].forEach(function (f) {
+['application/contracts.js', 'application/create_report.js', 'application/modify_report.js', 'application/capability_manifest.js'].forEach(function (f) {
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
   check('PARSE ' + f, ok);
 });
 load(ROOT + '/application/contracts.js');
+load(ROOT + '/application/capability_manifest.js');
 
 var gen = ReportArtifact.create({
-  sourceType: 'generated', outName: '日报', cptPath: 'x.cpt', pngPath: 'x.png',
+  sourceType: 'generated', outName: '日报', runId: 'r1', cptPath: 'x.cpt', pngPath: 'x.png',
   execution: ReportArtifact.executionFromRunResult({ success: true, exit: 0, stages: { input_load: 'passed', execute: 'passed' }, diagnostics: [] }),
   validation: { ok: true, checks: [] },
   spec: { path: 'examples/report-spec/daily_report.sql.json', kind: 'report-spec' }
 });
+var gen2 = ReportArtifact.create({ sourceType: 'generated', outName: '日报', runId: 'r2', cptPath: 'x.cpt', execution: { ok: false, exit: 1 }, spec: { path: 's' } });
 check('generated 产物契约合法', ReportArtifact.validate(gen).ok === true);
 check('acceptance 通过（成功+validation=true）', ReportArtifact.acceptance(gen).ok === true);
-check('artifactId 稳定（sourceType:outName）', gen.artifactId === 'generated:日报');
+check('artifactId 带 runId 唯一（sourceType:outName@runId，r10-A）', gen.artifactId === 'generated:日报@r1' && gen2.artifactId === 'generated:日报@r2' && gen.artifactId !== gen2.artifactId);
+check('缺 runId → 结构非法（r10-A 必填）', (function () { var a = ReportArtifact.create({ sourceType: 'generated', outName: 'x', cptPath: 'c', execution: { ok: false }, spec: { path: 's' } }); return ReportArtifact.validate(a).ok === false; })());
 check('generated 缺 spec→非法', (function () { var a = JSON.parse(JSON.stringify(gen)); a.spec = null; return ReportArtifact.validate(a).ok === false; })());
-check('patched 缺 patch→非法', ReportArtifact.validate(ReportArtifact.create({ sourceType: 'patched', outName: 'p', cptPath: 'c' })).ok === false);
-check('未知 sourceType 被规整为 generated（非法值不落地）', ReportArtifact.create({ sourceType: 'evil', outName: 'x', cptPath: 'c' }).sourceType === 'generated');
+check('patched 缺 patch→非法', ReportArtifact.validate(ReportArtifact.create({ sourceType: 'patched', outName: 'p', runId: 'r1', cptPath: 'c' })).ok === false);
+check('未知 sourceType 被规整为 generated（非法值不落地）', ReportArtifact.create({ sourceType: 'evil', outName: 'x', runId: 'r1', cptPath: 'c' }).sourceType === 'generated');
 
 // 诊断统一
 var rrBad = { success: false, exit: 2, stages: { input_load: 'failed', execute: 'skipped' }, diagnostics: ['UNSUPPORTED_RELATION_KEY @ relationships[0].to.column: 缺证据', 'plain message'] };
@@ -45,27 +48,59 @@ check('patch 执行视图 ok=false', ReportArtifact.executionFromPatch(pj).ok ==
 
 // 验收口径
 var failed = ReportArtifact.create({
-  sourceType: 'generated', outName: 'f', cptPath: 'c', spec: { path: 's' },
+  sourceType: 'generated', outName: 'f', runId: 'r1', cptPath: 'c', spec: { path: 's' },
   execution: ReportArtifact.executionFromRunResult(rrBad), diagnostics: ReportArtifact.diagnosticsFromRunResult(rrBad)
 });
 check('执行失败→acceptance=false', ReportArtifact.acceptance(failed).ok === false);
 var warned = ReportArtifact.create({
-  sourceType: 'generated', outName: 'w', cptPath: 'c', spec: { path: 's' },
+  sourceType: 'generated', outName: 'w', runId: 'r1', cptPath: 'c', spec: { path: 's' },
   execution: ReportArtifact.executionFromRunResult({ success: true, exit: 0, stages: { execute: 'passed' } }),
   diagnostics: [{ code: 'EVIDENCE_WARN', message: 'stale', severity: 'warn' }]
 });
 check('warn 诊断不阻断 acceptance', ReportArtifact.acceptance(warned).ok === true);
 var valFail = ReportArtifact.create({
-  sourceType: 'generated', outName: 'v', cptPath: 'c', spec: { path: 's' },
+  sourceType: 'generated', outName: 'v', runId: 'r1', cptPath: 'c', spec: { path: 's' },
   execution: ReportArtifact.executionFromRunResult({ success: true, exit: 0, stages: {} }),
   validation: { ok: false, checks: [{ name: 'x', pass: false }] }
 });
 check('validation=false→acceptance=false', ReportArtifact.acceptance(valFail).ok === false);
 check('create 不改输入 parts', (function () {
-  var parts = { sourceType: 'generated', outName: 'o', cptPath: 'c', spec: { path: 's' }, diagnostics: ['x'] };
+  var parts = { sourceType: 'generated', outName: 'o', runId: 'r1', cptPath: 'c', spec: { path: 's' }, diagnostics: ['x'] };
   var snap = JSON.stringify(parts);
   ReportArtifact.create(parts);
   return JSON.stringify(parts) === snap;
+})());
+
+// ===== r10-B：CapabilityManifest 四层能力状态 =====
+var mf = CapabilityManifest.build();
+  var SEGS = ['chart', 'condition', 'write', 'page'];
+check('manifest 有四大段（chart/condition/write/page）', SEGS.every(function (s) { return Array.isArray(mf[s]) && mf[s].length > 0; }));
+check('每能力四层状态齐全（construction/serialization/rendering/agentAvailable）', (function () {
+  var ok = true;
+  SEGS.forEach(function (seg) {
+    (mf[seg] || []).forEach(function (cap) {
+      if (!cap.name || typeof cap.construction !== 'string' || typeof cap.serialization !== 'string' || typeof cap.rendering !== 'string' || typeof cap.agentAvailable !== 'boolean') ok = false;
+    });
+  });
+  return ok;
+})());
+check('agentAvailable = 四层全 verified（仅构造层的不广告）', (function () {
+  var allTrue = [], someFalse = [];
+  SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.agentAvailable) allTrue.push(c); else someFalse.push(c); }); });
+  return allTrue.every(function (c) { return c.construction === 'verified' && c.serialization === 'verified' && c.rendering === 'verified'; }) && someFalse.length > 0;
+})());
+check('批B 渲染端待达四项 rendering=pending（stack/label/conditionalSeries/vpieLegend）', (function () {
+  var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
+  var s = find('chart.stack'), l = find('chart.label'), cs = find('chart.conditionalSeries');
+  return s && s.rendering === 'pending' && s.agentAvailable === false && l && l.rendering === 'pending' && cs && cs.rendering === 'pending';
+})());
+check('批H sort rejected（不硬凑）', (function () {
+  var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === 'detail.sort') r = c; }); });
+  return r && r.serialization === 'rejected';
+})());
+check('manifest 带 evidence 引证（README 条目可溯源）', (function () {
+  var ok = true; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (!c.evidence || !String(c.evidence).match(/README #\d+|probe_/)) ok = false; }); });
+  return ok;
 })());
 
 print('SELFTEST END, failures=' + FAILS);

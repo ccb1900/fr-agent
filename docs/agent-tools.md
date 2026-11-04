@@ -9,7 +9,7 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <verb> [参数]
 ```
 
-每个 verb **打印一行 ASCII JSON**：`{"ok":true,"result":"logs/agent/<verb>.json"}`；
+每个 verb **打印一行 ASCII JSON**：`{"ok":true,"result":"logs/agent/runs/<runId>/<verb>.json"}`；
 详细结果（可能含中文）写入该 UTF-8 JSON 文件，Agent 直接读取文件。
 
 | Verb | 参数 | 作用 |
@@ -57,3 +57,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 - 自由文本 SQL、非白名单 patch op（style/列宽/筛选/参数/标题）。
 
 > 这些不是"静默降级"：Agent 应在交付说明里列出，并给出可用的替代（如改按计划数降序）。
+
+## r10 契约升级（2026-11-05，runId 隔离 + plan/create/modify）
+
+- **每 verb 一次独立 run**：产物全部写 `logs/agent/runs/{runId}/`（compile.json/validate.json/preview.json/artifact.json/…），互不共享文件；`-RunId` 显式传可续跑同一 run（plan→create→validate→preview 用同一 runId），缺省自动生成。老固定路径 `logs/agent/*.json` 不再写。
+- **退出码**：0 = verb 与 artifact 均成功；1 = 任一失败（compile rc=0 但 artifact 失败也返回 1——artifact 失败不再被掩盖）；2 = 用法错误。
+- **防陈旧验收**：validate.json/preview.json 带生成时 runId；create/modify 仅并入与本 run runId 一致的 validate/preview（mismatch 即整体失败）。
+- **新增 verb**：
+  - `plan -Intent <意图JSON>`：自然语言意图（业务词/label 均可，工具层自动归一模型名）→ 三态 `ready|ambiguous|rejected` + reportSpec + assumptions + unresolvedQuestions + validationWarnings。ready 的 reportSpec 直接作为 `-Spec` 喂给 `create`。
+  - `create`（=compile 别名）／`modify`（=patch 别名）：业务命名入口，行为与底层 verb 一致。
+- **能力声明**：`discover` 输出 `capabilityManifest`（四层 construction/serialization/rendering/agentAvailable，逐能力带 README/probe 引证）与 `agentAvailable` 扁平名单——**只有 agentAvailable=true 的能力才可对外承诺**；serialization-only/pending 的能力仅内部使用或明确告知未达。
+- **artifact.json**：带 `runId`；`artifactId = sourceType:outName@runId`（每次操作唯一）；acceptance 口径不变（执行成功+无 error 诊断+validation≠false）。
