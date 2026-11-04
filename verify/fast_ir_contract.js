@@ -327,6 +327,23 @@ check('批E width 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].
 check('批E js 缺 params.name 拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', js: [{ params: [{ value: 1 }] }] }; }), 'REQUIRED', 'sheets[0].blocks[2].link.js[0].params[0].name'));
 check('批E js.recalc 非布拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].link = { by: '机型', reportlet: 'a.cpt', js: [{ recalc: 1 }] }; }), 'INVALID_TYPE', 'sheets[0].blocks[2].link.js[0].recalc'));
 check('批E then.link 同享 js/dialog 闸', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: { reportlet: 'a.cpt', dialog: { bad: 1 } } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].conditions[0].then.link.dialog.bad'));
+// ===== 批F（2026-11-05）填报章：IR.write 结构闸 + 编辑器 reg + write 工具栏按钮族 =====
+function writeIR(write) {
+  var ir = mut(function (ir) { ir.write = write; });
+  return ir;
+}
+check('批F write 全形零误报', errsOf(writeIR({ name: 'S1', connection: 'ATOM_LIVE', table: { schema: '', name: 't1' }, columns: [{ name: '月份', isKey: true, cell: [0, 2] }, { name: '数量', cell: [1, 2] }], })).length === 0);
+check('批F write 缺 table.name 拒', codeAt(writeIR({ columns: [{ name: 'a', cell: [0, 2] }] }), 'REQUIRED', 'write.table.name'));
+check('批F write 缺 columns 拒', codeAt(writeIR({ table: { name: 't1' } }), 'REQUIRED', 'write.columns'));
+check('批F write column 缺 cell 拒', codeAt(writeIR({ table: { name: 't1' }, columns: [{ name: 'a' }] }), 'REQUIRED', 'write.columns[0].cell'));
+check('批F write cell 非二元拒', codeAt(writeIR({ table: { name: 't1' }, columns: [{ name: 'a', cell: [0] }] }), 'REQUIRED', 'write.columns[0].cell'));
+check('批F write verifiers 结构化拒（一处真相）', codeAt(writeIR({ table: { name: 't1' }, columns: [{ name: 'a', cell: [0, 2] }], verifiers: [{ formula: '1>0', message: 'x' }] }), 'UNSUPPORTED_CAPABILITY', 'write.verifiers'));
+check('批F widget reg 白名单串零误报', errsOf(mut(function (ir) { ir.param = { widgets: [{ kind: 'editor', name: 'p', reg: 'phone', x: 0, y: 0, w: 1, h: 1 }] }; })).length === 0);
+check('批F widget reg 白名单外拒', codeAt(mut(function (ir) { ir.param = { widgets: [{ kind: 'editor', name: 'p', reg: 'zip', x: 0, y: 0, w: 1, h: 1 }] }; }), 'INVALID_ENUM', 'param.widgets[0].reg'));
+check('批F widget reg custom 缺正则拒', codeAt(mut(function (ir) { ir.param = { widgets: [{ kind: 'editor', name: 'p', reg: { err: 'x' }, x: 0, y: 0, w: 1, h: 1 }] }; }), 'REQUIRED', 'param.widgets[0].reg.custom'));
+check('批F widget reg custom 全形零误报', errsOf(mut(function (ir) { ir.param = { widgets: [{ kind: 'editor', name: 'p', reg: { custom: '^.{1,3}$', err: 'x' }, x: 0, y: 0, w: 1, h: 1 }] }; })).length === 0);
+check('批F toolbar write 按钮零误报', errsOf(mut(function (ir) { ir.toolbar = { buttons: ['submit', 'appendRow', 'deleteRow', 'showCellValue', 'appendColumnRow'] }; })).length === 0);
+check('批F toolbar 未知键仍拒', codeAt(mut(function (ir) { ir.toolbar = { buttons: ['magicBtn'] }; }), 'INVALID_ENUM', 'toolbar.buttons[0]'));
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {

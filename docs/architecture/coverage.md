@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 01:58:44 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 02:30:54 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 
@@ -10,28 +10,21 @@
 |---|---|---|---|
 | com.fr.plugin.chart.base.AttrTooltipRichText | 192 | missing | (漏账：批排期时人工归入) |
 | com.fr.base.chart.chartdata.model.NormalDataModel | 180 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.reg.NoneReg | 153 | missing | 批F |
 | com.fr.chart.base.AttrBorder | 93 | missing | 批B |
 | com.fr.plugin.chart.attr.axis.VanChartAxis | 92 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat | 61 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.write.BuiltInSQLSubmiter | 55 | missing | 批F |
 | com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat | 54 | missing | (漏账：批排期时人工归入) |
-| com.fr.write.config.IntelliDMLConfig | 53 | missing | 批F |
 | com.fr.report.mobile.DefaultMobileParamStyle | 27 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrSeriesImageBackground | 26 | missing | (漏账：批排期时人工归入) |
 | com.fr.extended.chart.ExtendedTableDataSet | 25 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipSummaryValueFormat | 24 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.web.ChartHyperRelateCellLink | 18 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.web.button.write.AppendColumnRow | 18 | missing | 批F |
-| com.fr.report.web.button.write.ShowCellValue | 16 | missing | 批F |
 | com.fr.form.ui.mobile.impl.DefaultMobileBookMarkStyle | 14 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.chartattr.ChartCommonCondition | 14 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.custom.VanChartCustomPlot | 12 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.base.AttrBackground | 12 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.web.button.write.DeleteRowButton | 11 | missing | 批F |
 | com.fr.form.ui.mobile.impl.DefaultMobileParameterStyle | 9 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.web.button.write.AppendRowButton | 9 | missing | 批F |
 | com.fr.plugin.chart.map.attr.AttrMapLabel | 8 | missing | 批I |
 | com.fr.plugin.chart.base.AttrBorderWithAlpha | 8 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipXFormat | 8 | missing | (漏账：批排期时人工归入) |
@@ -49,23 +42,17 @@
 | com.fr.plugin.chart.base.AttrAreaSeriesFillColorBackground | 6 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.map.line.condition.AttrLineEffect | 6 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.cell.cellattr.BarcodePresent | 5 | missing | 批G |
-| com.fr.report.web.button.write.ImportExcelData | 5 | missing | 批F |
-| com.fr.data.VerifyItem | 5 | missing | 批F |
 | com.fr.chart.chartattr.CategoryAxis | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.MultiFileEditor | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.general.date.FineDateFormat | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.mobile.EmptyMobileParamStyle | 4 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.reg.CustomReg | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.form.TreeNodeToggleButton | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.DeleteColumnRow | 4 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.reg.PhoneReg | 4 | missing | 批F |
 | com.fr.plugin.chart.kpi.KPIDataConfig | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.bubble.VanChartBubblePlot | 4 | missing | 批I |
 | com.fr.report.poly.PolyECBlock | 4 | missing | 批J |
-| com.fr.form.ui.reg.MobileReg | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.cell.cellattr.core.group.CustomGrouper | 4 | missing | 批G |
 | com.fr.plugin.chart.kpi.KPIElectronChart | 3 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.reg.PostCardReg | 3 | missing | (漏账：批排期时人工归入) |
 | com.fr.write.config.DeleteConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.meter.MeterDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.write.config.UpdateConfig | 2 | missing | (漏账：批排期时人工归入) |
@@ -79,7 +66,6 @@
 | com.fr.report.write.ValueVerifier | 2 | missing | 批F |
 | com.fr.data.impl.RecursionTableData | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.catalog.CatalogDataConfig | 2 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.reg.IDCardReg | 2 | missing | 批F |
 | com.fr.plugin.chart.fluid.FluidDataConfig | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.catalog.CatalogChart | 2 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.meter.MeterChart | 2 | missing | 批I |
@@ -123,6 +109,7 @@
 | com.fr.base.iofileattr.TemplateIdAttrMark | 23 | partial | 批C 已收(2026-11-05) |
 | com.fr.chart.chartattr.ValueAxis | 10 | partial | (漏账：批排期时人工归入) |
 | com.fr.data.impl.DynamicSQLDict | 6 | partial | 批D(4缺) |
+| com.fr.data.VerifyItem | 5 | partial | 批F |
 | com.fr.report.web.ui.impl.page.First | 1 | partial | (漏账：批排期时人工归入) |
 | com.fr.report.web.ui.impl.Email | 1 | partial | (漏账：批排期时人工归入) |
 | com.fr.report.web.ui.impl.FlashPrint | 1 | partial | (漏账：批排期时人工归入) |
@@ -151,7 +138,7 @@
 | float | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
 | watermark | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
 | toolbar | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| writeButtons | missing (缺: AppendRowButton+DeleteRowButton+AppendColumnRow+ShowCellValue+ImportExcelData) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| writeButtons | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | editor (参数控件族) | full | test_widgets.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | v4.2/待回填 |
 | dict | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
 | formats | full | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 数字格式既有 |
@@ -165,8 +152,8 @@
 | freeze | partial (缺: FrozenState+RepeatAndCollapsible) | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
 | headerfooter | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
 | template marks | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
-| submit (填报) | missing (缺: BuiltInSQLSubmiter+IntelliDMLConfig+VerifyItem+ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| reg 校验族 | missing (缺: NoneReg+PhoneReg+IDCardReg) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| submit (填报) | partial (缺: ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| reg 校验族 | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | sort | missing (缺: CellSortAttr) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 受阻断 |
 | subreport | missing (缺: SubReport) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | diagonal | missing (缺: Diagonal) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
@@ -195,7 +182,7 @@
 | editor | 45 | full |
 | dict | 39 | full |
 | summary | 38 | full |
-| submit | 35 | missing 0x12 |
+| submit | 35 | partial 0x1 |
 | hyperlink | 27 | partial 0x1 |
 | chartdata | 25 | full |
 | freeze | 21 | partial 0x2 |

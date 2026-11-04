@@ -550,3 +550,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **诚实边界**：setLinkTitle/setShowParameterInterface 序列化节点未现（属性名待查，低频不追）；Commit2DBJavaScript 挪批 F 填报章；ChartHyperRelateCellLink（18）挂接点在图表侧，批 I 一并。
 - **像素/序列化实证**：部署 XML ParameterJavaScript 1/DialogAttr 1（test_jsev.js 载体，超链组两件+弹窗窗属性）；fast 13 GREEN、scan 46 张（45+1）、默认 CBEB42E3 逐字节；coverage missing 110→108。
 
+
+#76 批F 填报章·序列化面（2026-11-05，demo 车道批 F 第一步——BuiltInSQLSubmiter 55/IntelliDMLConfig 53/write 按钮族/reg 校验族）：
+- **词汇**：`write: {name?, connection(连接名,凭据不落模板), table{schema?,name}, columns:[{name, isKey?, skipUnmodified?, cell:[col,row]}]}`（v1 单格/列；多格 ColumnRowGroup/SubmitJob/DBManipulation 后续批）+ `paramPanel.widgets[].reg: none|phone|idcard|mobile|postcard|{custom,err?}` + toolbar 按钮族 5 键（appendRow/deleteRow/appendColumnRow/showCellValue/importExcel）。ir.js write 结构闸+reg 闸+TOOLBAR_KEYS 扩+fast +11（红→绿）。
+- **挂接一手**（probe_write/_wa5-9 + 官方 产品月销量情况录入表.cpt）：**<ReportWriteAttr> 是 sheet 级 AttributeTarget——挂点=`sheet.addAttributeTarget(rwa)`**（wb 级 setter 不存在、addAttrMark=Cast 异常、WorkSheetAttr 无关——三轮穷举定案）；ColumnConfig(name, ColumnRow.valueOf(col,row), isKey, skip) 单格 ctor；编辑器校验=TextEditor.setRegex(RegExp)+setRegErrorMessage（NumberEditor/TextArea/DateEditor 无 setRegex→reg 静默跳过，登记）。
+- **三教案**：① **VerifyItem≠Verifier**（addVerifier ClassCastException 一手实证）——verifiers 词汇按一处真相红线**结构化拒**（UNSUPPORTED_CAPABILITY），真实 Verifier 家族待 probe 后批；② **extrasOut 透传教训二度复发**（批 C 教训的原样重演：validate 看得见、build 看不见）——v2 spec 新 workbook 级键必须 extrasOut；③ cpt.js SimHei 规则补 **<ToolBars> 段豁免**（按钮 widget 默认 SimSun 不属单元格管辖，同参数面板域逻辑）。
+- **诚实边界**：真提交（WriteActor DML 链路、演示库 staging 表真实写入）=独立工单挂账（需 web 表单提交值构造，复杂度独立成批）；NoneReg 显式 reg 在 number 等控件不落节点（无 setRegex）。
+- **序列化实证**：部署 XML ReportWriteAttr 2/BuiltInSQLSubmiter 1/IntelliDMLConfig 1/ColumnRow/CustomReg 1/AppendRowButton/ShowCellValue 全在（test_write.js 载体）；fast 13 GREEN、scan 47 张（46+1）、R1–R8、默认 CBEB42E3 逐字节；coverage missing 108→94。
+
