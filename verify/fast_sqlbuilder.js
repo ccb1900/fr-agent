@@ -95,6 +95,30 @@ var fghost = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: [
 check('I5.3-B 未知 filter 列→UNKNOWN_REF', codeAt(fghost, 'UNKNOWN_REF', 'filters'));
 check('I5.3-B filter 生成 SQL 仍单语句无分号', (fnum.sql || '').indexOf(';') < 0);
 
+// ===== I5.4 边界（r4 P2）：JOIN 顺序无关 / 跨表日期归属 / op×类型 / == 映射 =====
+check('I5.4 JOIN 列限定与维度顺序无关', (function () {
+  var a = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned'] });
+  var b = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine', 'bizDate'], metrics: ['planned'] });
+  function allQualified(r) {
+    var s = r.sql || '';
+    return r.errors.length === 0 && /laser_aaa\.biz_date/.test(s) && /laser_files\.source_id/.test(s) &&
+      !/(^|[, ])biz_date AS/.test(s) && !/(^|[, ])source_id AS/.test(s);
+  }
+  return allQualified(a) && allQualified(b);
+})());
+check('I5.4 == 语义相等映射为 SQL =', (function () {
+  var r = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '==', value: 'L' }] });
+  return (r.sql || '').indexOf(" = 'L'") >= 0 && (r.sql || '').indexOf('==') < 0;
+})());
+check('I5.4 数值列 like→INVALID_ENUM 拒', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'score', op: 'like', value: '9' }] }), 'INVALID_ENUM', 'filters'));
+check('I5.4 文本列非法 op(contains)→INVALID_ENUM 拒', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: 'contains', value: 'L' }] }), 'INVALID_ENUM', 'filters'));
+check('I5.4 跨表日期维 WHERE 挂 refTable 而非主表', (function () {
+  var m = JSON.parse(JSON.stringify(model));
+  m.dimensions.forEach(function (d) { if (d.name === 'bizDate') { d.table = 'laser_files'; d.column = 'collection_date'; } });
+  var r = SqlBuilder.build(m, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
+  return (r.sql || '').indexOf('TRY_CAST(laser_files.collection_date AS date) BETWEEN') >= 0 && (r.sql || '').indexOf('TRY_CAST(laser_aaa.collection_date') < 0;
+})());
+
 // 纯函数/确定序/输入不可变/抗炸
 var snap = JSON.stringify(sel);
 check('确定序（两次 SQL 全等）', SqlBuilder.build(model, sel).sql === SqlBuilder.build(model, sel).sql);

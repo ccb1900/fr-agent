@@ -1,0 +1,5 @@
+{ "specVersion":"1", "report":{"name":"I5.4 JOIN 双维顺序验"}, "outName":"生产日报_双维",
+  "dataset":{"kind":"sql","connection":"ATOM_LIVE","entity":"InspectionRecord",
+    "dimensions":["bizDate","machine"], "metrics":["planned","done","completionRate"],
+    "dateRange":{"from":"2026-09-13","to":"2026-09-22"}},
+  "presentation":{"type":"table","showTotal":true} }

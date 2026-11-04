@@ -58,52 +58,54 @@ var SqlBuilder = (function () {
       if (!joinSeen[refTable]) { joinSeen[refTable] = 1; joins.push('INNER JOIN ' + refTable + ' ON ' + table + '.' + j.onEnt + ' = ' + refTable + '.' + j.onRef); }
       return j;
     }
-    // 有 JOIN 才限定表名（避免歧义），单表查询逐字保持原样（向后兼容既有断言）
-    function q(tbl, col) { return joins.length || Object.keys(joinSeen).length ? tbl + '.' + col : col; }
-
-    // 维度：dim.column 为 table.column，取列名；命中 dateNormalize 规则则 TRY_CAST date 归一（#52 口径）
+    // I5.4：先解析全部维度（只做 JOIN 集合判定 + 收集 {table,column,alias,rule}），不在此阶段拼 SQL，
+    //   再统一按 hasJoin 决定列限定 → 消除"维度顺序决定哪些列被限定"的顺序依赖。
+    var dimSpecs = [], dateDim = null;
     (sel.dimensions || []).forEach(function (dn, i) {
       var d = dimsByName[dn];
       var path = 'dimensions[' + i + ']';
       if (!d) { E(errs, 'UNKNOWN_REF', path, '维度不在模型: ' + dn); return; }
       var leaf = String(d.column || '').split('.').pop();
-      var col, colTable;
-      if (!d.table || d.table === table) { col = leaf; colTable = table; }
-      else {
-        // I5.2：跨表维度——仅当存在 confirmed 安全关系才 INNER JOIN 带出，否则维持 I5.1 跨表拒绝
-        var j = ensureJoin(d.table);
-        if (!j) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '维度 ' + dn + ' 属表 ' + d.table + '，与实体主表 ' + table + ' 无 confirmed 安全关系，拒绝跨表（JOIN 需确认关系，r3 I5.2）'); return; }
-        col = leaf; colTable = d.table;
+      var colTable = (!d.table || d.table === table) ? table : d.table;
+      if (colTable !== table) {
+        var j = ensureJoin(colTable);
+        if (!j) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '维度 ' + dn + ' 属表 ' + colTable + '，与实体主表 ' + table + ' 无 confirmed 安全关系，拒绝跨表（JOIN 需确认关系）'); return; }
       }
-      var qual = joins.length ? colTable + '.' + col : col;
-      var normalize = d.rule === 'dateNormalize';
-      if (normalize) {
-        selectBits.push('convert(varchar(10), TRY_CAST(' + qual + ' AS date), 23) AS ' + d.name);
+      var spec = { alias: d.name, table: colTable, column: leaf, rule: d.rule };
+      dimSpecs.push(spec);
+      if (d.rule === 'dateNormalize') dateDim = spec;   // I5.4：dateRange 保留 {table,column} 归属，不丢表名
+    });
+    var hasJoin = joins.length > 0;
+    function qualOf(tbl, col) { return hasJoin ? tbl + '.' + col : col; }   // 有 JOIN 时所有列统一限定；单表全裸列（向后兼容）
+    // 统一生成维度 SELECT/GROUP BY（此时 JOIN 集合已定，与维度顺序无关）
+    dimSpecs.forEach(function (s) {
+      var qual = qualOf(s.table, s.column);
+      if (s.rule === 'dateNormalize') {
+        selectBits.push('convert(varchar(10), TRY_CAST(' + qual + ' AS date), 23) AS ' + s.alias);
         groupBits.push('TRY_CAST(' + qual + ' AS date)');
       } else {
-        selectBits.push(qual + ' AS ' + d.name);
+        selectBits.push(qual + ' AS ' + s.alias);
         groupBits.push(qual);
       }
-      baseCols.push({ alias: d.name, role: 'dim', column: col });
+      baseCols.push({ alias: s.alias, role: 'dim', column: s.column });
     });
-    // 指标（度量必须落在实体主表；跨表度量改 grain → 仍拒，JOIN 只用于带出维度不放大度量）
+    // 指标（度量必须落在实体主表；跨表度量改 grain → 仍拒；列限定同样用统一 hasJoin）
     (sel.metrics || []).forEach(function (mn, i) {
       var path = 'metrics[' + i + ']';
       var m = metricsByName[mn];
       if (!m) { E(errs, 'UNKNOWN_REF', path, '指标不在模型: ' + mn); return; }
       var mtable = m.expression && m.expression.table;
       if (mtable && mtable !== table) { E(errs, 'UNSUPPORTED_CROSS_TABLE', path, '指标 ' + mn + ' 度量表 ' + mtable + ' 与实体主表 ' + table + ' 跨表（度量 grain 改变，JOIN 不承载跨表度量）'); return; }
-      var frag = metricSelect(m, errs, path, table, joins.length);
+      var frag = metricSelect(m, errs, path, table, hasJoin);
       if (!frag) return;
       if (frag.base) {
         selectBits.push(frag.sql);
-        if (frag.measureCol) measures[frag.measureCol] = 1;   // 参与度量的列 → 基筛 IS NOT NULL
+        if (frag.measureCol) measures[frag.measureCol] = 1;
         baseCols.push({ alias: frag.alias, role: 'metric', kind: m.expression.kind });
       } else {
         baseCols.push({ alias: frag.alias, role: 'derived', numerator: frag.numerator, denominator: frag.denominator, scale: frag.scale, kind: 'ratio' });
       }
     });
-    // 派生 ratio 的两端必须是已选 base 指标（否则追溯断→UNKNOWN_REF，倒逼模型口径闭合）
     var aliasSet = {}; baseCols.forEach(function (b) { aliasSet[b.alias] = 1; });
     baseCols.forEach(function (b) {
       if (b.role === 'derived') {
@@ -112,22 +114,19 @@ var SqlBuilder = (function () {
       }
     });
 
-    // WHERE：基筛（有度量列 → IS NOT NULL）+ 可选日期范围（定字面，禁 ${}）
+    // WHERE：基筛 + dateRange（用 dateDim 的 {table,column}，跨表日期维也不会错挂主表）+ 非日期 filters
     var where = [];
-    Object.keys(measures).forEach(function (mc) { where.push('TRY_CAST(' + (joins.length ? table + '.' + mc : mc) + ' AS float) IS NOT NULL'); });
+    Object.keys(measures).forEach(function (mc) { where.push('TRY_CAST(' + qualOf(table, mc) + ' AS float) IS NOT NULL'); });
     if (sel.dateRange && (sel.dateRange.from || sel.dateRange.to)) {
-      var dateCol = null;
-      (sel.dimensions || []).forEach(function (dn) { var d = dimsByName[dn]; if (d && d.rule === 'dateNormalize') dateCol = String(d.column || '').split('.').pop(); });
-      if (!dateCol) E(errs, 'INVALID_SHAPE', 'dateRange', 'dateRange 需选中 dateNormalize 维度');
+      if (!dateDim) E(errs, 'INVALID_SHAPE', 'dateRange', 'dateRange 需选中 dateNormalize 维度');
       else {
-        var dr = IsoDate.range(sel.dateRange);   // I5.1 P4：与 spec_validator 同一日期真相（严格双边+日历有效+from<=to）
-        if (dr.ok) where.push('TRY_CAST(' + (joins.length ? table + '.' + dateCol : dateCol) + ' AS date) BETWEEN ' + "'" + sel.dateRange.from + "' AND '" + sel.dateRange.to + "'");
+        var dr = IsoDate.range(sel.dateRange);
+        if (dr.ok) where.push('TRY_CAST(' + qualOf(dateDim.table, dateDim.column) + ' AS date) BETWEEN ' + "'" + sel.dateRange.from + "' AND '" + sel.dateRange.to + "'");
         else dr.errors.forEach(function (e) { E(errs, e.code, 'dateRange' + (e.path.indexOf('.') >= 0 ? '.' + e.path.split('.').pop() : ''), e.message); });
       }
     }
-
-    // I5.3-B 非日期 filters：受控字面量（FR DBTableData 走 ${} 替换非 JDBC prepared，故值必须严格类型化，注入面清零）
-    //   仅允许引用实体表上的属性/维度列（跨表 filter → 拒，filter grain 保守）；op∈OPS；数值列值须有限数，文本列须安全 token。
+    // 语义 op→SQL Server op 统一映射（I5.4：== → =，禁直出）；like 仅文本列（数值列拒）
+    var OP_SQL = { '==': '=', '=': '=', '!=': '!=', '>': '>', '>=': '>=', '<': '<', '<=': '<=' };
     var NUMERIC_TYPES = { number: 1, integer: 1, long: 1, float: 1, decimal: 1 };
     var SAFE_TOKEN = /^[\w.\- ]{1,64}$/;
     var CN_TOKEN = /^[一-龥\w.\- ]{1,64}$/;
@@ -137,19 +136,29 @@ var SqlBuilder = (function () {
       var colMeta = props[fl.field] || (dimsByName[fl.field] && (!dimsByName[fl.field].table || dimsByName[fl.field].table === table) ? { column: dimsByName[fl.field].column, type: 'text' } : null);
       if (!colMeta) { E(errs, 'UNKNOWN_REF', fp + '.field', 'filter 字段非实体表可过滤列（跨表 filter 暂拒）: ' + fl.field); return; }
       var leaf = String(colMeta.column || '').split('.').pop();
-      var qualCol = joins.length ? table + '.' + leaf : leaf;
-      var op = fl.op == null ? '=' : fl.op;
-      if (!hasOwn(ModelVocab.OPS, op) && op !== 'like' && op !== 'LIKE') { E(errs, 'INVALID_ENUM', fp + '.op', 'filter op 越白名单: ' + op); return; }
-      var isNumCol = NUMERIC_TYPES[colMeta.type];
+      var qualCol = qualOf(table, leaf);
+      var rawOp = fl.op == null ? '=' : fl.op;
+      var isLike = /^like$/i.test(String(rawOp));
+      var isNumCol = !!NUMERIC_TYPES[colMeta.type];
+      // I5.4：操作符×字段类型约束——数值列拒 like/contains；文本列拒比较 op（只允许 =/!=/like）
       if (isNumCol) {
+        if (isLike || rawOp === 'contains') { E(errs, 'INVALID_ENUM', fp + '.op', '数值列不许 like/contains: ' + rawOp); return; }
+        var sqlOp = OP_SQL[rawOp];
+        if (!sqlOp) { E(errs, 'INVALID_ENUM', fp + '.op', 'filter op 越白名单: ' + rawOp); return; }
         if (!(typeof fl.value === 'number' && isFinite(fl.value))) { E(errs, 'INVALID_NUMBER', fp + '.value', '数值列 filter 值须有限数: ' + fl.value); return; }
-        where.push('TRY_CAST(' + qualCol + ' AS float) ' + op + ' ' + fl.value);
+        where.push('TRY_CAST(' + qualCol + ' AS float) ' + sqlOp + ' ' + fl.value);
       } else {
-        var v = String(fl.value == null ? '' : fl.value);
-        if (!SAFE_TOKEN.test(v) && !CN_TOKEN.test(v)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符（禁引号/;/注释符）: ' + v); return; }
-        var up = String(op).toUpperCase();
-        if (up === 'LIKE') where.push(qualCol + " LIKE '%" + v + "%'");
-        else where.push(qualCol + " " + op + " '" + v + "'");
+        if (isLike) {
+          var v = String(fl.value == null ? '' : fl.value);
+          if (!SAFE_TOKEN.test(v) && !CN_TOKEN.test(v)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符: ' + v); return; }
+          where.push(qualCol + " LIKE '%" + v + "%'");
+        } else {
+          var sqlOp2 = OP_SQL[rawOp];
+          if (!sqlOp2) { E(errs, 'INVALID_ENUM', fp + '.op', '文本列 filter 只允许 =|!=|like，收到: ' + rawOp); return; }
+          var v2 = String(fl.value == null ? '' : fl.value);
+          if (!SAFE_TOKEN.test(v2) && !CN_TOKEN.test(v2)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符: ' + v2); return; }
+          where.push(qualCol + " " + sqlOp2 + " '" + v2 + "'");
+        }
       }
     });
 
