@@ -2,10 +2,17 @@
 //   导出字节 MD5 不可用（官方件含 <UUID> 非确定，87/240 self=false，README:126）→ 改用语义 token diff：
 //     CDATA 文本值多重集 + 关键节点计数（<O/<Style/Row/ColumnDefinition/TableData）→ 只有预期改动出现才算"未改部分不变"。
 var TemplateDiff = (function () {
+  function isNoise(t) {
+    // 序列化噪声（README:126 官方件 re-export 非字节稳定：RowHeight/ColumnWidth 数字数组、UUID、时间戳）
+    if (/^[\d,\s.]+$/.test(t)) return true;                        // 纯数字/逗号数组（列宽/行高）
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t)) return true;         // UUID
+    if (/^\d{10,}$/.test(t.trim())) return true;                   // 长数字串（epoch/雪花键内部）
+    return false;
+  }
   function tokens(xml) {
     var s = String(xml), m, out = [];
     var re = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
-    while ((m = re.exec(s))) out.push(m[1]);
+    while ((m = re.exec(s))) { var t = m[1]; if (!isNoise(t)) out.push(t); }   // I6：只比语义内容，忽略序列化噪声
     return out;
   }
   function countAll(xml, re) { return (String(xml).match(re) || []).length; }
