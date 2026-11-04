@@ -82,6 +82,19 @@ check('I5.3-A topN→SELECT TOP 10', /^SELECT TOP 10 /.test(tp.sql || '') && /OR
 check('I5.3-A topN 无 sort→INVALID_SHAPE', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], topN: { n: 10 } }), 'INVALID_SHAPE', 'topN'));
 check('I5.3-A topN 非正整数→INVALID_NUMBER', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], sort: [{ field: 'planned' }], topN: { n: 0 } }), 'INVALID_NUMBER', 'topN'));
 
+// I5.3-B 非日期 filters（受控字面量，注入面清零）
+var fnum = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'score', op: '>=', value: 0.9 }] });
+check('I5.3-B 数值列 filter→TRY_CAST 比较', /TRY_CAST\(score AS float\) >= 0\.9/.test(fnum.sql || '') && (fnum.errors || []).length === 0);
+var ftxt = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: 'like', value: 'L' }] });
+check('I5.3-B 文本列 like→LIKE %L%', /LIKE '%L%'/.test(ftxt.sql || ''));
+var finj = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '=', value: "x'; DROP TABLE y;--" }] });
+check('I5.3-B 注入串→INVALID_TYPE 拒、不产 SQL', codeAt(finj, 'INVALID_TYPE', 'filters') && !finj.sql);
+var fbadnum = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'score', op: '>=', value: 'abc' }] });
+check('I5.3-B 数值列非数值值→INVALID_NUMBER', codeAt(fbadnum, 'INVALID_NUMBER', 'filters'));
+var fghost = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'ghost_col', op: '=', value: 1 }] });
+check('I5.3-B 未知 filter 列→UNKNOWN_REF', codeAt(fghost, 'UNKNOWN_REF', 'filters'));
+check('I5.3-B filter 生成 SQL 仍单语句无分号', (fnum.sql || '').indexOf(';') < 0);
+
 // 纯函数/确定序/输入不可变/抗炸
 var snap = JSON.stringify(sel);
 check('确定序（两次 SQL 全等）', SqlBuilder.build(model, sel).sql === SqlBuilder.build(model, sel).sql);

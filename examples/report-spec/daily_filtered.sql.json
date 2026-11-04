@@ -1,0 +1,13 @@
+{
+  "specVersion": "1",
+  "report": { "name": "激光生产日报 · 工序含L（I5.3 非日期筛选）" },
+  "outName": "生产日报_筛选",
+  "dataset": {
+    "kind": "sql", "connection": "ATOM_LIVE", "entity": "InspectionRecord",
+    "dimensions": ["bizDate"], "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" },
+    "filters": [{ "field": "stage", "op": "like", "value": "L" }],
+    "sort": [{ "field": "bizDate", "dir": "asc" }]
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}

@@ -126,6 +126,33 @@ var SqlBuilder = (function () {
       }
     }
 
+    // I5.3-B 非日期 filters：受控字面量（FR DBTableData 走 ${} 替换非 JDBC prepared，故值必须严格类型化，注入面清零）
+    //   仅允许引用实体表上的属性/维度列（跨表 filter → 拒，filter grain 保守）；op∈OPS；数值列值须有限数，文本列须安全 token。
+    var NUMERIC_TYPES = { number: 1, integer: 1, long: 1, float: 1, decimal: 1 };
+    var SAFE_TOKEN = /^[\w.\- ]{1,64}$/;
+    var CN_TOKEN = /^[一-龥\w.\- ]{1,64}$/;
+    (sel.filters || []).forEach(function (fl, i) {
+      var fp = 'filters[' + i + ']';
+      if (!isObj(fl)) { E(errs, 'INVALID_TYPE', fp, 'filter 须对象'); return; }
+      var colMeta = props[fl.field] || (dimsByName[fl.field] && (!dimsByName[fl.field].table || dimsByName[fl.field].table === table) ? { column: dimsByName[fl.field].column, type: 'text' } : null);
+      if (!colMeta) { E(errs, 'UNKNOWN_REF', fp + '.field', 'filter 字段非实体表可过滤列（跨表 filter 暂拒）: ' + fl.field); return; }
+      var leaf = String(colMeta.column || '').split('.').pop();
+      var qualCol = joins.length ? table + '.' + leaf : leaf;
+      var op = fl.op == null ? '=' : fl.op;
+      if (!hasOwn(ModelVocab.OPS, op) && op !== 'like' && op !== 'LIKE') { E(errs, 'INVALID_ENUM', fp + '.op', 'filter op 越白名单: ' + op); return; }
+      var isNumCol = NUMERIC_TYPES[colMeta.type];
+      if (isNumCol) {
+        if (!(typeof fl.value === 'number' && isFinite(fl.value))) { E(errs, 'INVALID_NUMBER', fp + '.value', '数值列 filter 值须有限数: ' + fl.value); return; }
+        where.push('TRY_CAST(' + qualCol + ' AS float) ' + op + ' ' + fl.value);
+      } else {
+        var v = String(fl.value == null ? '' : fl.value);
+        if (!SAFE_TOKEN.test(v) && !CN_TOKEN.test(v)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符（禁引号/;/注释符）: ' + v); return; }
+        var up = String(op).toUpperCase();
+        if (up === 'LIKE') where.push(qualCol + " LIKE '%" + v + "%'");
+        else where.push(qualCol + " " + op + " '" + v + "'");
+      }
+    });
+
     var baseAliases = baseCols.filter(function (b) { return b.role !== 'derived'; }).map(function (b) { return { alias: b.alias, role: b.role }; });
     var derived = baseCols.filter(function (b) { return b.role === 'derived'; });
     if (errs.length) return { errors: errs };
