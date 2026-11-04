@@ -1,9 +1,9 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Thu Nov 05 07:23:58 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 07:33:36 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
-> FVS 不追（2026-11-05 拍板"涉及 FVS 的不做"）：FineVis 大屏扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie），判据=类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）。
+> 不追范围（2026-11-05 拍板终口径="基本授权有的内容都可以做；额外收费的不做；移动端不做"）：① FVS 大屏付费插件扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie）——类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）；② com.fr.extended.chart.*（付费扩展图族配套数据集基建，类虽在核心 jar 但消费者全在付费插件）；③ 移动端 com.fr.report.mobile.* + com.fr.form.ui.mobile.*（4 类；MobileReg=手机号校验属基本功能不在其列）。
 
 ## A. 缺口总账（demo 类级，按演示库 240 张 cpt 引用频次倒序；也是批计划排期依据）
 
@@ -15,17 +15,13 @@
 | com.fr.plugin.chart.attr.axis.VanChartAxis | 92 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat | 61 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat | 54 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.mobile.DefaultMobileParamStyle | 27 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrSeriesImageBackground | 26 | missing | (漏账：批排期时人工归入) |
-| com.fr.extended.chart.ExtendedTableDataSet | 25 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipSummaryValueFormat | 24 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.web.ChartHyperRelateCellLink | 18 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.mobile.impl.DefaultMobileBookMarkStyle | 14 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.chartattr.ChartCommonCondition | 14 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.custom.VanChartCustomPlot | 12 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.base.AttrBackground | 12 | missing | (漏账：批排期时人工归入) |
-| com.fr.form.ui.mobile.impl.DefaultMobileParameterStyle | 9 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.map.attr.AttrMapLabel | 8 | missing | 批I |
 | com.fr.plugin.chart.base.AttrBorderWithAlpha | 8 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipXFormat | 8 | missing | (漏账：批排期时人工归入) |
@@ -45,7 +41,6 @@
 | com.fr.chart.chartattr.CategoryAxis | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.MultiFileEditor | 5 | missing | (漏账：批排期时人工归入) |
 | com.fr.general.date.FineDateFormat | 5 | missing | (漏账：批排期时人工归入) |
-| com.fr.report.mobile.EmptyMobileParamStyle | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.form.TreeNodeToggleButton | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.web.button.write.DeleteColumnRow | 4 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.poly.PolyECBlock | 4 | missing | 批J |

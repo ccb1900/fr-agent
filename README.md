@@ -589,11 +589,15 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 
 
 
-#81 FVS 圈定不做（2026-11-05，用户拍板"涉及 FVS 的不做"——缺口账 36 类移入 noncore）：
-- **判据（物理证据，非印象）**：缺口账 108 类逐一比对 FVS 插件 jar——`plugins/plugin-com.fr.plugin.bigScreen.v11-4.6.16/fr-plugin-extendedCharts-4.6.16.jar`（448 类，全在 com.fr.plugin.chart.*）——**36 类命中**：globe(3D 地球/slideshowmap)/meter(pixelgrid)/kpi/wisdomtree/fluid/catalog/time(时间齿轮)/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/carouselbar/shapecolumn/pie.carouselpie 全家=即"极端图族"本体。
-- **边界核实（不误伤）**：14 个包在 fine-* 核心 jar **零交叉**；VanChartMapPlot/AttrMapLabel/AttrMapTooltip/VanMapMoreNameCDDefinition/VanChartHeatMapPlot/PolyECBlock/PolyWorkSheet/ChartHyperRelateCellLink/mobile 样式类全在核心 jar（常规 cpt 能力）——**map/poly/heatmap/mobile 不属 FVS，留账**。
-- **落地**：coverage_report.js NONCORE_FVS 14 包前缀 + specialcharts 族收窄（Meter/KPI/CarouselPie 出键，余核心 HeatMap+已收 bubble）；coverage.md 重生成 **missing 91→55 / partial 17 / noncore 39**；头部留痕判据与拍板日期。
-- **剩余工单（FVS 移除后）**：WriteActor DML 真提交、Verifier 家族、vmap GIS（核心图族，非 FVS）、Poly 块面、批B 渲染端四项、批D 字典凭据注入、SortHeader 语料、ChartHyperRelateCellLink、Mobile 样式族、tooltip/axis 装饰深水区（AttrTooltipRichText 192/NormalDataModel 180/AttrBorder 93/VanChartAxis 92 仍是头部）。
+#81 范围圈定：基本授权全做、收费/移动端不做（2026-11-05，用户拍板，经三轮澄清终口径="**基本授权有的内容都可以做；额外收费的不做；移动端不做**"——缺口账 41 类移入 noncore）：
+- **判据（物理证据，非印象）**：范围判定=类物理定义在哪个 jar。WEB-INF/lib `fine-*` 核心 jar=基本授权自带；`plugins/` 插件 jar=插件功能。缺口账 108 类逐一核到 jar：
+  ① **FVS 大屏插件**（收费产品）`plugins/plugin-com.fr.plugin.bigScreen.v11-4.6.16/fr-plugin-extendedCharts-4.6.16.jar`（448 类，全在 com.fr.plugin.chart.*）命中 **36 类**：globe(3D 地球/slideshowmap)/meter(pixelgrid)/kpi/wisdomtree/fluid/catalog/time(时间齿轮)/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/shapecolumn/pie.carouselpie 全家=即"极端图族"本体；14 包在核心 jar 零交叉（grep -a 实证）。**FVS 复核（用户提醒"若有不收费的也是要的"）：36 类全随付费大屏产品无一属基本授权；VanChart 常规图型（柱/线/饼/散点/面积/仪表/雷达/地图/热力/气泡）全在核心 jar——零误伤**。
+  ② **com.fr.extended.chart（15 类）**：类在核心 jar（序列化兼容基建），但消费者=付费扩展图族（KPI/地球/智慧树等图型只在 FVS 插件），引用它的 25 张 demo 全是扩展图 demo——基建无基本授权图型可挂，**随付费族不追**。
+  ③ **移动端（用户拍板不做）**：`com.fr.report.mobile.*`+`com.fr.form.ui.mobile.*` 共 4 类（Default/EmptyMobileParamStyle、DefaultMobileBookMarkStyle/ParameterStyle）；`com.fr.form.ui.reg.MobileReg`=**手机号校验**（表单验证基本功能）不在此列已 full。
+- **边界核实（不误伤）**：其余 67 类（50 missing+17 partial）全数核到核心 jar=基本授权，**无其他收费插件依赖**。其中 10 个是版本包名差异非缺类：demo 记 `com.fr.report.web.ui.impl.page.PageNavi`/`com.fr.base.iofileattr.TemplateIdAttrMark`，引擎实际类为 `web.button.page.PageNavi`/`iofile.attr.TemplateIdAttrMark`（同功能跨版本改包名）。VanChartMapPlot/AttrMapLabel/VanMapMoreNameCDDefinition/VanChartHeatMapPlot（核心 heatmap 包）/PolyECBlock/PolyWorkSheet/ChartHyperRelateCellLink 全在核心 jar——**map/poly/heatmap 留账全做**。
+- **工具链坑（本案当场踩）**：`unzip -l` 清单含非 UTF-8 类名（ISO-8859），Git Bash grep 默认按二进制**静默跳过**（-c 无输出不报错）——jar 类归属判定必须 `grep -a`；大 jar 清单先落盘再 grep，勿在命令替换里直连管道。
+- **落地**：coverage_report.js `NONCORE_PAID`（14 包前缀 + extended.chart + 移动端两包）+ specialcharts 族收窄（Meter/KPI/CarouselPie 出键，余核心 HeatMap+已收 bubble）；coverage.md 重生成 **missing 135→91→54→50 / partial 17 / noncore 44**；头部留痕判据与拍板日期。
+- **剩余工单（全在基本授权内）**：WriteActor DML 真提交、Verifier 家族、vmap GIS（核心图族）、Poly 块面、批B 渲染端四项、批D 字典凭据注入、SortHeader 语料、ChartHyperRelateCellLink、tooltip/axis/label 装饰深水区（AttrTooltipRichText 192/NormalDataModel 180/AttrBorder 93/VanChartAxis 92 是头部——均为常规图表自带装饰，属"基本授权有的内容"）。
 
 
 #82 r10-A/B/C/D「Agent 创作链可靠性收口」落地批（2026-11-05，外部审查 r10.md 令执行；基准 main/e4ae950，四项 P1 逐条复现属实后动手；r10.md 入库）：

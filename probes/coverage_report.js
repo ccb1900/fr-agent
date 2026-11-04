@@ -114,15 +114,22 @@ classesText.split('\n').forEach(function (ln) {
   if (m && /^com\./.test(m[2])) cls.push({ n: parseInt(m[1], 10), fq: m[2] });
 });
 var NONCORE = /^com\.fr\.(esd|plugin\.cloud|widgettheme)\./; // 插件配置/云分析不追
-// FVS（FineVis 大屏）扩展图族不追（2026-11-05 用户拍板"涉及 FVS 的不做"）：
-//   判据=类物理定义于 FVS 插件 plugin-com.fr.plugin.bigScreen.v11-4.6.16 / fr-plugin-extendedCharts-4.6.16.jar
-//   （缺口账 108 类中 36 类命中，全部在下列包内；14 个包在 fine-* 核心 jar 零交叉，常规图表 gauge/heatmap/map 全在核心不受影响）
-var NONCORE_FVS = /^com\.fr\.plugin\.chart\.(kpi|meter|wisdomtree|globe|catalog|fluid|time|particlecounter|multidata)\.|^com\.fr\.plugin\.chart\.(map\.groupmap|column\.(arccolumn|carouselbar|shapecolumn)|pie\.carouselpie)\./;
+// 收费/移动端不追（2026-11-05 用户拍板终口径="**基本授权有的内容都可以做；额外收费的不做；移动端不做**"）：
+//   判据=类物理定义于哪个 jar：WEB-INF/lib fine-* 核心 jar=基本授权自带；plugins/ 插件 jar=插件功能。
+//   ① FVS 大屏（收费产品）插件 plugin-com.fr.plugin.bigScreen.v11 / fr-plugin-extendedCharts-4.6.16.jar
+//     （448 类）定义 36 个缺口类，全部在下列 14 包；14 包在核心 jar 零交叉（grep -a 实证，注意 jar 清单为
+//     ISO-8859 编码必须 grep -a，普通 grep 当二进制静默跳过）。FVS 复核：36 类全随付费大屏产品，无一属基本
+//     授权；VanChart 常规图型（柱/线/饼/散点/面积/仪表/雷达/地图/热力/气泡）全在核心 jar，未误伤免费内容。
+//   ② com.fr.extended.chart（核心 jar 内 15 类序列化兼容基建）：类在基本授权 jar，但消费者=付费扩展图族
+//     （KPI/地球/智慧树等图型只在 FVS 插件），引用它的 25 张 demo 全是扩展图 demo——基建无基本功能图型可挂，随付费族不追。
+//   ③ 移动端（用户拍板不做，多数部署需单独移动端授权）：com.fr.report.mobile.* + com.fr.form.ui.mobile.*
+//     共 4 类；com.fr.form.ui.reg.MobileReg=手机号校验（表单验证基本功能）不在此列，已 full。
+var NONCORE_PAID = /^com\.fr\.plugin\.chart\.(kpi|meter|wisdomtree|globe|catalog|fluid|time|particlecounter|multidata)\.|^com\.fr\.plugin\.chart\.(map\.groupmap|column\.(arccolumn|carouselbar|shapecolumn)|pie\.carouselpie)\.|^com\.fr\.extended\.chart\.|^com\.fr\.(report\.mobile|form\.ui\.mobile)\./;
 var SKIP_FURTHER = 0;
 var ledger = cls.map(function (c) {
   var cat;
   if (NONCORE.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
-  else if (NONCORE_FVS.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
+  else if (NONCORE_PAID.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
   else cat = classifyToken(c.fq);
   return { n: c.n, fq: c.fq, cat: cat };
 });
@@ -214,7 +221,7 @@ var HEAD =
   '> 由 `probes/coverage_report.js` 生成（' + dateStr + '），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。\n' +
   '> 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。\n' +
   '> 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。\n' +
-  '> FVS 不追（2026-11-05 拍板"涉及 FVS 的不做"）：FineVis 大屏扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie），判据=类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）。\n\n';
+  '> 不追范围（2026-11-05 拍板终口径="基本授权有的内容都可以做；额外收费的不做；移动端不做"）：① FVS 大屏付费插件扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie）——类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）；② com.fr.extended.chart.*（付费扩展图族配套数据集基建，类虽在核心 jar 但消费者全在付费插件）；③ 移动端 com.fr.report.mobile.* + com.fr.form.ui.mobile.*（4 类；MobileReg=手机号校验属基本功能不在其列）。\n\n';
 
 var doc = HEAD + A.join('\n') + '\n\n' + B.join('\n') + '\n\n' + C.join('\n') + '\n';
 
