@@ -1,0 +1,13 @@
+## (a) cell.setValue → export → re-read
+  title(0,0) before=java.lang.String:2026 Q3 洋酒销售明细
+  title(0,0) after =java.lang.String:I6_PATCHED_TITLE_临时
+  VERDICT cell.setValue→export→re-read = PASS
+## (b) putTableData 换数据集 → export → re-read
+  re-read ds1 colCount=2 probe=(valfail TypeError: td.getColumnValues is not a function)
+  VERDICT putTableData→export→re-read = CHECK
+## (c) setColumnWidth 读回对象 → export → re-read（<ColumnWidth> 变？）
+  setColumnWidth ERR: java.lang.invoke.WrongMethodTypeException: cannot convert MethodHandle(Object,int,UNIT)Object to (Object,int,int)Object →排除
+## (d) 命名样式守卫：官方件 style_name= 计数（只读）
+  sample=(none found) style_name= hits=0 /Style total=0
+  命名样式读回即损：该件无命名样式
+## END (truth file 无凭据；白名单以 VERDICT 行为准)
