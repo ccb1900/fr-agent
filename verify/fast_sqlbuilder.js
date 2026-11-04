@@ -70,6 +70,18 @@ var revDate = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: 
 check('P4 from>to→拒', !revDate.sql && (revDate.errors || []).some(function (e) { return e.code === 'INVALID_SHAPE'; }));
 check('P4 同表正常查询仍过（跨表闸不误伤）', (SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate', 'stage'], metrics: ['planned', 'done', 'completionRate'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }).sql || '').indexOf('FROM laser_aaa') >= 0);
 
+// I5.3-A sort + topN
+var srt = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned', 'done'], sort: [{ field: 'done', dir: 'desc' }] });
+check('I5.3-A sort→ORDER BY 别名 DESC + JOIN 保留', /ORDER BY done DESC$/.test(srt.sql || '') && /INNER JOIN laser_files/.test(srt.sql || ''));
+var sDeriv = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'done', 'completionRate'], sort: [{ field: 'completionRate' }] });
+check('I5.3-A 按派生比率排序→拒（不在 SQL）', codeAt(sDeriv, 'UNKNOWN_REF', 'sort'));
+var sBadDir = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], sort: [{ field: 'planned', dir: 'sideways' }] });
+check('I5.3-A 坏 sort.dir→INVALID_ENUM', codeAt(sBadDir, 'INVALID_ENUM', 'sort'));
+var tp = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], sort: [{ field: 'planned', dir: 'desc' }], topN: { n: 10 } });
+check('I5.3-A topN→SELECT TOP 10', /^SELECT TOP 10 /.test(tp.sql || '') && /ORDER BY planned DESC$/.test(tp.sql || ''));
+check('I5.3-A topN 无 sort→INVALID_SHAPE', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], topN: { n: 10 } }), 'INVALID_SHAPE', 'topN'));
+check('I5.3-A topN 非正整数→INVALID_NUMBER', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], sort: [{ field: 'planned' }], topN: { n: 0 } }), 'INVALID_NUMBER', 'topN'));
+
 // 纯函数/确定序/输入不可变/抗炸
 var snap = JSON.stringify(sel);
 check('确定序（两次 SQL 全等）', SqlBuilder.build(model, sel).sql === SqlBuilder.build(model, sel).sql);

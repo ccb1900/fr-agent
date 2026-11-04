@@ -131,11 +131,32 @@ var SqlBuilder = (function () {
     if (errs.length) return { errors: errs };
     if (!selectBits.length) { E(errs, 'REQUIRED', 'sel', '无可选维度/指标'); return { errors: errs }; }
 
-    var sql = 'SELECT ' + selectBits.join(', ') + ' FROM ' + table +
+    // I5.3-A：sort（按已选 SQL 别名 + 方向）+ topN（SELECT TOP n）。派生比率列不在 SQL 里 → 不可按它排序
+    var sqlAlias = {}; baseAliases.forEach(function (b) { sqlAlias[b.alias] = 1; });
+    var orderBits = [];
+    (sel.sort || []).forEach(function (s, i) {
+      var sp = 'sort[' + i + ']';
+      var f = isStr(s) ? s : (s && s.field);
+      var dir = (s && s.dir) || 'asc';
+      if (!f || !sqlAlias[f]) { E(errs, sqlAlias[f] ? 'INVALID_SHAPE' : 'UNKNOWN_REF', sp, 'sort 字段须为已选 SQL 列别名(非派生比率): ' + f); return; }
+      if (dir !== 'asc' && dir !== 'desc') { E(errs, 'INVALID_ENUM', sp + '.dir', 'sort.dir 只 asc|desc: ' + dir); return; }
+      orderBits.push(f + ' ' + dir.toUpperCase());
+    });
+    var topSql = '';
+    if (sel.topN != null) {
+      var n = sel.topN && sel.topN.n != null ? sel.topN.n : sel.topN;
+      if (!(typeof n === 'number' && isFinite(n) && Math.floor(n) === n && n > 0)) E(errs, 'INVALID_NUMBER', 'topN', 'topN 须正整数');
+      else if (!orderBits.length) E(errs, 'INVALID_SHAPE', 'topN', 'topN 需配 sort（否则 TOP n 无确定序，r3 §5.2 查询范围）');
+      else topSql = ' TOP ' + n;
+    }
+    if (errs.length) return { errors: errs };
+    var order = orderBits.length ? orderBits.join(', ') : '1';
+
+    var sql = 'SELECT' + topSql + ' ' + selectBits.join(', ') + ' FROM ' + table +
       (joins.length ? ' ' + joins.join(' ') : '') +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') +
       (groupBits.length ? ' GROUP BY ' + groupBits.join(', ') : '') +
-      ' ORDER BY 1';
+      ' ORDER BY ' + order;
     // 单点自检：受控 SQL 必单语句、无 ;（配 ir.js SQL_READONLY），违约即拒（不产脏 SQL）
     if (/;/.test(sql) || !/^(SELECT|WITH)\b/i.test(sql)) { E(errs, 'SQL_READONLY', 'sql', '生成的 SQL 违单语句/只读约束'); return { errors: errs }; }
     return { sql: sql, baseAliases: baseAliases, derived: derived, groupDims: (sel.dimensions || []).slice(), errors: [] };

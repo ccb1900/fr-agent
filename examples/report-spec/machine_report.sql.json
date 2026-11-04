@@ -1,0 +1,11 @@
+{
+  "specVersion": "1",
+  "report": { "name": "激光生产日报 · 按机台 Top（I5.2 JOIN + I5.3 sort/TopN）" },
+  "outName": "生产日报_按机台",
+  "dataset": {
+    "kind": "sql", "connection": "ATOM_LIVE", "entity": "InspectionRecord",
+    "dimensions": ["machine"], "metrics": ["planned", "done", "completionRate"],
+    "sort": [{ "field": "planned", "dir": "desc" }], "topN": { "n": 5 }
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}
