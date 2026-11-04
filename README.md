@@ -534,3 +534,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **像素实证**（PDF 文本层逐字命中）：页眉「激光检测中心 · 页眉（批C 自检）」+页眉底色、页脚「第1页/共1页」+「2026-11-05」日期 + 右列「fineagent 管线」；部署 XML Header/Footer(reportPageType=0)/TextHFElement 3/FormulaHFElement 1/DateHFElement 1/TemplateIdAttrMark/TemplateThemeAttrMark 全在；execute 不清页眉页脚（pre/post 导出同构——与批 B 条件集同墙不同命）。
 - **门禁**：scan 44 张（43+1）、fast 13 GREEN、负门 5 路 GREEN、R1–R8、默认 CBEB42E3 逐字节复原；coverage missing 维持 116（headerfooter 家族类不落类级账，tag 层待批收尾重扫）。
 
+
+#74 批D 字典族 + 日期/文本格式（2026-11-05，demo 车道批 D——dict 39 收全谱 + SimpleDateFormatThreadSafe 53）：
+- **词汇**：`dict` 三形态——custom map（v4.0 原形）/ `{tableData:{ds,keyIdx?,valIdx?}}`（TableDataDictionary，官方 54 张主形态，零凭据）/ `{formula}`（FormulaDictionary）；`DatabaseDictionary/DynamicSQLDict 需 Connection 对象面 → 凭据注入批工单`（不假造，AGENTS 凭据单源）。列格式派生零新词汇：number→CoreDecimalFormat（既有）、**date/datetime→SimpleDateFormatThreadSafe.applyPattern（官方 53 张）**、text→TextFormat.getInstance()——kind 由列型自动派生（style 层 st.formatKind）。
+- **挂接一手**（probe_dict2/_fmt + 官方 员工变化查询分析.cpt）：TableDataDictionary(NameTableData, keyIdx, valIdx) 直构造；**FormulaDictionary 真实 API=setProduceFormula(带=串)+setExcuteFormula**（probe 修正：无 setFormula——早先 dump 被 DynamicSQLDict 父类方法混行误导）；官方形=EFormulaDict 执行公式缺省 `=$$$`（原值即键），**produce 是键→显示公式（$$$ 占位键），不是行上下文公式**——引用列名（CONCATENATE(grade,..)）求值空白，改 `=CONCATENATE($$$,"-档说明")` 即出。
+- **教案**：① ReportHF 同款「便捷 API 假象」在字典面再现——getCenterList()/get*List() 读回是副本，存储以 set* 为准（readback-or-it-didn't-happen 换成 list-API 版）；② v2 spec 总分列=数字列必须存在（无数字列 totalCol=-1 → 聚合格 span 异常 → style count 幽灵，批 A 教训二的 v2 路复现）；③ 日期格式 pattern 直接写中文（yyyy年MM月dd日），SimpleDateFormat 引号转义在 FR 格式层会漏成字面引号。
+- **像素实证**（能力自检_字典格式 PNG）：custom 字典 A/B/C→合格/返修/报废、tableData 字典 M1/M2、日期列「2026年11月05日」、formula 字典「A-档说明」式产出；XML 计数 TableDataDictionary 1/FormulaDictionary 1/SimpleDateFormatThreadSafe 1。
+- **门禁**：fast 13 GREEN、scan 45 张（44+1）、负门 5 路 GREEN、默认 CBEB42E3 逐字节；coverage missing 116→110。
+

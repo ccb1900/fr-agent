@@ -297,6 +297,24 @@ check('批C templateId 合法零误报', errsOf(hfIR(null, { templateId: 'b7e3f2
 check('批C templateTheme 缺 name 拒', codeAt(hfIR(null, { templateTheme: { dark: false } }), 'REQUIRED', 'templateTheme.name'));
 check('批C templateTheme 全形零误报', errsOf(hfIR(null, { templateTheme: { name: '兼容主题', dark: false } })).length === 0);
 check('批C templateTheme dark 非布拒', codeAt(hfIR(null, { templateTheme: { name: 'x', dark: 'yes' } }), 'INVALID_TYPE', 'templateTheme.dark'));
+// ===== 批D（2026-11-05）字典三形态 + 日期/文本列格式 =====
+function dictColIR(dict) {
+  var col = { name: '机型', type: 'text' };
+  if (dict) col.dict = dict;
+  return { sheets: [{ name: 's1', widthsPt: [120], blocks: [
+    { type: 'title', text: 't', span: 1, heightPt: 30 },
+    { type: 'header', columns: [col], heightPt: 20 },
+    { type: 'detail', dataset: 'd', columns: [col], heightPt: 20 }
+  ] }], datasets: [{ name: 'd', columns: [{ name: '机型', type: 'text' }], rows: [['A']] }] };
+}
+check('批D dict custom map 零误报', errsOf(dictColIR({ A: '合格', B: '返修' })).length === 0);
+check('批D dict tableData 零误报', errsOf(dictColIR({ tableData: { ds: 'd', keyIdx: 0, valIdx: 0 } })).length === 0);
+check('批D dict tableData 缺 ds 拒', codeAt(dictColIR({ tableData: { keyIdx: 0 } }), 'REQUIRED', 'sheets[0].blocks[2].columns[0].dict.tableData.ds'));
+check('批D dict tableData 键 idx 非数拒', codeAt(dictColIR({ tableData: { ds: 'd', keyIdx: 'x' } }), 'INVALID_NUMBER', 'sheets[0].blocks[2].columns[0].dict.tableData.keyIdx'));
+check('批D dict formula 零误报', errsOf(dictColIR({ formula: '=CONCATENATE(机型, "-档")' })).length === 0);
+check('批D dict formula 非串拒', codeAt(dictColIR({ formula: 7 }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].dict.formula'));
+check('批D dict 混形态拒', codeAt(dictColIR({ formula: '=1', tableData: { ds: 'd' } }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].dict.formula'));
+check('批D dict 空对象拒', codeAt(dictColIR({}), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].dict'));
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {
