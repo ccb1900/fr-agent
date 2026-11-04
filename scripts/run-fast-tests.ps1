@@ -7,7 +7,7 @@
 $FR = 'D:\software\FineReport_11.0'
 $java = "$FR\jre\bin\java.exe"
 $jar = "$FR\jre\lib\ext\nashorn.jar"
-$suites = @('verify\fast_parse.js', 'verify\fast_ir_contract.js', 'verify\fast_runresult.js', 'verify\fast_browser_sql.js', 'verify\fast_report_spec.js', 'verify\fast_schema.js', 'verify\fast_semantic.js', 'verify\fast_planner.js', 'verify\fast_sqlbuilder.js', 'verify\fast_sqlpath.js')
+$suites = @('verify\fast_parse.js', 'verify\fast_ir_contract.js', 'verify\fast_runresult.js', 'verify\fast_browser_sql.js', 'verify\fast_report_spec.js', 'verify\fast_schema.js', 'verify\fast_semantic.js', 'verify\fast_planner.js', 'verify\fast_sqlbuilder.js', 'verify\fast_sqlpath.js', 'verify\fast_closure.js')
 $fail = 0
 foreach ($s in $suites) {
   & $java '-cp' $jar 'jdk.nashorn.tools.Shell' $s
