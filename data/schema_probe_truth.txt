@@ -1,0 +1,81 @@
+## CONNECTION (sanitized)
+  product=Microsoft SQL Server 15.00.4490
+  driver=Microsoft JDBC Driver 9.4 for SQL Server 9.4.1.0
+  urlCatalog=(n/a)
+## TABLE-TYPES supported
+  SYSTEM TABLE,TABLE,VIEW
+## SCHEMAS
+  count=13 names=db_accessadmin,db_backupoperator,db_datareader,db_datawriter,db_ddladmin,db_denydatareader,db_denydatawriter,db_owner
+## TABLES like laser_% (types TABLE|VIEW)
+  count=26
+  laser_aaa | TABLE | schema=dbo
+  laser_aaa_gosa | TABLE | schema=dbo
+  laser_alm_log | TABLE | schema=dbo
+  laser_cnd_selct | TABLE | schema=dbo
+  laser_energy_measure | TABLE | schema=dbo
+  laser_files | TABLE | schema=dbo
+  laser_files_bak_20261020 | TABLE | schema=dbo
+  laser_files_file_key_seq | TABLE | schema=dbo
+  laser_galv_mask_measure | TABLE | schema=dbo
+  laser_glv_cnd_send | TABLE | schema=dbo
+  laser_length | TABLE | schema=dbo
+  laser_m307 | TABLE | schema=dbo
+  laser_m370 | TABLE | schema=dbo
+  laser_m377 | TABLE | schema=dbo
+  laser_mainte1 | TABLE | schema=dbo
+  laser_mask_gosa | TABLE | schema=dbo
+  laser_pc_direct | TABLE | schema=dbo
+  laser_proc_state | TABLE | schema=dbo
+  laser_pwr | TABLE | schema=dbo
+  laser_pwrmulti | TABLE | schema=dbo
+  laser_sensor | TABLE | schema=dbo
+  laser_sin_statis | TABLE | schema=dbo
+  laser_sinsyuku | TABLE | schema=dbo
+  laser_table | TABLE | schema=dbo
+  laser_twin_scale_dsp | TABLE | schema=dbo
+  laser_zaxis | TABLE | schema=dbo
+## DEEP PROBE on laser_aaa
+  count=19
+  1|file_key|TYPE_NAME=bigint|DATA_TYPE=-5|COLUMN_SIZE=19|DECIMAL_DIGITS=0|NULLABLE=0|IS_NULLABLE=NO|COLUMN_DEF=null
+  2|row_number|TYPE_NAME=bigint|DATA_TYPE=-5|COLUMN_SIZE=19|DECIMAL_DIGITS=0|NULLABLE=0|IS_NULLABLE=NO|COLUMN_DEF=null
+  3|biz_date|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  4|biz_time|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  5|stage|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  6|result_x|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  7|result_y|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  8|workpiece_x|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  9|workpiece_y|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  10|main_prog_no|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  11|main_prog_seq|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  12|main_prog_block|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  13|sub_prog_no|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  14|sub_prog_seq|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  15|sub_prog_block|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  16|machine_x|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  17|machine_y|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  18|size|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+  19|score|TYPE_NAME=nvarchar|DATA_TYPE=-9|COLUMN_SIZE=4000|DECIMAL_DIGITS=null|NULLABLE=1|IS_NULLABLE=YES|COLUMN_DEF=null
+## PRIMARY KEYS (scan all 26 tables)
+  tables-with-PK=25 pkRows=50
+  PK laser_aaa.file_key key=undefined
+  PK laser_aaa.row_number key=undefined
+  PK laser_aaa_gosa.file_key key=undefined
+  PK laser_aaa_gosa.row_number key=undefined
+  PK laser_alm_log.file_key key=undefined
+  PK laser_alm_log.row_number key=undefined
+  PK laser_cnd_selct.file_key key=undefined
+  PK laser_cnd_selct.row_number key=undefined
+## IMPORTED KEYS / FK (scan all tables)
+  tables-with-FK=0 fkRows=0
+## INDEX INFO on laser_aaa
+  rows=9
+  (stat) nonUnique=null col=null seq=null
+  PK__laser_aa__9E842E84468DBF06 nonUnique=0 col=file_key seq=1
+  PK__laser_aa__9E842E84468DBF06 nonUnique=0 col=row_number seq=2
+  IX_aaa_date nonUnique=1 col=biz_date seq=1
+  IX_aaa_date_ord nonUnique=1 col=biz_date seq=1
+  IX_aaa_date_ord nonUnique=1 col=biz_time seq=2
+  IX_aaa_date_ord nonUnique=1 col=file_key seq=3
+  IX_aaa_date_ord nonUnique=1 col=row_number seq=4
+  IX_aaa_fk nonUnique=1 col=file_key seq=1
+## END (sanitized: no url/credentials in this file)
