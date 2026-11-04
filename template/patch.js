@@ -12,6 +12,7 @@ var TemplatePatch = (function () {
   //   boolean 不再用 !!v——字符串 "false" 是 truthy，会把 false 写成本 true）。
   function javaValue(t, v) {
     if (v == null) return null;
+    // 数值：字符串形态由 Java 重载走 String 构造（大整数/高精度 Decimal 不经 double 中转）；数值形态直接转换
     if (t === 'number' || t === 'integer') return J('java.lang.Integer').valueOf(v);
     if (t === 'long') return J('java.lang.Long').valueOf(v);
     if (t === 'float') return J('java.lang.Double').valueOf(v);

@@ -25,6 +25,7 @@ load(ROOT + '/semantic/model/registry.js');
 load(ROOT + '/semantic/model/validator.js');
 load(ROOT + '/semantic/model/resolver.js');
 load(ROOT + '/semantic/model/evidence.js');
+load(ROOT + '/semantic/preflight.js');
 
 function codeAt(errs, code, pathFrag) { return errs.some(function (e) { return e && e.code === code && String(e.path).indexOf(pathFrag) >= 0; }); }
 
@@ -55,22 +56,76 @@ check('r5 复合 PK→不认可其中任意单列', relKeyRejected(schemaWith(fu
 check('r5 单列 UNIQUE index→认可', !relKeyRejected(schemaWith(function (s) { fileTable(s).indexes = [{ unique: true, columns: [{ name: 'file_key' }] }]; })));
 check('r5 复合 UNIQUE index→不认可其中任意单列', relKeyRejected(schemaWith(function (s) { fileTable(s).indexes = [{ unique: true, columns: [{ name: 'file_key' }, { name: 'source_id' }] }]; })));
 
-// ===== I5.5-r5：证据绑定（schema 源 + 关系 + 时效），数据快照≠永久约束 =====
+// ===== I5.5-r5/r6：证据绑定（schema 源 + 纠系 + 时效 + 物理数据源/模型/Schema 指纹 + 完整性）=====
 var NOW_MS = Date.parse('2026-11-04T12:00:00Z');
+var CONN = { driver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver', url: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false' };
+var FP = ModelEvidence.fingerprints({ connection: CONN, model: model, schema: schema });
+function findRel(name) { var r = null; model.relationships.forEach(function (x) { if (x.name === name) r = x; }); return r; }
+function relFp(name) { return ModelEvidence.relationFingerprint(findRel(name)); }
 function evRaw(mut) {
-  var r = { schema: 'atom_live_demo', probedAt: '2026-11-04T11:00:00Z', checks: [{ table: 'laser_files', column: 'file_key', rows: 538, distinct: 538, unique: true, relation: 'recordToFile' }] };
+  var r = {
+    evidenceVersion: '2', status: 'passed', schema: 'atom_live_demo',
+    sourceFingerprint: FP.source, modelFingerprint: FP.model, schemaFingerprint: FP.schema,
+    probedAt: '2026-11-04T11:00:00Z',
+    checks: [{ table: 'laser_files', column: 'file_key', rows: 538, distinct: 538, unique: true, relation: 'recordToFile', relationFingerprint: relFp('recordToFile') }]
+  };
   if (mut) mut(r);
   return r;
 }
-function evFilter(mut, src) { return ModelEvidence.filter(evRaw(mut), { schemaSource: src || 'atom_live_demo', model: model, nowMs: NOW_MS, maxAgeDays: 30 }); }
-check('r5 证据合格→注入 unique 并记录 accepted', (function () { var e = evFilter(); return e.unique['laser_files.file_key'] === true && e.accepted.length === 1; })());
-check('r5 证据过期(40 天)→不注入 + stale', (function () { var e = evFilter(function (r) { r.probedAt = '2026-09-20T11:00:00Z'; }); return !e.unique['laser_files.file_key'] && e.stale.length >= 1; })());
-check('r5 数据源不匹配→不注入 + mismatched', (function () { var e = evFilter(null, 'other_db'); return !e.unique['laser_files.file_key'] && e.mismatched.length >= 1; })());
-check('r5 关系不存在/不匹配→不注入', (function () { var e = evFilter(function (r) { r.checks[0].relation = 'ghostRel'; }); return !e.unique['laser_files.file_key'] && e.mismatched.length >= 1; })());
-check('r5 unique=false→rejected（快照不唯一不采信）', (function () { var e = evFilter(function (r) { r.checks[0].unique = false; r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
-check('r5 rows!=distinct 自相矛盾→rejected', (function () { var e = evFilter(function (r) { r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
-check('r5 probedAt 缺失→malformed 不注入', (function () { var e = evFilter(function (r) { delete r.probedAt; }); return !e.unique['laser_files.file_key'] && e.malformed.length >= 1; })());
-check('r5 证据解析抗炸（坏 JSON/空值）', ModelEvidence.parse('{') === null && ModelEvidence.filter(null, {}).malformed.length >= 1);
+function evFilter(mut, over) {
+  var o = { fingerprints: FP, model: model, nowMs: NOW_MS, maxAgeDays: 30 };
+  if (over) Object.keys(over).forEach(function (k) { o[k] = over[k]; });
+  return ModelEvidence.filter(evRaw(mut), o);
+}
+check('r6 证据合格→注入 unique 并记录 accepted', (function () { var e = evFilter(); return e.unique['laser_files.file_key'] === true && e.accepted.length === 1 && e.missing.length === 0; })());
+check('r6 换库（sourceFingerprint 变）→不注入 + mismatched/missing', (function () {
+  var e = evFilter(null, { fingerprints: { source: 'deadbeefdeadbeef', model: FP.model, schema: FP.schema } });
+  return !e.unique['laser_files.file_key'] && e.mismatched.length >= 1 && e.missing.length >= 1;
+})());
+check('r6 关系端点改变→关系指纹不匹配→不注入', (function () {
+  var m2 = JSON.parse(JSON.stringify(model));
+  m2.relationships.forEach(function (r) { if (r.name === 'recordToFile') r.from.column = 'other_col'; });
+  var e = evFilter(null, { model: m2 });
+  return !e.unique['laser_files.file_key'] && e.malformed.concat(e.mismatched).length >= 1;
+})());
+check('r6 关系基数改变→旧证据失效', (function () {
+  var m2 = JSON.parse(JSON.stringify(model));
+  m2.relationships.forEach(function (r) { if (r.name === 'recordToFile') r.cardinality = '1:1'; });
+  var e = evFilter(null, { model: m2 });
+  return !e.unique['laser_files.file_key'];
+})());
+check('r6 探针 status=failed→整份证据不可消费', (function () { var e = evFilter(function (r) { r.status = 'failed'; }); return !e.unique['laser_files.file_key'] && e.malformed.length >= 1; })());
+check('r6 evidenceVersion 不认→malformed', (function () { var e = evFilter(function (r) { r.evidenceVersion = '1'; }); return !e.unique['laser_files.file_key'] && e.malformed.length >= 1; })());
+check('r6 缺必探测关系→missing（不接受部分证据）', (function () {
+  var m2 = JSON.parse(JSON.stringify(model));
+  m2.relationships.push({ name: 'extraRel', label: 'x', from: { table: 'laser_aaa', column: 'file_key' }, to: { table: 'laser_aaa', column: 'file_key' }, source: 'confirmed', cardinality: 'N:1', confirmedBy: 'test' });
+  var e = evFilter(null, { model: m2 });
+  return e.missing.length >= 1;
+})());
+check('r6 同一关系重复证据→duplicates 且不注入', (function () {
+  var e = evFilter(function (r) { r.checks.push(JSON.parse(JSON.stringify(r.checks[0]))); });
+  return !e.unique['laser_files.file_key'] && e.duplicates.length >= 1;
+})());
+check('r6 证据过期→不注入 + stale + missing', (function () { var e = evFilter(function (r) { r.probedAt = '2026-09-01T00:00:00Z'; }); return !e.unique['laser_files.file_key'] && e.stale.length >= 1 && e.missing.length >= 1; })());
+check('r6 unique=false→rejected（快照不唯一不采信）', (function () { var e = evFilter(function (r) { r.checks[0].unique = false; r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
+check('r6 rows!=distinct 自相矛盾→rejected', (function () { var e = evFilter(function (r) { r.checks[0].distinct = 500; }); return !e.unique['laser_files.file_key'] && e.rejected.length >= 1; })());
+check('r6 指纹稳定（同输入同值）且不含密码', (function () {
+  var f2 = ModelEvidence.fingerprints({ connection: CONN, model: model, schema: schema });
+  return f2.source === FP.source && f2.model === FP.model && f2.schema === FP.schema && JSON.stringify(FP).indexOf('password') < 0;
+})());
+check('r6 证据解析抗炸（坏 JSON/空值）', ModelEvidence.parse('{') === null && ModelEvidence.filter(null, {}).malformed.length >= 1);
+
+// ===== r6-D：SemanticPreflight 前置检查单点 =====
+function preflight(over) {
+  var o = { model: model, schema: schema, evidenceRaw: evRaw(), connection: CONN, nowMs: NOW_MS, maxAgeDays: 30 };
+  if (over) Object.keys(over).forEach(function (k) { if (over[k] === undefined) delete o[k]; else o[k] = over[k]; });
+  return SemanticPreflight.run(o);
+}
+check('r6 preflight 合格→ok + 注入唯一证据', (function () { var p = preflight(); return p.ok === true && p.context.uniqueKeyEvidence['laser_files.file_key'] === true && p.context.evidence.accepted.length === 1; })());
+check('r6 preflight 缺 schema→error', (function () { var p = preflight({ schema: undefined }); return p.ok === false && p.diagnostics.some(function (d) { return d.code === 'PREFLIGHT_SCHEMA_MISSING'; }); })());
+check('r6 preflight 无证据→EVIDENCE_MISSING error（JOIN 无证据即阻断）', (function () { var p = preflight({ evidenceRaw: null }); return p.ok === false && p.diagnostics.some(function (d) { return d.code === 'EVIDENCE_MISSING' && d.severity === 'error'; }); })());
+check('r6 preflight 换库→error（旧证据不可跨物理源复用）', (function () { var p = preflight({ connection: { driver: CONN.driver, url: 'jdbc:sqlserver://10.0.0.9:1433;databaseName=other' } }); return p.ok === false; })());
+check('r6 preflight 诊断形状 {code,path,message,severity}', preflight().diagnostics.every(function (d) { return d && typeof d.code === 'string' && typeof d.path === 'string' && typeof d.message === 'string' && ['info', 'warn', 'error'].indexOf(d.severity) >= 0; }));
 
 // ===== ⑤ 验收计数 =====
 var propCount = model.entities.reduce(function (a, e) { return a + (e.properties || []).length; }, 0);

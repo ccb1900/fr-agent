@@ -47,7 +47,7 @@ try {
   var dr = TemplateRegression.dataset({ columns: op.columns, rows: op.rows }, snap);
   out.push((dr.pass ? 'PASS ' : 'FAIL ') + 'r5 dataset 逐列/逐格 == PatchSpec（' + dr.reason + '）');
   if (!dr.pass) FAIL++;
-  ck('r5 快照含 2 列 2 行', !!snap && snap.columns.length === 2 && snap.rows.length === 2);
+  ck('r5/r6 快照严格读回 2 列 2 行', !!snap && snap.ok === true && snap.columns.length === 2 && snap.rows.length === 2);
   // 原基线件未被覆盖
   ck('原始基线件未被写（demo_api.cpt 不变量另行终验）', Files.exists(Pth.get(Paths.root + '/demo_api.cpt')));
 } catch (e) { out.push('FAIL 异常: ' + e); FAIL++; }

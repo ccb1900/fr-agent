@@ -104,7 +104,8 @@ try {
       // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
       load(Paths.semantic('model/vocab.js'));
       load(Paths.semantic('model/validator.js'));
-      load(Paths.semantic('model/evidence.js'));   // r5：证据解析/绑定/时效（纯函数，本 runner 仍零连库）
+      load(Paths.semantic('model/evidence.js'));   // r5/r6：证据解析/身份绑定/完整性（纯函数，本 runner 仍零连库）
+      load(Paths.semantic('preflight.js'));        // r6-D：前置检查单点（指纹+回溯+证据完整性）
       var schemaName = 'schema_' + (rs.dataset.schema || modelObj.source || 'atom_live_demo') + '.json';
       var schemaAbs = Paths.data(schemaName);
       if (!J('java.nio.file.Files').exists(J('java.nio.file.Paths').get(schemaAbs))) {
@@ -112,43 +113,41 @@ try {
         RR.fail('input_load'); stamp('SCHEMA SNAPSHOT MISSING: refusing to generate from unvalidated model'); finishRun(2);
       }
       var schemaObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(schemaAbs)), 'UTF-8')));
-      // I5.5/r5：数据侧唯一性证据必须绑定 schema 源 + 关系归属 + 时效（ModelEvidence 纯函数过滤）。
-      //   数据快照 ≠ 数据库唯一约束 → 过期/源不匹配/关系不符一律不注入；需要它的 JOIN 由 validator 拒（不静默放行）。
-      var uniqEvidence = {};
-      var evSource = rs.dataset.schema || modelObj.source || 'atom_live_demo';
+      // r6：连接身份只在这里解析一次——指纹、证据校验、SPEC.connections 注册共用同一套 driver/url（禁止一处硬编码一处 env）
+      var drvC = genv('SQL_DRIVER', 'com.microsoft.sqlserver.jdbc.SQLServerDriver');
+      var urlC = genv('SQL_URL', 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false');
+      var usrC = genv('SQL_USER', 'sa');
+      var evRaw = null;
       try {
-        var evText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.data('i55_relation_unique_truth.json'))), 'UTF-8'));
-        var evMaxAge = parseFloat(genv('I55_EVIDENCE_MAX_AGE_DAYS', '30'));
-        var ev = ModelEvidence.filter(ModelEvidence.parse(evText), {
-          schemaSource: evSource, model: modelObj, nowMs: new Date().getTime(),
-          maxAgeDays: isFinite(evMaxAge) ? evMaxAge : ModelEvidence.DEFAULT_MAX_AGE_DAYS
-        });
-        uniqEvidence = ev.unique;
-        ev.accepted.forEach(function (s) { stamp('UNIQUE EVIDENCE accepted: ' + s); });
-        ev.rejected.concat(ev.stale, ev.mismatched, ev.malformed).forEach(function (s) {
-          var m = 'UNIQUE EVIDENCE rejected: ' + s;
-          RR.diag(m); stamp(m);
-        });
+        evRaw = ModelEvidence.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.data('i55_relation_unique_truth.json')))), 'UTF-8'));
       } catch (eEv) {
         RR.diag('UNIQUE EVIDENCE MISSING: data/i55_relation_unique_truth.json（先跑 probes/probe_relation_unique.js）');
         stamp('UNIQUE EVIDENCE MISSING: 无 DB 单列唯一键的 JOIN 关系将被拒');
       }
-      var mvErrs = ModelValidator.validate(modelObj, schemaObj, { uniqueKeyEvidence: uniqEvidence });
-      if (mvErrs.length) {
-        mvErrs.forEach(function (e) { var t = irErrText(e); stamp('MODEL ISSUE: ' + t); RR.diag('MODEL ISSUE: ' + t); });
-        RR.fail('input_load'); stamp('MODEL/SCHEMA MISMATCH: 模型引用对不上结构快照(' + schemaName + ')，拒（结构漂移或未刷新快照）'); finishRun(2);
+      var evMaxAge = parseFloat(genv('I55_EVIDENCE_MAX_AGE_DAYS', '30'));
+      var pf = SemanticPreflight.run({
+        reportSpec: rs, model: modelObj, schema: schemaObj, evidenceRaw: evRaw,
+        connection: { driver: drvC, url: urlC, user: usrC },
+        nowMs: new Date().getTime(),
+        maxAgeDays: isFinite(evMaxAge) ? evMaxAge : ModelEvidence.DEFAULT_MAX_AGE_DAYS
+      });
+      pf.diagnostics.forEach(function (d) {
+        var t = d.code + ' @ ' + d.path + ': ' + d.message;
+        if (d.severity === 'info') stamp(t);
+        else { RR.diag(t); stamp((d.severity === 'warn' ? 'EVIDENCE WARN: ' : 'PREFLIGHT ISSUE: ') + t); }
+      });
+      if (!pf.ok) {
+        RR.fail('input_load'); stamp('PREFLIGHT FAILED: 模型/证据前置检查未通过，拒生成（不静默降级）'); finishRun(2);
       }
-      stamp('MODEL↔SCHEMA 对齐校验通过（' + schemaName + '）');
-      compiledIR = SpecCompiler.compile(rs, { model: modelObj, SqlBuilder: SqlBuilder });
+      stamp('PREFLIGHT OK（' + schemaName + '；证据 accepted=' + pf.context.evidence.accepted.length + '，missing=0）');
+      compiledIR = SpecCompiler.compile(rs, { model: pf.context.model, SqlBuilder: SqlBuilder });
       SPEC = { outName: rs.outName, IR: compiledIR };
       // 凭据本地注入：sql 数据集引用的连接名 → 非敏感 driver/url + dbpass 密码合成 SPEC.connections（密码只在本机、绝不入 JSON/cpt）
       var connNames = {};
       (compiledIR.datasets || []).forEach(function (d) { if (d.kind === 'sql' && d.connection) connNames[d.connection] = 1; });
       if (Object.keys(connNames).length) {
-        var drv = genv('SQL_DRIVER', 'com.microsoft.sqlserver.jdbc.SQLServerDriver');
-        var url = genv('SQL_URL', 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false');
-        var usr = genv('SQL_USER', 'sa');
-        SPEC.connections = Object.keys(connNames).map(function (nm) { return { name: nm, driver: drv, url: url, user: usr, password: load(Paths.lib('dbpass.js')) }; });
+        // 与 preflight 指纹使用同一份 driver/url/user（r6：一处解析，禁止探针/runnner 各写一套）
+        SPEC.connections = Object.keys(connNames).map(function (nm) { return { name: nm, driver: drvC, url: urlC, user: usrC, password: load(Paths.lib('dbpass.js')) }; });
         stamp('I5 SQL 注入连接（名=' + Object.keys(connNames).join(',') + '，密码走 dbpass 本地，不入产物）');
       }
     } else {

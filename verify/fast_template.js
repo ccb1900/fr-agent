@@ -128,11 +128,23 @@ check('r5 像素 diff 未执行（stats 缺失）→FAIL', TemplateRegression.re
 check('r5 渲染尺寸变化→FAIL', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 120, heightAfter: 50, diffPixels: 0, ratio: 0 }, {}).pass === false);
 check('r5 像素差异超阈值→FAIL', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 500, ratio: 0.10 }, {}).pass === false);
 check('r5 像素差异在阈值内→PASS + bbox', (function () { var r = TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 84, ratio: 0.0168, bbox: '1,2 - 5,6' }, {}); return r.pass === true && r.reason.indexOf('1,2') >= 0; })());
+check('r6 关键单元格内容断言：结果仍是旧值→FAIL', (function () {
+  var b = { ok: true, rows: [['旧标题', 'x']], error: null };
+  var a = { ok: true, rows: [['旧标题', 'x']], error: null };   // 对象改了但出表没变
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0, oldText: '旧标题', newText: '新标题' }], keyCells: [{ c: 0, r: 0, expect: '新标题' }] }).pass === false;
+})());
+check('r6 关键单元格内容断言：结果为新值→PASS', (function () {
+  var b = { ok: true, rows: [['旧标题', 'x']], error: null };
+  var a = { ok: true, rows: [['新标题', 'x']], error: null };
+  return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0, oldText: '旧标题', newText: '新标题' }], keyCells: [{ c: 0, r: 0, expect: '新标题' }] }).pass === true;
+})());
+check('r6 渲染零像素差但期望变化→FAIL', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 0, ratio: 0 }, { expectPixelChange: true }).pass === false);
+check('r6 渲染零像素差且未要求变化→PASS（例如无 op）', TemplateRegression.render(POK, POK, { width: 100, height: 50, widthAfter: 100, heightAfter: 50, diffPixels: 0, ratio: 0 }, {}).pass === true);
 
 // ===== r5 数据集替换回归（列名/列型/行数/逐格；快照缺失=失败）=====
 var DS_EXP = { columns: [{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }], rows: [[7, 'I61'], [8, 'OK']] };
 function dsAct(mut) {
-  var a = { columns: [{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }], rows: [['7', 'I61'], ['8', 'OK']] };
+  var a = { ok: true, columns: [{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }], rows: [['7', 'I61'], ['8', 'OK']] };
   if (mut) mut(a);
   return a;
 }
@@ -142,7 +154,33 @@ check('r5 dataset 列型不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct
 check('r5 dataset 行数不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.rows = [['7', 'I61']]; })).pass === false);
 check('r5 dataset 值不符→FAIL', TemplateRegression.dataset(DS_EXP, dsAct(function (a) { a.rows[1][1] = 'WRONG'; })).pass === false);
 check('r5 dataset 快照缺失→FAIL', TemplateRegression.dataset(DS_EXP, null).pass === false);
-check('r5 dataset 复合列型 number⊃integer 等价', TemplateRegression.dataset({ columns: [{ name: 'a', type: 'number' }], rows: [[]] }, { columns: [{ name: 'a', type: 'integer' }], rows: [[]] }).pass === true);
+check('r5 dataset 复合列型 number⊃integer 等价', TemplateRegression.dataset({ columns: [{ name: 'a', type: 'number' }], rows: [[]] }, { ok: true, columns: [{ name: 'a', type: 'integer' }], rows: [[]] }).pass === true);
+// r6-B：严格读回语义（反射失败≠空值）+ 精确数值比较（不走 IEEE-754）
+check('r6 快照 ok=false→FAIL 且带反射错误（不把读失败当空值）', (function () {
+  var r = TemplateRegression.dataset(DS_EXP, { ok: false, error: 'getValueAt 失败 row=1 col=0: boom' });
+  return r.pass === false && r.reason.indexOf('getValueAt') >= 0;
+})());
+check('r6 大整数相邻值不丢精度（2^53 / 2^53+1 必须可区分）', (function () {
+  var e = { columns: [{ name: 'a', type: 'long' }], rows: [[9007199254740992]] };
+  var a = { ok: true, columns: [{ name: 'a', type: 'long' }], rows: [['9007199254740993']] };
+  return TemplateRegression.dataset(e, a).pass === false;
+})());
+check('r6 大整数相同值（精确字符串）→PASS', (function () {
+  var e = { columns: [{ name: 'a', type: 'long' }], rows: [['9007199254740993']] };
+  var a = { ok: true, columns: [{ name: 'a', type: 'long' }], rows: [['9007199254740993']] };
+  return TemplateRegression.dataset(e, a).pass === true;
+})());
+check('r6 大整数精确字符串相邻值→FAIL', (function () {
+  var e = { columns: [{ name: 'a', type: 'long' }], rows: [['9007199254740993']] };
+  var a = { ok: true, columns: [{ name: 'a', type: 'long' }], rows: [['9007199254740992']] };
+  return TemplateRegression.dataset(e, a).pass === false;
+})());
+check('r6 Decimal 尾零归一（1.50≡1.5）但精度不丢（1.5000000000000001≠1.5）', (function () {
+  var mk = function (v) { return { ok: true, columns: [{ name: 'a', type: 'decimal' }], rows: [[v]] }; };
+  var e = { columns: [{ name: 'a', type: 'decimal' }], rows: [[1.5]] };
+  return TemplateRegression.dataset(e, mk('1.50')).pass === true && TemplateRegression.dataset(e, mk('1.5000000000000001')).pass === false;
+})());
+check('r6 前导零归一（007≡7）', TemplateRegression.dataset({ columns: [{ name: 'a', type: 'integer' }], rows: [[7]] }, { ok: true, columns: [{ name: 'a', type: 'integer' }], rows: [['007']] }).pass === true);
 
 // ===== r5 diff：数字噪声按节点上下文；属性签名带节点 =====
 check('r5 数字型业务单元格变化→不 clean（旧实现全局过滤数字=漏检）', (function () {
@@ -165,7 +203,8 @@ function dsOp(cols, rows) { return { op: 'replace_dataset', name: 'ds1', columns
 check('r5 未知列型→INVALID_ENUM', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'blob' }], [[1]])]; })), 'INVALID_ENUM', 'columns[0].type'));
 check('r5 列名重复→INVALID_SHAPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }, { name: 'a', type: 'text' }], [[1, 'x']])]; })), 'INVALID_SHAPE', 'columns[1].name'));
 check('r5 boolean 列传字符串 "false"→INVALID_TYPE（防 truthy 翻转）', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'boolean' }], [['false']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
-check('r5 integer 列传字符串→INVALID_TYPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }], [['7']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
+check('r6 integer 列拒绝非数值字符串', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }], [['abc']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
+check('r6 数值列允许精确字符串（大整数/Decimal 不丢精度）', TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'long' }, { name: 'b', type: 'decimal' }], [['9007199254740993', '1.5000000000000001']])]; })).length === 0);
 check('r5 date 列非法月份→INVALID_TYPE', codeAt(TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'date' }], [['2026-13-01']])]; })), 'INVALID_TYPE', 'rows[0][0]'));
 check('r5 合法类型值零误报（integer/text/boolean）', TemplateValidator.validate(m(function (p) { p.ops = [dsOp([{ name: 'a', type: 'integer' }, { name: 'b', type: 'text' }, { name: 'c', type: 'boolean' }], [[7, 'x', false]])]; })).length === 0);
 

@@ -10,12 +10,19 @@ var TemplateValidator = (function () {
   function isStr(v) { return typeof v === 'string'; }
   function isNonNegInt(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v && v >= 0; }
   function unsafePath(s) { return /[\\]|:|\.\.|^\/|\/|\\/.test(String(s)) ; }   // 含分隔符/盘符/.. 皆拒（相对 reportlets 根名单段除外由 caller 传合法 rel）
-  // r5 P2：列型 ↔ 值型的严格对应（validator 阶段定死；patch 层只做转换，boolean 禁静默 truthy）
+  // r6-B：列型 ↔ 值型的严格对应（validator 阶段定死；patch 层只做转换，boolean 禁静默 truthy）。
+  //   数值列允许"精确字符串"形态（大整数/高精度 Decimal 超出 IEEE-754 时唯一不丢精度的表达）。
   function valueOk(t, v) {
     if (v == null) return true;                                    // 允许空值（保持原列空语义）
     if (t === 'text' || t === 'string') return typeof v === 'string';
-    if (t === 'integer' || t === 'long') return typeof v === 'number' && isFinite(v) && Math.floor(v) === v;
-    if (t === 'number' || t === 'float' || t === 'decimal') return typeof v === 'number' && isFinite(v);
+    if (t === 'integer' || t === 'long') {
+      if (typeof v === 'number') return isFinite(v) && Math.floor(v) === v;
+      return isStr(v) && /^[+-]?\d+$/.test(v);
+    }
+    if (t === 'number' || t === 'float' || t === 'decimal') {
+      if (typeof v === 'number') return isFinite(v);
+      return isStr(v) && /^[+-]?\d+(\.\d+)?$/.test(v);
+    }
     if (t === 'boolean') return typeof v === 'boolean';
     if (t === 'date') return isStr(v) && /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(v);
     if (t === 'datetime') return isStr(v) && /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])[ T]\d{2}:\d{2}:\d{2}$/.test(v);

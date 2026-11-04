@@ -105,12 +105,13 @@ try {
   var before = execGrid(TemplateReader.readCpt(patch.sourceCpt));   // 未改原件执行基线
   var descriptor = TemplateInspector.describe(wb);
   var expected = { added: [], removed: [], ops: patch.ops.slice() };   // I6.1-B：ops 决定允许的结构变化类别
-  var changedCells = [], dsChecks = [];
+  var changedCells = [], keyCells = [], dsChecks = [];
   patch.ops.forEach(function (op) {
     var res = TemplatePatch.apply(wb, op, descriptor);
     if (res.before.cell) {
       expected.removed.push(res.before.cell.oldText); expected.added.push(res.before.cell.newText);
       changedCells.push({ c: res.before.cell.c, r: res.before.cell.r, oldText: res.before.cell.oldText, newText: res.before.cell.newText });
+      keyCells.push({ c: res.before.cell.c, r: res.before.cell.r, expect: res.before.cell.newText });   // r6-C：结果必须反映新值
     }
     if (res.before.dataset) {
       expected.added.push('/*replace_dataset ' + res.before.dataset.name + ' rows=' + res.before.dataset.rowCount + '*/');
@@ -124,9 +125,9 @@ try {
   var pngAfter = renderPng(wb, staging + '/_post.png');
 
   // 任一执行/渲染/数据集失败 = 回归失败；裁决逻辑在 template/regression.js 纯函数（离线可证）
-  var ev = TemplateRegression.execution(before, after, { changedCells: changedCells, hasDatasetOp: hasDatasetOp });
+  var ev = TemplateRegression.execution(before, after, { changedCells: changedCells, keyCells: keyCells, hasDatasetOp: hasDatasetOp });
   var stats = pixelStats(staging + '/_pre.png', staging + '/_post.png');
-  var rv = TemplateRegression.render(pngBefore, pngAfter, stats, { maxRatio: 0.05 });
+  var rv = TemplateRegression.render(pngBefore, pngAfter, stats, { maxRatio: 0.05, expectPixelChange: (patch.ops || []).length > 0 });
   print('  execution regression=' + (ev.pass ? 'PASS(' : 'FAIL(') + ev.reason + ') (rows=' + (before.rows ? before.rows.length : -1) + ')');
   print('  render regression=' + (rv.pass ? 'PASS(' : 'FAIL(') + rv.reason + ')');
   if (!ev.pass || !rv.pass) FAIL = 1;

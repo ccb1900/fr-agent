@@ -27,8 +27,9 @@ var TemplateInspector = (function () {
   function cellText(wb, sheet, c, r) {
     try { var ce = wb.getReport(sheet).getCellElement(c, r); var v = ce && ce.getValue(); return v == null ? '' : String(v); } catch (e) { return ''; }
   }
-  // r5 P1：数据集只读快照（列名/列型/逐格值）——供 replace_dataset 结果回归（不靠"能执行"担保）
-  //   API 已由 probes/probe_tabledata_api.js 实证：getColumnCount/getColumnName(i)/getColumnClass(i)/getRowCount/getValueAt(r,c)
+  // r5 P1 / r6-B：数据集只读快照（列名/列型/逐格值）——供 replace_dataset 结果回归。
+  //   r6 严格失败语义：任何反射调用失败都返回 {ok:false,error,...}，绝不降级成 'text'/null——
+  //   "读不到"与"读到空值"是两种状态，降级会让数据回归误通过。
   var CLASS_TYPE = {
     'java.lang.Integer': 'integer', 'java.lang.Long': 'long', 'java.lang.Double': 'float', 'java.lang.Float': 'float',
     'java.math.BigDecimal': 'decimal', 'java.lang.Boolean': 'boolean', 'java.sql.Date': 'date',
@@ -36,28 +37,29 @@ var TemplateInspector = (function () {
   };
   function datasetSnapshot(wb, name) {
     var td = null;
-    try { td = wb.getTableData(name); } catch (e) { return null; }
-    if (!td) return null;
+    try { td = wb.getTableData(name); } catch (e0) { return { ok: false, error: 'getTableData 失败: ' + e0 }; }
+    if (!td) return { ok: false, error: '数据集不存在: ' + name };
     var nc = 0, nr = 0;
-    try { nc = +td.getColumnCount(); } catch (e1) { nc = 0; }
-    try { nr = +td.getRowCount(); } catch (e2) { nr = 0; }
+    try { nc = +td.getColumnCount(); } catch (e1) { return { ok: false, error: 'getColumnCount 失败: ' + e1 }; }
+    try { nr = +td.getRowCount(); } catch (e2) { return { ok: false, error: 'getRowCount 失败: ' + e2 }; }
     var cols = [], rows = [];
     for (var c = 0; c < nc; c++) {
-      var nm = '', ty = 'text';
-      try { nm = String(td.getColumnName(c)); } catch (eN) { nm = ''; }
-      try { var cn = String(td.getColumnClass(c).getName()); ty = CLASS_TYPE[cn] || 'text'; } catch (eC) { ty = 'text'; }
-      cols.push({ name: nm, type: ty });
+      var nm, ty, cn;
+      try { nm = String(td.getColumnName(c)); } catch (eN) { return { ok: false, error: 'getColumnName 失败 col=' + c + ': ' + eN }; }
+      try { cn = String(td.getColumnClass(c).getName()); } catch (eC) { return { ok: false, error: 'getColumnClass 失败 col=' + c + ': ' + eC }; }
+      if (!CLASS_TYPE[cn]) return { ok: false, error: '未知列类型 col=' + c + ' class=' + cn };
+      cols.push({ name: nm, type: CLASS_TYPE[cn] });
     }
     for (var r = 0; r < nr; r++) {
       var row = [];
       for (var c2 = 0; c2 < nc; c2++) {
-        var v = null;
-        try { v = td.getValueAt(r, c2); } catch (eV) { v = null; }
+        var v;
+        try { v = td.getValueAt(r, c2); } catch (eV) { return { ok: false, error: 'getValueAt 失败 row=' + r + ' col=' + c2 + ': ' + eV }; }
         row.push(v == null ? '' : String(v));
       }
       rows.push(row);
     }
-    return { columns: cols, rows: rows };
+    return { ok: true, columns: cols, rows: rows };
   }
   return { describe: describe, datasetExists: datasetExists, cellExists: cellExists, cellText: cellText, datasetSnapshot: datasetSnapshot };
 })();

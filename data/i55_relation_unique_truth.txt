@@ -1,2 +1,2 @@
-laser_files.file_key relation=recordToFile rows=538 distinct=538 unique=true
-VERDICT PASS checks=1
+VERDICT FAIL checks=0/1
+ERRORS connect: com.microsoft.sqlserver.jdbc.SQLServerException: Cannot open database "other_db" requested by the login. The login failed. ClientConnectionId:8bd412bc-1c97-497f-87f4-b0b14c2f851f

@@ -1,6 +1,11 @@
 {
+ "evidenceVersion": "2",
+ "status": "passed",
  "schema": "atom_live_demo",
- "probedAt": "2026-11-04T11:43:34.043Z",
+ "sourceFingerprint": "cf83fe1843b918e0",
+ "modelFingerprint": "08553ba89fc74bdf",
+ "schemaFingerprint": "8a17cfba2db1972c",
+ "probedAt": "2026-11-04T12:01:31.660Z",
  "checks": [
   {
    "table": "laser_files",
@@ -8,8 +13,10 @@
    "rows": 538,
    "distinct": 538,
    "unique": true,
-   "relation": "recordToFile"
+   "relation": "recordToFile",
+   "relationFingerprint": "5622d4b37863ff3a"
   }
  ],
- "note": "数据快照证据；不是数据库唯一约束，runner 按 schema 源/关系归属/时效过滤"
+ "error": null,
+ "note": "数据快照证据（不是 DB 唯一约束）；Runner 按物理源/模型关系/Schema 指纹 + 时效 + 完整性过滤"
 }

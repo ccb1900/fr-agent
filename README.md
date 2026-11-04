@@ -458,3 +458,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **P2 坐标屏蔽**：执行回归不再固定跳前两行，按 PatchSpec 坐标屏蔽；合并格按"同行同旧值→同新值"扩展；别的格改成同新值仍 FAIL。
 - **P2 类型严格化**：`TemplateOps.DS_TYPES` 一处真相；validator 定死列名唯一/列型词表/逐格值型；`javaValue` 未知列型抛、boolean 非布尔抛（`"false"` 不再翻成 true）。
 - **验证**：fast 12 套件 GREEN、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 逐字节不变；docs/gpt/r5.md 收录原文+复现裁决+执行记录+开放项。
+
+#65 r6.md「证据身份 / 探针原子性 / 数据可信度 / 视觉回归」落地批（2026-11-04，用户投 `docs/gpt/r6.md`；按建议不开新功能，r6-A→B→C→D 收口，完成后暂停底层架构扩张）：
+- **r6-A 证据完整性**：证据升 v2（`evidenceVersion=2` + `status` + `sourceFingerprint/modelFingerprint/schemaFingerprint` + 每条 check 的 `relationFingerprint`）。`sourceFingerprint` 只含 driver+url（不含密码）；模型指纹含全部关系规范形；关系指纹含 name/source/cardinality/from/to——换库、改关系端点/基数、改 Schema 都令旧证据失效。探针改为与 Runner 同一套 `SQL_DRIVER/SQL_URL/SQL_USER+dbpass`（不再硬编码），目标关系取自 `ModelEvidence.requiredRelations(model)`；**原子性**：任一查询失败或任一不唯一 → `status=failed` + `exit(1)`；Runner 只消费 `status=passed`，且每条待验证关系必须**有且只有一条** check（missing/duplicates 均拒）。**live 三连证**：正常→accepted+JOIN 11 阶段全 passed；换 SQL_URL→exit2（打印两枚指纹）+EVIDENCE_MISSING+UNSUPPORTED_RELATION_KEY；坏连接探针→rc1+status failed（恢复后 PASS）。
+- **r6-B 数据可信度**：`datasetSnapshot` 严格读回（反射任一失败→`{ok:false,error}`，不再降级 'text'/null）；`normCell` 改十进制字符串规范化（不用 parseFloat）——2^53 相邻整数可区分、1.50≡1.5、精度不丢；`PatchSpec` 数值列允许精确字符串（long/decimal 大数不经 double），validator 做数字语法校验。
+- **r6-C 视觉回归加强**：执行回归加 `keyCells` 关键单元格内容断言（改后结果必须真为新值）；渲染加 `expectPixelChange`（有 op 却零像素差=FAIL）；像素比例 5%+尺寸一致+bbox 保留为辅助，数据正确性由 keyCells+dataset 快照+执行栅格三线保证。
+- **r6-D SemanticPreflight**：新件 `semantic/preflight.js`（纯函数零 Java）只做"指纹+模型回溯+证据完整性→ok/diagnostics/context"，不接管 SpecValidator/SqlBuilder/连接；`make_api` SQL 分支连接身份只解析一次并同时用于指纹与 `SPEC.connections`。
+- **验证**：fast 12 套件 GREEN（fast_semantic +12 证据/+5 preflight、fast_template +8）、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变；patch rename（keyCells+像素 1.69%）与 dataset（双向逐格）live PASS。

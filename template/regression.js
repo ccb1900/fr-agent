@@ -22,12 +22,20 @@ var TemplateRegression = (function () {
     var eq = TYPE_EQUIV[declared];
     return !!eq && eq[actual] === 1;
   }
-  // 值归一：null→''；数字串按数值比较（1.50 ≡ 1.5）；其余原样（不 trim，文本差异不应被吞）
+  // 值归一：null→''；数值按**十进制字符串规范化**比较（不走 IEEE-754：
+  //   9007199254740992 与 ...93 必须可区分；1.50 ≡ 1.5、007 ≡ 7）。文本原样（不 trim）。
+  function canonNum(s) {
+    var m = /^([+-]?)(\d+)(?:\.(\d*))?$/.exec(String(s).trim());
+    if (!m) return null;
+    var ip = m[2].replace(/^0+/, ''); if (ip === '') ip = '0';
+    var fp = (m[3] || '').replace(/0+$/, '');
+    if (ip === '0' && fp === '') return '0';
+    return (m[1] === '-' ? '-' : '') + ip + (fp ? '.' + fp : '');
+  }
   function normCell(v) {
     if (v == null) return '';
-    var s = String(v);
-    if (/^-?\d+(\.\d+)?$/.test(s)) return String(parseFloat(s));
-    return s;
+    var s = String(v), n = canonNum(s);
+    return n == null ? s : n;
   }
 
   // before/after: {ok:bool, rows:[[text]]|null, error:string|null}
@@ -61,13 +69,22 @@ var TemplateRegression = (function () {
         }
       }
     }
-    return { pass: true, reason: '除 PatchSpec 指定坐标外，执行栅格逐格不变' };
+    // r6-C：关键单元格内容断言——修改后执行结果必须真的反映新值（防"对象改了但出表仍旧值"）
+    var keys = opts.keyCells || [];
+    for (var k = 0; k < keys.length; k++) {
+      var kc = keys[k];
+      if (!kc || !isNum(kc.c) || !isNum(kc.r)) continue;
+      if (!a[kc.r] || normCell(a[kc.r][kc.c]) !== normCell(kc.expect)) {
+        return { pass: false, reason: '关键单元格未反映修改 r=' + kc.r + ' c=' + kc.c + ': 期望="' + kc.expect + '" 实际="' + (a[kc.r] ? a[kc.r][kc.c] : '(越界)') + '"' };
+      }
+    }
+    return { pass: true, reason: '除 PatchSpec 指定坐标外，执行栅格逐格不变；关键单元格内容与预期一致' };
   }
 
   // expected: {columns:[{name,type}], rows:[[raw]]}（来自 PatchSpec op）
-  // actual:   {columns:[{name,type}], rows:[[string]]}（getTableData 读回快照）
+  // actual:   {ok:true, columns:[{name,type}], rows:[[string]]} 或 {ok:false,error}（Inspector 严格读回）
   function dataset(expected, actual) {
-    if (!actual || !isArr(actual.columns) || !isArr(actual.rows)) return { pass: false, reason: '数据集读回失败（快照缺失）' };
+    if (!actual || actual.ok !== true) return { pass: false, reason: '数据集读回失败: ' + ((actual && actual.error) || '快照缺失') };
     var E = (expected && expected.columns) || [], A = actual.columns;
     if (E.length !== A.length) return { pass: false, reason: '列数不符: spec=' + E.length + ' actual=' + A.length };
     for (var i = 0; i < E.length; i++) {
@@ -101,6 +118,10 @@ var TemplateRegression = (function () {
     var maxRatio = isNum(opts.maxRatio) ? opts.maxRatio : 0.05;
     var ratio = isNum(stats.ratio) ? stats.ratio : (stats.diffPixels / (stats.width * stats.height));
     if (!(ratio <= maxRatio)) return { pass: false, reason: '像素差异 ' + (ratio * 100).toFixed(2) + '% > 阈值 ' + (maxRatio * 100) + '%（bbox=' + (stats.bbox || 'n/a') + '）' };
+    // r6-C：确有修改时渲染必须真的变化（0 像素差 = 修改没落到画面上，不能算通过）
+    if (opts.expectPixelChange === true && !(stats.diffPixels > 0)) {
+      return { pass: false, reason: 'Patch 已执行但渲染零像素差异（修改未反映到画面）' };
+    }
     return { pass: true, reason: '像素差异 ' + (ratio * 100).toFixed(2) + '% ≤ ' + (maxRatio * 100) + '%（bbox=' + (stats.bbox || 'n/a') + '）' };
   }
 
