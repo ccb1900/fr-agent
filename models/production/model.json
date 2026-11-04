@@ -1,0 +1,72 @@
+{
+  "modelVersion": "1",
+  "domain": "laser_inspection",
+  "source": "atom_live_demo",
+  "description": "激光加工检测评分领域模型（I3）。真实演示库领域，业务口径锚定 reports/agent_stage_report.js·agent_daily_report.js 的真值校验：计划=有效评分记录数 COUNT(*)、完成=score>=0.9、完成率=完成/计划×100、平均分=全加权 SUM(score)/COUNT（禁均值之均值 README 坑）。DB 无外键（I2 W0 坐实 FK=0），故所有关系 source=naming-derived 且 requiresConfirmation=true。",
+
+  "entities": [
+    { "name": "InspectionRecord", "label": "检测记录", "table": "laser_aaa", "key": ["file_key", "row_number"],
+      "properties": [
+        { "name": "fileKey", "label": "文件键", "column": "file_key", "type": "long" },
+        { "name": "rowNo", "label": "行号", "column": "row_number", "type": "long" },
+        { "name": "bizDate", "label": "业务日期", "column": "biz_date", "type": "text" },
+        { "name": "bizTime", "label": "业务时刻", "column": "biz_time", "type": "text" },
+        { "name": "stage", "label": "工序", "column": "stage", "type": "text" },
+        { "name": "score", "label": "评分", "column": "score", "type": "decimal" }
+      ] }
+    ,
+    { "name": "LaserFile", "label": "数据文件", "table": "laser_files", "key": ["file_key"],
+      "properties": [
+        { "name": "fileKey", "label": "文件键", "column": "file_key", "type": "long" },
+        { "name": "machineId", "label": "机台", "column": "source_id", "type": "text" },
+        { "name": "collectionDate", "label": "采集日期", "column": "collection_date", "type": "text" },
+        { "name": "path", "label": "源路径", "column": "path", "type": "text" },
+        { "name": "records", "label": "记录数", "column": "records", "type": "text" },
+        { "name": "collectedAt", "label": "采集时刻", "column": "collected_at", "type": "text" }
+      ] }
+    ,
+    { "name": "Machine", "label": "机台", "table": "laser_files", "key": ["source_id"],
+      "properties": [ { "name": "machineId", "label": "机台", "column": "source_id", "type": "text" } ] }
+    ,
+    { "name": "Stage", "label": "工序", "table": "laser_aaa", "key": ["stage"],
+      "properties": [ { "name": "stageName", "label": "工序", "column": "stage", "type": "text" } ] }
+    ,
+    { "name": "ScoreResult", "label": "评分结果", "table": "laser_aaa", "key": ["file_key", "row_number"],
+      "properties": [ { "name": "score", "label": "评分值", "column": "score", "type": "decimal" } ] }
+  ],
+
+  "metrics": [
+    { "name": "planned", "label": "计划数", "expression": { "kind": "count", "table": "laser_aaa" } },
+    { "name": "done", "label": "完成数", "expression": { "kind": "countThreshold", "table": "laser_aaa", "column": "score", "op": ">=", "value": 0.9 } },
+    { "name": "completionRate", "label": "完成率", "format": "#,##0.00",
+      "expression": { "kind": "ratio", "numerator": "done", "denominator": "planned", "scale": 100 } },
+    { "name": "avgScore", "label": "平均分", "format": "#,##0.000000",
+      "expression": { "kind": "weightedAvg", "table": "laser_aaa", "column": "score" } },
+    { "name": "totalScore", "label": "评分合计", "expression": { "kind": "sum", "table": "laser_aaa", "column": "score" } },
+    { "name": "fileCount", "label": "文件数", "expression": { "kind": "count", "table": "laser_files" } }
+  ],
+
+  "dimensions": [
+    { "name": "bizDate", "label": "业务日期", "table": "laser_aaa", "column": "biz_date", "rule": "dateNormalize" },
+    { "name": "stage", "label": "工序", "table": "laser_aaa", "column": "stage" },
+    { "name": "machine", "label": "机台", "table": "laser_files", "column": "source_id" }
+  ],
+
+  "relationships": [
+    { "name": "recordToFile", "label": "检测记录归属文件",
+      "from": { "table": "laser_aaa", "column": "file_key" }, "to": { "table": "laser_files", "column": "file_key" },
+      "source": "naming-derived", "requiresConfirmation": true, "confidence": "medium" },
+    { "name": "fileToMachine", "label": "文件来源机台",
+      "from": { "table": "laser_files", "column": "source_id" }, "to": { "table": "laser_files", "column": "source_id" },
+      "source": "naming-derived", "requiresConfirmation": true, "confidence": "medium" },
+    { "name": "recordToStage", "label": "检测记录所属工序",
+      "from": { "table": "laser_aaa", "column": "stage" }, "to": { "table": "laser_aaa", "column": "stage" },
+      "source": "naming-derived", "requiresConfirmation": true, "confidence": "high" }
+  ],
+
+  "rules": {
+    "completionThreshold": { "column": "score", "op": ">=", "value": 0.9, "note": "完成判定口径（agent_stage_report 真值校验）" },
+    "dateNormalize": { "cast": "TRY_CAST(biz_date AS date)", "note": "脏日期混 '2026/9/14' 与 '2026-9-13'，先 TRY_CAST 归一再比（AGENTS §3 禁 ${} 文本替换）" },
+    "avgWeighting": { "note": "平均分必须全加权 SUM(score)/COUNT，禁'平均值的平均'（README 均值口径坑）" }
+  }
+}

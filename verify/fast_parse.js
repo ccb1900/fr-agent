@@ -8,6 +8,7 @@ var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/run
   'lib/report_spec.js', 'lib/spec_validator.js', 'lib/spec_compiler.js',
   'semantic/schema/metadata.js', 'semantic/schema/relation.js', 'semantic/schema/serializer.js',
   'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
+  'semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js',
   'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;
 FILES.forEach(function (f) {
