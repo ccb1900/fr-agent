@@ -9,6 +9,33 @@ var t0 = new Date().getTime();
 var stamp = function (s) { print('[' + (new Date().getTime() - t0) + 'ms] ' + s); };
 var FAILS = 0;
 var check = function (name, cond) { if (cond) stamp('CHECK PASS: ' + name); else { FAILS++; stamp('CHECK FAIL: ' + name); } };
+// 失败门禁（迭代 1，2026-11-04 用户拍板）：上游任何 FAILS 不得继续——错误产物不执行、不部署、
+// 不往部署目录写诊断件，退出码如实反映失败（原实现 CPT 校验失败照跑照部署、部署失败 catch 不计数可致 exit 0）。
+var gateAt = function (where) {
+  if (FAILS > 0) { stamp('GATE CLOSED at ' + where + ': failures=' + FAILS + ' -> refusing execute/export/deploy'); J('java.lang.System').exit(1); }
+};
+// 参数默认值 → 执行参数（迭代 1 修复：原只送 editor，date/combo/number/多选等控件默认值不进 execute，
+// 执行验证的报表 ≠ 参数面板实际提交的报表）。形态镜像 object.js buildParamAttr 的 widgetValue 口径：
+// 文本族控件 widgetValue 均为串形态；number 走数值（整数优先 Integer——SQL ${} 文本替换口径，避免
+// "20.0" 打进 TOP/LIMIT 位；面板序列化 Double 属另一层面，接真实数值参数业务前再探针复核）；
+// '=…' 公式默认值执行期无法求值 → 显式跳过并留诊断，不伪造值。
+function paramDefaults(ir) {
+  var out = [];
+  if (!ir || !ir.param) return out;
+  (ir.param.widgets || []).forEach(function (w) {
+    if (!w || w.name == null) return; // label/submit/nav/iframe 不供参数名
+    if (w.kind === 'number') {
+      var nv = Number(w.value == null ? 0 : w.value); // NumberEditor 面板默认即 0（object.js widgetValue 同口径）
+      out.push([w.name, nv === Math.floor(nv) ? J('java.lang.Integer').valueOf(nv) : J('java.lang.Double').valueOf(nv)]);
+      return;
+    }
+    if (w.value == null || w.value === '') return;
+    var s = String(w.value);
+    if (s.charAt(0) === '=') { stamp('PARAM DEFAULT SKIP (formula not runtime-evaluable): ' + w.name + '=' + s); return; }
+    out.push([w.name, s]); // editor/date/combo/textarea/radio/checkbox/combocheck/treecombo 串形态
+  });
+  return out;
+}
 
 // ---------- 0. 规格与库 ----------
 // ABR-1 路径单点：唯一装载锚（FR_AGENT_HOME 可重定向整个项目根）；其余路径一律走 runtime/paths.js
@@ -134,9 +161,10 @@ try {
   }
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e);
-  var sw2 = new (J('java.io.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
+  var sw2 = new (J('java.lang.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
   e.printStackTrace(pw2); stamp(String(sw2.toString()).split('\n').slice(0, 15).join(' || '));
 }
+gateAt('cpt-export-validate');   // 迭代 1 门禁：导出/校验任何 FAIL 不放行后续执行与部署
 
 // ---------- 4. 执行 + 导出 ----------
 // 2026-10-28 生产构建通道：BR_DEPLOYDIR 可指向 staging（默认演示服务器部署位不动），BR_TPFX/BR_MODULESET 配套
@@ -150,13 +178,9 @@ if (SKIP_EXEC) {
   stamp('PROD BUILD: SKIP EXEC');
 } else {
   try {
-    // 参数面板家族（v3.2）：编辑器默认值作为执行参数（模拟设计器里点"查询"时面板送出的默认值）
+    // 参数面板家族（v3.2）：全部控件默认值作为执行参数（模拟设计器里点"查询"时面板送出的默认值）
     var pmap = new (J('java.util.HashMap'))();
-    if (typeof IR !== 'undefined' && IR.param) {
-      (IR.param.widgets || []).forEach(function (w) {
-        if (w.kind === 'editor' && w.value != null && w.value !== '') pmap.put(w.name, String(w.value));
-      });
-    }
+    paramDefaults(typeof IR !== 'undefined' ? IR : null).forEach(function (kv) { pmap.put(kv[0], kv[1]); });
     rb = wb.execute(pmap, new (J('com.fr.stable.PageActor'))());
     stamp('EXECUTED: ' + rb);
   } catch (e) {
@@ -165,8 +189,10 @@ if (SKIP_EXEC) {
     e.printStackTrace(pw3); stamp(String(sw3.toString()).split('\n').slice(0, 20).join(' || '));
     FAILS++;
   }
+  gateAt('execute');   // 迭代 1 门禁：执行失败不部署
 }
-try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); }
+gateAt('deploy');
+try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); FAILS++; }
 if (rb) {
   var name = SPEC.outName + '_api';
   // v4.2 VanChart 插件族：服务端出图 PainterFactory 需 GeneralContext locale（ResourceHelper.mixLocaleData NPE）。
@@ -190,7 +216,7 @@ if (rb) {
     }
   } catch (eLoc) { stamp('VAN LOCALE FAIL: ' + eLoc); FAILS++; }
   try { var osP = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.png'); new (J('com.fr.io.exporter.ImageExporter'))().export(osP, rb); osP.close(); stamp('PNG DONE'); } catch (e) { stamp('PNG FAIL: ' + e); FAILS++; }
-  try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); }
+  try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); FAILS++; }
   try { if (loc0 != null) J('com.fr.general.GeneralContext').setLocale(loc0); } catch (eL) { }
 }
 // ---------- 4.5 计算结果栅格 dump（env RESULT_DUMP=路径 时开启；纯诊断，默认关，不动任何产物）----------
