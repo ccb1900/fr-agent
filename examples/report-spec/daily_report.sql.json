@@ -1,0 +1,17 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "激光生产日报（计划 / 完成 / 完成率）·I5 语义自撰",
+    "description": "I5 端到端靶：仅声明模型实体/维度/指标引用 + 日期范围，SQL 由 semantic/query/sqlbuilder 依 model 生成（不写一行 SQL/IR）；口径同 agent_daily_report 真值"
+  },
+  "outName": "生产日报_I5闭环",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}

@@ -91,7 +91,29 @@ try {
       rsErrs.forEach(function (e) { var t = irErrText(e); stamp('SPEC ISSUE: ' + t); RR.diag('SPEC ISSUE: ' + t); });
       RR.fail('input_load'); stamp('SPEC VALIDATE FAILED: refusing to compile/build'); finishRun(2);
     }
-    SPEC = { outName: rs.outName, IR: SpecCompiler.compile(rs) };
+    var compiledIR;
+    if (rs.dataset && rs.dataset.kind === 'sql') {
+      // I5 模型驱动 SQL：载 model + sqlbuilder，编译成含 kind:sql 数据集的 cells IR；连接名→凭据本地注入
+      load(Paths.lib('report_spec.js'));
+      load(Paths.semantic('query/sqlbuilder.js'));
+      function genv(k, d) { var v = J('java.lang.System').getenv(k); return (v == null || String(v) === '') ? d : String(v); }
+      var modelPath = genv('SCHEMA_MODEL', 'models/production/model.json');
+      var modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
+      compiledIR = SpecCompiler.compile(rs, { model: modelObj, SqlBuilder: SqlBuilder });
+      SPEC = { outName: rs.outName, IR: compiledIR };
+      // 凭据本地注入：sql 数据集引用的连接名 → 非敏感 driver/url + dbpass 密码合成 SPEC.connections（密码只在本机、绝不入 JSON/cpt）
+      var connNames = {};
+      (compiledIR.datasets || []).forEach(function (d) { if (d.kind === 'sql' && d.connection) connNames[d.connection] = 1; });
+      if (Object.keys(connNames).length) {
+        var drv = genv('SQL_DRIVER', 'com.microsoft.sqlserver.jdbc.SQLServerDriver');
+        var url = genv('SQL_URL', 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false');
+        var usr = genv('SQL_USER', 'sa');
+        SPEC.connections = Object.keys(connNames).map(function (nm) { return { name: nm, driver: drv, url: url, user: usr, password: load(Paths.lib('dbpass.js')) }; });
+        stamp('I5 SQL 注入连接（名=' + Object.keys(connNames).join(',') + '，密码走 dbpass 本地，不入产物）');
+      }
+    } else {
+      SPEC = { outName: rs.outName, IR: SpecCompiler.compile(rs) };
+    }
     stamp('REPORTSPEC ' + specPath + ' [I1 JSON 入口 → rawIR 直通]');
   } else {
     load(Paths.spec(specPath));
