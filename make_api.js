@@ -101,6 +101,7 @@ try {
       var modelPath = genv('SCHEMA_MODEL', 'models/production/model.json');
       var modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
       // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
+      load(Paths.semantic('model/vocab.js'));
       load(Paths.semantic('model/validator.js'));
       var schemaName = 'schema_' + (rs.dataset.schema || modelObj.source || 'atom_live_demo') + '.json';
       var schemaAbs = Paths.data(schemaName);
