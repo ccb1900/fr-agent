@@ -506,3 +506,12 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **首批全景**：missing=135 / partial=13（noncore=3 圈定不追：esd/云分析/widgettheme）。TOP 缺口按频次：ValueHighlightAction 717、AttrTooltip 族 ~2.9k、ParameterJavaScript 589、ConditionAttr 299、NoneReg 153、AttrLabel 族 259、AttrBorder 93、VanChartAxis 92、DatabaseDictionary 60、BuiltInSQLSubmiter 55、SimpleDateFormatThreadSafe 53、IntelliDMLConfig 53、AttrAlpha 52——与批 A/B/C/D/E/F/H/I/J 排期一一对应。
 - **用意**：r1.md §六口径「demo 覆盖=证明已支持特性可稳定组合」——看板双列即此：A 节缺口账（排期依据，按类频次倒序）、B 节已实现族的组合稳定证据（载体 spec+13 快速套件+引擎负门+字节基线）、C 节 27 tag 三色表。每批收尾重跑该 probe 即刷新，覆盖增量即刻可见。
 
+
+#71 批A 条件属性满血（2026-11-04，demo 车道批 A——then 四动作 Value 717/Border 19/Hyperlink 7/Widget 1 收编）：
+- **ref）引擎词汇**：ir.js `COND_THEN_KEYS` 增 `value`(串|{formula})/`border`(top|bottom|left|right 各 {line:0..5,color:argb})/`link`(复用 checkLinkShape+web|reportlet 必一)/`widget`(值编辑器四件 kind 白名单 editor|number|date|textarea)；CAPABILITIES.condition.thenActions 同步。object.js actionsOf 四构造一手探针后落地：ValueHighlightAction(Object)（官方 公司评级.cpt =IF(F6..,"A","B","C") 同形）、BorderHighlightAction(CellBorderStyle set 某某Style/Color)（官方 签约情况分析 bottomLine=2 同位）、HyperlinkHighlightAction(NameJavaScriptGroup)（buildLinkGroup 提取单源共用）、WidgetHighlightAction(Widget)（buildWidget 提取单源：参数面板与条件换控件同一构造器）。
+- **测试**：fast_ir_contract +23 项（先红后绿：四动作正控零误报 + value 数字/空对象/未知键、border 未知边/无边/line 缺/串/越界/color 串、link .. 穿越/空对象、widget 缺 kind/非法 kind/value 非串、非对象）全绿；载体 `reports/test_hla2.js` 引擎 11 stage 全 passed（PNG 目视：换值字面「不合格」仅 L1、换值公式 补考/达标/达标 分行成立、粗底线仅 L1、96 绿灯、72 原样、合计 226）；部署 cpt XML 计数 Value 2/Border 1/Hyperlink 1/Widget 1+TextEditor 1，Border 节点 topLine="0" bottomLine="2"+FineColor 与官方逐位同构。
+- **教案一（引擎级事实，入 AGENTS §3）**：**cell 级 highlight 的 `when.column` 实测=对本格值求值**（列名不跨格求值；空串→0：`'<60'` 恒真、`'>0'` 恒假——首批 PNG 三行全画线/全列空白的根因）——跨列判断一律 `when.formula` 相对公式（`=F3<60` 本格锚+行自动偏移，官方语料同款）。
+- **教案二（spec 编写纪律）**：v2 源 spec 的 totalCol 聚合格不得被 `total.label`（span=n−1）合并区吞并——评分列放中间时标签格与聚合格重叠 → 引擎丢格 → 幽灵样式 13建/12 序 → CPT GATE `style count mismatch` 的表象根因是它。总分列一律放最右（或 rawIR 自排）。
+- **诚实留痕**：buildWidget/buildLinkGroup 提取单源无 pre-refactor 字节参照，等价性由「逐字段 move 无值修改 + 默认 spec 字节铁证 + test_widgets 引擎跑 failures=0」三重兜底。ObjectCondition 定性=CommonCondition 的父类型（带列参与物），cell 高亮面已覆盖；数据集级 TableData filter 条件仍计缺口（看板不在批 A 词汇内）。
+- **门禁**：fast 13 套件 GREEN、scan 44 张（43 ok+1 env-skip）、引擎负门 5 路 GREEN（默认回补完好）、R1–R8 clean、默认 spec 收尾 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F / 销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 逐字节；coverage 看板重跑 missing 135→131。
+

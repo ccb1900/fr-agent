@@ -212,6 +212,31 @@ check('REQUIRED link.params[].name', codeAt(mut(function (ir) { ir.sheets[0].blo
 check('REQUIRED ds.params[].name', codeAt(mut(function (ir) { ir.datasets[0].params = [{ formula: '=$$$' }]; }), 'REQUIRED', 'datasets[0].params[0].name'));
 check('合法 ds.params 零误报（drill 实形）', errsOf(mut(function (ir) { ir.datasets[0].params = [{ name: 'day', value: '2026-09-13' }]; })).length === 0);
 check('UNKNOWN_REF 未知 dataset 引用仍命中', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].dataset = 'ghost'; }), 'UNKNOWN_REF', 'sheets[0].blocks[2].dataset'));
+// ===== 批A（2026-11-04）条件动作满血：then 增 value/border/link/widget（官方 717/19/7/1）=====
+//   探针依据：probe_hla2（4 action ctors）+ probe_hla2b（CellBorderStyle set ö Style/Color）+ 官方 XML 四样本。
+check('批A then.value 串零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { value: '低' } }]; })).length === 0);
+check('批A then.value{formula} 零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { column: '机型', value: 'A' }, then: { value: { formula: '=IF(A3>50,"高","低")' } } }]; })).length === 0);
+check('批A then.value 数字=INVALID_TYPE', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { value: 3 } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].conditions[0].then.value'));
+check('批A then.value Unknown 键', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { value: { formula: '=1', x: 1 } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].conditions[0].then.value'));
+check('批A then.value{formula 缺}', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { value: {} } }]; }), 'REQUIRED', 'sheets[0].blocks[2].conditions[0].then.value.formula'));
+check('批A then.border 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { column: 'score', value: 59, valueType: 'number' }, then: { border: { bottom: { line: 2, color: -9721345 } } } }]; })).length === 0);
+check('批A then.border 四边混合零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { top: { line: 0 }, bottom: { line: 2, color: -1 }, left: { line: 0 }, right: { line: 0 } } } }]; })).length === 0);
+check('批A then.border 未知边', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { topn: { line: 1 } } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].conditions[0].then.border'));
+check('批A then.border 无边', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: {} } }]; }), 'REQUIRED', 'sheets[0].blocks[2].conditions[0].then.border'));
+check('批A then.border line 缺', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { top: {} } } }]; }), 'REQUIRED', 'sheets[0].blocks[2].conditions[0].then.border.top.line'));
+check('批A then.border line 串', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { top: { line: 'thin' } } } }]; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].conditions[0].then.border.top.line'));
+check('批A then.border line 6 越界', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { top: { line: 6, color: -1 } } } }]; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].conditions[0].then.border.top.line'));
+check('批A then.border color 串', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { border: { top: { line: 1, color: 'blue' } } } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].conditions[0].then.border.top.color'));
+check('批A then.link reportlet 零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: { reportlet: 'fineagent/sub1_api.cpt', name: '看' } } }]; })).length === 0);
+check('批A then.link web 相对零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: { web: { url: '/webroot/decision/view/report?viewlet=x' } } } }]; })).length === 0);
+check('批A then.link .. 穿越', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: { reportlet: '../x.cpt' } } }]; }), 'INVALID_URL', 'sheets[0].blocks[2].conditions[0].then.link.reportlet'));
+check('批A then.link 空对象', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].conditions = [{ when: { formula: 'a' }, then: { link: {} } }]; }), 'REQUIRED', 'sheets[0].blocks[2].conditions[0].then.link'));
+check('批A then.widget editor 零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'editor', name: '备注框', value: '待录入' } } }]; })).length === 0);
+check('批A then.widget number 零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'number', value: 20 } } }]; })).length === 0);
+check('批A then.widget 缺 kind', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: {} } }]; }), 'REQUIRED', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget.kind'));
+check('批A then.widget 非法 kind', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'label' } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget.kind'));
+check('批A then.widget value 非串/数', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'editor', value: true } } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget.value'));
+check('批A then.widget 非对象', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: 'editor' } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget'));
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {
