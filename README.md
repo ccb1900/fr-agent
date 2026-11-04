@@ -515,3 +515,13 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **诚实留痕**：buildWidget/buildLinkGroup 提取单源无 pre-refactor 字节参照，等价性由「逐字段 move 无值修改 + 默认 spec 字节铁证 + test_widgets 引擎跑 failures=0」三重兜底。ObjectCondition 定性=CommonCondition 的父类型（带列参与物），cell 高亮面已覆盖；数据集级 TableData filter 条件仍计缺口（看板不在批 A 词汇内）。
 - **门禁**：fast 13 套件 GREEN、scan 44 张（43 ok+1 env-skip）、引擎负门 5 路 GREEN（默认回补完好）、R1–R8 clean、默认 spec 收尾 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F / 销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 逐字节；coverage 看板重跑 missing 135→131。
 
+
+#72 批B 图表装饰层（2026-11-05，demo 车道批 B——AttrTooltip ~2.9k/AttrLabel 259/AttrBorder 93/AttrAlpha 52/趋势线+标记 84/堆叠轴 58 + #46 三遗留）：
+- **词汇**（chart 块新增，仅 Van 图族，ir.js 结构化闸+fast +15 项红→绿）：`tooltip{muti?,formats{series|value|percent|changedValue|changedPercent|category: true|格式串}}`、`label{enable,position}`、`marker{type 15 白名单,radius,common}`、`lineStyle{type solid|dashed|none,style normal|step|curve,width}`、`trend{type linear|exp|log|poly,name,color,pre,after}`、`stack{stacked,percent,stackId}`(仅 vbar/varea)、`alpha 0..1`、`bg`、`border{color,style}`、`axisY.unit`(#46 主刻度)、`conditions[{when,then{seriesColor|alpha}}]`。
+- **挂接一手**（probe_chartdeco/2/3）：统一通道=Plot.setConditionCollection(ConditionCollection)——装饰件入 DefaultAttr(ConditionAttr).addDataSeriesCondition(...)（官方 DataVisualization.cpt 条件集形态同构）；plot 级 alpha/bg/border=GeneralInfo setters 直通；堆叠=VanChartRectanglePlot.setStackAndAxisCondition（官方形=命名 ConditionAttr+空 ListCondition+stackID=attr 名）；tooltip 内容=getContent() 活引用回填（AttrTooltip 无 setContent setter）；legend 类名=com.fr.chart.chartattr.Legend。
+- ** ★ 根因教案（8 小时连环二分的终点，一行修复）**：**装饰件全挂在 dTag 上但从未 `cc.setDefaultAttr(dTag)`**——首版漏一行导致「build 途中挂/尾段挂/后挂全都不见」的假象，先被误判为「引擎清空 ConditionCollection」（bisect2/4/5/6 五轮对拍 + DBG 读回才定位）。**教训**：挂接 API 组装完必须回读 count 自证（readback-or-it-didn't-happen）。
+- **架构定案**：装饰走 `out.applyDeco()` 后挂——build 收集任务单（cell 引用+块 spec），make_api 在「build 返回后、wb.export 前」统一应用（bisect5/6 XML 一手实证该时点存活）；ASSEMBLED 行带 deco=N 计数。
+- **视觉实证**（能力自检_VanChart PNG）：marker 圆点/线形/趋势线（红「产量趋势」，isValidTrendLine 门槛=必须 setLineStyleInfo）/图例位置/plot 底色+边框/**散点 bubbleSize 修复（#46 大蓝点消失）**；XML 计数 Line 1/Marker 1/TrendLine 3/labelAttr 1/stackID 1 同官方形。
+- **诚实边界（挂接完成、渲染端未达，后续批补）**：stack 堆叠渲染未生效（序列化在、渲染仍分组）、label 数值显示未出现、条件系列色 AttrColor 挂上未染、vline2 加趋势线后 x 轴刻度缩至 2 档（auto 收缩，可读）、vpie 图例 4 见 3 未解（#46 遗留维持）。
+- **门禁**：fast 13 GREEN、scan 43+1、负门 5 路 GREEN、R1–R8、默认双铁证逐字节复原；coverage missing 131→116。
+

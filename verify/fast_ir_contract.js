@@ -237,6 +237,40 @@ check('批A then.widget 缺 kind', codeAt(mut(function (ir) { ir.sheets[0].block
 check('批A then.widget 非法 kind', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'label' } } }]; }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget.kind'));
 check('批A then.widget value 非串/数', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: { kind: 'editor', value: true } } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget.value'));
 check('批A then.widget 非对象', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].conditions = [{ when: { formula: 'a' }, then: { widget: 'editor' } }]; }), 'INVALID_TYPE', 'sheets[0].blocks[2].columns[0].conditions[0].then.widget'));
+// ===== 批B（2026-11-04）图表装饰层：tooltip/label/marker/lineStyle/trend/stack + alpha/bg/border/conditions/unit =====
+//   探针依据 probe_chartdeco/2/3（挂接=ConditionCollection；枚举一手）+ 官方 DataVisualization.cpt 条件集形态。
+function chartIR(k, extra) {
+  var blk = { type: 'chart', kind: k, dataset: 'd', category: '机型', values: ['产量'], heightPt: 210 };
+  if (extra) Object.keys(extra).forEach(function (ek) { blk[ek] = extra[ek]; });
+  return { sheets: [{ name: 's1', widthsPt: [220], blocks: [
+    { type: 'cells', heightPt: 30, items: [{ c: 0, text: 'x' }] },
+    blk
+  ] }], datasets: [{ name: 'd', columns: [{ name: '机型', type: 'text' }, { name: '产量', type: 'number' }], rows: [['A', 1]] }] };
+}
+check('批B V图全装饰零误报', errsOf(chartIR('vbar', {
+  tooltip: { muti: false, formats: { series: true, value: '#,##0', percent: true } },
+  label: { enable: true, position: 2 },
+  marker: { type: 'circle', radius: 5, common: true },
+  lineStyle: { type: 'dashed', style: 'curve', width: 2 },
+  trend: { type: 'linear', name: 'T', pre: 2, after: 2 },
+  stack: { stacked: true, stackId: 'S' },
+  conditions: [{ when: { column: '产量', op: '>', value: 150, valueType: 'number' }, then: { seriesColor: 0xD0392E } }],
+  alpha: 0.5, bg: 0xFFFFFF, border: { color: -1, style: 1 }, axisY: { min: 0, max: 260, unit: 50 }
+})).length === 0);
+check('批B legacy 拒装饰', codeAt(chartIR('bar', { tooltip: {} }), 'INVALID_SHAPE', 'sheets[0].blocks[1].tooltip'));
+check('批B legacy 拒 chart 条件', codeAt(chartIR('pie', { conditions: [{ when: { formula: 'a' }, then: { seriesColor: 1 } }] }), 'INVALID_SHAPE', 'sheets[0].blocks[1].conditions'));
+check('批B marker 非白名单', codeAt(chartIR('vline', { marker: { type: 'star2' } }), 'INVALID_ENUM', 'sheets[0].blocks[1].marker.type'));
+check('批B lineStyle type 非白名单', codeAt(chartIR('vline', { lineStyle: { type: 'wavy' } }), 'INVALID_ENUM', 'sheets[0].blocks[1].lineStyle.type'));
+check('批B lineStyle style 非白名单', codeAt(chartIR('vline', { lineStyle: { style: 'zigzag' } }), 'INVALID_ENUM', 'sheets[0].blocks[1].lineStyle.style'));
+check('批B trend type 非白名单', codeAt(chartIR('vline', { trend: { type: 'magic' } }), 'INVALID_ENUM', 'sheets[0].blocks[1].trend.type'));
+check('批B trend 缺 type', codeAt(chartIR('vline', { trend: { name: 'T' } }), 'REQUIRED', 'sheets[0].blocks[1].trend.type'));
+check('批B alpha 越界', codeAt(chartIR('vbar', { alpha: 2 }), 'INVALID_NUMBER', 'sheets[0].blocks[1].alpha'));
+check('批B tooltip formats 未知键', codeAt(chartIR('vbar', { tooltip: { formats: { bogus: true } } }), 'INVALID_ENUM', 'sheets[0].blocks[1].tooltip.formats.bogus'));
+check('批B tooltip formats 数字', codeAt(chartIR('vbar', { tooltip: { formats: { value: 42 } } }), 'INVALID_TYPE', 'sheets[0].blocks[1].tooltip.formats.value'));
+check('批B stack 仅 vbar/varea', codeAt(chartIR('vline', { stack: { stacked: true } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].stack'));
+check('批B cond then 键白名单', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { bg: 1 } }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].conditions[0].then.bg'));
+check('批B cond alpha 越界', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { alpha: 1.5 } }] }), 'INVALID_NUMBER', 'sheets[0].blocks[1].conditions[0].then.alpha'));
+check('批B axisY.unit 缺加成（老键不受扰）', errsOf(chartIR('vbar', { axisY: { min: 0, max: 100 } })).length === 0);
 // ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
 function typedIR(rows) {
   return {

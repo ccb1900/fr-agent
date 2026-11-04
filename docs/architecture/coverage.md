@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Wed Nov 04 22:47:05 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Thu Nov 05 00:49:23 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 
@@ -8,34 +8,19 @@
 
 | demo类 | 频次 | 状态 | 参考批次 |
 |---|---|---|---|
-| com.fr.plugin.chart.base.format.AttrTooltipSeriesFormat | 610 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.format.AttrTooltipPercentFormat | 602 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.format.AttrTooltipChangedPercentFormat | 590 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.format.AttrTooltipChangedValueFormat | 590 | missing | (漏账：批排期时人工归入) |
 | com.fr.js.ParameterJavaScript | 589 | missing | 批E(缺3) |
-| com.fr.plugin.chart.base.format.AttrTooltipCategoryFormat | 553 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.format.AttrTooltipValueFormat | 548 | missing | (漏账：批排期时人工归入) |
-| com.fr.chart.chartglyph.ConditionAttr | 299 | missing | 批B |
 | com.fr.plugin.chart.base.AttrTooltipRichText | 192 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.AttrTooltip | 182 | missing | 批B |
 | com.fr.base.chart.chartdata.model.NormalDataModel | 180 | missing | (漏账：批排期时人工归入) |
 | com.fr.form.ui.reg.NoneReg | 153 | missing | 批F |
-| com.fr.plugin.chart.base.AttrLabelDetail | 150 | missing | 批B |
-| com.fr.plugin.chart.base.AttrLabel | 109 | missing | (漏账：批排期时人工归入) |
 | com.fr.chart.base.AttrBorder | 93 | missing | 批B |
 | com.fr.plugin.chart.attr.axis.VanChartAxis | 92 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat | 61 | missing | (漏账：批排期时人工归入) |
 | com.fr.data.impl.DatabaseDictionary | 60 | missing | 批D(4缺) |
-| com.fr.plugin.chart.base.AttrSeriesStackAndAxis | 58 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.write.BuiltInSQLSubmiter | 55 | missing | 批F |
 | com.fr.data.impl.TableDataDictionary | 54 | missing | 批D(4缺) |
 | com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat | 54 | missing | (漏账：批排期时人工归入) |
 | com.fr.base.SimpleDateFormatThreadSafe | 53 | missing | 批D(日期/文本缺) |
 | com.fr.write.config.IntelliDMLConfig | 53 | missing | 批F |
-| com.fr.chart.base.AttrAlpha | 52 | missing | 批B |
-| com.fr.plugin.chart.base.VanChartAttrTrendLine | 42 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.VanChartAttrMarker | 42 | missing | (漏账：批排期时人工归入) |
-| com.fr.plugin.chart.base.VanChartAttrLine | 36 | missing | (漏账：批排期时人工归入) |
 | com.fr.report.mobile.DefaultMobileParamStyle | 27 | missing | (漏账：批排期时人工归入) |
 | com.fr.plugin.chart.base.AttrSeriesImageBackground | 26 | missing | (漏账：批排期时人工归入) |
 | com.fr.js.ReportletHyperlinkDialogAttr | 26 | missing | 批E(缺3) |
@@ -140,6 +125,7 @@
 | com.fr.plugin.chart.wisdomtree.WisdomTreeElectron | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.chartx.data.DataSetDefinition | 1 | missing | (漏账：批排期时人工归入) |
 | com.fr.data.condition.ObjectCondition | 506 | partial | (漏账：批排期时人工归入) |
+| com.fr.plugin.chart.base.AttrLabelDetail | 150 | partial | 批B |
 | com.fr.plugin.chart.attr.axis.VanChartValueAxis | 129 | partial | (漏账：批排期时人工归入) |
 | com.fr.base.iofileattr.TemplateIdAttrMark | 23 | partial | 批C |
 | com.fr.chart.chartattr.ValueAxis | 10 | partial | (漏账：批排期时人工归入) |
@@ -177,7 +163,7 @@
 | formats | partial (缺: SimpleDateFormatThreadSafe+TextFormat) | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 数字格式既有 |
 | chart legacy | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
 | chart Van | full | test_vanchart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #46 |
-| chartDeco | missing (缺: AttrTooltip+AttrLabelDetail+AttrBorder+AttrAlpha+ConditionAttr+TrendLine) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| chartDeco | partial (缺: AttrBorder) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | chartdata | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
 | webpage | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
 | hyperlink | partial (缺: ParameterJavaScript+ReportletHyperlinkDialogAttr+Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
@@ -209,7 +195,7 @@
 | funcgroup | 133 | full |
 | webpage | 117 | full |
 | formula | 101 | full |
-| chart | 62 | missing 0x6 |
+| chart | 62 | partial 0x1 |
 | sort | 55 | missing 0x1 |
 | html | 49 | full |
 | editor | 45 | full |

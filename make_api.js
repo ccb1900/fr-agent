@@ -256,8 +256,11 @@ try {
   }
   RR.pass('ir_validate');
   built = Obj.build(IR);
+  // 批B：图表装饰后挂——build 语境挂 ConditionCollection 被引擎静默清空（object.js bisect2/4/5/6 实证），
+  //   唯「build 返回后、wb.export 前」挂接存活（bisect5/6 XML 一手实证）；无图表 spec 时 no-op 返回 0
+  var decoN = built.applyDeco();
   RR.pass('object_build');
-  stamp('ASSEMBLED: styles=' + built.styleCount + ' totalCol=' + built.totalCol + ' rows=' + built.sheets[0].rows);
+  stamp('ASSEMBLED: styles=' + built.styleCount + ' totalCol=' + built.totalCol + ' rows=' + built.sheets[0].rows + ' deco=' + decoN);
 } catch (e) {
   stamp('ASSEMBLE FAIL: ' + e);
   RR.diag('ASSEMBLE FAIL: ' + e);
