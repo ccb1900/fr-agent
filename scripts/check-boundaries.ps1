@@ -73,10 +73,23 @@ Get-ChildItem "$root\semantic" -Recurse -Filter '*.js' -ErrorAction SilentlyCont
   }
 }
 
+# R8 已有 CPT 受控修改层边界（I6，docs/architecture/dependency-rules.md R8）：template/ 是 FR-facing 旁路，独立于生成主链
+#   R8a make_api.js（generate 主 runner）不得 load template/*——I6 走自己的 patch_main（runraw），不混进报表生成链
+#   R8b template core 四件（ops/validator/locator/diff）零 Java.type/零 com.fr（纯函数离线可测，同 R7b）；reader/inspector/patch/patch_main 薄壳才许触 com.fr
+$coreFiles = @('ops.js', 'validator.js', 'locator.js', 'diff.js')
+if (Select-String -Path "$root\make_api.js" -Pattern "template/" -Quiet) {
+  $viol += "R8a make_api.js 引用了 template/（I6 应独立于 generate 主链，走 patch_main）"
+}
+Get-ChildItem "$root\template" -Recurse -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
+  if (($coreFiles -contains $_.Name) -and (Select-String -Path $_.FullName -Pattern 'Java\.type|com\.fr\.' -Quiet)) {
+    $viol += "R8b template core/$($_.Name) 出现 Java.type/com.fr.（core 纯函数零依赖红线）"
+  }
+}
+
 if ($viol.Count -gt 0) {
   Write-Host 'BOUNDARY VIOLATIONS:'
   $viol | ForEach-Object { Write-Host "  $_" }
   exit 1
 }
-Write-Host 'BOUNDARIES OK (R1-R7 clean)'
+Write-Host 'BOUNDARIES OK (R1-R8 clean)'
 exit 0

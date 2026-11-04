@@ -75,3 +75,10 @@ $env:RESULT_DUMP='logs/<name>_grid.txt'      # 真值对拍要开
 - 演示库须在跑；连不上判 datasource_connect reject（环境类，非 spec 可修）。
 
 > 已验证闭环样张：`examples/report-spec/daily_report.sql.json` → 总计 33531/26531/79.12 与 #52 独立真值逐格一致（README #59）。
+
+## 6. I6：改「已有 CPT」而非新建（受控局部修改）
+上面是"从零生成"。当需求是**改一张已存在的 CPT**（换标题、换数据集），走 I6 patch 路（`runraw.ps1 -Script template/patch_main.js`，`TEMPLATE_PATCH=<PatchSpec.json>`）：
+- **白名单（R0 探针冻结）**：`replace_cell_value`（改指定 (c,r) 格文本/公式）+ `replace_dataset`（按名换内嵌数据集）。其余操作（改样式/列宽/增删列/加筛选/改参数/改报表标题）**v1 不做**——读回对象上零验证或命名样式有损，`TemplateOps.UNIMPLEMENTED` 挂了证据，validator 直接拒（不半成品、不"读回能读=能改"）。
+- **三条安全护栏**：① 源件含 `style_name=`（命名样式）→ 默认 abort（`readTemplateWorkBook` 会把它默认化伤及未改部分），除非 `TEMPLATE_FORCE=1`；② 写回**只进 staging**（默认 `logs/template_staging`），原始件 `copy` 保留，**绝不覆盖 `demo_api.cpt`/任何基线件**；③ 等价判据=**语义 token 结构 diff（忽略列宽/行高/UUID 序列化噪声）+ 执行回归（前后结果栅格逐格比）+ 渲染像素 diff(<5%)**，不用导出字节 MD5（官方件 re-export 非字节稳定）。
+- 定位只认**真实存在**的格/数据集（`TemplateLocator`+`TemplateInspector` 存在性校验），越界或数据集不存在→拒，不静默新建。
+- Agent 角色：I5 是"NL→语义 ReportSpec→生成"；I6 是"NL→PatchSpec（改哪格/换哪个集）→ patch"。两者都不让 Agent 碰 SQL/IR/凭据。详见 `template/ops.js` 与 README #60。

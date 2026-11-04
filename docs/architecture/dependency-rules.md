@@ -2,7 +2,7 @@
 
 > 依赖的唯一合法方向：业务 → Feature → Core（IR→Backend→Artifact）→ Runtime（仅经 runner 编排）。
 > 语义层（semantic/）是独立旁路：只依赖 java.sql+dbpass+纯 JS，不属上述主链，未来换报表引擎可整体复用（I2 起）。
-> 强制检查：`powershell -File scripts\check-boundaries.ps1`（R1–R7，exit 0 = 通过）。
+> 强制检查：`powershell -File scripts\check-boundaries.ps1`（R1–R8，exit 0 = 通过）。
 
 ## 允许的依赖
 
@@ -18,6 +18,8 @@
 | semantic/planner/* →（**注入**，不 load）I3 ModelResolver + I1 SpecValidator + ReportSpec 词表 | I4 planner：纯函数编排（意图→ReportSpec+假设/追问/警告），零 load/零 Java/零 com.fr 满足 R7；能力判定/合法性一处真相复用 I1/I3，不重造 |
 | semantic/query/sqlbuilder.js → models/**/*.json（模型语义） | I5 模型→SQL 生成器：只把 model 已声明的维度/指标 expression 编译成受控 SQL（禁自由文本），纯函数零 java；生成 SQL 过 ir.js SQL_READONLY |
 | semantic/closure/loopguard.js → 无（纯函数，判决入参） | I5 闭环守卫：把 RunResult 判决翻成 done/retry/reject（§5.2 五上限），零依赖、可喂 fake 证伪；不改代码/真值 |
+| template/{reader,inspector,patch,patch_main}.js → com.fr.*（读回/写回 WorkBook） | I6 FR-facing 薄壳：readTemplateWorkBook/export/putTableData/cell.setValue；写回只进 staging（logs/template_staging），绝不碰 fineagent 基线件；走 runraw 不进 generate 主链 |
+| template/{ops,validator,locator,diff}.js → 无（纯函数） | I6 core：PatchSpec 校验/定位/结构 diff（零 java 零 com.fr，R8b）；白名单由 R0 探针冻结 |
 
 ## 禁止的依赖
 
@@ -31,6 +33,8 @@
 | lib/* → runtime 反向调用 | 禁止（core 不初始化环境，只消费） |
 | semantic/* → com.fr.* / FR 激活链 / 真 load 后端三件 | 禁止（R7a：语义层独立于引擎与主链；词表刻意不含裸 Java.type——R7 与 R2 不同是有意的，防"统一词表"误杀 inspector 的 java.sql） |
 | semantic/schema core 三件 → Java.type | 禁止（R7b：metadata/relation/serializer 零运行时依赖，java.sql 只在 inspector/inspect_main 薄壳） |
+| make_api.js → template/ | 禁止（R8a：I6 已有 CPT 修改独立于 generate 主链，走自己的 patch_main/runraw） |
+| template/{ops,validator,locator,diff}.js → Java.type / com.fr. | 禁止（R8b：patch core 纯函数零依赖，同 R2/R7b；FR 触碰只在 reader/inspector/patch/patch_main 薄壳） |
 
 ## 事实契约（迁移时不得改动签名）
 
@@ -47,6 +51,7 @@
 | ReportPlanner（I4，零 java core） | ReportPlanner.plan(intent,{resolve,validateSpec,capability,caps})→{status:ready\|ambiguous\|rejected, reportSpec\|null, assumptions[], unresolvedQuestions[], validationWarnings[]} + PlannerCapability.classify*；外部件全经 ctx 注入，自身零 load |
 | SqlBuilder（I5，零 java） | build(model, sel{entity,dimensions,metrics,dateRange}) → {sql, baseAliases[], derived[], groupDims[], errors[]}；模型指标→受控单语句 SQL（ratio 不入 SQL） |
 | LoopGuard（I5，零 java） | nextAction(result,state,caps{maxFixCount,deadlineMs,modifiableFields}) → {action:done\|retry-fix-spec\|reject, attempt, fixTargets[], reason} |
+| TemplatePatch（I6） | TemplateReader.readCpt(rel)/exportCpt；TemplateInspector.describe/datasetExists/cellExists；TemplatePatch.apply(wb,op,descriptor)（op ∈ R0 冻结白名单 replace_cell_value/replace_dataset）；TemplateValidator.validate(PatchSpec)/TemplateLocator.exists/TemplateDiff.diff（core 零 java）；patch_main（runraw，写回 staging） |
 
 ## 垫片政策
 

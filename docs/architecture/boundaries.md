@@ -24,6 +24,7 @@
 │ 语义层  semantic/model/ + models/production/model.json（I3）│  实体/指标/维度/关系/映射：validator 回溯 I2 schema，resolver 歧义不自动选
 │ 语义层  semantic/planner/（I4，零 load/零 Java，ctx 注入 I1+I3）│  结构化意图→ReportSpec+假设/追问/警告；越权明拒带 owner，不降级不编造
 │ 语义层  semantic/query + semantic/closure（I5，零 java 纯函数）│  sqlbuilder：model→受控 SQL；loopguard：RESULT→done/retry/reject(§5.2 上限)
+│ 修改层  template/（I6，读回/写回旁路，独立于 generate 主链）  │  core{ops,validator,locator,diff}零 java + 薄壳 reader/inspector/patch/patch_main；写回只进 staging、原件保留、不碰基线；白名单 R0 探针冻结
 └────────────────────────────────────────────────────────┘
 ```
 
