@@ -138,7 +138,12 @@ check('能力清单 irVersion 一致', cap.irVersion === Ir.IR_VERSION);
 check('能力清单 singleSheet=supported', cap.sheet.singleSheet === 'supported');
 check('能力清单 multiSheet=unsupported', cap.sheet.multiSheet === 'unsupported');
 check('能力清单 reverseFromCpt=unsupported', cap.dataset.reverseFromCpt === 'unsupported');
-check('能力清单列 type 词汇标注延后口径', cap.columnType.note.indexOf('迭代 3') >= 0);
+check('能力清单列 type 词表=I0-05 定案（迭代 3 标注兑现）', (function () {
+  var ct = Ir.capabilities().columnType;
+  return ct.embedded.indexOf('decimal') >= 0 && ct.embedded.indexOf('long') >= 0 && ct.embedded.indexOf('date') >= 0 &&
+    ct.embedded.indexOf('datetime') >= 0 && ct.embedded.indexOf('boolean') >= 0 &&
+    String(ct.note).indexOf('probe_typemap') >= 0;
+})());
 
 // ===== ⑤ I0-01（r2.md）校验完整化批：数组闸/有限数/枚举/拒数组对象/必填/超链族/结构契约 =====
 var BC = [{ name: '机型', type: 'text' }, { name: 'score', type: 'number' }];
@@ -207,6 +212,38 @@ check('REQUIRED link.params[].name', codeAt(mut(function (ir) { ir.sheets[0].blo
 check('REQUIRED ds.params[].name', codeAt(mut(function (ir) { ir.datasets[0].params = [{ formula: '=$$$' }]; }), 'REQUIRED', 'datasets[0].params[0].name'));
 check('合法 ds.params 零误报（drill 实形）', errsOf(mut(function (ir) { ir.datasets[0].params = [{ name: 'day', value: '2026-09-13' }]; })).length === 0);
 check('UNKNOWN_REF 未知 dataset 引用仍命中', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].dataset = 'ghost'; }), 'UNKNOWN_REF', 'sheets[0].blocks[2].dataset'));
+// ===== ⑦ I0-05（r2.md）数据类型映射批：embedded 列类型白名单 + 行值形态闸（探针 probe_typemap 定案词表） =====
+function typedIR(rows) {
+  return {
+    sheets: [{ name: 's1', widthsPt: [80], blocks: [
+      { type: 'title', text: 't', span: 1, heightPt: 30 },
+      { type: 'header', columns: [{ name: 'v', type: 'text' }], heightPt: 20 },
+      { type: 'detail', dataset: 'd', columns: [{ name: 'v', type: 'text' }], heightPt: 20 }
+    ] }],
+    datasets: [{ name: 'd', columns: [{ name: 'v', type: 'text' }], rows: rows }]
+  };
+}
+function typedDs(type, rows) {
+  var ir = typedIR(rows);
+  ir.datasets[0].columns[0].type = type;
+  ir.sheets[0].blocks[1].columns[0].type = type;
+  ir.sheets[0].blocks[2].columns[0].type = type;
+  return ir;
+}
+check('列类型白名单拒 garbage', codeAt(typedDs('garbage', [['x']]), 'INVALID_ENUM', 'datasets[0].columns[0].type'));
+check('date 列合法 2026-09-13 零误报', errsOf(typedDs('date', [['2026-09-13']])).length === 0);
+check('date 列拒非补零 2026-9-3', codeAt(typedDs('date', [['2026-9-3']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('date 列拒非法月日 2026-13-45', codeAt(typedDs('date', [['2026-13-45']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('datetime 列合法全形态', errsOf(typedDs('datetime', [['2026-09-13 08:30:00']])).length === 0);
+check('datetime 列拒缺秒', codeAt(typedDs('datetime', [['2026-09-13 08:30']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('integer 列拒小数 2.7', codeAt(typedDs('integer', [[2.7]]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('integer 列合法负数', errsOf(typedDs('integer', [[-5]])).length === 0);
+check('long 列拒非数', codeAt(typedDs('long', [['9000000001x']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('long 列合法大整数串', errsOf(typedDs('long', [['9000000001']])).length === 0);
+check('decimal 列合法高精度串', errsOf(typedDs('decimal', [['12.3456789012345']])).length === 0);
+check('boolean 列拒串', codeAt(typedDs('boolean', [['yes']]), 'INVALID_TYPE', 'datasets[0].rows[0][0]'));
+check('null 值各型放行（可空语义保留）', errsOf(typedDs('date', [['2026-09-13'], [null]])).length === 0);
+check('number 列 legacy 不受扰（基线词）', errsOf(typedDs('number', [[3]])).length === 0);
 // I0-04（r2.md）SQL 只读闸：kind=sql 必须单语句 SELECT/WITH 起头，禁内嵌 ;（多语句注入面）
 function noCode(ir, code) { return !errsOf(ir).some(function (e) { return e && e.code === code; }); }
 check('SQL_READONLY 拒 DELETE', codeAt(mut(function (ir) { ir.datasets.push({ name: 'ds2', kind: 'sql', connection: 'C', query: 'DELETE FROM t' }); }), 'SQL_READONLY', 'datasets[1].query'));

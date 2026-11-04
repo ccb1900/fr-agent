@@ -239,7 +239,7 @@ try {
   }
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);
-  var sw2 = new (J('java.lang.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
+  var sw2 = new (J('java.io.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
   e.printStackTrace(pw2); stamp(String(sw2.toString()).split('\n').slice(0, 15).join(' || '));
 }
 RR.set('cpt_validate', FAILS > failsBeforeStage3 ? 'failed' : 'passed');   // 迭代 4：失败自动把下游 execute/render/deploy 置 skipped
