@@ -1,10 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "fr-agent ReportSpec (I1, v1 sum-only)",
-  "description": "声明式机器契约（文档 + 未来外部工具面）。注意：Nashorn ES5 运行期无 JSON-Schema 校验库，实际执行者是 lib/spec_validator.js（与 lib/ir.js 手写校验同先例，README #55 留痕）。本 schema 与 spec_validator 必须同步演进；spec_validator 是权威，本文件是它的可读镜像。",
+  "title": "fr-agent ReportSpec (datasets: rows | sql)",
+  "description": "声明式机器契约（文档 + 未来外部工具面）。注意：Nashorn ES5 运行期无 JSON-Schema 校验库，实际执行者是 lib/spec_validator.js（与 lib/ir.js 手写校验同先例，README #55 留痕）。本 schema 与 spec_validator 必须同步演进；spec_validator 是权威，本文件是它的可读镜像（I1.1 起按 rows/sql 两种数据集如实分列）。",
   "type": "object",
   "additionalProperties": false,
-  "required": ["outName", "dimensions", "metrics", "dataset"],
+  "required": ["outName", "dataset"],
   "properties": {
     "specVersion": { "type": "string", "enum": ["1"], "description": "缺省视为当前版；未知版被 spec_validator 拒（UNSUPPORTED_SPEC_VERSION）" },
     "report": {
@@ -19,7 +19,7 @@
     "dimensions": {
       "type": "array",
       "minItems": 1,
-      "description": "分组键，恒 text 列，不得带 aggregation",
+      "description": "rows 数据集专用：分组键，恒 text 列，不得带 aggregation（sql 路把维度名写在 dataset.dimensions）",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -35,7 +35,7 @@
     "metrics": {
       "type": "array",
       "minItems": 1,
-      "description": "度量列，v1 聚合仅 sum；avg/count/min/max/ratio_of_sums=已规划未实现（UNSUPPORTED_CAPABILITY）",
+      "description": "rows 数据集专用：度量列，聚合仅 sum；avg/count/min/max/ratio_of_sums=已规划未实现（UNSUPPORTED_CAPABILITY）",
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -51,17 +51,78 @@
       }
     },
     "dataset": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["rows"],
-      "description": "v1 只内嵌 rows；query/source(semantic)=UNSUPPORTED_CAPABILITY（I2/I3 落地）",
-      "properties": {
-        "rows": { "type": "array", "items": { "type": "array" }, "description": "每行列数须等于 dimensions+metrics 总数（INVALID_SHAPE）" }
-      }
+      "description": "两种形态（互斥）：① rows=内嵌数据（I1 基线）；② kind=sql=模型驱动（引用 Semantic Model 维度/指标名，SQL 由 sqlbuilder 生成，禁自由文本 query）",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["rows"],
+          "properties": {
+            "rows": { "type": "array", "items": { "type": "array" }, "description": "每行列数须等于 dimensions+metrics 总数（INVALID_SHAPE）" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "entity", "connection"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["sql"] },
+            "entity": { "type": "string", "description": "Semantic Model 实体名（须在 model 中存在）" },
+            "connection": { "type": "string", "description": "数据连接名；凭据只在本机 runner dbpass，JSON/cpt 零凭据" },
+            "schema": { "type": "string", "description": "I2 schema 快照名（缺省取 model.source）" },
+            "dimensions": { "type": "array", "items": { "type": "string" }, "description": "模型维度名（或 {term}）" },
+            "metrics": { "type": "array", "items": { "type": "string" }, "description": "模型指标名（或 {term}）" },
+            "dateRange": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["from", "to"],
+              "properties": {
+                "from": { "type": "string", "description": "yyyy-MM-dd，严格双边 + 日历有效性（IsoDate 单点）" },
+                "to": { "type": "string", "description": "yyyy-MM-dd，from<=to" }
+              }
+            },
+            "filters": {
+              "type": "array",
+              "description": "受控字面量筛选（数值列须有限数、文本列须安全 token、op×类型受约束）",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["field", "value"],
+                "properties": {
+                  "field": { "type": "string" },
+                  "op": { "type": "string", "description": "==/!=/>/>=/</<=/like/contains（映射与列型约束见 sqlbuilder）" },
+                  "value": { "type": ["string", "number"] }
+                }
+              }
+            },
+            "sort": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["field"],
+                "properties": {
+                  "field": { "type": "string", "description": "已选 SQL 列别名（派生比率列不可排）" },
+                  "dir": { "type": "string", "enum": ["asc", "desc"], "default": "asc" }
+                }
+              }
+            },
+            "topN": {
+              "oneOf": [{ "type": "integer", "minimum": 1 }, { "type": "object", "additionalProperties": false, "required": ["n"], "properties": { "n": { "type": "integer", "minimum": 1 } } }],
+              "description": "SELECT TOP n；须配 sort（否则无确定序→拒）"
+            }
+          },
+          "anyOf": [
+            { "required": ["dimensions"] },
+            { "required": ["metrics"] }
+          ]
+        }
+      ]
     },
     "presentation": {
       "type": "object",
       "additionalProperties": false,
+      "description": "键白名单 {type,showTotal,heightsPt,chart}；未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）",
       "properties": {
         "type": { "type": "string", "enum": ["table"], "default": "table" },
         "showTotal": { "type": "boolean", "default": true },
@@ -69,15 +130,34 @@
           "type": "object",
           "additionalProperties": false,
           "properties": { "title": { "type": "number" }, "header": { "type": "number" }, "row": { "type": "number" }, "total": { "type": "number" } }
+        },
+        "chart": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "仅 kind=sql 数据集支持（rows 路写→UNSUPPORTED_CAPABILITY，不静默丢图）",
+          "required": ["category", "value"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["bar", "pie", "line"], "default": "bar" },
+            "category": { "type": "string", "description": "已选维度列别名" },
+            "value": { "type": "string", "description": "基础度量列别名（派生比率不可作 value）" },
+            "title": { "type": "string" }
+          }
         }
       }
     },
-    "filters": { "x-unsupported": "I2/I3 — 存在即被 spec_validator 拒（UNSUPPORTED_CAPABILITY）", "type": "array" },
-    "chart": { "x-unsupported": "I4/I5 — 存在即被拒", "type": "object" }
+    "filters": { "x-unsupported": "顶层 filters 仍拒；sql 路放 dataset.filters", "type": "array" },
+    "chart": { "x-unsupported": "顶层 chart 仍拒；sql 路放 presentation.chart", "type": "object" }
   },
-  "x-v1-scope": {
-    "supported": ["dimensions(text 分组键)", "metrics(sum 聚合)", "内嵌 dataset.rows", "presentation.table + showTotal", "widthPt/format/heightsPt 透传"],
-    "rejectedByDesign": ["filters (I2/I3)", "chart (I4/I5)", "dataset.query.type=semantic (I2/I3)", "非 sum 聚合 (I3)", "multiSheet (同 IR 边界)"],
+  "x-scope": {
+    "rows": {
+      "supported": ["dimensions(text 分组键)", "metrics(sum 聚合)", "内嵌 dataset.rows", "presentation.table + showTotal", "widthPt/format/heightsPt 透传"],
+      "unsupported": ["chart", "filters", "sort", "topN", "join", "dataset.query.type=semantic", "非 sum 聚合"]
+    },
+    "sql": {
+      "supported": ["Semantic Model 维度/指标（不受自由文本 SQL）", "dateRange", "dataset.filters", "sort", "topN", "presentation.chart bar|pie|line", "confirmed 安全关系(N:1/1:1，目标键机器验证唯一) INNER JOIN"],
+      "unsupported": ["自由文本 dataset.query（§5.2）", "跨表度量（JOIN 不改 grain）", "非安全基数 join（1:N/N:M）"]
+    },
+    "multiSheet": "unsupported（同 IR 边界）",
     "entrypoint": "REPORT_SPEC=<path>.json run.ps1 make_api.js — make_api.js §0 后缀分支：JSON.parse→SpecValidator→SpecCompiler→SPEC={outName,IR} 复用 rawIR 直通路；旧 .js spec 走原 load() 路径不变"
   }
 }

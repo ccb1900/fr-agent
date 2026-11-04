@@ -104,5 +104,34 @@ check('合法靶 spec 零误报', errsOf(rspec).length === 0);
 // 幂等第二形态：同文本二次 parse → 同诊断
 check('validate 确定序（同输入两次全等）', JSON.stringify(errsOf(mut(function (r) { r.metrics[0].aggregation = 'avg'; }))) === JSON.stringify(errsOf(mut(function (r) { r.metrics[0].aggregation = 'avg'; }))));
 
+// ===== ⑥ I1.1（r4 P2）：sql 分支不再提前 return 跳过 presentation 校验；rows 路 chart 明确拒 =====
+var sqlText = src('examples/report-spec/daily_report.sql.json');
+var sqlSpec = JSON.parse(sqlText);
+function mutSql(f) { var r = JSON.parse(sqlText); f(r); return r; }
+check('sql 靶 spec 零误报', errsOf(sqlSpec).length === 0 || (print('SQL ERRS: ' + JSON.stringify(errsOf(sqlSpec)).slice(0, 300)), false));
+check('I1.1 sql 路 showTotal 非布尔→INVALID_TYPE（旧版提前 return 放过）', codeAt(mutSql(function (r) { r.presentation.showTotal = 'yes'; }), 'INVALID_TYPE', 'presentation.showTotal'));
+check('I1.1 sql 路 heightsPt.row 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.presentation.heightsPt = { row: 'big' }; }), 'INVALID_NUMBER', 'presentation.heightsPt.row'));
+check('I1.1 sql 路 presentation.type 越词表→INVALID_ENUM', codeAt(mutSql(function (r) { r.presentation.type = 'chart'; }), 'INVALID_ENUM', 'presentation.type'));
+check('I1.1 presentation 未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）', codeAt(mutSql(function (r) { r.presentation.foo = 1; }), 'UNSUPPORTED_CAPABILITY', 'presentation.foo'));
+check('I1.1 sql 路 chart 合法形状零误报', errsOf(JSON.parse(src('examples/report-spec/daily_chart.sql.json'))).length === 0);
+check('I1.1 sql 路 chart.value 缺失→REQUIRED', codeAt(mutSql(function (r) { r.presentation.chart = { kind: 'bar', category: 'bizDate' }; }), 'REQUIRED', 'presentation.chart.value'));
+check('I1.1 rows 路 presentation.chart→UNSUPPORTED_CAPABILITY（compiler 不读=不静默丢图）', codeAt(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart'));
+// capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
+check('I1.1 capabilities：sql 路 chart bar|pie|line 已支持', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line');
+check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
+  var r = ReportSpec.capabilities().datasets.rows;
+  return r.chart === 'unsupported' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
+})());
+// 镜像 schema 不得与 validator 口径打架（声明式镜像同步演进，validator 仍是权威）
+var schemaMirror = JSON.parse(src('schemas/report-spec.schema.json'));
+check('I1.1 镜像 schema：presentation 含 chart 键', !!(schemaMirror.properties.presentation.properties.chart));
+check('I1.1 镜像 schema：dataset 为 rows|sql 两形态 oneOf', (function () {
+  var one = schemaMirror.properties.dataset.oneOf || [];
+  var hasRows = one.some(function (b) { return b.required && b.required.indexOf('rows') >= 0; });
+  var hasSql = one.some(function (b) { return b.properties && b.properties.kind && b.properties.kind.enum.indexOf('sql') >= 0; });
+  return hasRows && hasSql;
+})());
+check('I1.1 镜像 schema：x-scope 同时列 rows/sql', !!(schemaMirror['x-scope'] && schemaMirror['x-scope'].rows && schemaMirror['x-scope'].sql));
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

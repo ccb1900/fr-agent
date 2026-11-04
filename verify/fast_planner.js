@@ -118,5 +118,26 @@ var sqlGhostM = plan({ outName: 'g2', dataset: { kind: 'sql', connection: 'ATOM_
 check('I5.1-P2 SQL 幽灵指标：非 ready（语义未决不塞生成链）', sqlGhostM.status !== 'ready' && hasWarn(sqlGhostM, /模型缺口/));
 check('SQL 意图不改输入（纯）', (function () { var s = JSON.stringify(sqlIntent); plan(sqlIntent); return JSON.stringify(sqlIntent) === s; })());
 
+// —— I1.1（r4 P2）：sql 路已支持的意图片段直通，不再"报了暂不支持却 ready"或静默丢
+var sqlRich = plan({
+  outName: 'rich', dataset: {
+    kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord',
+    dimensions: ['bizDate'], metrics: ['planned'], dateRange: { from: '2026-09-13', to: '2026-09-22' },
+    filters: [{ field: 'machine_id', op: '==', value: 'M1' }], sort: [{ field: 'bizDate', dir: 'desc' }], topN: { n: 5 }
+  },
+  presentation: { chart: { kind: 'bar', category: 'bizDate', value: 'planned' } }
+});
+check('I1.1 sql 路 filters/sort/topN 直通 dataset', sqlRich.status === 'ready' && (function () {
+  var d = sqlRich.reportSpec && sqlRich.reportSpec.dataset;
+  return d && d.filters && d.filters.length === 1 && d.sort && d.sort.length === 1 && d.topN && d.topN.n === 5;
+})());
+check('I1.1 sql 路 presentation.chart 直通（不被静默丢弃）', sqlRich.status === 'ready' && sqlRich.reportSpec.presentation.chart.kind === 'bar' && sqlRich.reportSpec.presentation.chart.value === 'planned');
+check('I1.1 sql 路透传产物过 I1 校验 0 err', sqlRich.reportSpec && SpecValidator.validate(sqlRich.reportSpec).length === 0);
+var sqlTopChart = plan({ outName: 'tc', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, chart: { kind: 'line', category: 'bizDate', value: 'planned' } });
+check('I1.1 sql 路顶层 chart 也转 presentation.chart（rows 路才 deferred）', sqlTopChart.status === 'ready' && sqlTopChart.reportSpec.presentation.chart.kind === 'line');
+var sqlTopFilters = plan({ outName: 'tf', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, filters: [{ field: 'stage', value: 'X' }] });
+check('I1.1 顶层 filters(数组) 转入 dataset.filters', sqlTopFilters.status === 'ready' && sqlTopFilters.reportSpec.dataset.filters.length === 1);
+check('I1.1 sql 路非法 presentation 键→rejected（不再静默放过）', plan({ outName: 'bp', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, presentation: { foo: 1 } }).status === 'rejected');
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

@@ -32,7 +32,6 @@ var ReportPlanner = (function () {
     // ===== I5：SQL 数据集意图（模型驱动）→ 直通 sql ReportSpec（opt-in；内嵌路径不受影响）=====
     if (intent.dataset && intent.dataset.kind === 'sql') {
       var dsn = intent.dataset;
-      if (hasOwn(intent, 'filters')) validationWarnings.push({ feature: 'filters', reason: '非日期筛选暂不接', owner: 'I2/I3' });
       // 模型成员校验（维度/指标名须在模型中；不在→unresolvedQuestions/unknown，不编造）
       function namesIn(list, key) {
         var out = [];
@@ -53,11 +52,30 @@ var ReportPlanner = (function () {
         mets.forEach(function (mn) { if (mn && hasOwn(mset, mn)) keepMet.push(mn); else { validationWarnings.push({ term: mn, reason: '指标不在模型，未编造', owner: '模型缺口(I3)' }); memberMissing++; } });
         dims = keepDim; mets = keepMet;
       }
+      // I1.1（r4 P2）：sql 路已支持 dateRange/dataset.filters/sort/topN/presentation.chart，
+      //   意图片段一律直通（形状交 SpecValidator、语义交 sqlbuilder 兜底），不再"报暂不支持却仍 ready"。
+      //   位置写错（如把 filters 放顶层）→ 结构化 warning，绝不静默丢。
+      var dsOut = { kind: 'sql', connection: dsn.connection, entity: dsn.entity, dimensions: dims, metrics: mets, dateRange: dsn.dateRange };
+      ['filters', 'sort', 'topN'].forEach(function (k) {
+        if (dsn[k] != null) dsOut[k] = dsn[k];
+      });
+      if (intent.filters != null) {
+        if (dsOut.filters == null && Object.prototype.toString.call(intent.filters) === '[object Array]') dsOut.filters = intent.filters;
+        else validationWarnings.push({ feature: 'filters', reason: 'sql 路的筛选须放 dataset.filters（顶层 filters 未采用）', owner: 'I5 spec 形态' });
+      }
+      var presIn = (intent.presentation && typeof intent.presentation === 'object' && !(intent.presentation instanceof Array)) ? intent.presentation : {};
+      // 原样透传用户写的 presentation 键（未知键交 SpecValidator 明确拒，planner 不静默吞）
+      var pres = {};
+      Object.keys(presIn).forEach(function (k) { pres[k] = presIn[k]; });
+      if (pres.type == null) pres.type = 'table';
+      if (pres.showTotal == null) pres.showTotal = true;
+      if (pres.chart == null && intent.chart != null) pres.chart = intent.chart;
+      if (pres.chart != null && presIn.chart != null && intent.chart != null) validationWarnings.push({ feature: 'chart', reason: 'presentation.chart 与顶层 chart 同时给出，取 presentation.chart', owner: '意图输入' });
       var sqlSpec = {
         specVersion: '1', outName: intent.outName || 'planner_sql',
         report: { name: intent.reportName || intent.outName || 'planner_sql' },
-        dataset: { kind: 'sql', connection: dsn.connection, entity: dsn.entity, dimensions: dims, metrics: mets, dateRange: dsn.dateRange },
-        presentation: { type: 'table', showTotal: !(intent.presentation && intent.presentation.showTotal === false) }
+        dataset: dsOut,
+        presentation: pres
       };
       assumptions.push({ key: 'dataset.kind', value: 'sql', why: '模型驱动 SQL 由 sqlbuilder 生成（非自由文本）' });
       var sqlErrs = ctx.validateSpec(sqlSpec);
@@ -103,6 +121,13 @@ var ReportPlanner = (function () {
     assumptions.push({ key: 'presentation.type', value: 'table', why: 'I1 v1 只 table' });
     assumptions.push({ key: 'presentation.showTotal', value: showTotal, why: '含度量默认给合计（可被 presentation.showTotal=false 覆盖）' });
     assumptions.push({ key: 'columnWidth', value: 'default', why: '列宽/字号非正确性，走渲染标尺不点名追问' });
+    // I1.1：未知 presentation 键原样带走，交 SpecValidator 明确拒（不由 planner 静默吞掉）
+    var presRows = {};
+    if (intent.presentation && typeof intent.presentation === 'object' && !(intent.presentation instanceof Array)) {
+      Object.keys(intent.presentation).forEach(function (k) { presRows[k] = intent.presentation[k]; });
+    }
+    if (presRows.type == null) presRows.type = 'table';
+    if (presRows.showTotal == null) presRows.showTotal = showTotal;
 
     var rows = intent.rows;
     var spec = {
@@ -112,7 +137,7 @@ var ReportPlanner = (function () {
       dimensions: dims,
       metrics: mets,
       dataset: { rows: Array.isArray(rows) ? rows : [] },
-      presentation: { type: 'table', showTotal: showTotal }
+      presentation: presRows
     };
 
     // 状态裁决：有未决歧义→ambiguous；否则组 spec 复验，合法→ready，非法/越权→rejected
