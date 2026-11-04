@@ -1,7 +1,8 @@
 // runtime/datasource.js — ABR-1 runtime：数据源/连接注册
 // 职责：spec.connections[] 凭据注册进 DatasourceManager（先真连一次，连不上终止）。
-// 语义保持（ABR-1 纪律，与 ABR-0 基线 make_api.js 1.5 节逐行等价）：
-//   - 先 testConnection()，失败 → stamp('DB CONNECTION FAIL ...') + System.exit(4)
+// 语义（I0-02 起）：失败 → 上抛（runner 收进 RunResult：datasource_connect failed + finishRun(4) 落 JSON）。
+//   原 System.exit(4) 裸退绕过结果契约（审计 I0-02 逃逸路 2），已除；退出码 4 语义不变（由 runner 统一裁决）。
+//   - 先 testConnection()，失败 → stamp('DB CONNECTION FAIL ...') + throw
 //   - 成功 → putConnection(名, 连接) + check('DB CONNECTION <名> 注册+名称可解析') + stamp('DB CONNECTION READY ...')
 // api = { stamp, check }：由 runner 提供，日志文案/时序/FAILS 计数与原实现一致。
 
@@ -24,7 +25,7 @@ Runtime.DataSource = (function () {
         api.stamp('DB CONNECTION READY: ' + cc.name + ' driver=' + cc.driver);
       } catch (eDb) {
         api.stamp('DB CONNECTION FAIL ' + cc.name + ': ' + eDb);
-        J('java.lang.System').exit(4);
+        throw new Error('DB CONNECTION FAIL ' + cc.name + ': ' + eDb);
       }
     }
   }

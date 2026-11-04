@@ -26,7 +26,12 @@ if ($freeMB -lt $needMB) {
 }
 if ($Out -ne '') {
   & $java '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script *> $Out
-  "EXIT=$LASTEXITCODE log=$Out"
+  $rc = $LASTEXITCODE
+  "EXIT=$rc log=$Out"
+  # I0-02: propagate real pipeline exit code through the wrapper (audit: -Out branch used to swallow it;
+  #   PS returns 1 for native-command failure regardless of true code => callers got false green/red)
+  exit $rc
 } else {
   & $java '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script
+  exit $LASTEXITCODE
 }

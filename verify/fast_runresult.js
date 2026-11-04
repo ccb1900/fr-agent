@@ -13,8 +13,8 @@ function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 load(ROOT + '/lib/runresult.js');
 check('RunResult 已导出', typeof RunResult === 'object' && RunResult !== null);
 
-var STAGES = ['input_load', 'ir_validate', 'object_build', 'cpt_export', 'cpt_validate', 'execute', 'render', 'deploy'];
-check('STAGES 常量=期望全序（一处真相）', JSON.stringify(RunResult.STAGES) === JSON.stringify(STAGES));
+var STAGES = ['input_load', 'runtime_initialize', 'datasource_connect', 'ir_validate', 'object_build', 'cpt_export', 'cpt_validate', 'execute', 'render', 'deploy', 'roundtrip'];
+check('STAGES 常量=期望全序（一处真相；I0-02 扩 runtime/datasource/roundtrip）', JSON.stringify(RunResult.STAGES) === JSON.stringify(STAGES));
 
 // begin：全 pending、success=null、diagnostics=[]
 var r = RunResult.begin();
@@ -36,9 +36,20 @@ check('诊断按序入列', bad.diagnostics().join('|') === 'IR ISSUE: no sheets
 
 // skipped 不算失败（生产构建通道：execute/render skipped、其余 passed → 仍 success）
 var prod = RunResult.begin();
-prod.pass('input_load'); prod.pass('ir_validate'); prod.pass('object_build'); prod.pass('cpt_export'); prod.pass('cpt_validate');
-prod.skip('execute'); prod.skip('render'); prod.pass('deploy');
+prod.pass('input_load'); prod.pass('runtime_initialize'); prod.pass('datasource_connect'); prod.pass('ir_validate'); prod.pass('object_build'); prod.pass('cpt_export'); prod.pass('cpt_validate');
+prod.skip('execute'); prod.skip('render'); prod.pass('deploy'); prod.pass('roundtrip');
 check('build+deploy（execute/render skipped）→ success true', prod.success() === true);
+
+// I0-02：连接失败短路——datasource_connect failed → 下游全 skipped（不产"看起来正常"的空报表）
+var connBad = RunResult.begin();
+connBad.pass('input_load'); connBad.pass('runtime_initialize'); connBad.fail('datasource_connect'); connBad.diag('DB CONNECTION FAIL NEGBAD');
+check('datasource 炸 → ir_validate…deploy 全 skipped', connBad.get('ir_validate') === 'skipped' && connBad.get('deploy') === 'skipped' && connBad.get('roundtrip') === 'skipped');
+check('datasource 炸 → success false', connBad.success() === false);
+// 无 connections 的 spec：datasource_connect 显式 skipped（三值裁决，不是漏记）
+var noDs = RunResult.begin();
+noDs.pass('input_load'); noDs.pass('runtime_initialize'); noDs.skip('datasource_connect');
+STAGES.slice(3).forEach(function (s) { noDs.pass(s); });
+check('无连接 spec 跑全 → success true（skipped 不算失败）', noDs.success() === true);
 
 // 边界：非法 stage / 非法状态 = 写不出来
 check('未知 stage 名被拒', threw(function () { ok.pass('no_such_stage'); }));

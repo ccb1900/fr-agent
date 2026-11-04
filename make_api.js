@@ -8,7 +8,7 @@ var Class = Java.type('java.lang.Class');
 var t0 = new Date().getTime();
 var stamp = function (s) { print('[' + (new Date().getTime() - t0) + 'ms] ' + s); };
 var FAILS = 0;
-var RR = null;   // 迭代4：结果契约记录器（RunResult.begin() 于 spec 装载后就位）；gateAt 在就位后调用
+var RR = null;   // I0-02：结果契约记录器——RunResult.begin() 于 runresult 库装载后立即位（先于 spec 装载），一切出口经 finishRun
 var check = function (name, cond) { if (cond) stamp('CHECK PASS: ' + name); else { FAILS++; stamp('CHECK FAIL: ' + name); } };
 // 失败门禁（迭代 1，2026-11-04 用户拍板）：上游任何 FAILS 不得继续——错误产物不执行、不部署、
 // 不往部署目录写诊断件，退出码如实反映失败（原实现 CPT 校验失败照跑照部署、部署失败 catch 不计数可致 exit 0）。
@@ -48,17 +48,14 @@ function paramDefaults(ir) {
 load((J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent') + '/runtime/paths.js');
 var FR_AGENT_ROOT = Paths.root;   // 兼容读法
 var specPath = J('java.lang.System').getenv('REPORT_SPEC') || 'reports/sales_demo.js';
-load(Paths.lib('object.js'));
-load(Paths.lib('ir.js'));        // v3.1: spec → IR
-load(Paths.lib('cpt.js'));       // v2 校验器当回归门
-load(Paths.lib('runresult.js')); // 迭代 4 地基：机器可读结果契约（纯模块，零运行时依赖）
-load(Paths.spec(specPath));
+load(Paths.lib('runresult.js')); // 迭代 4 地基：机器可读结果契约（纯模块，零运行时依赖）——先载，RR 尽早就位
 // 迭代 4：RR 只观察 stage 与诊断，绝不进对象图/字节路径（wb/export/Cpt 从不读它）→ 字节基线不受影响。
 //   退出码 = 权威裁决；RESULT_JSON 的 stages 定位失败段、diagnostics 带因；BR_SKIP_EXEC 下 execute/render=skipped。
 RR = RunResult.begin();
 var RESULT_FILE = J('java.lang.System').getenv('FR_AGENT_RESULT') || (Paths.root + '/logs/last_run.json');
 function writeRunResult(code) {
-  var snap = RR.snapshot(); snap.exit = code; snap.success = (code === 0);
+  var snap = RR.snapshot();
+  if (code != null) { snap.exit = code; snap.success = (code === 0); } else { snap.exit = null; }  // I0-02：初始快照无码 → success 保持契约推导值（null=未完）
   var json = JSON.stringify(snap);
   print('RESULT_JSON ' + json);
   try {
@@ -72,6 +69,18 @@ function finishRun(code) { writeRunResult(code); J('java.lang.System').exit(code
 function irErrText(e) {
   return (e && typeof e === 'object') ? (e.code + ' @ ' + e.path + ': ' + e.message) : String(e);
 }
+// I0-02 陈旧假绿堵洞：RR 就位即写初始快照（success=null）——此后无论怎么崩，last_run.json 不可能留着上一轮的 success:true
+writeRunResult(null);
+try {
+  load(Paths.lib('object.js'));
+  load(Paths.lib('ir.js'));        // v3.1: spec → IR
+  load(Paths.lib('cpt.js'));       // v2 校验器当回归门
+  load(Paths.spec(specPath));
+} catch (eLoad) {
+  stamp('LOAD FAIL: ' + eLoad);
+  RR.fail('input_load'); RR.diag('LOAD FAIL: ' + eLoad);
+  finishRun(2);
+}
 if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); RR.fail('input_load'); RR.diag('SPEC NOT FOUND: ' + specPath); finishRun(2); }
 if (!SPEC.dsName) SPEC.dsName = 'ds1';
 if (SPEC.IR) {
@@ -81,18 +90,45 @@ if (SPEC.IR) {
   check('spec.columns 与 data 列数一致', SPEC.columns.length === SPEC.data[0].length);
 }
 
-// ---------- 1. 环境（ABR-1：runtime 门面，激活链在 runtime/bootstrap.js） ----------
-load(Paths.runtime('bootstrap.js'));
-load(Paths.runtime('datasource.js'));
-Runtime.initialize();
-stamp('ENV READY');
+// I0-02：input_load 判定前移——坏输入即裁决收口（退出码 1 不变），不再带病深入环境段
 RR.set('input_load', FAILS > 0 ? 'failed' : 'passed');   // spec 装载 + 列数一致检查（check() 已计 FAILS）
+if (FAILS > 0) { RR.diag('INPUT LOAD: failures=' + FAILS); finishRun(1); }
+
+// ---------- 1. 环境（ABR-1：runtime 门面，激活链在 runtime/bootstrap.js） ----------
+// I0-02 逃逸路 1（审计）：Runtime.initialize 原为裸调用——炸了不产 JSON、last_run.json 残留上次 success:true。
+// 现在 runtime_initialize 段内收口：失败 = failed + 根因入诊断 + finishRun(3)（3=构建/初始化异常，码表语义不变）。
+try {
+  load(Paths.runtime('bootstrap.js'));
+  load(Paths.runtime('datasource.js'));
+  Runtime.initialize();
+  RR.pass('runtime_initialize');
+  stamp('ENV READY');
+} catch (eInit) {
+  stamp('RUNTIME INIT FAIL: ' + eInit);
+  var swI = new (J('java.io.StringWriter'))(); eInit.printStackTrace(new (J('java.io.PrintWriter'))(swI));
+  RR.diag('RUNTIME INIT FAIL: ' + String(swI.toString()).split('\n').slice(0, 6).join(' || '));
+  RR.fail('runtime_initialize');
+  finishRun(3);
+}
 
 // ---------- 1.5 数据连接注册（v3.5 DB 路线；ABR-1：runtime/datasource.js）----------
 // spec.connections 里给凭据（本机 spec 文件，cpt 只存连接名）；先真连一次，
-// 连不上直接退出——拒绝带着坏连接产出"看起来正常"的空报表。
-if (SPEC.connections && SPEC.connections.length) {
-  Runtime.DataSource.register(SPEC.connections, { stamp: stamp, check: check });
+// 连不上即契约收口——拒绝带着坏连接产出"看起来正常"的空报表。
+// I0-02 逃逸路 2（审计）：datasource.js 原裸 System.exit(4) 绕过结果契约；现上抛由 runner 统一收（退出码 4 语义不变）。
+try {
+  if (SPEC.connections && SPEC.connections.length) {
+    var failsBeforeDs = FAILS;
+    Runtime.DataSource.register(SPEC.connections, { stamp: stamp, check: check });
+    RR.set('datasource_connect', FAILS > failsBeforeDs ? 'failed' : 'passed');
+    if (FAILS > failsBeforeDs) { RR.diag('DB CONNECTION REGISTER FAILED'); finishRun(4); }
+  } else {
+    RR.skip('datasource_connect');   // 无 connections 的 spec：显式 skipped（三值裁决，不是漏记）
+  }
+} catch (eDb2) {
+  stamp(String(eDb2));
+  RR.diag('DB CONNECTION FAIL: ' + eDb2);
+  RR.fail('datasource_connect');
+  finishRun(4);
 }
 
 // ---------- 1.6 行数保护阈值钩子（保留机制，spec 需要时显式开）----------
@@ -111,8 +147,12 @@ if (SPEC.relaxRowControl) {
     check('ROW CONTROL REGISTER', !inst.isOpenRowControl() && inst.getMaxDSCellCount() === 20000000);
     stamp('ROW CONTROL: row open=false cell open=false maxDSRow=80000->500000 maxCell=20000000');
   } catch (eR) {
+    // I0-02 逃逸路 3（审计）：原裸 exit(5) 无 JSON；现经 runtime_initialize 段裁决（本段属环境准备类，
+    //   退出码 5=行数保护钩子异常语义不变；stages 定位 + diagnostics 带根因）
     stamp('ROW CONTROL FAIL: ' + eR);
-    J('java.lang.System').exit(5);
+    RR.diag('ROW CONTROL FAIL: ' + eR);
+    RR.fail('runtime_initialize');
+    finishRun(5);
   }
 }
 
@@ -208,7 +248,10 @@ gateAt('cpt-export-validate');   // 迭代 1 门禁：导出/校验任何 FAIL �
 // ---------- 4. 执行 + 导出 ----------
 // 2026-10-28 生产构建通道：BR_DEPLOYDIR 可指向 staging（默认演示服务器部署位不动），BR_TPFX/BR_MODULESET 配套
 var outDir = J('java.lang.System').getenv('BR_DEPLOYDIR') || Paths.demoDeployDir();   // ABR-1：默认演示部署位 = FR_HOME 单点
-Files.createDirectories(J('java.nio.file.Paths').get(outDir));
+try { Files.createDirectories(J('java.nio.file.Paths').get(outDir)); } catch (eDir) {
+  // I0-02：目录都开不出来 = 部署必败，早收口（不白带后段；deploy 段 failed 定位）
+  stamp('OUTDIR FAIL: ' + eDir); RR.diag('OUTDIR FAIL: ' + eDir); RR.fail('deploy'); finishRun(1);
+}
 var rb = null;
 var SKIP_EXEC = J('java.lang.System').getenv('BR_SKIP_EXEC');
 if (SKIP_EXEC) {
@@ -231,12 +274,9 @@ if (SKIP_EXEC) {
     FAILS++;
   }
   RR.set('execute', rb ? 'passed' : 'failed');
-  gateAt('execute');   // 迭代 1 门禁：执行失败不部署
+  gateAt('execute');   // 迭代 1 门禁：执行失败不渲染、不部署
 }
-gateAt('deploy');
-var deployed = false;
-try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); deployed = true; stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); RR.diag('CPT DEPLOY FAIL: ' + e); FAILS++; }
-RR.set('deploy', deployed ? 'passed' : 'failed');
+// ---------- 4.4 渲染（I0-02：render 前置于 deploy——审计缺口"渲染失败照样已部署"堵洞） ----------
 var failsBeforeRender = FAILS;   // 迭代 4：render 段（PNG/PDF）以 FAILS 增量判 passed/failed
 if (rb) {
   var name = SPEC.outName + '_api';
@@ -265,6 +305,11 @@ if (rb) {
   try { if (loc0 != null) J('com.fr.general.GeneralContext').setLocale(loc0); } catch (eL) { }
 }
 if (rb) RR.set('render', FAILS > failsBeforeRender ? 'failed' : 'passed');   // 迭代 4：出图段裁决
+// ---------- 4.9 部署（I0-02：置于 execute/render 裁决之后——上游全绿才把 cpt 写进部署目录） ----------
+gateAt('deploy');
+var deployed = false;
+try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); deployed = true; stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); RR.diag('CPT DEPLOY FAIL: ' + e); FAILS++; }
+RR.set('deploy', deployed ? 'passed' : 'failed');
 // ---------- 4.5 计算结果栅格 dump（env RESULT_DUMP=路径 时开启；纯诊断，默认关，不动任何产物）----------
 // 用途：真库报表的数字验收要对"算完的格"逐格核，而不是只看 PNG 猜。
 if (rb && J('java.lang.System').getenv('RESULT_DUMP')) {
@@ -317,10 +362,14 @@ if (rb && J('java.lang.System').getenv('RESULT_DUMP')) {
     stamp('RESULT DUMP FAIL: ' + eDump);
     var swD = new (J('java.io.StringWriter'))(); eDump.printStackTrace(new (J('java.io.PrintWriter'))(swD));
     stamp(String(swD.toString()).split('\n').slice(0, 6).join(' || '));
+    // I0-02 审计缺口 5：原完全静默。dump 属可选诊断通道（默认关），不计 FAILS 扰动产物裁决，但必须进契约留痕
+    RR.diag('RESULT DUMP FAIL: ' + eDump);
   }
 }
 
 // ---------- 5. ROUNDTRIP：FR 自序列化再读回断言（防静默降级） ----------
+// I0-02 审计缺口 4：roundtrip 独立成段——原实现可能 10 段全 passed 却 success:false/exit:1，段层无法定位
+var failsBeforeRT = FAILS;
 try {
   var diagPath = outDir + '/diag_api.cpt';
   var osDi = new (J('java.io.FileOutputStream'))(diagPath);
@@ -335,6 +384,7 @@ try {
   stamp('DIAG ColumnWidth = ' + (cw ? cw[1] : 'n/a'));
   stamp('DIAG Style count = ' + (diagTxt.match(/<Style[ >]/g) || []).length);
 } catch (e) { FAILS++; stamp('ROUNDTRIP FAIL: ' + e); RR.diag('ROUNDTRIP FAIL: ' + e); }
+RR.set('roundtrip', FAILS > failsBeforeRT ? 'failed' : 'passed');
 
 // ---------- 6. 数值自检（默认路径；rawIR 自带勾稽账，不适用） ----------
 var expectSum = 0, lastNum = built.totalCol;
