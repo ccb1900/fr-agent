@@ -484,3 +484,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **测试**：新增 `verify/fast_contracts.js`（13 项：契约合法/非法、诊断结构化、失败段、patch 诊断、验收口径、输入不可变）；fast 套件升至 **13**，fast_parse 纳入 application/*。
 - **验证**：fast 13 套件 GREEN；真实链路 compile（机台日报，11 阶段 passed）→ artifact generated，validate 后含 validation.ok=true；patch rename → artifact patched，与 Create 同形；R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变。
 - **明确不做（r8 §十二）**：A2 能力等价迁移（需先做 5 类报表新旧路径对照）、目录搬迁、CPT→IR 反编译、Agent Runtime、多后端/OWL/TS/ANTLR。
+
+#68 r8 A2 前置「五类报表新旧路径对照」（2026-11-04，用户选 A2；不改产品行为，只产出迁移决策证据，`docs/architecture/a2-matrix.md`）：
+- **对照工具**：新增 `verify/compare_paths.js`（零引擎）：读两份 RESULT_DUMP/RunResult/PNG，按日期键对齐明细、十进制规范化逐格比较、合计对拍、PNG SHA-256；数据不等或运行失败即 `ok=false`，PNG 差异只记录不判失败。
+- **日报双路径实测**：`examples/report-spec/daily_report.sql.json`（ReportSpec）vs `reports/agent_daily_report.js`（手写 SQL rawIR）——两条均 11 阶段 passed；**10 天明细逐格相等（0 差）**、合计 `33531/26531/79.1237958903701` 完全一致；结构差异仅标题后缀/表头文案/脚注行（13 vs 15 行），PNG 因结构不同而不同（记录 SHA，不判失败）。
+- **五类结论**：① `sales_demo` 已等价（IR JSON 全等 + 字节铁证）；② 日报类**可迁移**（先对齐文案）；③ 机台日报 ReportSpec 独有（无旧路径，数据对真值）；④ 浏览器族 24/25 张**不迁移**（缺 SQL 分页/参数面板/机台过滤/TOP）；⑤ 图表**部分**（legacy bar|pie|line 可迁，VanChart 6 图种 ReportSpec 无入口）。
+- **缺口登记**：SQL 分页与运行期参数（需 FR 参数面板读回探针）、VanChart 入口、条件格式高亮、派生比率排序——均登记为能力缺口，不做静默降级。
+- **决策**：ReportSpec 承担"新建 + 日报类结构化报表"长期契约；交互式浏览器族与 VanChart 仍由 Feature 承担；A2 若继续，先做日报文案对齐并双跑验收。
+- **验证**：fast 13 套件 GREEN、R1–R8 clean、scan 42/43；本轮无产品路径改动，基线 `CBEB42E3` 未动（复核见提交前哈希）。
