@@ -1,0 +1,15 @@
+{
+  "specVersion": "1",
+  "outName": "../escape/x",
+  "dimensions": [
+    { "field": "地区", "label": "地区" }
+  ],
+  "metrics": [
+    { "field": "销量", "label": "销量", "aggregation": "avg" }
+  ],
+  "filters": [],
+  "dataset": {
+    "rows": [["华东", 10]]
+  },
+  "presentation": { "type": "chart" }
+}

@@ -75,7 +75,27 @@ try {
   load(Paths.lib('object.js'));
   load(Paths.lib('ir.js'));        // v3.1: spec → IR
   load(Paths.lib('cpt.js'));       // v2 校验器当回归门
-  load(Paths.spec(specPath));
+  if (/\.json$/i.test(specPath)) {
+    // ---------- I1（r2.md）Runner JSON 模式：ReportSpec.json → 校验 → 编译 ReportIR ----------
+    //   产物包成 SPEC={outName, IR}，下游完全复用 rawIR 直通路（Ir.compile 深拷+补版本、build/导出/部署/门禁零改动）；
+    //   旧 .js spec 走原 load() 路径一行不动（新旧入口互不破坏，r2 §1.3）。
+    //   凭据面：JSON 结构上无处放 connections（天然满足"Agent 不接触密码"）；目录由 BR_DEPLOYDIR env 控，spec 无权指路径。
+    load(Paths.lib('report_spec.js'));
+    load(Paths.lib('spec_validator.js'));
+    load(Paths.lib('spec_compiler.js'));
+    var rsText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(specPath))), 'UTF-8'));
+    var rs = null;
+    try { rs = JSON.parse(rsText); } catch (eJson) { throw new Error('REPORTSPEC JSON parse failed: ' + eJson); }
+    var rsErrs = SpecValidator.validate(rs);
+    if (rsErrs.length) {
+      rsErrs.forEach(function (e) { var t = irErrText(e); stamp('SPEC ISSUE: ' + t); RR.diag('SPEC ISSUE: ' + t); });
+      RR.fail('input_load'); stamp('SPEC VALIDATE FAILED: refusing to compile/build'); finishRun(2);
+    }
+    SPEC = { outName: rs.outName, IR: SpecCompiler.compile(rs) };
+    stamp('REPORTSPEC ' + specPath + ' [I1 JSON 入口 → rawIR 直通]');
+  } else {
+    load(Paths.spec(specPath));
+  }
 } catch (eLoad) {
   stamp('LOAD FAIL: ' + eLoad);
   RR.fail('input_load'); RR.diag('LOAD FAIL: ' + eLoad);

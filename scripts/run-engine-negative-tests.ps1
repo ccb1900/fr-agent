@@ -14,7 +14,8 @@ $rows = @(
   @{ n='ir-bad';            spec='verify/neg_ir_full.js';    env=@{};                                            code=9; bad='ir_validate' },
   @{ n='db-conn';           spec='verify/neg_db_conn.js';    env=@{};                                            code=4; bad='datasource_connect' },
   @{ n='secret-leak';       spec='verify/neg_secret_leak.js'; env=@{};                                           code=1; bad='deploy' },
-  @{ n='exec-formula';      spec='verify/neg_exec_formula.js'; env=@{};                                          code=1; bad='execute' }
+  @{ n='exec-formula';      spec='verify/neg_exec_formula.js'; env=@{};                                          code=1; bad='execute' },
+  @{ n='json-bad-spec';     spec='verify/neg_bad_spec.json';  env=@{};                                          code=2; bad='input_load' }
 )
 
 $script:badrow = 0
