@@ -57,7 +57,10 @@ if (Select-String -Path "$root\make_api.js" -Pattern "load\('D:" -Quiet) {
 #        未来换报表引擎可整体复用（r2 I3 初衷）。runtime/paths.js(纯路径助手)与 dbpass(凭据外围件)属允许面，不判。
 #        注意：R7a 词表刻意【不含裸 Java.type】——inspector 必然 Java.type('java.sql.DriverManager')，
 #        与 R2(禁 Java.type) 词表不同是有意为之，别"统一词表"误杀合法实现。反向依赖要求真 load( 调用，避免命中注释里的路径名。
-$coreFiles = @('metadata.js', 'relation.js', 'serializer.js')
+#   R7b semantic core 零运行时依赖红线（与 R2 同词 Java.type）：semantic/** 中除触库薄壳(inspector.js/inspect_main.js)外
+#        一律不得出现 Java.type——I2 schema core(metadata/relation/serializer) 与 I3 model core(vocab/registry/validator/resolver)
+#        同律：java.sql 只许在薄壳，核心只吃传入的纯 JS 数据（离线可单测 + 换引擎可复用）。
+$shellFiles = @('inspector.js', 'inspect_main.js')
 Get-ChildItem "$root\semantic" -Recurse -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
   if (Select-String -Path $_.FullName -Pattern 'com\.fr\.|ActivatorToolBox|SimpleWork|DatasourceManager' -Quiet) {
     $viol += "R7a semantic/$($_.Name) 含 FR 依赖（com.fr./激活链）"
@@ -65,8 +68,8 @@ Get-ChildItem "$root\semantic" -Recurse -Filter '*.js' -ErrorAction SilentlyCont
   if (Select-String -Path $_.FullName -Pattern "load\([^)]*lib/(object|cpt|ir)\.js" -Quiet) {
     $viol += "R7a semantic/$($_.Name) 真 load 了后端三件"
   }
-  if ($coreFiles -contains $_.Name -and (Select-String -Path $_.FullName -Pattern 'Java\.type' -Quiet)) {
-    $viol += "R7b semantic core/$($_.Name) 出现 Java.type（零运行时依赖红线，等同 R2）"
+  if (($shellFiles -notcontains $_.Name) -and (Select-String -Path $_.FullName -Pattern 'Java\.type' -Quiet)) {
+    $viol += "R7b semantic/$($_.Name) 出现 Java.type（core 零运行时依赖红线；薄壳仅 inspector/inspect_main）"
   }
 }
 

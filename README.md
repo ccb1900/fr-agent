@@ -48,9 +48,10 @@ D:\fineagent\
   logs\      ← 运行日志（*_run.txt）、结果栅格 dump（*_grid.txt）、普查表、临时脚本——只增不改，可随时清空
   shots\     ← 渲染 PNG / 裁切 / 像素 diff 热图（人工过目材料）
   verify_png\← 官方 demo 全量普查 PNG（make_verify.js 产物，证据勿删）
-  semantic\  ← I2 语义层（独立旁路，只依赖 java.sql+dbpass+纯 JS）：schema/{inspector(唯一触库),metadata,relation,serializer,inspect_main} → data\schema_*.json
+  semantic\  ← I2/I3 语义层（独立旁路，只依赖 java.sql+dbpass+纯 JS）：schema/{inspector(唯一触库),metadata,relation,serializer,inspect_main}→data\schema_*.json；model/{vocab,registry,validator,resolver}→读 models\*.json + I2 schema
   schemas\   ← I1 ReportSpec 声明式机器契约（report-spec.schema.json；权威执行者=lib/spec_validator.js）
   examples\  ← I1 report-spec/*.json（等价靶 sales_demo.json 等）
+  models\    ← I3 业务领域模型（production/model.json：实体/指标/维度/关系，validator 回溯 I2 schema、resolver 歧义不自动选）
 ```
 
 注意：
@@ -383,3 +384,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **W3 ABR-1 登记**：`runtime/paths.js` 加 `semantic()` 访问子（纯路径解析）；`scripts/check-boundaries.ps1` 新增 **R7**（R7a semantic 禁 com.fr./激活链/真 load 后端三件，**词表刻意不含裸 `Java.type`**——与 R2 不同是有意，防"统一词表"误杀 inspector 的 java.sql，注释写死理由；R7b core 三件禁 Java.type=零运行时依赖红线等同 R2）；`dependency-rules.md` 允许表+禁止表 R7a/R7b+事实契约 `SchemaInspector`/`Paths.semantic()`；`boundaries.md` 插语义层旁路带；AGENTS §4（画像权威源升级：`data/schema_*.json`=机器直查一级、txt=历史参照，verify 持续对拍）+§6；README 目录结构三新目录。踩坑留痕：R7a 首版把"注释里提到 lib/ir.js"和"load runtime/paths.js"误判反向依赖——收紧为「真 `load(` 后端三件」且 runtime 助手/dbpass 属允许面。
 - **r2 I2 验收对照**：① 真实 SQL Server 源→完整准确结构描述（26 表全要素：类型/长度/可空/PK/索引，489 列对拍零偏差）② 三态严格区分（结构事实 PK / FK 推导=本库实测空 / 未确认业务关系=命名推导 27 条带 requires_confirmation，桶间硬隔离，置信度只排序不替代确认=r2 §3.3）③ 只读 SQL Server 优先、Adapter 面靠 DatabaseMetaData 天然方言无关但不建未验证驱动 ④ 采样=设计不做（§2.3 默认关）。终验：fast **7 套件** GREEN、**R1–R7** GREEN、scan_all_specs 42/43 照旧、schema↔profile 对拍 GREEN。
 - **仍开放**：视图/索引已在结构事实面覆盖但演示库 0 视图；生产库画像（`SCHEMA_URL` 指生产+生产连接）留待有环境时一键复跑（机制已通，非缺码）；I3 Semantic Model 消费本 schema 建业务语义（把 unconfirmedNaming 逐条转确认关系）；gen_laser_specs 从私有画像迁到标准 schema = I5 创作闭环期。
+
+#57 r2.md I3「轻量 Semantic Model」落地批（2026-11-04，I2 验收后按"前一迭代验收过再开下一迭代"推进；用户拍板两口径：**JSON 模型文件**（Nashorn 无 YAML 库，原生 parse 且能机器回溯；弃手写 YAML 子集解析器的新面）+ **真实激光检测评分领域**（非 production_* 合成玩具，指标口径锚定已真值校验的 agent_stage/daily_report）；r2 建议 8 文件 → 收敛 4 core + 1 数据，同 I2 collapse 先例）：
+- **四 core（零 java、零 com.fr、零 IR 词汇，独立于 FineReport=换引擎可整体复用，r2 §3）**：`semantic/model/vocab.js`（概念词汇+能力名册：METRIC_KINDS 每 kind 必带字段、ratio 必分子分母=**显式聚合语义禁裸 formula** r2 §3.2、RELATION_SOURCES{fk,pk,naming-derived}）+ `registry.js`（by-name 索引+resolver 术语表：属性名/标签/列名/指标/维度多候选**不合并=暴露歧义**）+ `validator.js`（**双校验**：模型结构 + 回溯性——凡引用 DB 字段处必须在 I2 `schema.tables[]` 找到否则 UNKNOWN_REF，r2 §3"所有映射可追溯到数据库字段"机器化；沿用 I0-01 `{code,path,message}` 抗炸）+ `resolver.js`（业务术语→resolved/ambiguous/unknown，置信度**只降序排序绝不自动选**、多候选必 requiresConfirmation、未知空候选不臆造=r2 §3.3+§4"不许静默编造业务指标"）。
+- **models/production/model.json（真实领域，满足 r2 §3 验收计数）**：5 实体（检测记录 laser_aaa/数据文件 laser_files/机台 source_id/工序 stage/评分 score）、15 属性映射、6 指标（计划=COUNT(*)、完成=countThreshold score>=0.9、完成率=ratio×100、平均分=weightedAvg 全加权禁均值之均值、评分合计 sum、文件数 count）、3 维度（日期/工序/机台，日期附 TRY_CAST 归一 Rule）、3 关系（recordToFile/fileToMachine/recordToStage，**DB FK=0 故全 source=naming-derived+requiresConfirmation**——三态区分从 I2 贯穿到 I3）；业务口径直接锚定 agent_stage_report 真值（计划/完成/完成率/平均分），映射零臆造。
+- **S1 离线契约测** `verify/fast_semantic.js` 18 项：杀手验收=**真模型过真 I2 schema 回溯 0 错**（模型列名全命中真库结构）；负项（幽灵列 UNKNOWN_REF/ratio 缺分母 REQUIRED/裸 formula INVALID_TYPE/naming-derived 缺确认 REQUIRED/未知 kind INVALID_ENUM）+抗炸+确定序+输入不可变+resolver 三态（planned→resolved、机台→ambiguous+requiresConfirmation 不自动选、未知词→unknown 空候选）+验收计数达标。parse 门登记 4 model core、聚合门扩第 7 套件。
+- **S2 ABR-1 登记**：R7b **泛化**为「`semantic/**` 除 inspector/inspect_main 薄壳外一律禁 `Java.type`」——一次覆盖 I2 schema core + I3 model core（零运行时依赖红线等同 R2）；`dependency-rules.md` 允许表加 `semantic/model→models/*.json+I2 schema`、事实契约加 `SemanticModel`；`boundaries.md` 语义层带补 model 子层；AGENTS §4（业务口径权威源=model.json，指标引真值报表）+§6（I3 状态+开放项 I4 下一站）；README 目录结构补 `models\`。
+- **r2 I3 验收对照**：≥5 实体(5)✓、≥10 映射(15)✓、≥3 关系(3)✓、≥5 指标(6)✓、≥3 维度(3)✓、业务歧义处理✓、所有映射可追溯数据库字段✓（validator UNKNOWN_REF 护栏，实测回溯 0 错）。终验：fast **7 套件** GREEN、**R1–R7** GREEN、scan_all_specs 42/43 照旧、I3 零改动产物路径代码→默认引擎回归双铁证 CBEB42E3/A8EF39AB 逐字节不变（廉价保险）。
+- **仍开放/不做（防提前抽象，r2 §十暂缓）**：不接生成链（模型→ReportSpec 编译=I4 Planner/I5 闭环）；不建 NL→模型 Planner（I4）；无模糊/ML 语义匹配（confidence 只用结构规则）；无 YAML 解析器（选 JSON）；不连库（消费 I2 现成 schema）；`?` 值绑定工单不变。三能力"知道数据是什么(I2)/知道业务是什么意思(I3)/知道如何生成报表(I1 接口，I4/I5 补全)"至此其二落地，I4 是把它们接成自然语言闭环的第一块拼图。

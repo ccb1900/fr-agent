@@ -21,6 +21,7 @@
 ├────────────────────────────────────────────────────────┤
 │ 语义层  semantic/schema/（I2，独立旁路，不在主链上）      │  只依赖 java.sql+dbpass+纯 JS；换引擎可整体复用
 │   inspector.js(唯一触库薄壳) → metadata/relation/serializer(core 零运行时依赖) → data/schema_*.json │
+│ 语义层  semantic/model/ + models/production/model.json（I3）│  实体/指标/维度/关系/映射：validator 回溯 I2 schema，resolver 歧义不自动选
 └────────────────────────────────────────────────────────┘
 ```
 

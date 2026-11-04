@@ -14,6 +14,7 @@
 | reports*/*.js → lib/dbpass.js | 凭据外围件（非后端，指针在 data/db_local.js） |
 | runtime/bootstrap.js → 全局 Paths | 路径单点（paths.js 先于一切加载） |
 | semantic/schema/* → java.sql + lib/dbpass.js + runtime/paths.js | I2 语义层：inspector 薄壳用 java.sql 直连元数据；入口经 dbpass 取凭据、Paths 解析路径（皆非后端） |
+| semantic/model/* → models/**/*.json（声明式业务模型，数据非代码）+ I2 schema JSON | I3 语义模型：core 四件零 java，吃 model.json + I2 schema 做结构校验+回溯性+术语解析；不接生成链（I4/I5 域） |
 
 ## 禁止的依赖
 
@@ -39,6 +40,7 @@
 | Runtime | initialize() / DataSource.register(connections, {stamp, check}) |
 | Paths | root / frWebInf() / demoDeployDir() / lib() / feature() / runtime() / semantic() / spec() |
 | SchemaInspector | inspect({url,user,password,like,source}) → {source,dialect,tables[],relations{structural,fk,unconfirmedNaming},errors[]}（I2；行对象抽入后由零-java 核心 SchemaMeta/SchemaRelation/SchemaSerializer 处理） |
+| SemanticModel（I3，零 java core 四件） | ModelVocab.capabilities() / ModelRegistry.index(model) / ModelValidator.validate(model,i2Schema)→{code,path,message}[] / ModelResolver.resolve(idx,term)→{status:resolved|ambiguous|unknown,candidates[],requiresConfirmation}——独立于 FineReport，只吃模型 JSON + I2 schema；不接生成链 |
 
 ## 垫片政策
 
