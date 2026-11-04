@@ -68,6 +68,10 @@ function writeRunResult(code) {
   } catch (eW) { print('RESULT WRITE FAIL: ' + eW); }
 }
 function finishRun(code) { writeRunResult(code); J('java.lang.System').exit(code); }
+// I0-01：IR 校验项 = {code,path,message}（lib/ir.js 契约）；旧串形态兼容直传（防御，不该出现）
+function irErrText(e) {
+  return (e && typeof e === 'object') ? (e.code + ' @ ' + e.path + ': ' + e.message) : String(e);
+}
 if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); RR.fail('input_load'); RR.diag('SPEC NOT FOUND: ' + specPath); finishRun(2); }
 if (!SPEC.dsName) SPEC.dsName = 'ds1';
 if (SPEC.IR) {
@@ -119,7 +123,11 @@ try {
   var irErrs = Ir.validate(IR);
   check('IR VALIDATE (blocks/datasets 结构)', irErrs.length === 0);
   if (irErrs.length) {
-    irErrs.forEach(function (e) { stamp('IR ISSUE: ' + e); RR.diag('IR ISSUE: ' + e); });
+    // I0-01：错误结构契约 {code,path,message(JSON 路径)}；序列化行 = IR ISSUE: <CODE> @ <path>: <message>
+    irErrs.forEach(function (e) {
+      var t = irErrText(e);
+      stamp('IR ISSUE: ' + t); RR.diag('IR ISSUE: ' + t);
+    });
     // 审计批 A（README #48）：IR 校验失败即停——保留全部诊断，不产出不合格中间产物。EXIT 9 = IR VALIDATE FAILED
     RR.fail('ir_validate');
     stamp('IR VALIDATE FAILED: refusing to build');
