@@ -36,11 +36,26 @@ Get-ChildItem "$root\reports","$root\reports_prod" -Filter 'br_*.js' | ForEach-O
 if (Select-String -Path "$root\make_api.js" -Pattern 'features/data_browser' -Quiet) {
   $viol += "R5 make_api.js 直接加载已迁移 Feature"
 }
+# R6 Runner 接线断言（2026-11-04 审计后增补，docs/architecture/dependency-rules.md）
+# R6a make_api.js 必含 Runtime/Paths 接线（文档声明的调用链可被机器验证）
+foreach ($pat in @("Paths\.runtime\('bootstrap\.js'\)", "Paths\.runtime\('datasource\.js'\)", 'Runtime\.initialize\(\)', 'Paths\.lib\(', 'runtime/paths\.js')) {
+  if (-not (Select-String -Path "$root\make_api.js" -Pattern $pat -Quiet)) {
+    $viol += "R6a make_api.js 缺少接线断言: $pat"
+  }
+}
+# R6b make_api.js 不得内联 FR 激活链/连接注册（只属 runtime/*）
+if (Select-String -Path "$root\make_api.js" -Pattern 'ActivatorToolBox|SimpleWork|DatasourceManager' -Quiet) {
+  $viol += "R6b make_api.js 内联了本应归属 runtime 的激活链/连接注册（ActivatorToolBox/SimpleWork/DatasourceManager）"
+}
+# R6c make_api.js 不得出现 load('D:... 硬编码绝对路径（路径单点在 runtime/paths.js）
+if (Select-String -Path "$root\make_api.js" -Pattern "load\('D:" -Quiet) {
+  $viol += "R6c make_api.js 出现硬编码绝对 load 路径（应走 Paths / FR_AGENT_HOME 单点）"
+}
 
 if ($viol.Count -gt 0) {
   Write-Host 'BOUNDARY VIOLATIONS:'
   $viol | ForEach-Object { Write-Host "  $_" }
   exit 1
 }
-Write-Host 'BOUNDARIES OK (R1-R5 clean)'
+Write-Host 'BOUNDARIES OK (R1-R6 clean)'
 exit 0
