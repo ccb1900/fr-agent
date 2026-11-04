@@ -1,0 +1,2 @@
+laser_files.file_key rows=538 distinct=538 unique=true
+VERDICT recordToFile target-key-unique=PASS

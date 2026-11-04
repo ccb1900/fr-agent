@@ -20,6 +20,18 @@ var ModelValidator = (function () {
     });
     return idx;
   }
+  // I5.5：目标表"声明唯一键"（PK 列 + unique index 单列）→ 供关系基数机器验证
+  function declaredUniqueKeys(schema, tableName) {
+    var keys = {};
+    ((schema && schema.tables) || []).forEach(function (t) {
+      if (!t || t.name !== tableName) return;
+      (t.primaryKey || []).forEach(function (k) { if (k && k.column) keys[k.column] = 1; });
+      (t.indexes || []).forEach(function (ix) {
+        if (ix && ix.unique && ix.columns && ix.columns.length === 1 && ix.columns[0].name) keys[ix.columns[0].name] = 1;
+      });
+    });
+    return keys;
+  }
   function requireColumn(idx, errs, table, column, path, what) {
     if (!isStr(table) || !table) { E(errs, 'REQUIRED', path, what + ' 缺 table'); return; }
     if (!hasOwn(idx, table)) { E(errs, 'UNKNOWN_REF', path, what + ' 的表不在 schema: ' + table); return; }
@@ -55,8 +67,11 @@ var ModelValidator = (function () {
     if (kind === 'countThreshold' && exp.value == null) E(errs, 'REQUIRED', path + '.value', 'countThreshold 需要判定阈值 value');
   }
 
-  function validate(model, schema) {
+  // options.uniqueKeyEvidence: { 'table.column': true } —— 外部读数据侧唯一性探针结果注入（本件零 IO/零 java，R7）
+  function validate(model, schema, options) {
     var errs = [];
+    options = options || {};
+    var uniqEvidence = options.uniqueKeyEvidence || {};
     if (!isObj(model)) { E(errs, 'INVALID_TYPE', 'model', '模型必须是对象'); return errs; }
     var idx = schemaIndex(schema);
     if (!isStr(schema) && (!isObj(schema) || !Array.isArray(schema.tables))) { E(errs, 'INVALID_TYPE', 'schema', '回溯性校验需 I2 schema（{tables:[{name,columns}]}）'); return errs; }
@@ -114,6 +129,18 @@ var ModelValidator = (function () {
       if (r.source === 'confirmed') {
         if (!hasOwn(ModelVocab.CARDINALITYS, r.cardinality)) E(errs, 'REQUIRED', rp + '.cardinality', 'confirmed 关系必须声明合法基数(1:1/N:1/1:N/N:M)');
         if (!isStr(r.confirmedBy) || !r.confirmedBy) E(errs, 'REQUIRED', rp + '.confirmedBy', 'confirmed 关系必须记 confirmedBy 证据（谁确认、依据什么）');
+        // I5.5：N:1/1:1 才可能 JOIN-safe；且 to 侧键必须机器可验证唯一（Schema PK/unique index 或注入的数据侧探针证据）
+        if (r.cardinality === 'N:1' || r.cardinality === '1:1') {
+          var toT = r.to && r.to.table, toC = r.to && r.to.column;
+          if (toT && toC) {
+            var declared = declaredUniqueKeys(schema, toT);
+            var key = toT + '.' + toC;
+            var uniqueOk = !!declared[toC] || !!uniqEvidence[key];
+            if (!uniqueOk) E(errs, 'UNSUPPORTED_RELATION_KEY', rp + '.to.column', '目标键 ' + key + ' 既非 Schema 声明唯一键(PK/unique index)也无数据侧唯一性探针证据 → 不能作 JOIN-safe 关系（r4 P2: 不靠文本声明）');
+          }
+        } else if (r.cardinality === '1:N' || r.cardinality === 'N:M') {
+          E(errs, 'UNSUPPORTED_CARDINALITY', rp + '.cardinality', 'confirmed 关系基数 ' + r.cardinality + ' 非 JOIN-safe（fan-out 重复行），sqlbuilder 必拒');
+        }
       } else if (r.cardinality != null && !hasOwn(ModelVocab.CARDINALITYS, r.cardinality)) {
         E(errs, 'INVALID_ENUM', rp + '.cardinality', '基数越枚举: ' + r.cardinality);
       }

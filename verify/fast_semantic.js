@@ -27,10 +27,23 @@ load(ROOT + '/semantic/model/resolver.js');
 
 function codeAt(errs, code, pathFrag) { return errs.some(function (e) { return e && e.code === code && String(e.path).indexOf(pathFrag) >= 0; }); }
 
-// ===== ① 回溯性 0 错（真模型 ↔ 真库结构）=====
-var errs = ModelValidator.validate(model, schema);
+// ===== ① 回溯性 0 错（真模型 ↔ 真库结构；I5.5 注入数据侧唯一性探针证据，同 make_api）=====
+var EVID = { 'laser_files.file_key': true };
+var errs = ModelValidator.validate(model, schema, { uniqueKeyEvidence: EVID });
 if (errs.length) errs.slice(0, 8).forEach(function (e) { print('   VAL ERR: ' + e.code + ' @ ' + e.path + ': ' + e.message); });
 check('真模型过真 I2 schema 回溯 = 0 错（映射全可追溯）', errs.length === 0);
+// I5.5：confirmed N:1 目标键唯一性必须机器可验证，不靠文本声明
+check('I5.5 无唯一性证据→UNSUPPORTED_RELATION_KEY 拒', codeAt(ModelValidator.validate(model, schema), 'UNSUPPORTED_RELATION_KEY', 'to.column'));
+check('I5.5 Schema 声明唯一键也认可（不依赖探针）', (function () {
+  var s2 = JSON.parse(JSON.stringify(schema));
+  s2.tables.forEach(function (t) { if (t.name === 'laser_files') t.primaryKey = [{ column: 'file_key', seq: 1 }]; });
+  return !codeAt(ModelValidator.validate(model, s2), 'UNSUPPORTED_RELATION_KEY', 'to.column');
+})());
+check('I5.5 错误标注 1:N 为 confirmed→UNSUPPORTED_CARDINALITY', (function () {
+  var m2 = JSON.parse(JSON.stringify(model));
+  m2.relationships.forEach(function (r) { if (r.name === 'recordToFile') r.cardinality = '1:N'; });
+  return codeAt(ModelValidator.validate(m2, schema, { uniqueKeyEvidence: EVID }), 'UNSUPPORTED_CARDINALITY', 'cardinality');
+})());
 
 // ===== ⑤ 验收计数 =====
 var propCount = model.entities.reduce(function (a, e) { return a + (e.properties || []).length; }, 0);

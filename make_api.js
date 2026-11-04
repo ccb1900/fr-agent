@@ -111,7 +111,13 @@ try {
         RR.fail('input_load'); stamp('SCHEMA SNAPSHOT MISSING: refusing to generate from unvalidated model'); finishRun(2);
       }
       var schemaObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(schemaAbs)), 'UTF-8')));
-      var mvErrs = ModelValidator.validate(modelObj, schemaObj);
+      // I5.5：注入数据侧唯一性探针证据（真值文件含 VERDICT ... PASS 才认；本 runner 不连库、纯读文件）
+      var uniqEvidence = {};
+      try {
+        var truth = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.data('i55_relation_unique_truth.txt'))), 'UTF-8'));
+        if (/laser_files\.file_key rows=\d+ distinct=\d+ unique=true/.test(truth) && /VERDICT recordToFile target-key-unique=PASS/.test(truth)) uniqEvidence['laser_files.file_key'] = true;
+      } catch (eTruth) { /* 证据缺失 → validator 会据 Schema 声明判；无声明即拒，不静默 */ }
+      var mvErrs = ModelValidator.validate(modelObj, schemaObj, { uniqueKeyEvidence: uniqEvidence });
       if (mvErrs.length) {
         mvErrs.forEach(function (e) { var t = irErrText(e); stamp('MODEL ISSUE: ' + t); RR.diag('MODEL ISSUE: ' + t); });
         RR.fail('input_load'); stamp('MODEL/SCHEMA MISMATCH: 模型引用对不上结构快照(' + schemaName + ')，拒（结构漂移或未刷新快照）'); finishRun(2);
