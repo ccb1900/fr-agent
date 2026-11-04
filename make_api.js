@@ -8,11 +8,17 @@ var Class = Java.type('java.lang.Class');
 var t0 = new Date().getTime();
 var stamp = function (s) { print('[' + (new Date().getTime() - t0) + 'ms] ' + s); };
 var FAILS = 0;
+var RR = null;   // 迭代4：结果契约记录器（RunResult.begin() 于 spec 装载后就位）；gateAt 在就位后调用
 var check = function (name, cond) { if (cond) stamp('CHECK PASS: ' + name); else { FAILS++; stamp('CHECK FAIL: ' + name); } };
 // 失败门禁（迭代 1，2026-11-04 用户拍板）：上游任何 FAILS 不得继续——错误产物不执行、不部署、
 // 不往部署目录写诊断件，退出码如实反映失败（原实现 CPT 校验失败照跑照部署、部署失败 catch 不计数可致 exit 0）。
+// 迭代 4：门禁触发经 finishRun 统一落 RESULT_JSON（stage 定位 + 诊断入列），退出码仍 = 1（权威裁决不变）。
 var gateAt = function (where) {
-  if (FAILS > 0) { stamp('GATE CLOSED at ' + where + ': failures=' + FAILS + ' -> refusing execute/export/deploy'); J('java.lang.System').exit(1); }
+  if (FAILS > 0) {
+    stamp('GATE CLOSED at ' + where + ': failures=' + FAILS + ' -> refusing execute/export/deploy');
+    if (RR) { RR.diag('GATE CLOSED at ' + where); finishRun(1); }
+    J('java.lang.System').exit(1);
+  }
 };
 // 参数默认值 → 执行参数（迭代 1 修复：原只送 editor，date/combo/number/多选等控件默认值不进 execute，
 // 执行验证的报表 ≠ 参数面板实际提交的报表）。形态镜像 object.js buildParamAttr 的 widgetValue 口径：
@@ -45,8 +51,24 @@ var specPath = J('java.lang.System').getenv('REPORT_SPEC') || 'reports/sales_dem
 load(Paths.lib('object.js'));
 load(Paths.lib('ir.js'));        // v3.1: spec → IR
 load(Paths.lib('cpt.js'));       // v2 校验器当回归门
+load(Paths.lib('runresult.js')); // 迭代 4 地基：机器可读结果契约（纯模块，零运行时依赖）
 load(Paths.spec(specPath));
-if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); J('java.lang.System').exit(2); }
+// 迭代 4：RR 只观察 stage 与诊断，绝不进对象图/字节路径（wb/export/Cpt 从不读它）→ 字节基线不受影响。
+//   退出码 = 权威裁决；RESULT_JSON 的 stages 定位失败段、diagnostics 带因；BR_SKIP_EXEC 下 execute/render=skipped。
+RR = RunResult.begin();
+var RESULT_FILE = J('java.lang.System').getenv('FR_AGENT_RESULT') || (Paths.root + '/logs/last_run.json');
+function writeRunResult(code) {
+  var snap = RR.snapshot(); snap.exit = code; snap.success = (code === 0);
+  var json = JSON.stringify(snap);
+  print('RESULT_JSON ' + json);
+  try {
+    var P = J('java.nio.file.Paths'), F = J('java.nio.file.Files');
+    F.createDirectories(P.get(RESULT_FILE).getParent());
+    F.write(P.get(RESULT_FILE), J('java.lang.String').valueOf(json).getBytes('UTF-8'));
+  } catch (eW) { print('RESULT WRITE FAIL: ' + eW); }
+}
+function finishRun(code) { writeRunResult(code); J('java.lang.System').exit(code); }
+if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); RR.fail('input_load'); RR.diag('SPEC NOT FOUND: ' + specPath); finishRun(2); }
 if (!SPEC.dsName) SPEC.dsName = 'ds1';
 if (SPEC.IR) {
   stamp('SPEC ' + specPath + ' [IR 直通：官方 demo 重建路径]');
@@ -60,6 +82,7 @@ load(Paths.runtime('bootstrap.js'));
 load(Paths.runtime('datasource.js'));
 Runtime.initialize();
 stamp('ENV READY');
+RR.set('input_load', FAILS > 0 ? 'failed' : 'passed');   // spec 装载 + 列数一致检查（check() 已计 FAILS）
 
 // ---------- 1.5 数据连接注册（v3.5 DB 路线；ABR-1：runtime/datasource.js）----------
 // spec.connections 里给凭据（本机 spec 文件，cpt 只存连接名）；先真连一次，
@@ -96,27 +119,34 @@ try {
   var irErrs = Ir.validate(IR);
   check('IR VALIDATE (blocks/datasets 结构)', irErrs.length === 0);
   if (irErrs.length) {
-    irErrs.forEach(function (e) { stamp('IR ISSUE: ' + e); });
+    irErrs.forEach(function (e) { stamp('IR ISSUE: ' + e); RR.diag('IR ISSUE: ' + e); });
     // 审计批 A（README #48）：IR 校验失败即停——保留全部诊断，不产出不合格中间产物。EXIT 9 = IR VALIDATE FAILED
+    RR.fail('ir_validate');
     stamp('IR VALIDATE FAILED: refusing to build');
-    J('java.lang.System').exit(9);
+    finishRun(9);   // 迭代 4：经结果契约落 JSON（退出码 9 语义不变）
   }
+  RR.pass('ir_validate');
   built = Obj.build(IR);
+  RR.pass('object_build');
   stamp('ASSEMBLED: styles=' + built.styleCount + ' totalCol=' + built.totalCol + ' rows=' + built.sheets[0].rows);
 } catch (e) {
   stamp('ASSEMBLE FAIL: ' + e);
+  RR.diag('ASSEMBLE FAIL: ' + e);
+  RR.set(RR.get('ir_validate') === 'passed' ? 'object_build' : 'ir_validate', 'failed');   // compile 炸=IR 段，build 炸=构建段
   var sw = new (J('java.io.StringWriter'))(); var pw = new (J('java.io.PrintWriter'))(sw);
   e.printStackTrace(pw); stamp(String(sw.toString()).split('\n').slice(0, 15).join(' || '));
-  J('java.lang.System').exit(3);
+  finishRun(3);
 }
 var wb = built.wb;
 var Files = J('java.nio.file.Files');
 
 // ---------- 3. 导出产物 cpt（FR 自序列化）+ v2 校验器过回归门 ----------
 var localCpt = Paths.root + '/demo_api.cpt';   // ABR-1 路径单点（外部审计批 A：原硬编码绝对路径）
+var failsBeforeStage3 = FAILS;                  // 迭代 4：cpt 校验段（含 PARAM/LINK/CHART 断言）以 FAILS 增量判 passed/failed
 try {
   var osC = new (J('java.io.FileOutputStream'))(localCpt);
   wb.export(osC); osC.close();
+  RR.pass('cpt_export');
   stamp('CPT EXPORTED: ' + localCpt);
   var xmlText = new (J('java.lang.String'))(Files.readAllBytes(J('java.nio.file.Paths').get(localCpt)), 'UTF-8');
   // rawIR 路径跳过 styleCount 门：引擎序列化会合并相同样式实例（重建 spec 11 → 7 段属正常去重）
@@ -164,6 +194,7 @@ try {
   var sw2 = new (J('java.lang.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
   e.printStackTrace(pw2); stamp(String(sw2.toString()).split('\n').slice(0, 15).join(' || '));
 }
+RR.set('cpt_validate', FAILS > failsBeforeStage3 ? 'failed' : 'passed');   // 迭代 4：失败自动把下游 execute/render/deploy 置 skipped
 gateAt('cpt-export-validate');   // 迭代 1 门禁：导出/校验任何 FAIL 不放行后续执行与部署
 
 // ---------- 4. 执行 + 导出 ----------
@@ -176,6 +207,7 @@ if (SKIP_EXEC) {
   // 2026-10-28 生产构建通道（BR_SKIP_EXEC=1）：演示库没有 t_collector_* 前缀表，的正常执行验证只能在生产服务器做。
   // 只烘 SQL + 导出 cpt；PNG/PDF 免产物
   stamp('PROD BUILD: SKIP EXEC');
+  RR.skip('execute'); RR.skip('render');   // 迭代 4：验证等级=构建+校验+部署，执行/出图显式 skipped
 } else {
   try {
     // 参数面板家族（v3.2）：全部控件默认值作为执行参数（模拟设计器里点"查询"时面板送出的默认值）
@@ -189,10 +221,14 @@ if (SKIP_EXEC) {
     e.printStackTrace(pw3); stamp(String(sw3.toString()).split('\n').slice(0, 20).join(' || '));
     FAILS++;
   }
+  RR.set('execute', rb ? 'passed' : 'failed');
   gateAt('execute');   // 迭代 1 门禁：执行失败不部署
 }
 gateAt('deploy');
-try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); FAILS++; }
+var deployed = false;
+try { var osT = new (J('java.io.FileOutputStream'))(outDir + '/' + SPEC.outName + '_api.cpt'); wb.export(osT); osT.close(); deployed = true; stamp('CPT DEPLOYED'); } catch (e) { stamp('CPT DEPLOY FAIL: ' + e); FAILS++; }
+RR.set('deploy', deployed ? 'passed' : 'failed');
+var failsBeforeRender = FAILS;   // 迭代 4：render 段（PNG/PDF）以 FAILS 增量判 passed/failed
 if (rb) {
   var name = SPEC.outName + '_api';
   // v4.2 VanChart 插件族：服务端出图 PainterFactory 需 GeneralContext locale（ResourceHelper.mixLocaleData NPE）。
@@ -219,6 +255,7 @@ if (rb) {
   try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); FAILS++; }
   try { if (loc0 != null) J('com.fr.general.GeneralContext').setLocale(loc0); } catch (eL) { }
 }
+if (rb) RR.set('render', FAILS > failsBeforeRender ? 'failed' : 'passed');   // 迭代 4：出图段裁决
 // ---------- 4.5 计算结果栅格 dump（env RESULT_DUMP=路径 时开启；纯诊断，默认关，不动任何产物）----------
 // 用途：真库报表的数字验收要对"算完的格"逐格核，而不是只看 PNG 猜。
 if (rb && J('java.lang.System').getenv('RESULT_DUMP')) {
@@ -295,4 +332,4 @@ var expectSum = 0, lastNum = built.totalCol;
 if (SPEC.data) { for (var di = 0; di < SPEC.data.length; di++) expectSum += (lastNum >= 0 ? SPEC.data[di][lastNum] : 0); stamp('EXPECTED TOTAL = ' + expectSum); }
 
 stamp('PIPELINE END, failures=' + FAILS);
-J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
+finishRun(FAILS > 0 ? 1 : 0);   // 迭代 4：收尾经结果契约落 RESULT_JSON（stages 定位 + 诊断；exit code 仍权威）
