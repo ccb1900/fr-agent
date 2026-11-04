@@ -1,0 +1,9 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报_I5闭环_api.cpt",
+  "outName": "生产日报_I6patched.cpt",
+  "description": "I6 受控局部修改示例：只改标题格 (0,0) 文本，其余零改动（写回 staging、原件保留、结构 diff 判未改部分不变）。源为 I5 端到端自产 CPT，无命名样式。",
+  "ops": [
+    { "op": "replace_cell_value", "sheet": 0, "cell": { "c": 0, "r": 0 }, "value": { "kind": "text", "text": "激光生产日报（I6 受控局部修改）" } }
+  ]
+}

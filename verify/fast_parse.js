@@ -10,7 +10,8 @@ var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/run
   'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
   'semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js',
   'semantic/planner/capability.js', 'semantic/planner/planner.js', 'semantic/query/sqlbuilder.js', 'semantic/closure/loopguard.js',
-  'template/ops.js', 'template/validator.js', 'template/locator.js', 'template/diff.js',  'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
+  'template/ops.js', 'template/validator.js', 'template/locator.js', 'template/diff.js',
+  'template/inspector.js', 'template/reader.js', 'template/patch.js', 'template/patch_main.js',  'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;
 FILES.forEach(function (f) {
   try {
