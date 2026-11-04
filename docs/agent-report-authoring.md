@@ -35,8 +35,8 @@
 - **IR 直通**（复杂/贴近官方形态）：`{ IR: { sheets:[{blocks:[...], widthsPt:[...], floats?}], datasets:[...], param?, watermark?, toolbar?, webPage? } }`
 
 数据集两种形态：
-- 内嵌自包含：`{ name, columns:[{name,type('text'|'number'|'float')], rows:[[...]] }`
-- SQL：`{ kind:'sql', connection:'<连接名>', query:'SELECT ...', params? }` —— **连接名**写这里，凭据不写（见 §5）。
+- 内嵌自包含：`{ name, columns:[{name,type,format?}], rows:[[...]] }`——列 `type` 全词表（I0-05 定案，`Ir.capabilities().columnType.embedded`）：`text|string|number|integer|long|float|decimal|boolean|date|datetime`；`number`=legacy（硬转 Integer）。行值形态被逐格校验：`date` 必须字面 `yyyy-MM-dd`（补零）、`datetime` 必须 `yyyy-MM-dd HH:mm:ss`、`integer/long` 必须整值（long 可用纯数字串保精度）、`decimal` 用数字串保高精度、`boolean` 只认 `true|false`、`null` 合法（可空语义保留）。
+- SQL：`{ kind:'sql', connection:'<连接名>', query:'SELECT ...', params? }` —— **连接名**写这里，凭据不写（见 §5）。query 受只读闸：必须单语句 `SELECT`/`WITH` 起头且**不得含 `;`**。
 
 字段词汇细节以 `lib/ir.js` 头注 + `Ir.capabilities()` 为准，别自造键。
 
@@ -58,18 +58,19 @@ $env:FR_AGENT_RESULT = 'logs/last_run.json'       # RESULT 落盘点（可选，
 每次跑完，看 stdout 末尾 `RESULT_JSON {...}` 与进程退出码：
 ```json
 { "success": true,
-  "stages": { "input_load":"passed","ir_validate":"passed","object_build":"passed",
-              "cpt_export":"passed","cpt_validate":"passed","execute":"passed","render":"passed","deploy":"passed" },
+  "stages": { "input_load":"passed","runtime_initialize":"passed","datasource_connect":"skipped","ir_validate":"passed",
+              "object_build":"passed","cpt_export":"passed","cpt_validate":"passed","execute":"passed","render":"passed","deploy":"passed","roundtrip":"passed" },
   "order": [...], "diagnostics": [...], "exit": 0 }
 ```
-- `exit` 码是**权威裁决**（`success = (exit===0)`）：`0` 通过 / `1` 某段失败（门禁拦下）/ `2` spec 缺失 / `3` 构建异常 / `4` 数据连接失败 / `5` 行数保护配置 / `8` 提交额度预检（内存）/ `9` IR 校验失败。
+- `exit` 码是**权威裁决**（`success = (exit===0)`）：`0` 通过 / `1` 某段失败（门禁拦下）/ `2` spec 缺失或装载炸 / `3` 构建/初始化异常 / `4` 数据连接失败 / `5` 行数保护配置 / `8` 提交额度预检（内存）/ `9` IR 校验失败。
+- **stage 全序（I0-02 起 11 段，一处真相=`lib/runresult.js` STAGES）**：`input_load → runtime_initialize → datasource_connect → ir_validate → object_build → cpt_export → cpt_validate → execute → render → deploy → roundtrip`。无 `connections` 的 spec `datasource_connect=skipped`（skipped 不算失败）；`deploy` 排在 `render` 之后（渲染失败即不部署）；开跑即写初始快照（`success:null`），坏输入/崩溃路径也保证 RESULT 文件是**本轮**的（不会残留上次绿）。
 - `failed` 的 stage 告诉你**卡在哪一段**；其下游自动 `skipped`。
-- `diagnostics` 里是逐条原因（如 `IR ISSUE: sheet0 block3 cond0: when must pick exactly one ...`）——照着改 IR，重跑，直到全 `passed`。
+- `diagnostics` 逐条带因；IR 类错误自 I0-01 起是结构化行：`IR ISSUE: <CODE> @ <JSON路径>: <message>`（如 `IR ISSUE: INVALID_TYPE @ sheets[0].blocks[3].conditions[0].when: when must pick exactly one ...`）。CODE 词汇：REQUIRED / INVALID_TYPE / INVALID_ARRAY / INVALID_NUMBER / INVALID_ENUM / INVALID_SHAPE / DUPLICATE / UNKNOWN_REF / INVALID_URL / INVALID_TARGET / SQL_READONLY / UNSUPPORTED_IR_VERSION / UNSUPPORTED_CAPABILITY——照 JSON 路径定位改 IR，重跑，直到全 `passed`。
 
 ## 5. 硬约束（安全 + 交付纪律，违反即停）
 
-- **凭据不进你写的 spec/IR，更不进交付的 cpt**：连接名写 `datasets[].connection`；`driver/url/user/password` 只放本机 `spec.connections` 段（用户环境受信任配置）。交付前对产物 `grep 'whmeiko\|password'` 必须 0 命中。
-- **不许产出的输入**（后端会拒，别试）：`toolbar` 用 `className` 指任意 Java 类；`nav`/`iframe`/`linkTo` 用绝对/外部 URL（`scheme://`、`javascript:`）——只允许相对路径；`floats.imageFile` 越出 `FR_AGENT_HOME`；SQL 里手拼凭据或未授权数据源。
+- **凭据不进你写的 spec/IR，更不进交付的 cpt**：连接名写 `datasets[].connection`；`driver/url/user/password` 只放本机 `spec.connections` 段（用户环境受信任配置）。交付前对产物 `grep 'whmeiko\|password'` 必须 0 命中——**且管线自 I0-04 起有自动凭据门**：deploy 后扫本轮部署件，命中密钥 token 即**撤回产物 + deploy=failed + 退出码非 0**，你无需手工 grep 也拦得住（但别依赖它，写时就别拼进去）。
+- **不许产出的输入**（后端会拒，validate 或构建期当场报）：`toolbar` 用 `className` 指任意 Java 类；`nav`/`iframe`/`linkTo`/`detail.link` 用绝对/外部 URL（`scheme://`、`javascript:`）或含 `..` 穿越（只允许相对路径，reportlet 还禁 `..`）；`targetFrame` 只认 `^[A-Za-z0-9_-]{1,32}$`；`floats.imageFile` 越出 `FR_AGENT_HOME`、`imageFormat` 只认 `png|jpg|jpeg|gif|bmp`；SQL 数据集 `query` 必须单语句 `SELECT`/`WITH` 起头且不含 `;`（只读闸）；浏览器族配置里表名/列名必须是常规标识符（禁引号/分号/括号/空格/`[]`）；SQL 里手拼凭据或未授权数据源。
 - **SQL 里的参数**：`${param}` 是 FR 的**文本替换不是绑定变量**（AGENTS §3），经 `wb.execute` 这条 API 路径**不会**被替换 → 会原样进 SQL 把日期/数值炸成空集（0 行）。日期/机台等筛选把值**烤成字面量**进 SQL（语料 browser 族 `dc >= lo AND dc <= hi` 就这么做）；运行期交互筛选是浏览器族 `br_*` 的专职，独立报表别重造。脏日期（混 `2026/9/14` 与 `2026-9-13`）先 `TRY_CAST(col AS date)` 规范化再比。
 - **公式函数词汇**（实测，见 `Ir.capabilities().formula`）：FR 嵌入式解释器只有 `SUM/AVERAGE/MAX/MIN/COUNT/round()/row()/col()` 这个量级——**`SUMPRODUCT`、`VLOOKUP`、`IFERROR` 等 Excel 专有函数会 `InterpreterError: no function found` 让 execute 段炸**。加权平均用 `SUM(x)/SUM(n)` 或独立聚合行，别想当然写 Excel 函数。
 
@@ -84,4 +85,4 @@ $env:FR_AGENT_RESULT = 'logs/last_run.json'       # RESULT 落盘点（可选，
 
 **查能力 → 拿真列名写受约束 IR → validate → 跑 runner → 读 RESULT 的 failed stage + diagnostics 定点修 → 全绿才交付，附 CPT + 预览图 + 验证摘要。**
 
-> 尚无 Agent 实跑过本闭环。第一版真接入后，用真实体验决定是否再加 MCP（暂不做）。
+> 闭环已有现成 Agent 实跑记录（README #52：ZCode 子代理独立产出两张真库报表并经 RESULT 自修）；I0 可靠性收尾（README #54）后，validate/边界/退出码契约均已硬化。是否加 MCP 仍以真实体验定夺（暂不做）。
