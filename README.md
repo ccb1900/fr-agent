@@ -465,3 +465,14 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **r6-C 视觉回归加强**：执行回归加 `keyCells` 关键单元格内容断言（改后结果必须真为新值）；渲染加 `expectPixelChange`（有 op 却零像素差=FAIL）；像素比例 5%+尺寸一致+bbox 保留为辅助，数据正确性由 keyCells+dataset 快照+执行栅格三线保证。
 - **r6-D SemanticPreflight**：新件 `semantic/preflight.js`（纯函数零 Java）只做"指纹+模型回溯+证据完整性→ok/diagnostics/context"，不接管 SpecValidator/SqlBuilder/连接；`make_api` SQL 分支连接身份只解析一次并同时用于指纹与 `SPEC.connections`。
 - **验证**：fast 12 套件 GREEN（fast_semantic +12 证据/+5 preflight、fast_template +8）、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变；patch rename（keyCells+像素 1.69%）与 dataset（双向逐格）live PASS。
+
+#66 r7.md「探针原子性 / 关系完整性 / 指纹强度 / Inspector 严格语义」+ Agent 创作闭环首批（2026-11-04，用户投 `docs/gpt/r7.md`；按建议只开小 r6.1 修完即冻结底层，随后交付工具层与首次完整演示）：
+- **P1 探针真原子写入**：所有 checks/status 算完后，JSON/TXT 先写 `.tmp`，JSON 最后 move（ATOMIC_MOVE→REPLACE_EXISTING 回退）；任一写失败→尽力把正式 JSON 改成 `status:"failed"`（再失败则删除）并 exit1。**实证**：预建 `i55_relation_unique_truth.txt.tmp` 目录→探针 rc1 且磁盘 JSON=failed；清理后 PASS。
+- **P1 关系级完整性**：完整性主键改为 `acceptedRelations[relationName]`；同键两关系不再互相顶替（`missing` 精确到关系名）。`uniqueKeys[table.column]` 仅作 validator 注入。
+- **P2 指纹升级**：纯 ES5 SHA-256（标准向量对拍通过）替换双 FNV；URL 规范化直接剔除 password/user 等敏感参数（加参数不改指纹，换库必变）。诚实边界：SHA-256 不证明服务器未被伪装。
+- **P2 Inspector 严格语义**：`describe/cellExists/cellText` 统一 `{ok:true,...}|{ok:false,error:{operation,message}}`，`safeNum` 删除；Locator 对 `ok:false` 描述符/sheet 维度一律拒；patch_main 描述符失败直接 abort。真实 WorkBook 探针全 PASS。
+- **Agent 工具层（r7-B）**：`agent/tools/fr_agent.ps1` + `discover/resolve/validate/preview.js`，契约 `docs/agent-tools.md`：discover（能力清单）/resolve（三态，不自动选）/compile（ReportSpec→CPT）/validate（11 阶段+产物+栅格自洽+外部真值）/preview/patch（受控修改）。每 verb 输出一行 ASCII JSON，详情落 `logs/agent/*.json`；Agent 不接触 Java/CPT/SQL。
+- **首次完整演示**（`docs/agent-demo-machine-daily.md`）：独立子代理仅凭原句需求（机台生产日报：日期+机台、计划/完成/完成率、日期筛选、完成率降序、<80% 高亮）+ 工具契约产出 `examples/report-spec/machine_daily_demo.json`，并显式告知三项不支持（运行期日期控件/按派生比率排序/条件格式）与替代方案。主链 `compile→validate(-ExpectTotals 33531:26531)→preview` 全绿：11 阶段 passed、合计=明细之和（33531/26531）、完成率公式命中、PNG 1587×2245 非空白。
+- **踩坑留痕**：PS 函数 `$rc = Run-Js ...` 把 java stdout 吞进返回值致 verb 无输出→改直接调用；PS 写出 JSON 带 BOM→validate 读取剥 `\uFEFF`；R7b 连注释里的 `Java.type` 字样也误报→改写注释。
+- **验证**：fast 12 套件 GREEN、R1–R8 clean、scan 42/43、引擎负门 5 路 GREEN、双铁证 CBEB42E3/6161F402 不变。
+- **按审查结论冻结底层架构**：后续不再扩 Validator/编译链；开放项=运行期参数/派生比率排序/条件格式（属报表表达力新迭代）与工具服务化（HTTP/MCP）。

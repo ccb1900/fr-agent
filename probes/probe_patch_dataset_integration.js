@@ -20,6 +20,7 @@ try {
   // 源 = 自产日报（内嵌/SQL 名 ds1、单 sheet、无命名样式）——原文件只读不覆盖
   var wb = TemplateReader.readCpt('fineagent/销售明细_api.cpt');
   var desc = TemplateInspector.describe(wb);
+  ck('r7 describe 严格语义 ok=true（不降级）', desc.ok === true && Array.isArray(desc.sheets) && desc.sheets.every(function (s) { return s.ok === true; }));
   ck('describe 返回 hasDataset 活断言', typeof desc.hasDataset === 'function');
   ck('describe.hasDataset(ds1) 真实 WorkBook 实查为真', desc.hasDataset('ds1') === true);
   ck('describe.hasDataset(ghost) 为假', desc.hasDataset('ghost') === false);

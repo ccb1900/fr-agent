@@ -54,19 +54,87 @@ var ModelEvidence = (function () {
     }).sort(function (a, b) { return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0); });
     return JSON.stringify({ tables: tables });
   }
-  // 只含连接的非敏感部分（driver + url）；绝不纳入 user/password
+  // 只含连接的非敏感部分（driver + 规范化 url）；凭据参数先剔除再入哈希（r7 P1）
+  var SENSITIVE_PARAMS = /([;?&])(password|pwd|user|username|userid|user name|sslpwd|truststorepassword)\s*=\s*[^;&]*/gi;
+  function normalizeUrl(url) {
+    var s = String(url == null ? '' : url);
+    s = s.replace(SENSITIVE_PARAMS, '');           // 直接剔除，不保留 <redacted> 占位（否则加参数仍改指纹）
+    s = s.replace(/([;?&])[;?&]+/g, '$1');         // 折叠悬空分隔符
+    s = s.replace(/[;?&]+$/, '');
+    s = s.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+    return s;
+  }
   function canonicalSource(conn) {
     conn = conn || {};
-    return JSON.stringify({ driver: conn.driver || null, url: conn.url || null });
+    return JSON.stringify({ driver: conn.driver ? String(conn.driver) : null, url: normalizeUrl(conn.url) });
   }
-  function fnv(s, seed) {
-    var h = seed >>> 0;
-    for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
-    var hex = h.toString(16);
-    while (hex.length < 8) hex = '0' + hex;
+  // ---- SHA-256（纯 ES5，零 Java 依赖：semantic 核心不引后端类；FNV 只够变更检测，不够身份证据）----
+  var SHA_K = [
+    0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+    0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+    0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+    0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+    0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+    0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+    0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+    0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+  ];
+  function utf8Bytes(s) {
+    var out = [], i, c;
+    for (i = 0; i < s.length; i++) {
+      c = s.charCodeAt(i);
+      if (c < 0x80) out.push(c);
+      else if (c < 0x800) { out.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+      else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {
+        var c2 = s.charCodeAt(++i);
+        var cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+        out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      } else { out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+    }
+    return out;
+  }
+  function rrot(x, n) { return ((x >>> n) | (x << (32 - n))) | 0; }
+  function sha256(s) {
+    var H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    var bytes = utf8Bytes(String(s)), l = bytes.length;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    var hi = Math.floor(l / 0x20000000);          // (l*8) / 2^32
+    var lo = (l * 8) >>> 0;
+    bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255);
+    bytes.push((lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+    for (var off = 0; off < bytes.length; off += 64) {
+      var w = new Array(64), i;
+      for (i = 0; i < 16; i++) {
+        w[i] = ((bytes[off + i * 4] << 24) | (bytes[off + i * 4 + 1] << 16) | (bytes[off + i * 4 + 2] << 8) | bytes[off + i * 4 + 3]) | 0;
+      }
+      for (i = 16; i < 64; i++) {
+        var s0 = (rrot(w[i - 15], 7) ^ rrot(w[i - 15], 18) ^ (w[i - 15] >>> 3));
+        var s1 = (rrot(w[i - 2], 17) ^ rrot(w[i - 2], 19) ^ (w[i - 2] >>> 10));
+        w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+      }
+      var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+      for (i = 0; i < 64; i++) {
+        var S1 = (rrot(e, 6) ^ rrot(e, 11) ^ rrot(e, 25));
+        var ch = ((e & f) ^ ((~e) & g));
+        var t1 = (h + S1 + ch + SHA_K[i] + w[i]) | 0;
+        var S0 = (rrot(a, 2) ^ rrot(a, 13) ^ rrot(a, 22));
+        var maj = ((a & b) ^ (a & c) ^ (b & c));
+        var t2 = (S0 + maj) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+      H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+    }
+    var hex = '';
+    for (var j = 0; j < 8; j++) {
+      var x = H[j] >>> 0, part = x.toString(16);
+      while (part.length < 8) part = '0' + part;
+      hex += part;
+    }
     return hex;
   }
-  function hash(s) { return fnv(s, 2166136261) + fnv(s, 2246822519); }   // 16 hex（双种子，防单 32 位碰撞）
+  function hash(s) { return sha256(s); }
   function relationFingerprint(r) { return hash(canonicalRelation(r)); }
   function fingerprints(opts) {
     opts = opts || {};
@@ -99,10 +167,11 @@ var ModelEvidence = (function () {
     return null;
   }
 
-  // 完整性收口：无论前面因何失败，都要报"哪些待验证关系没有有效证据"（不接受部分证据）
+  // 完整性收口：以**关系名**为完整性主键（两个关系可指向同一 table.column，不能互相顶替）；
+  //   uniqueKeys 只是给 ModelValidator 的注入结果，不承担"某关系已被证明"的语义。
   function finish(out, model) {
     requiredRelations(model).forEach(function (rq) {
-      if (!out.unique[rq.key]) out.missing.push(rq.name + ' (' + rq.key + ') 缺少有效证据');
+      if (!out.acceptedRelations[rq.name]) out.missing.push(rq.name + ' (' + rq.key + ') 缺少有效证据');
     });
     return out;
   }
@@ -110,7 +179,7 @@ var ModelEvidence = (function () {
   // opts: {fingerprints, model, nowMs, maxAgeDays}
   // 返回 {unique:{'t.c':true}, accepted:[], rejected:[], stale:[], mismatched:[], malformed:[], missing:[], duplicates:[]}
   function filter(raw, opts) {
-    var out = { unique: {}, accepted: [], rejected: [], stale: [], mismatched: [], malformed: [], missing: [], duplicates: [] };
+    var out = { unique: {}, accepted: [], acceptedRelations: {}, rejected: [], stale: [], mismatched: [], malformed: [], missing: [], duplicates: [] };
     opts = opts || {};
     if (!isObj(raw)) { out.malformed.push('evidence root 非对象'); return finish(out, opts.model); }
     if (String(raw.evidenceVersion) !== EVIDENCE_VERSION) { out.malformed.push('evidenceVersion 不支持: ' + raw.evidenceVersion + '（需 ' + EVIDENCE_VERSION + '，旧证据请重跑探针）'); return finish(out, opts.model); }
@@ -157,6 +226,7 @@ var ModelEvidence = (function () {
       if (!fpOk) { out.mismatched.push(key + ': 身份/模型/Schema 指纹不匹配'); return; }
       if (!fresh) { out.stale.push(key + ': 过期'); return; }
       out.unique[key] = true;
+      out.acceptedRelations[c.relation] = true;
       out.accepted.push(key + ' (' + c.relation + ', ' + c.rows + '/' + c.distinct + ')');
     });
 
@@ -168,7 +238,7 @@ var ModelEvidence = (function () {
     EVIDENCE_VERSION: EVIDENCE_VERSION,
     DEFAULT_MAX_AGE_DAYS: DEFAULT_MAX_AGE_DAYS,
     parse: parse, filter: filter, fingerprints: fingerprints, relationFingerprint: relationFingerprint,
-    requiredRelations: requiredRelations
+    requiredRelations: requiredRelations, sha256: sha256, normalizeUrl: normalizeUrl
   };
 })();
 

@@ -115,6 +115,26 @@ check('r6 指纹稳定（同输入同值）且不含密码', (function () {
 })());
 check('r6 证据解析抗炸（坏 JSON/空值）', ModelEvidence.parse('{') === null && ModelEvidence.filter(null, {}).malformed.length >= 1);
 
+// ===== r7-A：SHA-256 / URL 脱敏 / 关系级完整性 =====
+check('r7 SHA-256 标准向量（abc）', ModelEvidence.sha256('abc') === 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
+check('r7 SHA-256 空串向量', ModelEvidence.sha256('') === 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');
+check('r7 URL 敏感参数脱敏后指纹一致（password 不入哈希输入）', (function () {
+  var a = ModelEvidence.fingerprints({ connection: { driver: CONN.driver, url: CONN.url }, model: model, schema: schema });
+  var b = ModelEvidence.fingerprints({ connection: { driver: CONN.driver, url: CONN.url + ';password=SuperSecret123;user=sa' }, model: model, schema: schema });
+  return a.source === b.source && ModelEvidence.normalizeUrl('jdbc:x;password=p;user=u').indexOf('SuperSecret') < 0;
+})());
+check('r7 不同数据库 URL 指纹不同', (function () {
+  var a = ModelEvidence.fingerprints({ connection: CONN, model: model, schema: schema });
+  var b = ModelEvidence.fingerprints({ connection: { driver: CONN.driver, url: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=other_db' }, model: model, schema: schema });
+  return a.source !== b.source;
+})());
+check('r7 完整性以关系名为准：同键两关系不能互相顶替', (function () {
+  var m2 = JSON.parse(JSON.stringify(model));
+  m2.relationships.push({ name: 'dupKeyRel', label: '同键另一关系', from: { table: 'laser_aaa', column: 'file_key' }, to: { table: 'laser_files', column: 'file_key' }, source: 'confirmed', cardinality: 'N:1', confirmedBy: 'test' });
+  var e = evFilter(null, { model: m2 });
+  return e.unique['laser_files.file_key'] === true && e.missing.some(function (s) { return s.indexOf('dupKeyRel') >= 0; });
+})());
+
 // ===== r6-D：SemanticPreflight 前置检查单点 =====
 function preflight(over) {
   var o = { model: model, schema: schema, evidenceRaw: evRaw(), connection: CONN, nowMs: NOW_MS, maxAgeDays: 30 };

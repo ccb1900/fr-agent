@@ -90,8 +90,41 @@ out.push('VERDICT ' + (status === 'passed' ? 'PASS' : 'FAIL') + ' checks=' + che
 if (errors.length) out.push('ERRORS ' + errors.join(' | '));
 var msg = out.join('\n');
 print(msg);
+// ---- r7-A 原子写入：JSON/TXT 先写临时文件，全部成功后原子替换；任一失败 → 正式 JSON 必须是 failed ----
+var JSON_ABS = ROOT + '/data/i55_relation_unique_truth.json';
+var TXT_ABS = ROOT + '/data/i55_relation_unique_truth.txt';
+function writeTmp(abs, text) {
+  var tmp = abs + '.tmp';
+  Files.write(Pth.get(tmp), J('java.lang.String').valueOf(text).getBytes('UTF-8'));
+  return tmp;
+}
+function moveReplace(from, to) {
+  try {
+    Files.move(Pth.get(from), Pth.get(to), [J('java.nio.file.StandardCopyOption').ATOMIC_MOVE, J('java.nio.file.StandardCopyOption').REPLACE_EXISTING]);
+  } catch (eA) {
+    Files.move(Pth.get(from), Pth.get(to), [J('java.nio.file.StandardCopyOption').REPLACE_EXISTING]);
+  }
+}
+var okWrite = true;
 try {
-  Files.write(Pth.get(ROOT + '/data/i55_relation_unique_truth.json'), J('java.lang.String').valueOf(JSON.stringify(raw, null, 1)).getBytes('UTF-8'));
-  Files.write(Pth.get(ROOT + '/data/i55_relation_unique_truth.txt'), J('java.lang.String').valueOf(msg).getBytes('UTF-8'));
-} catch (eW) { print('WRITE FAIL ' + eW); status = 'failed'; }
-System.exit(status === 'passed' ? 0 : 1);
+  var tTxt = writeTmp(TXT_ABS, msg);
+  var tJson = writeTmp(JSON_ABS, JSON.stringify(raw, null, 1));
+  moveReplace(tTxt, TXT_ABS);
+  moveReplace(tJson, JSON_ABS);   // JSON 最后落地：磁盘上只会是旧版或新版，不会半新
+} catch (eW) {
+  okWrite = false;
+  print('WRITE FAIL ' + eW);
+}
+if (!okWrite) {
+  raw.status = 'failed';
+  raw.error = (raw.error ? raw.error + ' | ' : '') + 'evidence write failed';
+  try {
+    var tFail = writeTmp(JSON_ABS, JSON.stringify(raw, null, 1));
+    moveReplace(tFail, JSON_ABS);   // 尽力把正式证据改成明确 failed
+  } catch (eW2) {
+    try { Files.deleteIfExists(Pth.get(JSON_ABS)); } catch (eDel) { }
+    print('WRITE FAIL (deleted stale evidence) ' + eW2);
+  }
+  status = 'failed';
+}
+System.exit(status === 'passed' && okWrite ? 0 : 1);

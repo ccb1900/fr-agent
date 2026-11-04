@@ -1,0 +1,18 @@
+{
+  "specVersion": "1",
+  "report": { "name": "机台生产日报（按日期+机台）" },
+  "outName": "机台生产日报",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate", "machine"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" },
+    "sort": [
+      { "field": "bizDate", "dir": "asc" },
+      { "field": "planned", "dir": "desc" }
+    ]
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}

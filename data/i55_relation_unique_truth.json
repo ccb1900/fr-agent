@@ -2,10 +2,10 @@
  "evidenceVersion": "2",
  "status": "passed",
  "schema": "atom_live_demo",
- "sourceFingerprint": "cf83fe1843b918e0",
- "modelFingerprint": "08553ba89fc74bdf",
- "schemaFingerprint": "8a17cfba2db1972c",
- "probedAt": "2026-11-04T12:01:31.660Z",
+ "sourceFingerprint": "6e57393c473ab6589a2020ac28f73f151e3d9bcbb8308e9d812b58df21ae6310",
+ "modelFingerprint": "fceadb9fe94c1a4e37aec70d4d07b3274659543101244a8288fec1a1a5e9c955",
+ "schemaFingerprint": "1c0483a1ab49601fa6f7c8f534b567c9a0add22663393df20619253e0ee604c3",
+ "probedAt": "2026-11-04T12:17:04.988Z",
  "checks": [
   {
    "table": "laser_files",
@@ -14,7 +14,7 @@
    "distinct": 538,
    "unique": true,
    "relation": "recordToFile",
-   "relationFingerprint": "5622d4b37863ff3a"
+   "relationFingerprint": "bf9119fcfc88d8c404189b5e076f1c4f9ad8e8621566ae3a8de11da6c112f4f8"
   }
  ],
  "error": null,

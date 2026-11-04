@@ -8,8 +8,10 @@ var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/run
   'lib/report_spec.js', 'lib/spec_validator.js', 'lib/spec_compiler.js', 'lib/isodate.js',
   'semantic/schema/metadata.js', 'semantic/schema/relation.js', 'semantic/schema/serializer.js',
   'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
-  'semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js',
+  'semantic/model/vocab.js', 'semantic/model/registry.js', 'semantic/model/validator.js', 'semantic/model/resolver.js', 'semantic/model/evidence.js',
+  'semantic/preflight.js',
   'semantic/planner/capability.js', 'semantic/planner/planner.js', 'semantic/query/sqlbuilder.js', 'semantic/closure/loopguard.js',
+  'agent/tools/discover.js', 'agent/tools/resolve.js', 'agent/tools/validate.js', 'agent/tools/preview.js',
   'template/ops.js', 'template/validator.js', 'template/locator.js', 'template/diff.js', 'template/regression.js',
   'template/inspector.js', 'template/reader.js', 'template/patch.js', 'template/patch_main.js',  'runtime/paths.js', 'runtime/bootstrap.js', 'runtime/datasource.js', 'features/data_browser/browser.js'];
 var FAILS = 0;

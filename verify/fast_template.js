@@ -47,6 +47,11 @@ check('I6.1-A describe 形态(hasDataset) ds1→ok', TemplateLocator.exists({ op
 check('I6.1-A describe 形态(hasDataset) ghost→拒', TemplateLocator.exists({ op: 'replace_dataset', name: 'ghost' }, realDesc).ok === false);
 check('I6.1-A hasDataset 优先于空 datasetNames（不回退误拒）', TemplateLocator.exists({ op: 'replace_dataset', name: 'ds1' }, realDesc).ok === true);
 check('locator sheet 越界→拒', TemplateLocator.exists({ op: 'replace_cell_value', sheet: 7, cell: { c: 0, r: 0 } }, desc).ok === false);
+check('r7 描述符读取失败(ok:false)→拒（不在未知网格上放行修改）', (function () {
+  var bad = { ok: false, error: { operation: 'getRowCount', message: 'boom' } };
+  return TemplateLocator.exists({ op: 'replace_cell_value', sheet: 0, cell: { c: 0, r: 0 } }, bad).ok === false;
+})());
+check('r7 sheet 维度读取失败(ok:false)→拒', TemplateLocator.exists({ op: 'replace_cell_value', sheet: 0, cell: { c: 0, r: 0 } }, { ok: true, sheetCount: 1, sheets: [{ ok: false, error: { operation: 'sheetDims', message: 'x' } }] }).ok === false);
 
 // ===== diff（未改部分不变的判据）=====
 var beforeXml = '<Report><O c="0" r="0"><![CDATA[旧标题]]></O><O c="1" r="0"><![CDATA[保持]]></O><ColumnDefinition num="288"/></Report>';

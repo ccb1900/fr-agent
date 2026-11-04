@@ -104,6 +104,7 @@ try {
   var hasDatasetOp = datasetOps.length > 0;
   var before = execGrid(TemplateReader.readCpt(patch.sourceCpt));   // 未改原件执行基线
   var descriptor = TemplateInspector.describe(wb);
+  if (descriptor.ok === false) throw new Error('描述符读取失败（严格语义，不降级）: ' + descriptor.error.operation + ': ' + descriptor.error.message);
   var expected = { added: [], removed: [], ops: patch.ops.slice() };   // I6.1-B：ops 决定允许的结构变化类别
   var changedCells = [], keyCells = [], dsChecks = [];
   patch.ops.forEach(function (op) {
