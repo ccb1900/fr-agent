@@ -208,5 +208,19 @@ $badFailed = (ArtExecOk "it_s15bad") -ne $true
 if ($allDone -and $goodsOk -and $badFailed) { Pass "S15 three tasks serialized, goods ok, bad isolated" } else { Fail "S15 broken done=$allDone goods=$goodsOk bad=$badFailed" }
 Assert-Serialized "S15 serialized"
 
+# ================= S16: a dead queued waiter must not starve younger waiters (r13 review fix) =================
+Write-Output "== S16 dead-waiter queue slot pruned (no starvation)"
+Reset-Rt
+# plant an OLDEST queued entry whose owner process is dead (999999) - it must not block a real waiter
+[System.IO.File]::WriteAllText("$rt\queue\it_phantom.json", (@{ runId='it_phantom'; verb='compile'; submittedAt=(Get-Date).AddSeconds(-100).ToString('o'); runtimeState='queued'; ownerToken='phantom'; ownerPid=999999 } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$sl = New-Sleeper 60
+$acq = & $runtimePs1 -Action acquire -RunId "it_real" -Verb compile -OwnerPid $sl.Id -OwnerToken ([guid]::NewGuid().ToString('N')) -TimeoutSec 8 2>&1 | Select-Object -Last 1
+$acqOk = ($acq -match '"acquired":true')
+$phantomGone = -not (Test-Path "$rt\queue\it_phantom.json")
+if ($acqOk -and $phantomGone) { Pass "S16 dead waiter pruned, real waiter acquired (no starvation)" } else { Fail "S16 starvation acq=$acqOk phantomGone=$phantomGone" }
+$null = & $runtimePs1 -Action release -RunId "it_real" -OwnerToken ((Get-Content "$rt\lock\owner.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ownerToken) 2>&1
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

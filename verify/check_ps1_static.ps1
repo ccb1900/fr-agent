@@ -24,6 +24,7 @@ foreach ($f in $allPs) {
 
 # 2) ASCII-only for agent tools + test harness (run.ps1/runraw.ps1/config.ps1 also kept ASCII by convention)
 $asciiFiles = @(
+  "$ROOT\run.ps1", "$ROOT\runraw.ps1",
   "$ROOT\agent\tools\config.ps1", "$ROOT\agent\tools\runtime.ps1", "$ROOT\agent\tools\fr_agent.ps1",
   "$ROOT\verify\integration_runtime.ps1", "$ROOT\verify\check_ps1_static.ps1"
 )

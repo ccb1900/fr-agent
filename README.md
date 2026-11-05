@@ -619,3 +619,14 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
   - 轮3 代码残留旧固定路径扫描（零）+ 文档一致性。
 - **集成验收 `verify/integration_runtime.ps1`（覆盖 PowerShell/Nashorn/Application/FineReport Runtime 全链，JS 单测不可替代）S1–S8 全绿**：并发 create A/B 串行（maxLiveRuntime=1）、失败隔离、崩溃恢复（ghost 标 failed 非 success）、模板 staging 不串、plan sql/rows 分流、**S8 确定性并发**（活持有者 4s 内 create 无 compile.json=排队非并行，释放后自动跑成）。
 - **门禁**：fast 13 GREEN（fast_contracts 扩 runId 唯一+manifest 五层+两视图一致断言）、scan 48、R1–R8、负门 5 路 GREEN、默认双铁证 CBEB42E3/A8EF39AB 逐字节。
+
+
+#84 r13「Runtime Supervisor 正确性收口」落地批（2026-11-05，外部审查 r13.md 令执行；基准 main/1a6ca2d；r13 对 R12 深挖，冲突以 r13 为准；docs/gpt/r13.md 入库）：
+- **两个并发 P1（复现属实→修复→故障注入证明）**：
+  - **P1-A 锁初始化竞态（双获取）**：r12 先 `New-Item lock` 再写 `current.json` 两步非原子，waiter 在窗口见"锁在但 current 缺"→误判陈旧→删锁→**两个任务都以为持锁**。修=waiter **按 owner 身份判定生死，绝不因文件缺失删锁**：新增 `initializing`（lock 存在但 owner.json 未写且 lock 创建 < InitGraceSec=10s）态→只等待；`init_stalled`（超 grace 仍无 owner）→ 专门恢复（不杀 java，因无从确认任何实例）。S9 主动制造 init 窗口验证 waiter 不删锁不恢复。
+  - **P1-B MaxLockAgeSec 误杀活任务**：r12 里 owner 存活但任务超 1800s 也判 stale→Recovery 杀在跑的 JVM。修=**年龄≠死亡**：`TaskSuspectSec` 只在 status 产 `suspect=true` 告警，**永不触发恢复**；生死只由 owner 身份（pid 存活 + StartTime 匹配）决定。S10 造"owner 存活但 acquiredAt 超 2000s"→recover 报 OWNER_ALIVE、lock 保留、suspect=true。
+- **r13 其余收口**：① **OwnerToken**（acquire 生成/记录，release/recovery 必须校验，错 token 绝不删他人锁——S11）；② **恢复范围限定**（只杀 CommandLine 匹配 pipelineTag=make_api.js/patch_main.js 的 java，不再 `Get-Process java|Stop` 全杀；FineDB 锁仅在确认 owner 已死后删——S14 造无关 java 存活验证不误杀）；③ **runtimeState(queued/running/released/lost) 与 businessResult(pending/succeeded/failed) 正交**（release 只置 released，业务成败由 fr_agent 显式传 -BusinessResult，"执行权释放"≠"报表成功"）；④ **重复 RunId 策略**（在途 queued/running 拒 RUNID_INFLIGHT——S13）；⑤ **FIFO best-effort**（仅最旧 queued 尝试取锁）；⑥ **PID 复用防误判**（owner 身份 = pid + StartTime 双确认，P2-B）。
+- **★审查修复循环（r13 基线，独立复测）轮1**：自查发现 **FIFO 饿死缺陷**——最旧 queued 等待者进程崩溃后其 queue 槽无人清理，年轻任务永远 defer 给它→饿死。修=queue 槽记 acquire 进程自身 pid，`Is-OldestQueued` 剔除并删除死等待者槽；新增 **S16 故障注入**（植一个 ownerPid=999999 的最旧幽灵槽，真实等待者应剔除它并成功获取）。又修一处边界：ownerStart 记为 -1（StartTime 不可读）时 `OwnerIdentityAlive` 会把活 owner 误判死→加 `>0` 守卫回退 pid-alive。
+- **R12.3 工程收敛**：`agent/tools/config.ps1` 路径与策略单源（root/fr/java/nashorn/runtime dir/deploy/heap/超时）；run.ps1/runraw.ps1 改读 FR_HOME/FR_AGENT_HOME env；`docs/architecture/runtime-supervisor.md` 状态协议正式文档（存储布局/状态机/锁协议/不变量↔测试映射）；`verify/check_ps1_static.ps1` 静态门（PSParser tokenize 全脚本 + agent 工具 ASCII-only + runtime/fr_agent 无硬编路径）；`scripts/run-integration-tests.ps1` 统一门。
+- **验收**：`verify/integration_runtime.ps1` **S1–S16 全绿**（真实全链故障注入：双获取/年龄/token/崩溃识别/重复 RunId/无关 java/三任务串行/饿死剔除）；静态门 failures=0；fast 13 GREEN、scan 48、R1–R8、默认双铁证 CBEB42E3/A8EF39AB 逐字节。
+- **r13 原则落地**：不再扩 Runtime Supervisor 功能面（无任务中心/持久化调度/分布式队列/重试引擎）；每条关键不变量都有主动制造故障并证明系统正确拒绝的测试，而非以 GREEN 自证。

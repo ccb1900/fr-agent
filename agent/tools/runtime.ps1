@@ -65,7 +65,9 @@ function OwnerIdentityAlive($owner) {
   try { $opid = [int]$owner.ownerPid } catch { return $false }
   $st = ProcStartTicks $opid
   if ($st -lt 0) { return $false }                       # pid gone
-  if ($owner.ownerStart -and ([long]$owner.ownerStart) -ne $st) { return $false }  # pid reused -> different process
+  # only enforce the start-time match when a VALID start was recorded (ownerStart>0); if it was unreadable (-1) at
+  #   acquire time, fall back to pid-alive so a live owner is never misjudged dead (r13 review)
+  if ($owner.ownerStart -and [long]$owner.ownerStart -gt 0 -and [long]$owner.ownerStart -ne $st) { return $false }  # pid reused -> different process
   return $true
 }
 # Returns: free | owned_alive | owned_dead | initializing | init_stalled
@@ -83,8 +85,22 @@ function Get-LockState() {
   return 'init_stalled'
 }
 # Best-effort FIFO: only the oldest still-queued waiter may attempt to claim the lock.
+#   r13 review fix: a queued waiter whose owning process DIED cannot self-clean its queue slot; if it stayed "oldest"
+#   every younger waiter would defer to it forever (starvation). So prune dead-queued entries before ordering.
 function Is-OldestQueued([string]$runId) {
-  $entries = @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue | ForEach-Object { ReadJson $_.FullName } | Where-Object { $_ -and [string]$_.runtimeState -eq 'queued' })
+  $entries = @()
+  foreach ($file in @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue)) {
+    $e = ReadJson $file.FullName
+    if (-not $e) { continue }
+    if ([string]$e.runtimeState -ne 'queued') { continue }
+    # a queued entry with a dead ownerPid is an abandoned waiter -> drop its slot, do not let it block others
+    $opid = 0; try { $opid = [int]$e.ownerPid } catch { $opid = 0 }
+    if ($opid -gt 0 -and $opid -ne $PID -and (ProcStartTicks $opid) -lt 0) {
+      Remove-Item $file.FullName -Force -ErrorAction SilentlyContinue
+      continue
+    }
+    $entries += $e
+  }
   if ($entries.Count -eq 0) { return $true }
   $sorted = @($entries | Sort-Object submittedAt, runId)
   return ([string]$sorted[0].runId -eq $runId)
@@ -123,7 +139,9 @@ switch ($Action) {
     # duplicate RunId policy: an in-flight (queued/running) runId cannot be acquired again (no double execution)
     $existing = ReadJson "$queueDir\$RunId.json"
     if ($existing) { Write-Output ('{"ok":false,"acquired":false,"reason":"RUNID_INFLIGHT","runId":"' + $RunId + '"}'); exit 1 }
-    WriteJsonNoBom "$queueDir\$RunId.json" @{ runId = $RunId; verb = $Verb; submittedAt = (Get-Date).ToString('o'); runtimeState = 'queued'; ownerToken = $OwnerToken }
+    # queue slot ownerPid = THIS acquire process (the spinner): while queued it is alive; if the acquirer is killed the
+    #   slot is prunable so it cannot starve younger waiters. owner.json ownerPid (below) = the long-lived caller (fr_agent).
+    WriteJsonNoBom "$queueDir\$RunId.json" @{ runId = $RunId; verb = $Verb; submittedAt = (Get-Date).ToString('o'); runtimeState = 'queued'; ownerToken = $OwnerToken; ownerPid = $PID }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($true) {
       if (Is-OldestQueued $RunId) {
