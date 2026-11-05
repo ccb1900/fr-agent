@@ -34,6 +34,8 @@ r18 补充边界：
 - **"可转成整数" ≠ 身份**（r18 P1-1）：pidfile `1234 -1` 曾经解析成 ok 且按 pid-only（expectStart≤0→alive）降级——pid 存在则可能**误杀任意无关进程**，pid 不存在则带着幽灵身份照跑任务。现在 Java 击杀目标身份要求**恰好两字段、pid>0、start>0**，不合者=corrupt=unknown=拒绝；owner 语义（ownerStart=-1 且 pid 存在→保守认定 alive）保留、两者不混。
 - **"已启动" 之后的登记失败，绝不能用删文件表达"没启动"**（r18 P1-2）：spawn 前的失败（PENDING 写失败/Start-Process 抛）才允许撤销登记——此刻确实没有 java；spawn 成功后 StartTime 读取失败或 pidfile 覆盖失败一律进入 **Collect-UnregisteredSpawn**：在已持有的同一 Process 对象上 Kill+WaitForExit，**确认退出才可清登记**，否则 PENDING 留守让下一次拒绝。理由：r17 版把拆分前的三步共用一个 catch，spawn 成功后的失败会删 PENDING→fr_agent 侧 `Confirm-RunJavaGone` 看到 absent→清哨兵→下一次起第二个 JVM，正好击穿 r17 核心承诺。此外 StartTime 失败绝不写 `pid -1` 伪身份（那会重新触发 r18 P1-1）。
 - **同 RunId 并发独占必须证明而非注释宣称**（r18 P2）：S24 用两个独立进程抢同一 RunId——恰一个 `"ok":true`，另一个 `RUNID_EXISTS`（New-Item 的 create-new 语义在 OS 层兜住竞争窗口）。
+- **Test-Path 的 false 不承担 absent 判定**（r19 P1）：`Test-Path`/`File.Exists` 把访问错误折叠成 false——被锁/畸形路径/权限故障都可能"谎报不存在"，若哨兵判断采信就可能在真实遗留还在时 claim 执行权起第二个 JVM。统一 `Get-FilePresence`（.NET File.Open 按**真实异常类型名**分层）：absent（FileNotFound/DirectoryNotFound=确实不在）/ readable（可读→继续解析）/ unreadable（存在但拒绝访问→拒）/ unknown（共享冲突、畸形路径等其他 FS 错→拒）。三者 fail-closed，只有 absent 允许按"无哨兵"处理。★PS 5.1 套娃陷阱第 N 张面孔：.NET 方法异常被包成 `MethodInvocationException`（真异常在 InnerException）——分类前解一层再对比类型名（typed catch 不可靠的 r17 教训在 .NET 方法面重演，红探针实读）。
+- **Collect-UnregisteredSpawn 的 Kill 只是个提示，退出才是裁决**（r19 P2）：JVM 在回收前已自然退出时 Kill 抛 InvalidOperationException——旧单 catch 把这个"已确认退出"的好结局判成 kept-pending（哨兵被 HOLD 留守→下一次 RUNTIME_BUSY 恶循环、需人工恢复）。修=吞掉 Kill 的任何异常、统一由 WaitForExit 裁决：确认退出才清登记，否则保留 PENDING。
 
 ## 3. 执行流程（fr_agent compile/patch，r18 后）
 
@@ -99,7 +101,8 @@ logs/agent/runs/<runId>/java.pid   本次 Java 身份（PENDING=预登记未起/
 | 结果可信：patch 缺 manifest → 不验收 | S17 | 构造 |
 | RunId create-new：显式重复 → RUNID_EXISTS | S23 | 构造 |
 | 登记：spawn 前 pidfile 不可用 → rc≠0 且无 java 起来 | S25 | 故障注入（r18 P2） |
-| 收集器：spawn 后登记失败 → 确认退出才清登记；Kill 失败/未退出=PENDING 留守 | S26（白盒：真 java +Kill/Wait stub 两分支） | 故障注入（r18 P1-2） |
+| 收集器：spawn 后登记失败 → 确认退出才清登记；Kill 失败/未退出=PENDING 留守；Kill 抛 InvalidOperationException 但 JVM 已自退 → confirmed（r19 P2） | S26（白盒：真 java + Kill/Wait stub 三分支 + 自退竞态分支） | 故障注入 |
+| 文件状态四分类：锁住/畸形路径 = unknown 绝不 absent；锁哨兵→RUNTIME_BUSY 不清（r19 P1） | S27（白盒四态 + 黑盒锁哨兵防退化） | 故障注入 |
 
 （S5 曾抓到 `IdentityAlive([int]$pid,…)` 参数撞 PowerShell 自动变量 `$PID` 致身份判定失效；r17 六项 FAIL 抓出类型 catch 不可靠须按 FQID 指纹判；r18 红探针再抓出 `1234 -1` 类整数垃圾以 pid-only 语义进入身份链——主动制造故障证明系统正确拒绝的价值持续兑现。）
 

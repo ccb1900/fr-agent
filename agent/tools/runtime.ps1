@@ -16,7 +16,10 @@ $activeFile = "$($cfg.RuntimeDir)\active.json"
 
 switch ($Action) {
   'status' {
-    if (-not (Test-Path $activeFile)) { Write-Output '{"ok":true,"active":null}'; exit 0 }
+    # r19 P1: presence via Get-FilePresence - a locked/malformed sentinel reports UNKNOWN/CORRUPT, never null-absent.
+    $pres = Get-FilePresence $activeFile
+    if ($pres -eq 'absent') { Write-Output '{"ok":true,"active":null}'; exit 0 }
+    if ($pres -ne 'readable') { Write-Output ('{"ok":true,"active":"' + $pres.ToUpper() + '"}'); exit 0 }
     $a = $null
     try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
     if (-not $a) { Write-Output '{"ok":true,"active":"CORRUPT"}'; exit 0 }

@@ -79,19 +79,19 @@ function Start-EngineJava {
   return $LASTEXITCODE
 }
 
-# r18 P1-2: collect a JVM that WAS spawned but whose identity could not be registered (StartTime unreadable or
-#   pidfile write failed). Kill on the SAME Process object we hold and wait for exit; ONLY a confirmed exit may
-#   drop the pre-registration. If it cannot be confirmed dead, the pending registration STAYS so the next run
-#   refuses (identity unknown) instead of racing an unspecified JVM. Returns 'confirmed' | 'kept-pending'.
+# r18 P1-2 / r19 P2: collect a JVM that WAS spawned but whose identity could not be registered (StartTime
+#   unreadable or pidfile write failed). Kill on the SAME Process object we hold, then WAIT FOR EXIT - Kill's own
+#   outcome is only a hint: if the JVM already exited by itself the Kill throws InvalidOperationException, which is
+#   the good case and must NOT mask the exit (r19 race fix: the old single-catch marked that confirmed-exit as
+#   kept-pending). ONLY a WaitForExit-confirmed exit may drop the pre-registration; anything else keeps PENDING so
+#   the next run refuses (identity unknown) instead of racing an unspecified JVM. Returns 'confirmed' | 'kept-pending'.
 function Collect-UnregisteredSpawn($p, [string]$PidFile) {
-  $confirmed = $false
+  try { $p.Kill() } catch { }
   try {
-    $p.Kill()
-    if ($p.WaitForExit(15000)) { $confirmed = $true }
-  } catch { $confirmed = $false }
-  if ($confirmed) {
-    Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
-    return 'confirmed'
-  }
+    if ($p.WaitForExit(15000)) {
+      Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
+      return 'confirmed'
+    }
+  } catch { }
   return 'kept-pending'
 }

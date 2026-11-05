@@ -79,7 +79,12 @@ function Invoke-UnderMutex([scriptblock]$RunBody) {
     catch [System.Threading.AbandonedMutexException] { $gained = $true }
     if (-not $gained) { return @{ gained = $false; busy = $false; rc = $null } }
     # leftover-process check (only reachable while we hold the mutex)
-    if (Test-Path $activeFile) {
+    # r19 P1: Test-Path false is NOT proof of absence - classify with Get-FilePresence, refuse on unreadable/unknown.
+    $pres = Get-FilePresence $activeFile
+    if ($pres -eq 'unreadable' -or $pres -eq 'unknown') {
+      $busy = $true; return @{ gained = $true; busy = $true; rc = $null }   # cannot confirm -> RUNTIME_BUSY, never claim
+    }
+    if ($pres -eq 'readable') {
       $a = $null
       try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
       if (-not $a) { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }   # corrupt -> fail-closed

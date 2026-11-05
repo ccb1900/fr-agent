@@ -16,6 +16,35 @@
 # NOTE: ASCII-only.
 # NOTE param must NOT be $pid (PowerShell automatic $PID is read-only; assigning it throws VariableNotWritable).
 
+# r19 P1: FILE PRESENCE classification (docs/gpt/r19.md). Test-Path / File.Exists fold access errors into
+#   $false, so "false" is NOT proof of absence - a locked/malformed/unreadable path could pass as "no sentinel"
+#   and the caller would claim the runtime and start a second JVM. Classify on .NET exceptions instead:
+#   'absent'     : provably not there (FileNotFoundException / DirectoryNotFoundException)
+#   'readable'   : openable for read -> caller may parse the content
+#   'unreadable' : exists but the access was denied -> unknown for the supervisor -> REFUSE
+#   'unknown'    : other filesystem fault (sharing violation, malformed path, too-long path) -> REFUSE
+# The handle opens with FileShare ReadWrite so normal concurrent readers/writers are not disturbed.
+function Get-FilePresence([string]$path) {
+  if ([string]::IsNullOrEmpty($path)) { return 'unknown' }
+  $fs = $null
+  try {
+    $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite)
+    return 'readable'
+  } catch {
+    # r17 lesson: classify on real exception type NAME, never on typed catch alone. PS 5.1 surface lesson (r19):
+    #   .NET method call exceptions arrive wrapped as MethodInvocationException with the real type in INNEREXCEPTION
+    #   (probed: File.Open on a missing file -> Inner=FileNotFoundException) - unwrap once, then classify.
+    $ex = $_.Exception
+    if ($ex -and $ex.InnerException) { $ex = $ex.InnerException }
+    $t = if ($ex) { [string]$ex.GetType().FullName } else { '' }
+    if ($t -eq 'System.IO.FileNotFoundException' -or $t -eq 'System.IO.DirectoryNotFoundException') { return 'absent' }
+    if ($t -eq 'System.UnauthorizedAccessException') { return 'unreadable' }
+    return 'unknown'
+  } finally {
+    if ($fs) { $fs.Dispose() }
+  }
+}
+
 # Internal: classify ONE freshly obtained Process object.
 #   state 'alive'   : this exact process is running
 #   state 'gone'    : definitively not running / different process now occupies that pid
@@ -74,7 +103,10 @@ function SelfStartTicks() {
 #   'unreadable' : I/O error while reading -> refuse
 function Read-JavaPid([string]$runsDir, [string]$run) {
   $pf = "$runsDir\$run\java.pid"
-  if (-not (Test-Path $pf)) { return @{ file = 'absent'; pid = 0; start = -1 } }
+  # r19 P1: presence is decided by Get-FilePresence (fault-capable), NOT by Test-Path false=absent fiction.
+  $pres = Get-FilePresence $pf
+  if ($pres -eq 'absent') { return @{ file = 'absent'; pid = 0; start = -1 } }
+  if ($pres -ne 'readable') { return @{ file = $pres; pid = 0; start = -1 } }   # unreadable/unknown -> caller refuses
   $raw = $null
   try { $raw = (Get-Content $pf -Raw -Encoding UTF8) } catch { return @{ file = 'unreadable'; pid = 0; start = -1 } }
   $t = ([string]$raw).Trim().TrimStart([char]0xFEFF)

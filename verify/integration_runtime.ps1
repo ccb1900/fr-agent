@@ -218,7 +218,8 @@ if ($javaPid -le 0) {
 
 # ============ r18 P1: corrupt java.pid VARIANTS (integer-parseable garbage must NOT become a killable identity) ============
 Write-Output "== S21 corrupt java.pid variants -> RUNTIME_BUSY, decoy untouched, sentinel kept"
-$variants21 = @('not-a-jvm-id', '1234 -1', '1234 0', '0 123456789', '-1 123456789', '1234 123456789 extra')
+$variants21 = @('not-a-jvm-id', '1234 -1', '1234 0', '0 123456789', '-1 123456789', '1234 123456789 extra',
+  '1234   123456789', "1234`t123456789", '99999999999 123456789', '1234 99999999999999999999')
 $bad21 = 0
 $idx21 = 0
 foreach ($v21 in $variants21) {
@@ -258,6 +259,9 @@ $rc23 = $LASTEXITCODE
 if (($out23b -match 'RUNID_EXISTS') -and $rc23 -eq 1) { Pass "S23 explicit duplicate RunId refused (RUNID_EXISTS, exit 1)" } else { Fail "S23 broken: $out23b rc=$rc23" }
 
 # ============ r18 P2: CONCURRENT RunId race - two independent processes, same RunId, exactly one must win ============
+# r19 honesty: the 300ms launch stagger is best-effort - it does NOT strictly prove both callers passed Test-Path
+#   inside the race window. What S24 proves is concurrent invocation + OS create-new single-winner; a deterministic
+#   barrier would need an out-of-prod sync handle (scope-discipline: not added this round).
 Write-Output "== S24 two concurrent hosts race for the SAME RunId -> exactly one wins, other RUNID_EXISTS"
 Reset-Rt
 $s24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb discover -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24a.txt" -RedirectStandardError "$itAbs\s24a.err"
@@ -274,8 +278,11 @@ if ($wins24.Count -eq 1 -and $losers24.Count -eq 1 -and $wins24[0] -ne $losers24
 } else { Fail "S24 broken wins=$wins24 losers=$losers24 outA=$outA24 outB=$outB24" }
 
 # ============ r18 P2: registration-failure fault injection (e2e + white-box) ============
-Write-Output "== S25 pre-spawn registration unusable (pidfile on missing drive) -> rc!=0, NO java spawned"
-$env:FR_AGENT_JAVA_PIDFILE = 'Q:\no-such-drive\bad\java.pid'
+Write-Output "== S25 pre-spawn registration unusable (pidfile PARENT is a regular file - deterministic fault, no drive dependency) -> rc!=0, NO java spawned"
+$s25dir = "$itAbs\s25engine"
+if (Test-Path $s25dir) { Remove-Item $s25dir -Recurse -Force -ErrorAction SilentlyContinue }
+[System.IO.File]::WriteAllText($s25dir, 'regular file blocks the pidfile parent (r19: deterministic, host-independent)', (New-Object System.Text.UTF8Encoding($false)))
+$env:FR_AGENT_JAVA_PIDFILE = "$s25dir\java.pid"
 & "$ROOT\run.ps1" -Script "$itAbs\_decoy_sleep.js" -Heap 640m -NoKill | Out-Null
 $rc25 = $LASTEXITCODE
 Remove-Item env:FR_AGENT_JAVA_PIDFILE -ErrorAction SilentlyContinue
@@ -311,7 +318,44 @@ $pf26c = "$itAbs\s26c\java.pid"
 [System.IO.File]::WriteAllText($pf26c, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
 $r26c = Collect-UnregisteredSpawn $stubC26 $pf26c
 $ok26c = (($r26c -eq 'kept-pending') -and (Test-Path $pf26c))
-if ($ok26a -and $ok26b -and $ok26c) { Pass "S26 unregistered-spawn collector: confirmed=$r26a kept=($r26b/$r26c) fail-closed" } else { Fail "S26 broken a=$ok26a($r26a) b=$ok26b($r26b) c=$ok26c($r26c)" }
+# D) r19 recovery race: Kill throws InvalidOperationException (JVM already exited by itself) but WaitForExit
+#    tells the truth -> the registration MAY be dropped (current r18 code returns kept-pending here = RED-expected)
+$stubD26 = New-Object PSObject
+$stubD26 | Add-Member -MemberType ScriptMethod -Name Kill -Value { throw (New-Object System.InvalidOperationException 'process already exited') }
+$stubD26 | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param([int]$ms) return $true }
+New-Item -ItemType Directory -Force -Path "$itAbs\s26d" | Out-Null
+$pf26d = "$itAbs\s26d\java.pid"
+[System.IO.File]::WriteAllText($pf26d, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
+$r26d = Collect-UnregisteredSpawn $stubD26 $pf26d
+$ok26d = (($r26d -eq 'confirmed') -and (-not (Test-Path $pf26d)))
+if ($ok26a -and $ok26b -and $ok26c -and $ok26d) { Pass "S26 unregistered-spawn collector: a=$r26a b/c=kept(d=$r26d confirmed-exited race fixed)" } else { Fail "S26 broken a=$ok26a($r26a) b=$ok26b($r26b) c=$ok26c($r26c) d=$ok26d($r26d)" }
+
+# ============ r19 P1: file presence classification - "cannot confirm" is NEVER "absent" ============
+Write-Output "== S27 Get-FilePresence 4-state: absent / readable / unreadable-ish unknown via locks & lying paths"
+. "$ROOT\agent\tools\_identity.ps1"   # r19: exposes Get-FilePresence
+New-Item -ItemType Directory -Force -Path "$itAbs\s27" | Out-Null
+$r27a = Get-FilePresence "$itAbs\s27\nope_not_here.pid"                                  # definitively absent
+$rl27 = "$itAbs\s27\plain.txt"
+[System.IO.File]::WriteAllText($rl27, 'readable', (New-Object System.Text.UTF8Encoding($false)))
+$r27b = Get-FilePresence $rl27                                                            # readable
+$lock27 = "$itAbs\s27\locked.active"
+[System.IO.File]::WriteAllText($lock27, '{"x":1}', (New-Object System.Text.UTF8Encoding($false)))
+$fs27 = [System.IO.File]::Open($lock27, [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+$r27c = Get-FilePresence $lock27                                                          # exists but cannot be opened -> NOT absent
+$fs27.Close()
+$bogus27 = "$itAbs\s27\bad|file.pid"
+$lies27 = Test-Path "$bogus27" 2>$null                                                    # Test-Path FOLDS the malformed path error into $false
+$r27d = Get-FilePresence $bogus27                                                         # classify must say unknown, never absent
+if (($r27a -eq 'absent') -and ($r27b -eq 'readable') -and ($r27c -eq 'unknown') -and ($r27d -eq 'unknown') -and ($lies27 -eq $false)) {
+  Pass "S27 presence classification: absent/readable/unknown(locked)/unknown(malformed; Test-Path lied=$lies27)"
+} else { Fail "S27 broken a=$r27a b=$r27b c=$r27c d=$r27d liesTestPath=$lies27" }
+# S27b - black-box holdover: exclusively locked sentinel still refuses (fail-closed behavior must NOT regress)
+Reset-Rt
+[System.IO.File]::WriteAllText("$rt\active.json", '{"runId":"it_s27","ownerPid":999999,"ownerStart":-1,"claimedAt":"now"}', (New-Object System.Text.UTF8Encoding($false)))
+$fs27b = [System.IO.File]::Open("$rt\active.json", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)
+$out27 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s27x" 2>&1 | Select-Object -Last 1
+$fs27b.Close()
+if (($out27 -match 'RUNTIME_BUSY') -and (Test-Path "$rt\active.json")) { Pass "S27b locked sentinel -> RUNTIME_BUSY (fail-closed, not touched)" } else { Fail "S27b broken: $out27" }
 
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })
