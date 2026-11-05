@@ -7,7 +7,10 @@ hs_err_pid*.log
 replay_pid*.log
 
 # 资源产物（cpt 渲染产物 / 截图等）—— 2026-11-03 口径：不进仓库
+# r21b 后例外（golden E2E 审查资产）：docs/cpt-samples/ 的精选模板样张显式白名单入库，
+#   纪律不变：进该目录前必须过凭据扫描（whmeiko|password|jdbc: 零命中，AGENTS 数据纪律）。
 *.cpt
+!docs/cpt-samples/*.cpt
 *.png
 *.jpg
 *.jpeg
