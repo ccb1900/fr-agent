@@ -17,14 +17,12 @@ function Get-AgentConfig {
     RuntimeDir      = "$root\logs\agent\runtime"
     DeployDir       = "$fr\webapps\webroot\WEB-INF\reportlets\fineagent"
     FineDbLck       = "$fr\webapps\webroot\WEB-INF\embed\finedb\db.lck"
-    # r14: OS named mutex = the single-instance guarantee (kernel-enforced mutual exclusion + abandonment on owner crash).
-    #   Files (owner.json/queue/done/history) are RECORDS/state, NOT the mutex. This removes r13's time-based init reclaim
-    #   and corrupt-owner reclaim (both could false-kill a live-but-slow owner). A live holder keeps the mutex so WaitOne
-    #   blocks; only AbandonedMutexException (OS-proven owner death) triggers recovery.
+    # r15: thin single-instance executor. Mutual exclusion = OS named Mutex (kernel). Crash recovery = leftover-process
+    #   IDENTITY check (java.pid pid+StartTime) inside the mutex; refuse when a leftover cannot be confirmed dead.
+    #   No queue/, no OwnerToken, no done/ records (artifact.json is the result truth) - see docs/gpt/r15.md.
     MutexName         = 'fr-agent-fine-report-runtime'
-    Heap              = '1200m'
-    AcquireTimeoutSec = 900     # waiter gives up + reclaims its queue slot after this (never steals a live holder)
-    TaskSuspectSec    = 1800    # a live-owner task older than this => status WARNING only, never kill
+    Heap              = if ($env:FR_AGENT_HEAP) { $env:FR_AGENT_HEAP } else { '1200m' }   # env-overridable (README #47); embedded specs need no j2v8
+    AcquireTimeoutSec = 900     # waiter blocks on the mutex up to this; never steals a live holder
   }
 }
 

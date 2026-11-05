@@ -1,10 +1,11 @@
-# fr_agent.ps1 - stable tool surface for an external AI Agent (r7-B + r10 + r12 + r13 + r14).
+# fr_agent.ps1 - stable tool surface for an external AI Agent (r7-B + r10 + r12 + r13 + r14 + r15).
 # Verbs: discover | resolve | plan | plan2spec | compile(create) | patch(modify) | validate | preview
 # Contract: every verb prints ONE ASCII JSON line {"ok":bool,"runId":"...","result":"logs/agent/runs/<runId>/<verb>.json"};
 #   detailed payload (UTF-8) is written into the per-run dir. Exit 0 = verb AND artifact ok; 1 = failure; 2 = usage.
-# r14: the FineReport runtime section is guarded by an OS named Mutex (single-instance serial). Mutual exclusion is
-#   kernel-enforced; a crashed holder surfaces as AbandonedMutexException (OS-proven death) -> identity-scoped recovery.
-#   Records (owner.json/queue/done/history) are managed by runtime.ps1; the mutex is held HERE across the whole run.
+# r15 THIN single-instance executor: the FineReport runtime section is guarded by an OS named Mutex (kernel mutual
+#   exclusion). Crash recovery is NOT AbandonedMutexException-based (TerminateProcess here frees the mutex silently);
+#   instead runtime.ps1 `enter` inspects a leftover sentinel by PROCESS IDENTITY (confirmed orphan java -> kill exactly
+#   it; cannot confirm -> RUNTIME_BUSY refuse). No queue/owner.json/OwnerToken/done records (artifact.json = result truth).
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview')][string]$Verb,
@@ -37,7 +38,6 @@ New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
 $env:FR_AGENT_HOME = $ROOT
 $env:AGENT_RUN_ID = $RunId
-$OwnerToken = [guid]::NewGuid().ToString('N')
 
 function Emit([bool]$ok, [string]$resultRel) {
   Write-Output ('{"ok":' + $ok.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"' + $resultRel + '"}')
@@ -47,41 +47,24 @@ function WriteAtomic([string]$path, [string]$text) {
   [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
   try { [System.IO.File]::Replace($tmp, $path, $null) } catch { Move-Item -Force $tmp $path }
 }
-# r14: run the FineReport runtime under the OS named mutex. Mutual exclusion is kernel-enforced (WaitOne).
-#   Crash recovery does NOT rely on AbandonedMutexException (TerminateProcess here frees the mutex WITHOUT raising it):
-#   after gaining the mutex, we inspect owner.json; if it names a DIFFERENT run whose owner process is PROVEN dead
-#   (pid+StartTime identity), that predecessor crashed -> identity-scoped recover-previous. A live predecessor still
-#   holds the mutex, so we could not have gained it -> no false reclaim. Returns @{gained; abandoned; result}.
+# r15 thin single-instance executor: acquire OS mutex -> leftover-process check (enter) -> claim sentinel -> run body
+#   -> release sentinel (always, even on body throw) -> release mutex. Mutual exclusion is kernel-enforced; crash
+#   recovery is identity-based inside `enter` (confirmed orphan java killed; unconfirmable -> RUNTIME_BUSY refuse).
+#   No OwnerToken / queue / finalize / businessResult records (artifact.json is the result truth). Returns {gained; busy; result}.
 function Invoke-UnderMutex([scriptblock]$Body) {
   $mtx = New-Object System.Threading.Mutex($false, $cfg.MutexName)
-  $gained = $false; $abandoned = $false; $result = $null
+  $gained = $false; $result = $null; $busy = $false
   try {
     try { $gained = $mtx.WaitOne([TimeSpan]::FromSeconds($cfg.AcquireTimeoutSec)) }
-    catch [System.Threading.AbandonedMutexException] { $gained = $true; $abandoned = $true }
-    if (-not $gained) { return @{ gained = $false; abandoned = $false; result = $null } }
-    # detect a crashed predecessor by owner.json identity (reliable regardless of abandonment semantics)
-    $of = "$($cfg.RuntimeDir)\owner.json"
-    $prev = $null
-    if (Test-Path $of) { try { $prev = Get-Content $of -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $prev = $null } }
-    if ($prev -and [string]$prev.runId -ne $RunId) {
-      $alive = $false
-      try { $pp = [int]$prev.ownerPid; $cur = (Get-Process -Id $pp -ErrorAction Stop).StartTime.Ticks; if (-not ($prev.ownerStart -and [long]$prev.ownerStart -gt 0 -and [long]$prev.ownerStart -ne $cur)) { $alive = $true } } catch { $alive = $false }
-      if (-not $alive) { & $runtimePs1 -Action recover-previous | Out-Null }
-    }
-    $result = & $Body
-    return @{ gained = $true; abandoned = $abandoned; result = $result }
+    catch [System.Threading.AbandonedMutexException] { $gained = $true }
+    if (-not $gained) { return @{ gained = $false; busy = $false; result = $null } }
+    & $runtimePs1 -Action enter -RunId $RunId | Out-Null
+    if ($LASTEXITCODE -ne 0) { $busy = $true; return @{ gained = $true; busy = $true; result = $null } }
+    & $runtimePs1 -Action claim -RunId $RunId -OwnerPid $PID | Out-Null
+    try { $result = & $Body } finally { & $runtimePs1 -Action release -RunId $RunId | Out-Null }
+    return @{ gained = $true; busy = $false; result = $result }
   } finally {
-    if ($gained) {
-      try {
-        $ownerNow = $null
-        $of2 = "$($cfg.RuntimeDir)\owner.json"
-        if (Test-Path $of2) { $ownerNow = (Get-Content $of2 -Raw -Encoding UTF8 | ConvertFrom-Json) }
-        if ($ownerNow -and [string]$ownerNow.runId -eq $RunId -and [string]$ownerNow.ownerToken -eq $OwnerToken) {
-          & $runtimePs1 -Action finalize -RunId $RunId -OwnerToken $OwnerToken -BusinessResult failed | Out-Null
-        }
-      } catch { }
-      try { $mtx.ReleaseMutex() } catch { }
-    }
+    if ($gained) { try { $mtx.ReleaseMutex() } catch { } }
     try { $mtx.Dispose() } catch { }
   }
 }
@@ -152,22 +135,13 @@ switch ($inner) {
     if (-not $Spec) { Write-Output '{"ok":false,"error":"-Spec required"}'; exit 2 }
     $specText = [System.IO.File]::ReadAllText((Join-Path $ROOT $Spec), [System.Text.Encoding]::UTF8)
     $outName = [string]($specText | ConvertFrom-Json).outName
-    # 1. atomic RunId claim (CreateNew) - duplicate in-flight runId rejected before touching the mutex
-    & $runtimePs1 -Action register -RunId $RunId -Verb compile -OwnerPid $PID -OwnerToken $OwnerToken | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNID_INFLIGHT_OR_USAGE"}')
-      exit 1
-    }
-    # 2. run the FineReport runtime under the OS mutex (single-instance serial)
     $body = {
-      & $runtimePs1 -Action mark-running -RunId $RunId -Verb compile -OwnerPid $PID -OwnerToken $OwnerToken -PipelineTag 'make_api.js' | Out-Null
       $env:REPORT_SPEC = $Spec
       $env:FR_AGENT_RESULT = "$runDir\runresult.json"
       $env:RESULT_DUMP = "$runDir\grid.txt"
       $env:FR_AGENT_JAVA_PIDFILE = "$runDir\java.pid"
       $log = "$runDir\compile.log"
-      & "$ROOT\run.ps1" -Script make_api.js -Out $log -NoKill | Out-Null
+      & "$ROOT\run.ps1" -Script make_api.js -Out $log -Heap $cfg.Heap -NoKill | Out-Null
       $rc = $LASTEXITCODE
       Remove-Item env:REPORT_SPEC -ErrorAction SilentlyContinue
       Remove-Item env:FR_AGENT_RESULT -ErrorAction SilentlyContinue
@@ -184,41 +158,26 @@ switch ($inner) {
       WriteAtomic "$runDir\compile.json" ($obj | ConvertTo-Json -Depth 6)
       & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
       $artRc = $LASTEXITCODE
-      $okAll = ($rc -eq 0) -and ($artRc -eq 0)
-      $biz = $(if ($okAll) { 'succeeded' } else { 'failed' })
-      # finalize INSIDE the mutex (owner.json is only touched by the current holder - no cross-run race)
-      & $runtimePs1 -Action finalize -RunId $RunId -OwnerToken $OwnerToken -BusinessResult $biz | Out-Null
-      @{ okAll = $okAll }
+      @{ okAll = (($rc -eq 0) -and ($artRc -eq 0)) }
     }
     $r = Invoke-UnderMutex $body
-    if (-not $r.gained) {
-      & $runtimePs1 -Action unregister -RunId $RunId | Out-Null
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}')
-      exit 1
-    }
-    $okAll = $r.result.okAll
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    $okAll = $r.result.okAll
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/compile.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
   }
   'patch' {
     if (-not $Patch) { Write-Output '{"ok":false,"error":"-Patch required"}'; exit 2 }
-    & $runtimePs1 -Action register -RunId $RunId -Verb patch -OwnerPid $PID -OwnerToken $OwnerToken | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNID_INFLIGHT_OR_USAGE"}')
-      exit 1
-    }
     $body = {
-      & $runtimePs1 -Action mark-running -RunId $RunId -Verb patch -OwnerPid $PID -OwnerToken $OwnerToken -PipelineTag 'patch_main.js' | Out-Null
       $env:TEMPLATE_PATCH = $Patch
       $stagingDir = "$runDir\staging"
       New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
       $env:TEMPLATE_STAGING = $stagingDir
       $env:FR_AGENT_JAVA_PIDFILE = "$runDir\java.pid"
       $log = "$runDir\patch.log"
-      & "$ROOT\runraw.ps1" 'template/patch_main.js' *> $log
+      & "$ROOT\runraw.ps1" 'template/patch_main.js' $cfg.Heap *> $log
       $rc = $LASTEXITCODE
       Remove-Item env:TEMPLATE_PATCH -ErrorAction SilentlyContinue
       Remove-Item env:TEMPLATE_STAGING -ErrorAction SilentlyContinue
@@ -230,20 +189,13 @@ switch ($inner) {
       WriteAtomic "$runDir\patch.json" ($obj | ConvertTo-Json -Depth 8)
       & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
       $artRc = $LASTEXITCODE
-      $okAll = ($rc -eq 0) -and ($artRc -eq 0)
-      $biz = $(if ($okAll) { 'succeeded' } else { 'failed' })
-      & $runtimePs1 -Action finalize -RunId $RunId -OwnerToken $OwnerToken -BusinessResult $biz | Out-Null
-      @{ okAll = $okAll }
+      @{ okAll = (($rc -eq 0) -and ($artRc -eq 0)) }
     }
     $r = Invoke-UnderMutex $body
-    if (-not $r.gained) {
-      & $runtimePs1 -Action unregister -RunId $RunId | Out-Null
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}')
-      exit 1
-    }
-    $okAll = $r.result.okAll
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    $okAll = $r.result.okAll
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/patch.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
   }

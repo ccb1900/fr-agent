@@ -97,3 +97,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 - `release`/recovery 必须校验 **OwnerToken**（错 token 不能删他人锁）；恢复**只杀 CommandLine 匹配 pipelineTag 的 java**（不误杀无关 java），FineDB 锁仅在确认 owner 已死后删。
 - `runtimeState`(queued/running/released/lost) 与 `businessResult`(pending/succeeded/failed) 正交：释放执行权 ≠ 报表成功。
 - 路径/策略单源于 `agent/tools/config.ps1`；`verify/check_ps1_static.ps1` 静态把关（禁硬编路径、ASCII-only）；`scripts/run-integration-tests.ps1` = 静态门 + S1–S19 全链故障注入。
+
+## r15 薄执行器（当前态，覆盖并简化 r13/r14 协议）
+
+单机单实例前提下 Runtime 尽可能薄：**互斥=OS 命名 Mutex；恢复=进程身份判定**（无 queue/OwnerToken/done/FIFO/recover-previous 独立动作，结果真相=artifact.json）。
+
+- compile/modify 临界区：`WaitOne → enter(遗留检测) → claim → run.ps1(-NoKill,记 java.pid) → release → ReleaseMutex`。
+- `enter` 语义：哨兵缺失→放行；损坏/活持有者→`RUNTIME_BUSY` 拒绝（fail-closed，绝不为恢复清哨兵或起第二个 FineReport）；前手确认已死→按 `runs/<runId>/java.pid` 身份杀孤儿 Java（start 不符则放过）。
+- `FR_AGENT_HEAP` env 可覆盖堆（embedded spec 无 j2v8，测试用低堆保证故障注入确定性）。
+- 验收 `verify/integration_runtime.ps1` S1–S17 故障注入（互斥 S2/S4/S15·孤儿身份杀 S5·放过 S14·活锁拒绝 S6·损坏拒绝 S16·排队 S8·patch 证据 S17）。协议详见 `docs/architecture/runtime-supervisor.md`。

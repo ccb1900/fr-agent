@@ -1,13 +1,18 @@
-# integration_runtime.ps1 - r14 acceptance: Runtime Supervisor + Artifact trust, verified by FAULT INJECTION.
-# Three properties (docs/gpt/r14.md sec.6):
-#   P1 mutual exclusion  - at most one FineReport runtime holder at any time (OS named mutex).
-#   P2 recovery safety   - never reclaim a lock / kill a JVM unless the owner is PROVEN dead (identity, not time/corruption).
-#   P3 result trust      - no complete execution+regression evidence => cannot declare success (fail-closed).
-# Full chain: PowerShell -> Nashorn -> Application -> FineReport runtime. -Spec/-Patch are ROOT-RELATIVE. ASCII-only.
-# Exit 0 = all pass.
+# integration_runtime.ps1 - r15 acceptance: THIN single-instance executor, verified by FAULT INJECTION.
+# Three properties (docs/gpt/r15.md):
+#   1 mutual exclusion  - OS named Mutex: concurrent submits run serially, never two FineReport JVMs at once.
+#   2 recovery safety   - after gaining the mutex, inspect the leftover sentinel by PROCESS IDENTITY:
+#                         confirmed orphan (owner dead + our java alive) -> kill exactly that java;
+#                         cannot confirm (live owner, or corrupt sentinel) -> REFUSE (RUNTIME_BUSY), never start a second,
+#                         never scan-all-kill, never auto-clear a possibly-live run.
+#   3 result trust      - contracts fail-closed: missing manifest/regression evidence => not accepted (artifact.json).
+# Full chain: PowerShell -> Nashorn -> Application -> FineReport runtime. -Spec/-Patch ROOT-RELATIVE. ASCII-only.
 $ErrorActionPreference = 'Continue'
 $ROOT = if ($env:FR_AGENT_HOME) { $env:FR_AGENT_HOME } else { 'D:\fineagent' }
 Set-Location $ROOT
+# r15: this host is chronically memory-tight (README #46); embedded sales_demo needs no j2v8, so run test creates at a
+#   lower heap to keep the fault-injection suite deterministic instead of flaky on COMMIT_LIMIT_LOW.
+$env:FR_AGENT_HEAP = '640m'
 . (Join-Path "$ROOT\agent\tools" 'config.ps1')
 $cfg = Get-AgentConfig
 $java = $cfg.Java
@@ -21,19 +26,19 @@ $fail = 0
 function Pass($n) { Write-Output "IT PASS: $n" }
 function Fail($n) { Write-Output "IT FAIL: $n"; $script:fail++ }
 function Reset-Rt() {
+  Remove-Item "$rt\active.json" -Force -ErrorAction SilentlyContinue
   Remove-Item "$rt\owner.json" -Force -ErrorAction SilentlyContinue
   Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
-  Get-ChildItem "$rt\queue\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
-  Get-ChildItem "$rt\done\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
+  if (Test-Path "$rt\queue") { Remove-Item "$rt\queue" -Recurse -Force }
+  if (Test-Path "$rt\done") { Remove-Item "$rt\done" -Recurse -Force }
 }
+function New-Sleeper([int]$sec) { return (Start-Process powershell -ArgumentList '-Command', "Start-Sleep $sec" -PassThru -WindowStyle Hidden) }
+function Start-Ticks($proc) { try { return [long](Get-Process -Id $proc.Id -ErrorAction Stop).StartTime.Ticks } catch { return -1 } }
 function ArtExecOk($rid) {
   $p = "$runs\$rid\artifact.json"; if (-not (Test-Path $p)) { return $null }
   try { return (Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json).execution.ok } catch { return $null }
 }
-function DoneField($rid, $field) {
-  $p = "$rt\done\$rid.json"; if (-not (Test-Path $p)) { return '' }
-  try { return [string](Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json).$field } catch { return '' }
-}
+function Alive($procId) { return [bool](Get-Process -Id $procId -ErrorAction SilentlyContinue) }
 function MaxLiveRuntime() {
   if (-not (Test-Path "$rt\history.log")) { return 0 }
   $live = @{}; $max = 0
@@ -46,13 +51,12 @@ function MaxLiveRuntime() {
   return $max
 }
 
-# baseline: free ONLY the java THIS harness spawned in prior runs (identity-verified via each it_* run's java.pid),
-#   never blanket-kill all java (r14 P2). Each create/patch run writes runs/<runId>/java.pid (pid + StartTime).
+# fresh spec files + identity cleanup of java THIS harness spawned before (via it_*/java.pid), never blanket kill
 Get-ChildItem -Path $runs -Directory -Filter 'it_*' -ErrorAction SilentlyContinue | ForEach-Object {
   $pf = Join-Path $_.FullName 'java.pid'
   if (Test-Path $pf) {
-    $sp = ((Get-Content $pf -Raw -Encoding UTF8).Trim() -split ' ')
-    $jpid = 0; if ($sp.Count -ge 1 -and [int]::TryParse($sp[0], [ref]$jpid)) {
+    $sp = ((Get-Content $pf -Raw -Encoding UTF8).Trim() -split ' '); $jpid = 0
+    if ($sp.Count -ge 1 -and [int]::TryParse($sp[0], [ref]$jpid)) {
       $jstart = -1; if ($sp.Count -ge 2) { [long]::TryParse($sp[1], [ref]$jstart) | Out-Null }
       try { $cur = (Get-Process -Id $jpid -ErrorAction Stop).StartTime.Ticks; if ($jstart -lt 0 -or $cur -eq $jstart) { Stop-Process -Id $jpid -Force -ErrorAction SilentlyContinue } } catch { }
     }
@@ -66,17 +70,87 @@ $salesJson = [System.IO.File]::ReadAllText("$ROOT\examples\report-spec\sales_dem
 [System.IO.File]::WriteAllText("$itAbs\a.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_A"'), (New-Object System.Text.UTF8Encoding($false)))
 [System.IO.File]::WriteAllText("$itAbs\b.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_B"'), (New-Object System.Text.UTF8Encoding($false)))
 [System.IO.File]::WriteAllText("$itAbs\bad.json", ($salesJson -replace '"aggregation":\s*"sum"', '"aggregation": "avg"'), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$itAbs\_decoy_sleep.js", "Java.type('java.lang.Thread').sleep(60000);`n", (New-Object System.Text.UTF8Encoding($false)))
 
-# ================= P1 mutual exclusion: concurrent creates are serial =================
+# ================= P1 mutual exclusion =================
 Write-Output "== S1/2/4 concurrent creates serial (mutual exclusion)"
 $jobA = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s1a"
 $jobB = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/b.json","it_s1b"
-$null = Wait-Job $jobA,$jobB; $outA = Receive-Job $jobA; $outB = Receive-Job $jobB; Remove-Job $jobA,$jobB
-Write-Output "  A: $outA"; Write-Output "  B: $outB"
-if ((ArtExecOk "it_s1a") -eq $true -and (ArtExecOk "it_s1b") -eq $true) { Pass "S2 both creates succeeded (serial auto-start)" } else { Fail "S2 create not ok A=$(ArtExecOk 'it_s1a') B=$(ArtExecOk 'it_s1b')" }
-if ((MaxLiveRuntime) -le 1) { Pass "S4 mutual exclusion maxLiveRuntime=$(MaxLiveRuntime) (<=1)" } else { Fail "S4 parallel runtimes maxLiveRuntime=$(MaxLiveRuntime)" }
+$null = Wait-Job $jobA,$jobB; Receive-Job $jobA,$jobB | Out-Null; Remove-Job $jobA,$jobB
+if ((ArtExecOk "it_s1a") -eq $true -and (ArtExecOk "it_s1b") -eq $true) { Pass "S2 both creates succeeded (serial)" } else { Fail "S2 not ok A=$(ArtExecOk 'it_s1a') B=$(ArtExecOk 'it_s1b')" }
+if ((MaxLiveRuntime) -le 1) { Pass "S4 mutual exclusion maxLiveRuntime=$(MaxLiveRuntime)" } else { Fail "S4 parallel runtimes $(MaxLiveRuntime)" }
 
-# ================= P1: three concurrent creates + failure isolation =================
+# ================= P2 recovery safety: crashed predecessor + ORPHAN JAVA killed by identity =================
+Write-Output "== S5 crashed owner + orphan java -> enter kills exactly that java, next proceeds"
+Reset-Rt
+$decoy = Start-Process $java -ArgumentList '-cp', $jar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$runs\it_ghost" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_ghost\java.pid", ($decoy.Id.ToString() + ' ' + $decoy.StartTime.Ticks.ToString()), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_ghost'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s5" 2>&1
+$orphanDead = -not (Alive $decoy.Id)
+if ($orphanDead -and (ArtExecOk "it_s5") -eq $true -and -not (Test-Path "$rt\active.json")) { Pass "S5 orphan java killed by identity, sentinel cleared, next run completed" } else { Fail "S5 broken orphanDead=$orphanDead s5=$(ArtExecOk 'it_s5')" }
+
+# ================= P2 recovery safety: identity mismatch spares an unrelated java =================
+Write-Output "== S14 identity mismatch -> do NOT kill a reused-pid/unrelated java"
+Reset-Rt
+$decoy = Start-Process $java -ArgumentList '-cp', $jar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$runs\it_ghost" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_ghost\java.pid", ($decoy.Id.ToString() + ' ' + ($decoy.StartTime.Ticks + 999).ToString()), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_ghost'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$null = & $runtimePs1 -Action enter -RunId "it_new" 2>&1
+$spared = Alive $decoy.Id
+if ($spared) { Pass "S14 identity mismatch spared the java (not killed)" } else { Fail "S14 killed a non-matching java" }
+Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= P2 recovery safety: live owner + free mutex -> REFUSE (RUNTIME_BUSY) =================
+Write-Output "== S6 live-owner sentinel but free mutex -> refuse, never start a second, never clear"
+Reset-Rt
+$sl = New-Sleeper 30
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_live'; ownerPid=$sl.Id; ownerStart=(Start-Ticks $sl); claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$out6 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s6" 2>&1 | Select-Object -Last 1
+Write-Output "  S6: $out6"
+$refused = ($out6 -match 'RUNTIME_BUSY') -and (-not (Test-Path "$runs\it_s6\compile.json")) -and (Test-Path "$rt\active.json")
+if ($refused) { Pass "S6 refused (RUNTIME_BUSY), did not start, did not clear live sentinel" } else { Fail "S6 broken: $out6" }
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= P2 recovery safety: corrupt sentinel -> refuse (fail-closed) =================
+Write-Output "== S16 corrupt sentinel -> refuse, never auto-clear"
+Reset-Rt
+[System.IO.File]::WriteAllText("$rt\active.json", "{ this is not valid json", (New-Object System.Text.UTF8Encoding($false)))
+$out16 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s16" 2>&1 | Select-Object -Last 1
+$refused16 = ($out16 -match 'RUNTIME_BUSY') -and (Test-Path "$rt\active.json")
+if ($refused16) { Pass "S16 corrupt sentinel -> RUNTIME_BUSY, sentinel preserved (fail-closed)" } else { Fail "S16 broken: $out16" }
+Reset-Rt
+
+# ================= P2 mutual exclusion under a live holder: waiter queues =================
+Write-Output "== S8 live holder blocks waiter (queued, not parallel)"
+Reset-Rt
+$holder = Start-Job -ScriptBlock {
+  param($root)
+  Set-Location $root
+  . (Join-Path "$root\agent\tools" 'config.ps1'); $c = Get-AgentConfig
+  $m = New-Object System.Threading.Mutex($false, $c.MutexName)
+  if ($m.WaitOne(5000)) {
+    & "$root\agent\tools\runtime.ps1" -Action claim -RunId "it_holder" -OwnerPid $PID | Out-Null
+    Start-Sleep 5
+    & "$root\agent\tools\runtime.ps1" -Action release -RunId "it_holder" | Out-Null
+    $m.ReleaseMutex()
+  }
+} -ArgumentList $ROOT
+Start-Sleep -Milliseconds 800
+$jobC = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s8"
+Start-Sleep -Seconds 3
+$queuedMid = -not (Test-Path "$runs\it_s8\compile.json")
+$null = Wait-Job $holder -Timeout 20
+$null = Wait-Job $jobC -Timeout 120; Receive-Job $jobC | Out-Null; Remove-Job $holder,$jobC
+if ($queuedMid -and (ArtExecOk "it_s8") -eq $true) { Pass "S8 waiter queued while live holder held mutex, then completed" } else { Fail "S8 broken queuedMid=$queuedMid done=$(ArtExecOk 'it_s8')" }
+
+# ================= P1 mutual exclusion + isolation: three concurrent =================
 Write-Output "== S15 three concurrent creates"
 Reset-Rt
 $j1 = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s15a"
@@ -84,118 +158,16 @@ $j2 = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\too
 $j3 = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/bad.json","it_s15bad"
 $null = Wait-Job $j1,$j2,$j3; Receive-Job $j1,$j2,$j3 | Out-Null; Remove-Job $j1,$j2,$j3
 $goods = ((ArtExecOk "it_s15a") -eq $true) -and ((ArtExecOk "it_s15b") -eq $true)
-$badfail = (ArtExecOk "it_s15bad") -ne $true
-if ($goods -and $badfail -and ((MaxLiveRuntime) -le 1)) { Pass "S15 three tasks serial, goods ok, bad isolated" } else { Fail "S15 broken goods=$goods badfail=$badfail maxLive=$(MaxLiveRuntime)" }
+if ($goods -and ((ArtExecOk "it_s15bad") -ne $true) -and ((MaxLiveRuntime) -le 1)) { Pass "S15 three serial, goods ok, bad isolated" } else { Fail "S15 broken goods=$goods maxLive=$(MaxLiveRuntime)" }
 
-# ================= P1 atomic RunId claim: two concurrent register same RunId -> exactly one wins =================
-Write-Output "== S18 duplicate RunId concurrent register (atomic CreateNew)"
-Reset-Rt
-$r1 = Start-Job -ScriptBlock { param($rp,$id) & $rp -Action register -RunId $id -Verb compile -OwnerToken 't1' 2>&1 | Select-Object -Last 1 } -ArgumentList $runtimePs1,"it_dup"
-$r2 = Start-Job -ScriptBlock { param($rp,$id) & $rp -Action register -RunId $id -Verb compile -OwnerToken 't2' 2>&1 | Select-Object -Last 1 } -ArgumentList $runtimePs1,"it_dup"
-$null = Wait-Job $r1,$r2; $o1 = Receive-Job $r1; $o2 = Receive-Job $r2; Remove-Job $r1,$r2
-$wins = 0; foreach ($o in @($o1,$o2)) { if ($o -match '"registered":true') { $wins++ } }
-$inflight = 0; foreach ($o in @($o1,$o2)) { if ($o -match 'RUNID_INFLIGHT') { $inflight++ } }
-if ($wins -eq 1 -and $inflight -eq 1) { Pass "S18 exactly one register wins (wins=$wins inflight=$inflight)" } else { Fail "S18 atomic claim broken wins=$wins inflight=$inflight o1=$o1 o2=$o2" }
-Reset-Rt
-
-# ================= P2 recovery safety: crashed holder -> abandoned -> recovered as LOST/FAILED (never success) =================
-Write-Output "== S5 crashed holder recovered as lost/failed"
-Reset-Rt
-$crashTok = [guid]::NewGuid().ToString('N')
-$crasher = Start-Job -ScriptBlock {
-  param($root, $rid, $tok)
-  Set-Location $root
-  . (Join-Path "$root\agent\tools" 'config.ps1'); $c = Get-AgentConfig
-  $m = New-Object System.Threading.Mutex($false, $c.MutexName)
-  [System.IO.File]::WriteAllText("$root\logs\agent\it\crasher.pid", $PID.ToString())
-  if ($m.WaitOne(5000)) {
-    & "$root\agent\tools\runtime.ps1" -Action mark-running -RunId $rid -Verb compile -OwnerPid $PID -OwnerToken $tok | Out-Null
-    Start-Sleep 60   # hold the mutex
-  }
-} -ArgumentList $ROOT,"it_ghost",$crashTok
-# wait until the crasher has acquired the mutex AND written owner.json, then HARD-KILL its process (a graceful Stop-Job
-#   would let the .NET Mutex finalizer release cleanly => no AbandonedMutexException; only a real process death abandons it)
-$seen = $false
-for ($i = 0; $i -lt 40; $i++) { if (Test-Path "$rt\owner.json") { $seen = $true; break }; Start-Sleep -Milliseconds 250 }
-$crashPid = 0; if (Test-Path "$itAbs\crasher.pid") { [int]::TryParse((Get-Content "$itAbs\crasher.pid" -Raw).Trim(), [ref]$crashPid) | Out-Null }
-if ($crashPid -gt 0) { Stop-Process -Id $crashPid -Force -ErrorAction SilentlyContinue }
-Remove-Job $crasher -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500   # let the OS mark the mutex abandoned
-# a new create must observe abandonment, recover the ghost (lost/failed), then complete
-$null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s5" 2>&1
-$ghostState = DoneField "it_ghost" "runtimeState"; $ghostBiz = DoneField "it_ghost" "businessResult"
-if ($seen -and $ghostState -eq 'lost' -and $ghostBiz -eq 'failed' -and (ArtExecOk "it_s5") -eq $true) { Pass "S5 crashed holder recovered lost/failed (never success), new run completed" } else { Fail "S5 recovery broken seen=$seen ghost=$ghostState/$ghostBiz s5=$(ArtExecOk 'it_s5')" }
-Reset-Rt
-
-# ================= P2 recovery safety: live holder blocks a waiter (never reclaimed) =================
-Write-Output "== S8 live holder blocks waiter (no false reclaim)"
-Reset-Rt
-$holdTok = [guid]::NewGuid().ToString('N')
-$holder = Start-Job -ScriptBlock {
-  param($root, $rid, $tok)
-  Set-Location $root
-  . (Join-Path "$root\agent\tools" 'config.ps1'); $c = Get-AgentConfig
-  $m = New-Object System.Threading.Mutex($false, $c.MutexName)
-  if ($m.WaitOne(5000)) {
-    & "$root\agent\tools\runtime.ps1" -Action mark-running -RunId $rid -Verb compile -OwnerPid $PID -OwnerToken $tok | Out-Null
-    Start-Sleep 6
-    & "$root\agent\tools\runtime.ps1" -Action finalize -RunId $rid -OwnerToken $tok -BusinessResult succeeded | Out-Null
-    $m.ReleaseMutex()
-  }
-} -ArgumentList $ROOT,"it_holder",$holdTok
-Start-Sleep -Milliseconds 800   # let holder acquire + mark-running
-$jobC = Start-Job -ScriptBlock { param($r,$s,$id) Set-Location $r; & "$r\agent\tools\fr_agent.ps1" -Verb create -Spec $s -RunId $id 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s8"
-Start-Sleep -Seconds 3
-$queuedMid = -not (Test-Path "$runs\it_s8\compile.json")
-$recInHist = (Test-Path "$rt\history.log") -and ((Get-Content "$rt\history.log" -Encoding ASCII) -match 'RECOVER')
-$null = Wait-Job $holder -Timeout 20
-$null = Wait-Job $jobC -Timeout 120; Receive-Job $jobC | Out-Null; Remove-Job $holder,$jobC
-if ($queuedMid -and -not $recInHist -and (ArtExecOk "it_s8") -eq $true) { Pass "S8 live holder blocked waiter (queued, not reclaimed), waiter completed after release" } else { Fail "S8 broken queuedMid=$queuedMid recovered=$recInHist done=$(ArtExecOk 'it_s8')" }
-Reset-Rt
-
-# ================= P2 recovery safety: identity-scoped JVM kill (never all java) =================
-Write-Output "== S14 recovery kills only the identity-matched JVM"
-Reset-Rt
-[System.IO.File]::WriteAllText("$itAbs\_decoy_sleep.js", "Java.type('java.lang.Thread').sleep(60000);`n", (New-Object System.Text.UTF8Encoding($false)))
-New-Item -ItemType Directory -Force -Path "$runs\it_s14a" | Out-Null
-New-Item -ItemType Directory -Force -Path "$runs\it_s14b" | Out-Null
-$decoy = Start-Process $java -ArgumentList '-cp', $jar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
-Start-Sleep -Seconds 1
-$dpid = $decoy.Id; $dstart = $decoy.StartTime.Ticks
-# case A: java.pid has WRONG start ticks -> must NOT kill the decoy (PID reuse guard)
-[System.IO.File]::WriteAllText("$rt\owner.json", (@{ runId='it_s14a'; verb='compile'; ownerPid=999999; ownerStart=-1; ownerToken='ta'; pipelineTag='make_api.js'; acquiredAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
-[System.IO.File]::WriteAllText("$runs\it_s14a\java.pid", ($dpid.ToString() + ' ' + ($dstart + 12345).ToString()))
-$null = & $runtimePs1 -Action recover-previous 2>&1
-$aliveAfterMismatch = [bool](Get-Process -Id $dpid -ErrorAction SilentlyContinue)
-# case B: java.pid has EXACT identity -> must kill it
-[System.IO.File]::WriteAllText("$rt\owner.json", (@{ runId='it_s14b'; verb='compile'; ownerPid=999999; ownerStart=-1; ownerToken='tb'; pipelineTag='make_api.js'; acquiredAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
-[System.IO.File]::WriteAllText("$runs\it_s14b\java.pid", ($dpid.ToString() + ' ' + $dstart.ToString()))
-$null = & $runtimePs1 -Action recover-previous 2>&1
-Start-Sleep -Milliseconds 400
-$deadAfterMatch = -not (Get-Process -Id $dpid -ErrorAction SilentlyContinue)
-if ($aliveAfterMismatch -and $deadAfterMatch) { Pass "S14 identity-scoped kill: mismatched start spared, exact identity killed" } else { Fail "S14 broken mismatchSpared=$aliveAfterMismatch exactKilled=$deadAfterMatch" }
-Stop-Process -Id $dpid -Force -ErrorAction SilentlyContinue
-Reset-Rt
-
-# ================= P2 recovery safety: corrupt/missing owner + free mutex -> NO false success =================
-Write-Output "== S19 corrupt owner.json with free mutex -> not a false reclaim/success"
-Reset-Rt
-New-Item -ItemType Directory -Force -Path "$rt" | Out-Null
-[System.IO.File]::WriteAllText("$rt\owner.json", "{ this is not valid json", (New-Object System.Text.UTF8Encoding($false)))
-$recOut = & $runtimePs1 -Action recover 2>&1 | Select-Object -Last 1
-if ($recOut -match 'NO_OWNER_RECORD' -or $recOut -match '"recovered":false') { Pass "S19 corrupt owner.json fail-closed (no fabricated success): $recOut" } else { Fail "S19 corrupt owner mishandled: $recOut" }
-Reset-Rt
-
-# ================= P3 result trust: patch manifest missing -> artifact NOT accepted =================
-Write-Output "== S17 patch missing manifest -> fail-closed acceptance"
+# ================= P3 result trust: patch missing manifest -> fail-closed =================
+Write-Output "== S17 patch missing manifest -> not accepted"
 Reset-Rt
 New-Item -ItemType Directory -Force -Path "$runs\it_s17" | Out-Null
 [System.IO.File]::WriteAllText("$runs\it_s17\patch.json", (@{ tool='patch'; runId='it_s17'; ok=$true; exit=0; patch='x.json'; manifest=$null } | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
-$env:AGENT_RUN_ID = 'it_s17'; $env:FR_AGENT_HOME = $ROOT
-$env:AGENT_PATCH = "$runs\it_s17\patch.json"
+$env:AGENT_RUN_ID = 'it_s17'; $env:FR_AGENT_HOME = $ROOT; $env:AGENT_PATCH = "$runs\it_s17\patch.json"
 & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js" | Out-Null
-$art = Get-Content "$runs\it_s17\artifact.json" -Raw -Encoding UTF8 | ConvertFrom-Json
-if ($art.execution.ok -ne $true) { Pass "S17 missing-manifest patch execution.ok=false (fail-closed)" } else { Fail "S17 missing manifest treated as success" }
+if ((ArtExecOk "it_s17") -ne $true) { Pass "S17 missing-manifest patch not accepted (fail-closed)" } else { Fail "S17 missing manifest treated as success" }
 Remove-Item env:AGENT_PATCH -ErrorAction SilentlyContinue
 Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
 

@@ -639,3 +639,12 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **软崩溃安全网**：fr_agent finally 若 owner.json 仍指本 run（body 抛出未 finalize）→ 补 finalize failed，绝不留 phantom running 被误当成功。
 - **验收**：`verify/integration_runtime.ps1` **S1–S19 三性质故障注入全绿**（互斥 S2/S4/S15·原子 RunId S18·崩溃恢复 S5·活锁不回收 S8·身份化杀 S14·损坏 fail-closed S19·patch 证据 S17）；真实 patch 端到端仍验收（fail-closed 未误伤）；静态门 failures=0；fast 13 GREEN、scan 48、R1–R8、负门 5 路、默认双铁证 CBEB42E3/A8EF39AB 逐字节。
 - **r14 原则**：不扩 Runtime 功能面（无任务中心/持久化调度/分布式队列/重试引擎）；转向验证更底层并发不变量——每条不变量配主动制造故障并证明系统正确拒绝的测试，不以 GREEN 自证。三性质（互斥安全/恢复安全/结果可信）站稳。
+
+
+#86 r15「Runtime 与 Artifact 双边界审查·自研基础设施减法」落地批（2026-11-05，外部审查 r15.md 令执行；基准 main/f7c8d74；docs/gpt/r15.md 入库）：
+- **架构决策（先核对代码再断言可删，r15 §5）**：全仓扫描确认 queue/owner.json/OwnerToken/done/recover-previous 仅 runtime.ps1+fr_agent.ps1 自用、无外部依赖 → 四决策表：保留 OS Named Mutex + java.pid（FineReport 特有边界）；替换 owner.json→薄 active.json（仅身份）；删除 queue/、OwnerToken、RUNID_INFLIGHT、done/记录、runtimeState/businessResult、recover-previous 独立动作、FIFO；补充 enter 遗留进程身份检测（确认孤儿→身份杀；不可确认→拒绝）。
+- **关键洞见（r15 §3）**：Mutex 被 OS 释放 ≠ Java 进程退出——PowerShell 宿主崩溃后 Java 子进程可能仍存活占 FineDB。故恢复走**进程身份（pid+StartTime）**判定，不依赖 abandoned 信号（本机实测 TerminateProcess 后 Mutex 变空闲不抛 AbandonedMutexException）。活持有者/损坏哨兵→RUNTIME_BUSY 拒绝（fail-closed，绝不为"恢复"清哨兵或起第二个 FineReport）。
+- **薄执行器流程**（r15 §4）：WaitOne→enter(遗留检测)→claim(active.json 身份)→run.ps1(-NoKill,记 java.pid)→create/modify_report→release→ReleaseMutex。无 register/finalize/OwnerToken/queue。
+- **★审查发现（故障注入的价值兑现）**：S5 崩溃恢复测试抓到 `IdentityAlive([int]$pid,…)` 参数撞 PowerShell 自动变量 `$PID`（只读）→赋值 VariableNotWritable→身份判定失效→孤儿 Java 没被杀——**与 r13 OwnerAlive 完全同款陷阱**，正因先造验证器（S5 主动制造"前手崩溃+孤儿 Java 存活"）才当场暴露。修=参数改名 $procId。另 FR_AGENT_HEAP env（embedded 无 j2v8，测试低堆保确定性）。
+- **保留的非基础设施（领域逻辑，非调度）**：contracts.js patch/create fail-closed、termnorm.js 候选契约归一、capability_manifest 五层——r15 只减自研调度基础设施，不动这些解决报表特有问题域的逻辑。
+- **验收**：`verify/integration_runtime.ps1` **S1–S17 全绿**（互斥 S2/S4/S15·孤儿身份杀 S5·放过 S14·活锁拒绝 S6·损坏拒绝 S16·排队 S8·patch 证据 S17）；静态门/fast13/scan48/R1–R8 GREEN；真实 create/patch 端到端仍验收；默认双铁证 CBEB42E3/A8EF39AB 逐字节。
