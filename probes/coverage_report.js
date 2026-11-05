@@ -154,18 +154,106 @@ function carrierHit(list) {
 
 // ---------- 生成文档 ----------
 function tableRow(cells) { return '| ' + cells.join(' | ') + ' |'; }
-var A = [], B = [], C = [];
+var A = [], B = [], C = [], D = [];
 A.push('## A. 缺口总账（demo 类级，按演示库 240 张 cpt 引用频次倒序；也是批计划排期依据）');
+A.push('');
+A.push('> r17 对齐口径：**参考批次=排期归属（README 引证），不等于探针已认到实现；实现状态以 状态 列为准**。');
+A.push('> 批次↔按键级实认交叉核对见 D 表；**版本包名差异 10 类（First/Previous/Next/Last/PageNavi/Export/Print/FlashPrint/Email/TemplateIdAttrMark）=demo 旧包名 vs 引擎新包名，功能非真缺（#81 已核）**。');
+A.push('> 漏账.域 条目=当前无 README 批定义背书，保留显式漏账标记、不硬编归属。');
 A.push('');
 A.push(tableRow(['demo类', '频次', '状态', '参考批次']));
 A.push('|---|---|---|---|');
 // 批归属索引：家→键短名全等先查，再按全限定名先查
 var IDX = {};
 FAMILIES.forEach(function (f) { f.keys.forEach(function (k) { IDX[String(k).split('.').pop()] = f; }); });
+
+// r17 对齐增强：参考批次逐类补全（2026-11-05，README #72/#75/#79/#80/#81 引证；键=全限定名）。
+//   纪律：只按 README 写明的批定义归属；没有批定义背书的标 "漏账·<域>(需排)"，不硬编。
+//   版本包名差异 10 类=root 坐实：引擎在 web.button(.page).* / iofile.attr.*（object.js 1137-1149/904），
+//   demo 记 web.ui.impl.* / iofileattr = 旧包名，功能非真缺（#81 "其中 10 个是版本包名差异非缺类"）。
+var BATCH_CLASS = {
+  // —— 批B后继·装饰深水区（#600 工单头部点名 4 类）——
+  'com.fr.plugin.chart.base.AttrTooltipRichText': '批B后继(#600 工单头部,未排)',
+  'com.fr.base.chart.chartdata.model.NormalDataModel': '批B后继(#600 工单头部,未排)',
+  'com.fr.chart.base.AttrBorder': '批B后继(#600 工单头部,未排)',
+  'com.fr.plugin.chart.attr.axis.VanChartAxis': '批B后继(#600 工单头部,未排)',
+  'com.fr.plugin.chart.attr.axis.VanChartValueAxis': '批B后继(#600 工单头部,未排)',
+  // —— 批B后继·tooltip/axis/label 深水区（#600 "tooltip/axis/label 装饰深水区"）——
+  'com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipSummaryValueFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipXFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipSizeFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.base.format.AttrTooltipYFormat': '批B后继·tooltip 深水区(未排)',
+  'com.fr.plugin.chart.scatter.attr.ScatterAttrTooltip': '批B后继·tooltip 深水区(未排)',
+  'com.fr.chart.chartattr.CategoryAxis': '批B后继·axis 装饰深水区(未排)',
+  'com.fr.chart.chartattr.ValueAxis': '批B后继·axis 装饰深水区(未排)',
+  'com.fr.plugin.chart.attr.axis.VanChartAlertValue': '批B后继·axis/标记深水区(未排)',
+  'com.fr.plugin.chart.base.AttrLabelDetail': '批B后继·label 装饰深水区(未排)',
+  // —— 批B后继·图表 attr 装饰域（批B 同域 Attr 类，构串类）——
+  'com.fr.plugin.chart.base.AttrSeriesImageBackground': '批B后继·chart attr 装饰(未排)',
+  'com.fr.chart.base.AttrBackground': '批B后继·chart attr 装饰(未排)',
+  'com.fr.chart.base.AttrContents': '批B后继·chart attr 装饰(未排)',
+  'com.fr.plugin.chart.base.AttrBorderWithAlpha': '批B后继·chart attr 装饰(未排)',
+  'com.fr.plugin.chart.base.AttrEffect': '批B后继·chart attr 装饰(未排)',
+  'com.fr.plugin.chart.base.AttrMarkerAlpha': '批B后继·chart attr 装饰(未排)',
+  'com.fr.plugin.chart.base.AttrAreaSeriesFillColorBackground': '批B后继·chart attr 装饰(未排)',
+  // —— 批I（地图/极端/热链挂账，#79/#597）——
+  'com.fr.plugin.chart.map.attr.AttrMapLabel': '批I(挂账,#79/#597)',
+  'com.fr.plugin.chart.map.attr.AttrMapTooltip': '批I(挂账,#79/#597)',
+  'com.fr.plugin.chart.map.data.VanMapMoreNameCDDefinition': '批I(挂账,#79/#597)',
+  'com.fr.plugin.chart.map.VanChartMapPlot': '批I(挂账,#79/#597 GIS 底图)',
+  'com.fr.plugin.chart.map.line.condition.AttrCurve': '批I(挂账, map.line 域,#79)',
+  'com.fr.plugin.chart.map.line.condition.AttrLineEffect': '批I(挂账, map.line 域,#79)',
+  'com.fr.plugin.chart.heatmap.VanChartHeatMapPlot': '批I(挂账,#79; 核心 heatmap 包全做)',
+  'com.fr.chart.web.ChartHyperRelateCellLink': '批I(挂账,#79/#581 图表热链随地图批)',
+  'com.fr.plugin.chart.bubble.attr.VanChartAttrBubble': '批I后继·bubble 属性(未排; bubble plot 已收 #79)',
+  // —— 批J（Poly 挂账，#80/#586）——
+  'com.fr.report.poly.PolyECBlock': '批J(挂账,#80/#586 块面 API 未探全)',
+  'com.fr.report.poly.PolyWorkSheet': '批J(挂账,#80/#586 块面 API 未探全)',
+  // —— 批F（填报后继，#554/#558/#600）——
+  'com.fr.js.Commit2DBJavaScript': '批F(#75 挪填报章,未排)',
+  'com.fr.report.write.ValueVerifier': '批F后继·Verifier 族工单(#558/#600)',
+  'com.fr.data.VerifyItem': '批F后继·Verifier 族工单(#557 Verifier≠VerifyItem 教案)',
+  'com.fr.write.config.DeleteConfig': '批F后继·WriteActor DML 工单(#558/#600)',
+  'com.fr.write.config.UpdateConfig': '批F后继·WriteActor DML 工单(#558/#600)',
+  'com.fr.report.web.button.write.DeleteColumnRow': '批F后继·write 按钮(未排)',
+  'com.fr.report.web.button.write.CustomizeImportExcelData': '批F后继·write 按钮(未排)',
+  'com.fr.report.web.button.write.ClearStashedButton': '批F后继·write 按钮(未排)',
+  'com.fr.report.web.button.write.StashButton': '批F后继·write 按钮(未排)',
+  // —— 批D（字典凭据注入工单，#539/#600）——
+  'com.fr.data.impl.DatabaseDictionary': '批D(凭据注入工单,#539)',
+  'com.fr.data.impl.DynamicSQLDict': '批D(凭据注入工单,#539)',
+  'com.fr.general.date.FineDateFormat': '批D后继·格式域扩项(未排; SimpleDateFormatThreadSafe 已收 #74)',
+  // —— 批A（定性不降级，README #45/#515）——
+  'com.fr.data.condition.ObjectCondition': '批A(定性:cell 高亮面已覆盖,数据集级过滤仍缺口,#45/#515)',
+  // —— 既有·版本包名差异 10 类（#81 已核非真缺；引擎 web.button(.page).* / iofile.attr.*）——
+  'com.fr.report.web.ui.impl.page.First': '既有·版本包名差异(引擎=web.button.page.First,#81 已核)',
+  'com.fr.report.web.ui.impl.page.Previous': '既有·版本包名差异(引擎=web.button.page.Previous,#81 已核)',
+  'com.fr.report.web.ui.impl.page.Next': '既有·版本包名差异(引擎=web.button.page.Next,#81 已核)',
+  'com.fr.report.web.ui.impl.page.Last': '既有·版本包名差异(引擎=web.button.page.Last,#81 已核)',
+  'com.fr.report.web.ui.impl.page.PageNavi': '既有·版本包名差异(引擎=web.button.page.PageNavi,#81 已核)',
+  'com.fr.report.web.ui.impl.Export': '既有·版本包名差异(引擎=web.button.Export,#81 已核)',
+  'com.fr.report.web.ui.impl.Print': '既有·版本包名差异(引擎=web.button.Print,#81 已核)',
+  'com.fr.report.web.ui.impl.FlashPrint': '既有·版本包名差异(引擎=web.button.FlashPrint,#81 已核)',
+  'com.fr.report.web.ui.impl.Email': '既有·版本包名差异(引擎=web.button.Email,#81 已核)',
+  'com.fr.base.iofileattr.TemplateIdAttrMark': '既有·版本包名差异(引擎=iofile.attr.TemplateIdAttrMark,#81 已核)',
+  // —— 漏账·无 README 批定义背书（保留漏账标记，不硬编归属）——
+  'com.fr.chart.chartattr.ChartCommonCondition': '漏账·图表条件(需批定义后归属)',
+  'com.fr.plugin.chart.custom.VanChartCustomPlot': '漏账·组合图(需批定义后归属)',
+  'com.fr.form.ui.MultiFileEditor': '漏账·编辑器扩项(需批定义后归属)',
+  'com.fr.report.web.button.form.TreeNodeToggleButton': '漏账·表单树控件(需批定义后归属)',
+  'com.fr.form.ui.CustomToolBarButton': '漏账·工具条按钮(需批定义后归属)',
+  'com.fr.data.impl.ExcelTableData': '漏账·数据集(需批定义后归属)',
+  'com.fr.data.impl.RecursionTableData': '漏账·数据集(需批定义后归属)',
+  'com.fr.chartx.data.DataSetDefinition': '漏账·chartx 数据(需批定义后归属)',
+  'com.fr.base.io.FileAttrErrorMarker': '漏账·IO 杂项(需批定义后归属)'
+};
 function batchOf(fq) {
-  var fam = FAMILIES.filter(function (f) { return f.keys.indexOf(fq) >= 0; })[0]
-    || IDX[String(fq).split('.').pop()];
-  return fam ? fam.batch : '(漏账：批排期时人工归入)';
+  return BATCH_CLASS[fq]
+    || (FAMILIES.filter(function (f) { return f.keys.indexOf(fq) >= 0; })[0] || IDX[String(fq).split('.').pop()] || {}).batch
+    || '(漏账：批排期时人工归入)';
 }
 MISSING.forEach(function (r) { A.push(tableRow([r.fq, String(r.n), 'missing', batchOf(r.fq)])); });
 PARTIAL.forEach(function (r) { A.push(tableRow([r.fq, String(r.n), 'partial', batchOf(r.fq)])); });
@@ -215,6 +303,44 @@ var tagRows = Object.keys(TAGS).filter(function (t) { return TAGS[t] > 0; }).map
 });
 C.push(tagRows.join('\n'));
 
+// ---------- D. 批次↔探针对齐（r17）：批标记是排期归属，键/类级探针实认才是实现状态 ----------
+var DCODE_ORDER = ['既有', 'v4.2', '批A', '批B', '批C', '批D', '批E', '批F', '批G', '批H', '批I', '批J', '漏账', '其他'];
+function batchCode(lbl) {
+  var m = String(lbl).match(/批[A-J]|既有|v4\.2|漏账/);
+  return m ? m[0] : '其他';
+}
+var DMAP = {};
+DCODE_ORDER.forEach(function (c) { DMAP[c] = { keyFull: 0, keyMiss: [], tags: [], clsP: 0, clsM: 0, readmes: [] }; });
+FAMILIES.forEach(function (f) {
+  var d = DMAP[batchCode(f.batch)];
+  d.tags.push(f.tag);
+  if (f.readme && d.readmes.indexOf(f.readme) < 0) d.readmes.push(f.readme);
+  f.keys.forEach(function (k) {
+    if (classifyToken(k) === 'full') d.keyFull++;
+    else d.keyMiss.push(k);
+  });
+});
+ledger.forEach(function (r) {
+  if (r.cat === 'partial') DMAP[batchCode(batchOf(r.fq))].clsP++;
+  else if (r.cat === 'missing') DMAP[batchCode(batchOf(r.fq))].clsM++;
+});
+D.push('## D. 批次↔探针对齐（r17 增强；批标记=排期归属 ≠ 实现状态，按键级/类级实认交叉核对）');
+D.push('');
+D.push(tableRow(['批次', '覆盖族(tag)', '家族键: full/missing', 'missing 键', '类级账: partial+missing', 'README 位']));
+D.push('|---|---|---|---|---|---|');
+DCODE_ORDER.forEach(function (c) {
+  var d = DMAP[c];
+  if (d.keyFull + d.keyMiss.length + d.clsP + d.clsM === 0) return;
+  D.push(tableRow([
+    c,
+    d.tags.join('、') || '—',
+    String(d.keyFull) + '/' + String(d.keyMiss.length),
+    d.keyMiss.length ? d.keyMiss.join('+') : '—',
+    String(d.clsP) + '+' + String(d.clsM),
+    d.readmes.join('、') || '—'
+  ]));
+});
+
 var dateStr = String(new (J('java.util.Date'))());
 var HEAD =
   '# demo240 能力覆盖率看板\n\n' +
@@ -223,7 +349,7 @@ var HEAD =
   '> 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。\n' +
   '> 不追范围（2026-11-05 拍板终口径="基本授权有的内容都可以做；额外收费的不做；移动端不做"）：① FVS 大屏付费插件扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie）——类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）；② com.fr.extended.chart.*（付费扩展图族配套数据集基建，类虽在核心 jar 但消费者全在付费插件）；③ 移动端 com.fr.report.mobile.* + com.fr.form.ui.mobile.*（4 类；MobileReg=手机号校验属基本功能不在其列）。\n\n';
 
-var doc = HEAD + A.join('\n') + '\n\n' + B.join('\n') + '\n\n' + C.join('\n') + '\n';
+var doc = HEAD + A.join('\n') + '\n\n' + B.join('\n') + '\n\n' + C.join('\n') + '\n\n' + D.join('\n') + '\n';
 
 var Paths = J('java.nio.file.Paths');
 var Charsets = J('java.nio.charset.StandardCharsets');
@@ -232,6 +358,10 @@ J('java.nio.file.Files').write(Paths.get(ROOT + '/docs/architecture/coverage.md'
 
 print('COVERAGE: missing=' + MISSING.length + ' partial=' + PARTIAL.length +
   ' ledgerTotal=' + cls.length + ' noncore=' + SKIP_FURTHER);
+// r17 对齐统计：漏账残留数（无 README 批定义背书的类；口径=missing+partial 67，full 类不在此对齐范围）
+var gaps = ledger.filter(function (r) { return r.cat === 'missing' || r.cat === 'partial'; });
+var unacc = gaps.filter(function (r) { return batchOf(r.fq).indexOf('漏账') >= 0; }).length;
+print('ALIGN: batchAttributed=' + (gaps.length - unacc) + ' unattributed(漏账)=' + unacc + ' of ' + gaps.length + ' (missing+partial)');
 print('TOP10 GAPS:');
 MISSING.slice(0, 10).forEach(function (r) { print('  ' + r.n + '  ' + r.fq); });
 System.exit(0);
