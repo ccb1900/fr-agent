@@ -2,10 +2,11 @@
 # Verbs: discover | resolve | plan | plan2spec | compile(create) | patch(modify) | validate | preview
 # Contract: every verb prints ONE ASCII JSON line {"ok":bool,"runId":"...","result":"logs/agent/runs/<runId>/<verb>.json"};
 #   detailed payload (UTF-8) is written into the per-run dir. Exit 0 = verb AND artifact ok; 1 = failure; 2 = usage.
-# r15 THIN single-instance executor: the FineReport runtime section is guarded by an OS named Mutex (kernel mutual
-#   exclusion). Crash recovery is NOT AbandonedMutexException-based (TerminateProcess here frees the mutex silently);
-#   instead runtime.ps1 `enter` inspects a leftover sentinel by PROCESS IDENTITY (confirmed orphan java -> kill exactly
-#   it; cannot confirm -> RUNTIME_BUSY refuse). No queue/owner.json/OwnerToken/done records (artifact.json = result truth).
+# r15/r16 THIN single-instance executor: the FineReport runtime section is guarded by an OS named Mutex (kernel mutual
+#   exclusion). Crash recovery is NOT AbandonedMutexException-based (a minimal experiment on this host proved
+#   TerminateProcess frees the mutex WITHOUT raising it); instead the main flow (Invoke-UnderMutex) inspects a leftover
+#   sentinel by PROCESS IDENTITY (confirmed orphan java -> Kill+WaitForExit; cannot confirm -> RUNTIME_BUSY refuse).
+#   No queue/owner.json/OwnerToken/done records (artifact.json = result truth). runtime.ps1 is read-only status only.
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview')][string]$Verb,
@@ -49,7 +50,7 @@ function WriteAtomic([string]$path, [string]$text) {
 }
 # r16 P1#2 + step3: the WHOLE critical section (mutex + leftover-check + kill + active sentinel claim/release + run)
 #   lives in the main flow (this function), so recovery can ONLY happen while holding the execution right - there is
-#   no standalone dangerous `recover`/`enter` action anymore. Mutual exclusion = OS named Mutex (kernel). Crash
+#   no standalone dangerous recover/enter action anymore. Mutual exclusion = OS named Mutex (kernel). Crash
 #   recovery = leftover-process IDENTITY check (java.pid pid+StartTime): confirmed orphan -> Kill + WaitForExit (r16
 #   async-kill); cannot confirm (live owner / corrupt sentinel / JVM stuck) -> RUNTIME_BUSY refuse, never start a 2nd.
 #   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold (r16 sec.3).
