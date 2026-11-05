@@ -62,23 +62,14 @@ if (!pf.ok) {
 }
 }
 
-// 术语归一（工具层胶水，r10-C）：intent 中的业务词（中文名/label/列名）先经 resolver 归一为模型 name，
-//   使 I4 planner 的模型成员校验（按 name）能吃到 label 术语；ambiguous/unknown 原样透传给 planner
-//   走 unresolvedQuestions/不编造语义（I4 契约不变，planner 本体零改动）。
+// 术语归一（工具层胶水，r10-C；r14 修正：走 semantic/planner/termnorm.js 纯函数，按候选 target 类型归一，
+//   不再取不存在的 candidates[0].name——旧实现恒 undefined 使归一静默失效。ambiguous/unknown/property/column 原样透传）
 var idx = ModelRegistry.index(model);
-function normalizeTerm(raw) {
-  var t = (raw && typeof raw === 'object') ? raw.term : raw;
-  if (t == null) return raw;
-  var r = ModelResolver.resolve(idx, String(t));
-  if (r.status === 'resolved' && r.candidates && r.candidates[0] && r.candidates[0].name) {
-    if (raw && typeof raw === 'object') { var o = JSON.parse(JSON.stringify(raw)); o.term = r.candidates[0].name; return o; }
-    return r.candidates[0].name;
-  }
-  return raw;
-}
+load(ROOT + '/semantic/planner/termnorm.js');
+function resolveTerm(t) { return ModelResolver.resolve(idx, String(t)); }
 if (intent.dataset && intent.dataset.kind === 'sql') {
-  if (Array.isArray(intent.dataset.dimensions)) intent.dataset.dimensions = intent.dataset.dimensions.map(normalizeTerm);
-  if (Array.isArray(intent.dataset.metrics)) intent.dataset.metrics = intent.dataset.metrics.map(normalizeTerm);
+  if (Array.isArray(intent.dataset.dimensions)) intent.dataset.dimensions = TermNorm.normalizeList(intent.dataset.dimensions, resolveTerm);
+  if (Array.isArray(intent.dataset.metrics)) intent.dataset.metrics = TermNorm.normalizeList(intent.dataset.metrics, resolveTerm);
 }
 var ctx = {
   model: model,

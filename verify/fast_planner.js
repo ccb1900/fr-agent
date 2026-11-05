@@ -11,7 +11,7 @@ function src(f) { return String(new (J('java.lang.String'))(Files.readAllBytes(P
 function jt(f) { return JSON.parse(src(f)); }
 function threw(fn) { try { fn(); return false; } catch (e) { return true; } }
 
-['semantic/planner/capability.js', 'semantic/planner/planner.js'].forEach(function (f) {
+['semantic/planner/capability.js', 'semantic/planner/planner.js', 'semantic/planner/termnorm.js'].forEach(function (f) {
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
   check('PARSE ' + f, ok);
 });
@@ -138,6 +138,30 @@ check('I1.1 sql 路顶层 chart 也转 presentation.chart（rows 路才 deferred
 var sqlTopFilters = plan({ outName: 'tf', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, filters: [{ field: 'stage', value: 'X' }] });
 check('I1.1 顶层 filters(数组) 转入 dataset.filters', sqlTopFilters.status === 'ready' && sqlTopFilters.reportSpec.dataset.filters.length === 1);
 check('I1.1 sql 路非法 presentation 键→rejected（不再静默放过）', plan({ outName: 'bp', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, presentation: { foo: 1 } }).status === 'rejected');
+
+// ===== r14 P2: TermNorm 术语归一（候选契约 target/ref/column；中文 label→规范成员；歧义/非成员透传不臆造） =====
+load(ROOT + '/semantic/planner/termnorm.js');
+var resolveFn = function (t) { return ModelResolver.resolve(idx, String(t)); };
+check('TermNorm canonicalMember metric→ref', TermNorm.canonicalMember({ target: 'metric', ref: 'planned' }) === 'planned');
+check('TermNorm canonicalMember dimension→ref', TermNorm.canonicalMember({ target: 'dimension', ref: 'bizDate' }) === 'bizDate');
+check('TermNorm canonicalMember property→null（不是 planner 成员名）', TermNorm.canonicalMember({ target: 'property', ref: 'InspectionRecord.bizDate', column: 'laser_aaa.biz_date' }) === null);
+// 受控 resolveFn 单测映射逻辑（真实模型维度 label 全歧义，见下条透传断言）
+var fakeResolve = function (t) {
+  if (t === '业务日期') return { status: 'resolved', candidates: [{ target: 'dimension', ref: 'bizDate', confidence: 'high' }] };
+  if (t === '幽灵') return { status: 'ambiguous', candidates: [{ target: 'property', ref: 'X' }, { target: 'dimension', ref: 'Y' }] };
+  return { status: 'unknown', candidates: [] };
+};
+check('TermNorm 受控: 维度 label→规范维度名', JSON.stringify(TermNorm.normalizeList(['业务日期'], fakeResolve)) === JSON.stringify(['bizDate']));
+check('TermNorm 受控: 对象形式 {term} 归一保留对象', JSON.stringify(TermNorm.normalizeList([{ term: '业务日期' }], fakeResolve)) === JSON.stringify([{ term: 'bizDate' }]));
+check('TermNorm 受控: ambiguous 原样透传（不自动选）', JSON.stringify(TermNorm.normalizeList(['幽灵'], fakeResolve)) === JSON.stringify(['幽灵']));
+check('TermNorm 受控: unknown 原样透传（不臆造）', JSON.stringify(TermNorm.normalizeList(['不存在'], fakeResolve)) === JSON.stringify(['不存在']));
+// 真实模型：指标 label 唯一可解析→规范指标名；维度 label 全歧义→原样透传（诚实反映模型现状，非 bug）
+check('TermNorm 真实: 指标中文 label→规范指标名', JSON.stringify(TermNorm.normalizeList(['计划数'], resolveFn)) === JSON.stringify(['planned']));
+check('TermNorm 真实: 歧义维度 label 原样透传', JSON.stringify(TermNorm.normalizeList(['业务日期'], resolveFn)) === JSON.stringify(['业务日期']));
+// 端到端：维度用名（透传即规范名）+ 指标用中文 label（归一→planned/done）→ planner ready
+var cnIntent = { outName: 'cn', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: TermNorm.normalizeList(['bizDate'], resolveFn), metrics: TermNorm.normalizeList(['计划数', '完成数'], resolveFn), dateRange: { from: '2026-09-13', to: '2026-09-13' } } };
+var cnPlan = plan(cnIntent);
+check('r14 中文指标 label 端到端→ready（归一后成员校验通过）', cnPlan.status === 'ready' && cnPlan.reportSpec.dataset.metrics.indexOf('planned') >= 0 && cnPlan.reportSpec.dataset.metrics.indexOf('done') >= 0);
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
