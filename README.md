@@ -711,3 +711,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **P3（审查评定暂不阻塞）**：Get-FilePresence 先检查后由调用方读取的两开窗口——读取失败本就按 unknown 保守拒绝，留账**后续统一读取接口**（一次打开返回内容），本轮不动。
 - **门**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S27+e failures=0**（IT FAIL=0：S26 四分支·S27 四态+S27b 黑盒·S27e unreadable·全绿）。
 - **收尾裁定**：Runtime 冻结（薄执行器五件套不动）；既有边界继续：互斥=单 Windows 登录 Session；手动 run.ps1 全杀 java 机器级副作用、agent 路径一律 -NoKill。
+
+
+#93 r21「status 调用链回归自纠 + 黑盒持久回归」（2026-11-05，外部审查入 docs/gpt/r21-runtime-status-regression.md（逐字；审查基准 5de4019，确认 #92 收尾方向正确但两项须收）；★典型重构回归自纠）：
+- **P2 `$jp=Read-JavaPid…` 被删**：#92 收尾把 status 的 if/elseif 链改 switch 时**连带删掉了数据来源行**——`switch ($jp.file)` 对着 null → 全部哨兵查询退化 `javaState:unknown`（正常链也失真：pidfile 有效/损坏/PENDING/absent 一律 unknown——审查表格五态全中）。红实读：pidfile 指向不存在 pid（应 gone）→ 输出 unknown；修=补回 `$jp = Read-JavaPid $cfg.RunsDir ([string]$a.runId)` 于 switch 前 → gone/live/corrupt/pending 各归其位。
+- **P2 S28 status 真实黑盒持久回归**：审查点名"一次性探针（logs/_r20_red_probe）不能替代持续回归、上轮文档宣称的『S27 白盒联动』与集成代码不对应"——属实，本轮补 **S28**：构造 active.json + runId 指向测试目录；A 正常链（pidfile=真 decoy pid+start）→ status JSON **javaState=alive**（红判据——$jp 缺失时恒 unknown）；B 独占锁 pidfile → **javaState=unknown**（绝不 absent/不崩）；两断言修复后全绿，提供 status 链的持久化防线。文档同步修正（runtime-supervisor §5 行改为 S28 归属）。
+- **S27e 审查认定有价值保留**（Everyone-deny Read 的 unreadable 分支专项证明）；P3 两开窗口继续留账。
+- **门**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S28 failures=0**（S28 黑盒链全绿）。
+- **r21 裁定**：Runtime 继续冻结（审查确认无执行模型变更、无队列/Token/调度回潮）；边界不变：Mutex=单 Windows 登录 Session、run.ps1 全杀 java=手动门专用、agent 路径一律 -NoKill；P3 两开窗口留账不阻塞。

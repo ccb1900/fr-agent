@@ -104,7 +104,7 @@ logs/agent/runs/<runId>/java.pid   本次 Java 身份（PENDING=预登记未起/
 | 收集器：spawn 后登记失败 → 确认退出才清登记；Kill 失败/未退出=PENDING 留守；Kill 抛 InvalidOperationException 但 JVM 已自退 → confirmed（r19 P2） | S26（白盒：真 java + Kill/Wait stub 三分支 + 自退竞态分支） | 故障注入 |
 | 文件状态四分类：锁住/畸形路径 = unknown 绝不 absent；锁哨兵→RUNTIME_BUSY 不清（r19 P1） | S27（白盒四态 + 黑盒锁哨兵防退化） | 故障注入 |
 | unreadable 分支实证：Everyone-deny Read（显式 deny 先于 allow/继承、backup 特权默认停用 → 管理员运行也成立） | S27e | 故障注入（r19 收尾） |
-| runtime.ps1 status 穷尽映射：pidfile 不可确认（锁定）透出 unknown 而非 absent（诊断不受谎言污染） | S27 白盒联动（logs/_r20_red_probe 红确认：unknown 曾被显示为 absent） | 故障注入（r19 收尾） |
+| runtime.ps1 status **真实黑盒链**（S28，持久回归——r21 收尾审查发现收尾提交曾删 `$jp=Read-JavaPid…` 致全部哨兵查询退化 unknown，且仅一次性探针与文档"S27 白盒联动"不对应）：正常身份 pidfile → alive；锁定 pidfile → unknown（绝不 absent）| S28（构造 active.json + pidfile：A 正常链→alive；B 独占锁→unknown；解析 status JSON 断言） | 故障注入 + 真实调用链（r21） |
 
 （S5 曾抓到 `IdentityAlive([int]$pid,…)` 参数撞 PowerShell 自动变量 `$PID` 致身份判定失效；r17 六项 FAIL 抓出类型 catch 不可靠须按 FQID 指纹判；r18 红探针再抓出 `1234 -1` 类整数垃圾以 pid-only 语义进入身份链——主动制造故障证明系统正确拒绝的价值持续兑现。）
 

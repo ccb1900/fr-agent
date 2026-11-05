@@ -24,8 +24,11 @@ switch ($Action) {
     try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
     if (-not $a) { Write-Output '{"ok":true,"active":"CORRUPT"}'; exit 0 }
     $ownerState = Classify-Owner ([int]$a.ownerPid) ([long]$a.ownerStart)
+    # r21 P2: the pidfile READ backs this switch - do not drop it (the endgame round deleted $jp accidentally and
+    #   every sentinel query degenerated to unknown). Read FIRST, then map exhaustively.
+    $jp = Read-JavaPid $cfg.RunsDir ([string]$a.runId)
     # r19/portfolio P2: EXHAUSTIVE mapping of the pidfile state - unknown state must surface as 'unknown',
-    #   NEVER silently fall back to the 'absent' initializer (a locked/unconfirmable java.pid is a REAL
+    #   NEVER silently fall back to an 'absent' initializer (a locked/unconfirmable java.pid is a REAL
     #   diagnostic state, and reporting it as "no java registered" lies to the operator about exactly the
     #   case the fail-closed contract cares about).
     $javaState = switch ($jp.file) {

@@ -330,6 +330,27 @@ $r26d = Collect-UnregisteredSpawn $stubD26 $pf26d
 $ok26d = (($r26d -eq 'confirmed') -and (-not (Test-Path $pf26d)))
 if ($ok26a -and $ok26b -and $ok26c -and $ok26d) { Pass "S26 unregistered-spawn collector: a=$r26a b/c=kept(d=$r26d confirmed-exited race fixed)" } else { Fail "S26 broken a=$ok26a($r26a) b=$ok26b($r26b) c=$ok26c($r26c) d=$ok26d($r26d)" }
 
+# ============ r21: runtime.ps1 status BLACK-BOX chain (persistent regression, replaces the throwaway red probe) ============
+Write-Output "== S28 status call chain: sane pidfile -> javaState=alive; locked pidfile -> javaState=unknown"
+Reset-Rt
+$decoy28 = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_s28'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+# A) SANE chain: pidfile carries the REAL live identity -> status must classify 'alive' (r21 P2: $jp read missing => everything unknown)
+New-Item -ItemType Directory -Force -Path "$runs\it_s28" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s28\java.pid", ($decoy28.Id.ToString() + ' ' + (Start-Ticks $decoy28).ToString()), (New-Object System.Text.UTF8Encoding($false)))
+$out28 = & "$ROOT\agent\tools\runtime.ps1" -Action status 2>&1 | Select-Object -Last 1
+$java28a = $null; try { $java28a = ([string]$out28 | ConvertFrom-Json).active.javaState } catch { }
+# B) LOCKED pidfile: exists but unconfirmable -> javaState=unknown (never 'absent', never a crash)
+$fs28 = [System.IO.File]::Open("$runs\it_s28\java.pid", [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+$out28b = & "$ROOT\agent\tools\runtime.ps1" -Action status 2>&1 | Select-Object -Last 1
+$fs28.Close()
+$java28b = $null; try { $java28b = ([string]$out28b | ConvertFrom-Json).active.javaState } catch { }
+Stop-Process -Id $decoy28.Id -Force -ErrorAction SilentlyContinue
+if (($java28a -eq 'alive') -and ($java28b -eq 'unknown')) { Pass "S28 status chain: live pidfile -> alive, locked pidfile -> unknown (no absent leak)" } else { Fail "S28 broken A=$java28a ($out28) B=$java28b" }
+
+Write-Output ("INTEGRATION END, failures=" + $fail)
+
 # ============ r19 P1: file presence classification - "cannot confirm" is NEVER "absent" ============
 Write-Output "== S27 Get-FilePresence 4-state: absent / readable / unreadable-ish unknown via locks & lying paths"
 . "$ROOT\agent\tools\_identity.ps1"   # r19: exposes Get-FilePresence
