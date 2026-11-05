@@ -24,7 +24,7 @@ run.ps1 -Script make_api.js
   - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（fast_parse + fast_ir_contract + fast_runresult + fast_browser_sql + fast_report_spec 五套件，任一 rc≠0 整体 exit 1）
   - 零误伤扫描（无引擎）：`nashorn.jar ... Shell probes/scan_all_specs.js`（reports/ 全量 compile+validate，合法报表=回归门）
   - 引擎负门（需 java/FineDB，会杀 java）：`scripts/run-engine-negative-tests.ps1`——断言"失败必非零退出码、无假绿"，末步自动回补默认 spec 护基线
-  - 工具链集成门（r13，改 agent/tools/*、runtime supervisor、config.ps1、run.ps1 必跑）：`scripts/run-integration-tests.ps1`（`verify/check_ps1_static.ps1` 静态门：PSParser tokenize+ASCII-only+无硬编路径；`verify/integration_runtime.ps1` S1–S16 全链故障注入：双获取/年龄/token/崩溃识别/重复 RunId/无关 java/三任务串行/饿死剔除）。**Runtime Supervisor 状态协议见 `docs/architecture/runtime-supervisor.md`；不变量必须配能主动制造故障并证明系统正确拒绝的测试（r13 原则，不以 GREEN 自证）**
+  - 工具链集成门（r13/r14，改 agent/tools/*、runtime supervisor、config.ps1、run.ps1、contracts.js 必跑）：`scripts/run-integration-tests.ps1`（`verify/check_ps1_static.ps1` 静态门：PSParser tokenize+ASCII-only+无硬编路径；`verify/integration_runtime.ps1` **S1–S19** 全链故障注入：互斥 S2/S4/S15·原子 RunId S18·崩溃恢复 S5·活锁不回收 S8·身份化 JVM 杀 S14·owner 损坏 fail-closed S19·patch 证据 S17）。**Runtime Supervisor 状态协议见 `docs/architecture/runtime-supervisor.md`；互斥=OS 命名 Mutex、恢复=owner 身份(pid+StartTime)判定（不依赖时间/abandoned 信号）；不变量必须配能主动制造故障并证明系统正确拒绝的测试（r14 原则，不以 GREEN 自证）**
 
 ## 2. 排版红线（自动销项，别等用户提）
 
@@ -93,4 +93,4 @@ run.ps1 -Script make_api.js
 - **r13 Runtime Supervisor 正确性收口（2026-11-05，docs/gpt/r13.md 两并发 P1；README #84）**：P1-A 锁初始化竞态双获取→waiter 按 owner 身份判生死绝不因文件缺失删锁（新增 initializing/init_stalled 态）；P1-B MaxLockAgeSec 误杀活任务→年龄仅 suspect 告警、生死只由 pid+StartTime 身份定。另：OwnerToken 校验 release/recovery、恢复只杀 pipelineTag 匹配 java、FineDB 锁仅在确认 owner 死后删、runtimeState 与 businessResult 正交、重复 RunId 拒、FIFO best-effort、PID 复用防误判。**审查轮1 自查修 FIFO 饿死（死等待者 queue 槽剔除，S16 注入证明）+ ownerStart=-1 误判守卫**。config.ps1 路径策略单源、run/runraw env 化、docs/architecture/runtime-supervisor.md 状态协议、verify/check_ps1_static.ps1 静态门、scripts/run-integration-tests.ps1 统一门、integration S1-S16。**纪律：agent 工具禁硬编路径（走 config）；waiter 绝不因 owner.json 缺失删锁；年龄≠死亡；release 必带 OwnerToken；恢复限 pipelineTag。**
 
 
-技术设计应该先检索和比较已有成熟机制，再决定哪些部分需要自己实现
+技术设计应该先检索和比较已有成熟机制，再决定哪些部分需要自己实现- **r14 Runtime 与 Artifact 双边界审查收口（2026-11-05，docs/gpt/r14.md 六 P1；README #85）**：互斥从文件锁+时间启发式改 **OS 命名 Mutex**（fr_agent 持有，内核级单实例串行）；崩溃恢复改 **owner 身份(pid+StartTime)判定**——★本机 TerminateProcess 后 Mutex 变空闲不抛 AbandonedMutexException，故取锁后读 owner.json 判前手已死才 recover（不依赖 abandoned/时间，r13 的 InitGraceSec/init_stalled 时间回收全删）。六 P1 全故障注入证明：RunId CreateNew 原子独占(S18)、finalize 验 runId+token+缺失 OWNER_STATE_UNKNOWN(S19)、活锁不回收(S8)、JVM 身份化杀 via runs/<run>/java.pid(S14)、contracts patch fail-closed(S17)、软崩溃 finally 安全网 finalize failed。P2：termnorm.js 候选契约归一(旧取不存在 name 静默失效)、测试不再全杀 java、三脚本 env 单源、run.ps1 预检重试。**纪律：互斥只信 OS Mutex；恢复只信 owner 身份；patch/成功只信完整证据(fail-closed)。**
