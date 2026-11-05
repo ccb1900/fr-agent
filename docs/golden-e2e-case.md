@@ -72,5 +72,5 @@
 
 ### 6.3 验收资产增量（r22 §4 明示）
 
-1. **`data/db_laser_machine_daily_truth.txt`**（本轮新增）：日期 × 机台三段真值（detail day×machine / 逐日小计 / grand），SQL 与 v1 口径一致（score≥0.9 + recordToFile JOIN），固定区间 2026-09-13~2026-09-22；产线=`probes/probe_machine_daily_truth.js`（只读 JDBC 直查业务库，不启 FineReport，同 probe_dbtruth2 惯例）。
-2. **验证工具复合键支持**（待 v1 开跑前完成，非本轮——审查明示不本轮）：`compare_paths.js` 的明细键从"第一列"升为"可与真值头对齐的复合键（日期+机台）"，`verify_sql_data.js` 同步机台级对拍——修现有工具，不造第二套框架。
+1. **`data/db_laser_machine_daily_truth.txt`**（r22 新增、r22b 升级）：日期 × 机台三段真值（detail day×machine / 逐日小计 / grand）+ **join_sanity 五计数自证段（base/joined/matched/unmatched/fanout）**；主数据段与生产生成 SQL **同用 INNER JOIN**（join_sanity 以 LEFT 语义证明 INNER==LEFT：`33531=33531=33531/0/0`——全部匹配、零未匹配、零放大；fanout=laser_files 侧同键多记录的键数，**不能用左键组行数代替**——多检测记录共用一个文件键是正常业务）；固定区间 2026-09-13~2026-09-22；产线=`probes/probe_machine_daily_truth.js`（只读 JDBC 直查业务库，不启 FineReport，同 probe_dbtruth2 惯例）。
+2. **验证工具复合键支持（r22b 完成、r22c 补双向闭合）**：`verify/verify_sql_data.js` 复合键模式（env `TRUTH_DAY_MACHINE=1`）——day@machine 逐行对三值、总计行对 grand 三值、**双侧重复键显式失败 + 双向完整键集合 + 明细行数一致**（r22c 修"只遍历生成侧可假通过"缺口）；`verify/compare_paths.js`（env `AGENT_GRID_KEYCOLS`，**必须连续前缀如 0 或 0,1，非法配置 exit 2**）+ 键重复哨兵 `keyDupsA/B` 计入 equal 判定。两者未设 env = 旧路径一字不动（零漂移）。多机台复合键回归仍属"工具逻辑已证，真实多机数据待后续"（r22b §3 诚实口径）。

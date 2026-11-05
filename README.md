@@ -742,3 +742,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **P2 复合键工具适配（上轮留账完成）**：`verify/verify_sql_data.js` 增 **`TRUTH_DAY_MACHINE=1`** 模式（读 day×machine 真值，grid 按 5 列 day|machine|plan|done|rate 逐行 day@machine 对拍 + rate 容差 ±0.01，总计对 grand 三值）；`verify/compare_paths.js` 增 **`AGENT_GRID_KEYCOLS`**（如 0,1 拼复合键；c 循环从键列后起）+ **键重复哨兵 `keyDupsA/B` 计入 equal 判定**（r22 §2-P1"同日多机台静默覆盖"教训固化为显式 Fail）。两者**未设 env=旧路径一字不动（零漂移）**。
 - **smoke 实证**（复合键正/负 + 零漂移 + 哨兵）：① 正例 10 行+总计 5 CHECK 全 PASS；② 负例改 1 格精确检出 exit 1；③ 不设 env 旧 grid 路径照旧；④ compare_paths 复合键同/异两例 dataEqual true/false 精确切中；⑤ **同日两机台在复合键下 dataEqual=true（不再覆盖），单键模式下 keyDups 哨兵使其显式 false**。五例全绿（快门/边界/SCAN 同步复跑 GREEN）。
 - **下一步（审查钦定）**：停止准备，直接第一次真实运行——`plan`（自然语言输入查字段/指标识别）→`create`→`validate`→`preview`（FineReport 实开导 PNG/PDF）→`modify`（改标题、原报表保留、未改内容不变）。
+
+
+#97 r22c 开跑阻断项（验证器不能假通过）+ 开跑令（2026-11-05，外部审查入 docs/gpt/r22c-verifier-blocking.md 逐字；裁定=88d3a63 三项收尾验收通过，但验证器复合键有确定漏检，补上即开跑，不回头改任何 Runtime/语义层/BUILDER/Patch）：
+- **P1 验证器双向键闭合**（`verify/verify_sql_data.js` 复合键模式）：旧逻辑只遍历生成侧——真值 10 行、生成漏 1 行时（总计仍对）会假通过；双侧 `det`/`gMach` 重复键也静默覆盖。修=①双侧重复键显式 FAIL（`truth 复合键无重复`/`grid 复合键无重复`）②**双向完整键集合**（`truth 独有键=生成漏行` / `grid 独有键` 各自列前 4 个键）③明细行数一致 ④原 plan/done/rate+总计三值保留。负例真实化：grid9（9 明细+总计）构造失误后重造 `sed '/2026-09-16|/d'`——**漏一行 → `2026-09-16@laser3-aaa` 命中生成漏行 + 行数不一致双 FAIL + exit 1**（正是审查描述的假通过场景被当场堵死）；DUP-GRID/DUP-TRUTH 双侧各 FAIL exit 1 ✓。
+- **P2a compare_paths KEYC 连续前缀硬门槛**：`AGENT_GRID_KEYCOLS` 非 `0 / 0,1` 形态（如 `1,0`）→ **exit 2** + 明确消息（比较循环假设键列连续出场，不做任意列支持）；块内重复的 KEYC 解析下沉为单一来源。
+- **P2b golden 文档 §6.3 过时状态同步**（"复合键支持待完成"→已完成的准确状态，含 r22c 双向闭合与 KEYC 硬门槛）。审查顺带记档：`fanout_cnt` 全表窄化建议为 non-blocking，本轮不动。
+- **验收 smoke 全绿**：新负例四件（missing-row 双 FAIL/ dup-grid FAIL/ dup-truth FAIL/ bad-keycols exit2）+ r22b 旧五例回归（复合键正例 failures=0/legacy 零漂移 rc=0/cp same→true/cp diff→false/dup multikey→true/singlekey→false）；FAST 13/SCAN 48/边界/静态门复跑 GREEN。
+- **开跑令生效**：按审查钦定直接进入第一次真实运行——Plan（自然语言 intent）→ Create → Validate（day@machine 真值哨兵）→ Preview（FineReport 实开导 PNG/PDF）→ Modify（改标题、原报表保留、未改内容逐格不变）。

@@ -22,24 +22,38 @@ if (!Files.exists(Pth.get(GRID))) { print('SQL DATA REGRESSION: SKIP（无 ' + G
 var grid = readUtf(GRID), rows = grid.split(/\r?\n/);
 
 if (MACH) {
-  // ===== 复合键模式（day@machine，r22b-golden-readiness.md）=====
+  // ===== 复合键模式（day@machine，r22b/r22c-golden-readiness.md：双向键集合 + 双侧重复键 + 行数一致 =====
   var truthPath = ROOT + '/data/db_laser_machine_daily_truth.txt';
   if (!Files.exists(Pth.get(truthPath))) { print('SQL DATA REGRESSION: SKIP（无 ' + truthPath + '）'); J('java.lang.System').exit(0); }
   var truth2 = readUtf(truthPath);
   function section2(name) { var m = new RegExp('## ' + name + '\\n([^]*?)(\\n## |$)').exec(truth2); return m ? m[1].trim().split(/\r?\n/) : []; }
-  var det = {};   // key day@machine -> {plan, done, rate}
+  var dupT = 0, det = {};   // key day@machine -> {plan, done, rate}; 重复键绝不静默覆盖（r22c P1）
   section2('detail_day_machine').forEach(function (ln) {
-    var p = ln.split('|'); if (p.length >= 5) det[p[0] + '@' + p[1]] = { plan: +p[2], done: +p[3], rate: +p[4] };
+    var p = ln.split('|'); if (p.length >= 5) {
+      var k = p[0] + '@' + p[1];
+      if (det[k]) dupT++; else det[k] = { plan: +p[2], done: +p[3], rate: +p[4] };
+    }
   });
   var g2 = (section2('grand_total')[0] || '').split('|');
   var gPlan = +g2[0], gDone = +g2[1], gRate = +g2[2];
-  var gMach = {}, gTotalM = null;
+  var dupG = 0, gMach = {}, gTotalM = null;
   rows.forEach(function (ln) {
     var p = ln.split('|');
-    if (p.length >= 5 && /^20\d\d-\d\d-\d\d$/.test(p[0])) gMach[p[0] + '@' + p[1]] = { plan: +p[2], done: +p[3], rate: +p[4] };
-    else if (p.length >= 4 && /^总计/.test(p[0]) && p[0].indexOf('@') < 0) gTotalM = { plan: +p[1], done: +p[2], rate: +p[3] };
+    if (p.length >= 5 && /^20\d\d-\d\d-\d\d$/.test(p[0])) {
+      var k = p[0] + '@' + p[1];
+      if (gMach[k]) dupG++; else gMach[k] = { plan: +p[2], done: +p[3], rate: +p[4] };
+    } else if (p.length >= 4 && /^总计/.test(p[0]) && p[0].indexOf('@') < 0) gTotalM = { plan: +p[1], done: +p[2], rate: +p[3] };
   });
   check('grid(复合键) day@machine 明细行数=' + Object.keys(gMach).length + '（>=1）+ 总计', Object.keys(gMach).length >= 1 && !!gTotalM);
+  // r22c P1：双侧重复键显式失败（覆盖=假通过的地基）
+  check('truth 复合键无重复（' + dupT + ' 行被覆盖）', dupT === 0);
+  check('grid 复合键无重复（' + dupG + ' 行被覆盖）', dupG === 0);
+  // 双向完整键集合：生成漏行/多行都必须可见（只遍历生成侧是假通过缺口——r22c P1）
+  var onlyT = Object.keys(det).filter(function (k) { return !gMach[k]; });   // truth 有 grid 无 = 生成漏行
+  var onlyG = Object.keys(gMach).filter(function (k) { return !det[k]; });   // grid 有 truth 无 = 多键
+  check('grid 独有键（应为 0' + (onlyG.length ? ': ' + onlyG.slice(0, 4).join(', ') : '') + '）', onlyG.length === 0);
+  check('truth 独有键 = 生成漏行（应为 0' + (onlyT.length ? ': ' + onlyT.slice(0, 4).join(', ') : '') + '）', onlyT.length === 0);
+  check('明细行数一致（grid=' + Object.keys(gMach).length + ' truth=' + Object.keys(det).length + '）', Object.keys(gMach).length === Object.keys(det).length);
   var mm = [];
   Object.keys(gMach).forEach(function (k) {
     var t = det[k];

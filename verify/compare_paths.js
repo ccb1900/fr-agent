@@ -36,6 +36,17 @@ function parseGrid(abs) {
   }).map(function (l) { return l.split('|'); });
 }
 var A = System.getenv('AGENT_GRID_A'), B = System.getenv('AGENT_GRID_B');
+// r22c P2：AGT_GRID_KEYCOLS 必须是连续前缀 0..n-1（比较循环假设键列连续出场）——'1,0'/'0,2' 一个弹窗，退出 2个。
+var KEYCRAW = System.getenv('AGENT_GRID_KEYCOLS') || '';
+var KEYC = KEYCRAW.split(',').filter(Boolean)
+  .map(function (x) { return +x; }).filter(function (x) { return !isNaN(x) && x >= 0; });
+if (KEYC.length === 0) KEYC = [0];
+for (var ki = 0; ki < KEYC.length; ki++) {
+  if (KEYC[ki] !== ki) {
+    print('AGENT_GRID_KEYCOLS invalid: must be a continuous prefix like "0" or "0,1" (got "' + KEYCRAW + '")');
+    System.exit(2);
+  }
+}
 var ga = parseGrid(A || ''), gb = parseGrid(B || '');
 var out = { tool: 'compare_paths', gridA: A, gridB: B, grid: { equal: false, rowsA: ga ? ga.length : 0, rowsB: gb ? gb.length : 0, diffs: [] },
   totals: { a: null, b: null },
@@ -56,10 +67,7 @@ if (ga && gb) {
   out.grid.equal = equal; out.grid.diffs = diffs;
 
   // 数据区对照（A2 真正要证明的）：按键对齐明细行 + 合计行数值；标题/脚注/表头差异单独记
-  // r22b 复合键：AGENT_GRID_KEYCOLS（如 '0,1'）→ 键=KEYCOLS 各列 canon 用 '@' 拼接；未设=旧单键 col0。
-  var KEYC = (System.getenv('AGENT_GRID_KEYCOLS') || '').split(',').filter(Boolean)
-    .map(function (x) { return +x; }).filter(function (x) { return !isNaN(x) && x >= 0; });
-  if (KEYC.length === 0) KEYC = [0];
+  // r22b/r22c 复合键：KEYC 在文件顶部解析并校验（连续前缀，非法 exit 2）。
   function isDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s).trim()); }
   function isTotal(row) { return row && /合计|总计/.test(String(row[0])); }
   function rowKey(row) { return KEYC.map(function (c) { return canon(row[c]); }).join('@'); }
