@@ -24,3 +24,9 @@ function Get-AgentConfig {
     TaskSuspectSec    = 1800    # a live-owner task older than this => WARNING only (never kill; owner identity is the truth)
   }
 }
+
+# r13 sec.2: RunId validation lives in ONE place (shared by fr_agent.ps1 and runtime.ps1). Same rule as _lib.js checkRunId
+#   (JS side is a separate language boundary; the PS rule is centralized here). Charset guard = path-traversal defense.
+function Test-RunId([string]$id) {
+  return ($id -match '^[A-Za-z0-9_-]{1,64}$')
+}

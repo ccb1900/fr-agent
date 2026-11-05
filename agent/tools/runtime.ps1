@@ -134,7 +134,7 @@ function Invoke-Recovery([string]$reason, [bool]$killJava) {
 switch ($Action) {
   'acquire' {
     if (-not $RunId -or -not $Verb) { Write-Output '{"ok":false,"error":"acquire needs -RunId and -Verb"}'; exit 2 }
-    if ($RunId -notmatch '^[A-Za-z0-9_-]{1,64}$') { Write-Output '{"ok":false,"error":"illegal runId"}'; exit 2 }
+    if (-not (Test-RunId $RunId)) { Write-Output '{"ok":false,"error":"illegal runId"}'; exit 2 }
     if (-not $OwnerToken) { Write-Output '{"ok":false,"error":"acquire needs -OwnerToken"}'; exit 2 }
     # duplicate RunId policy: an in-flight (queued/running) runId cannot be acquired again (no double execution)
     $existing = ReadJson "$queueDir\$RunId.json"

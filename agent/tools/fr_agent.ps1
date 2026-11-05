@@ -31,8 +31,8 @@ if ($Verb -eq 'create') { $inner = 'compile' }
 if ($Verb -eq 'modify') { $inner = 'patch' }
 
 if (-not $RunId) { $RunId = [guid]::NewGuid().ToString('N') }
-# r11-4: charset guard against path traversal / injection
-if ($RunId -notmatch '^[A-Za-z0-9_-]{1,64}$') { Write-Output '{"ok":false,"error":"-RunId must match ^[A-Za-z0-9_-]{1,64}$"}'; exit 2 }
+# r11-4/r13 sec.2: runId charset guard centralized in config.ps1 Test-RunId (path traversal / injection defense)
+if (-not (Test-RunId $RunId)) { Write-Output '{"ok":false,"error":"-RunId must match ^[A-Za-z0-9_-]{1,64}$"}'; exit 2 }
 $runDir = "$agentDir\runs\$RunId"
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
