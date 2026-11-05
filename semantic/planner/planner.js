@@ -42,14 +42,29 @@ var ReportPlanner = (function () {
         return out;
       }
       var dims = namesIn(dsn.dimensions, 'dimensions'), mets = namesIn(dsn.metrics, 'metrics');
-      var memberMissing = 0;   // I5.1 P2：模型成员缺失计数——有缺失即不得 ready（语义未决不塞给生成链）
+      var memberMissing = 0;   // I5.1 P2：模型成员缺失计数——纯 unknown 才 rejected（不编造）
+      var ambiguousTerms = 0;  // B1（night-shift）：双指术语必须反问（unresolvedQuestions），绝不混入"成员缺失"硬拒
       if (ctx.model) {
         var dset = {}, mset = {};
         (ctx.model.dimensions || []).forEach(function (d) { dset[d.name] = 1; });
         (ctx.model.metrics || []).forEach(function (m) { mset[m.name] = 1; });
         var keepDim = [], keepMet = [];
-        dims.forEach(function (dn) { if (dn && hasOwn(dset, dn)) keepDim.push(dn); else { validationWarnings.push({ term: dn, reason: '维度不在模型，未编造', owner: '模型缺口(I3)' }); memberMissing++; } });
-        mets.forEach(function (mn) { if (mn && hasOwn(mset, mn)) keepMet.push(mn); else { validationWarnings.push({ term: mn, reason: '指标不在模型，未编造', owner: '模型缺口(I3)' }); memberMissing++; } });
+        // B1: 未命中成员名时先过 ctx.resolve —— ambiguous（多候选）→ unresolvedQuestions 反问（requiresConfirmation，
+        //   与内嵌路径 mapTerm 的行为一致化）；纯 unknown → 原样 validationWarnings + memberMissing（不编造）。
+        function memberCheck(dn, isDim, set) {
+          if (!dn) return;
+          if (hasOwn(set, dn)) { (isDim ? keepDim : keepMet).push(dn); return; }
+          var r = (typeof ctx.resolve === 'function') ? ctx.resolve(dn) : null;
+          if (r && r.status === 'ambiguous' && r.candidates && r.candidates.length) {
+            ambiguousTerms++;
+            unresolvedQuestions.push({ kind: isDim ? 'dimension' : 'metric', term: dn, candidates: r.candidates, requiresConfirmation: true });
+          } else {
+            validationWarnings.push({ term: dn, reason: (isDim ? '维度' : '指标') + '不在模型，未编造', owner: '模型缺口(I3)' });
+            memberMissing++;
+          }
+        }
+        dims.forEach(function (dn) { memberCheck(dn, true, dset); });
+        mets.forEach(function (mn) { memberCheck(mn, false, mset); });
         dims = keepDim; mets = keepMet;
       }
       // I1.1（r4 P2）：sql 路已支持 dateRange/dataset.filters/sort/topN/presentation.chart，
@@ -79,8 +94,9 @@ var ReportPlanner = (function () {
       };
       assumptions.push({ key: 'dataset.kind', value: 'sql', why: '模型驱动 SQL 由 sqlbuilder 生成（非自由文本）' });
       var sqlErrs = ctx.validateSpec(sqlSpec);
-      // I5.1 P2：成员缺失（幽灵维度/指标）→ 绝不 ready；否则 validateSpec 决定 ready/rejected
-      var sqlStatus = memberMissing ? 'rejected' : ((sqlErrs && sqlErrs.length) ? 'rejected' : 'ready');
+      // I5.1 P2：成员缺失（幽灵维度/指标）→ 绝不 ready；B1：ambiguous（双指）→ 反问优先（status=ambiguous，
+      //   reportSpec 置 null 与内嵌路径一致）；纯 unknown/形状错 → rejected。
+      var sqlStatus = ambiguousTerms ? 'ambiguous' : (memberMissing ? 'rejected' : ((sqlErrs && sqlErrs.length) ? 'rejected' : 'ready'));
       if (sqlErrs && sqlErrs.length) sqlErrs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
       return { status: sqlStatus, reportSpec: sqlStatus === 'ready' ? sqlSpec : null, assumptions: assumptions, unresolvedQuestions: unresolvedQuestions, validationWarnings: validationWarnings };
     }

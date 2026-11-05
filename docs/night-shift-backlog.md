@@ -4,13 +4,15 @@
 
 ## 进行中
 
-### B1（P2-A）：SQL intent 中 ambiguous 术语应反问而非 rejected
-- 优先级：P2（需求理解主线；r22-golden-scope.md §3 点名的语义差距）。
-- 真实问题证据：待核实——r22 审查称"SQL Planner 对未规范化的维度名称走模型成员缺失检查 → rejected 而非反问"；r10-C 则称胶水层"ambiguous/unknown 原样透传走 unresolvedQuestions"。两者矛盾，需读 `agent/tools/plan.js`（TermNorm.normalizeList）与 `semantic/planner/planner.js` sql 分支实际交互定性。
-- 用户影响：用户说"按机台"（术语双指）时 Agent 硬拒而不是反问是哪台——需求理解质量核心场景。
-- 预期修改范围：plan.js 胶水层（若缺陷在透传）；不动 planner 本体（r10-C 约束）。
-- 验收标准：ambiguous 术语 → plan 输出含 unresolvedQuestions(requiresConfirmation=true) 且不静默 rejected；fast_planner/fast 断言覆盖。
+### B2（P2-D）：patch 失败后的状态可判定性（修改可靠性）
+- 待走查 `template/patch.js`/`reader.js`/`inspector.js`/`diff.js` 的失败路径：patch 中途失败时 staging/部署件状态是否明确、能否准确报告"改了什么/没改什么"、失败后 artifact/manifest 是否如实。
+- 验收标准：失败场景 exit≠0 且 artifact/manifest 如实反映；无半成品冒充成功；原件在任何失败路径下保留。
 - 外部依赖：无。
+
+## 已完成（从待办移除的记录）
+
+### ~~B1（P2-A）：SQL intent 中 ambiguous 术语应反问而非 rejected~~（2026-11-05 完成）
+- 证据定性成立（plan.js 透传 + planner sql 分支 rejected 硬拒，与内嵌路径反问不一致）；修复=planner sql 分支 memberCheck（ambiguous→unresolvedQuestions 反问/unknown 保持拒/混合态反问优先/ambiguous 时 spec=null）；fast_planner 6 断言先红后绿+真通道冒烟 status=ambiguous+requiresConfirmation=true；全门 GREEN。commit 见 night-shift-log。
 
 ## 候选（待任务三审查后定级）
 

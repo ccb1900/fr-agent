@@ -163,5 +163,22 @@ var cnIntent = { outName: 'cn', dataset: { kind: 'sql', connection: 'ATOM_LIVE',
 var cnPlan = plan(cnIntent);
 check('r14 中文指标 label 端到端→ready（归一后成员校验通过）', cnPlan.status === 'ready' && cnPlan.reportSpec.dataset.metrics.indexOf('planned') >= 0 && cnPlan.reportSpec.dataset.metrics.indexOf('done') >= 0);
 
+// ===== B1（night-shift）：sql 分支的 ambiguous 术语必须反问，不得混入"成员缺失"硬拒 =====
+// 「机台」双指（machine 维度 + Machine.machineId property）——胶水原样透传原文后，planner 需按 ctx.resolve
+//   区分 ambiguous（→ unresolvedQuestions 反问，status=ambiguous）与纯 unknown（→ rejected 不编造）。
+function planSql(dims, mets) {
+  return plan({ outName: 'b1', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: dims, metrics: mets, dateRange: { from: '2026-09-13', to: '2026-09-22' } } });
+}
+var b1Amb = planSql(['bizDate', '机台'], ['planned']);
+check('B1: sql 维度 ambiguous（机台）→ status=ambiguous（反问，非 rejected）', b1Amb.status === 'ambiguous');
+check('B1: unresolvedQuestions 含 机台 且 requiresConfirmation=true', b1Amb.status === 'ambiguous' && (b1Amb.unresolvedQuestions || []).some(function (q) { return q.requiresConfirmation === true && JSON.stringify(q).indexOf('机台') >= 0; }));
+check('B1: ambiguous 时不得给出 reportSpec', b1Amb.status === 'ambiguous' && b1Amb.reportSpec === null);
+var b1Unknown = planSql(['bizDate', '销售员'], ['planned']);
+check('B1: sql 维度纯 unknown（销售员）→ 保持 rejected（不编造）', b1Unknown.status === 'rejected' && (b1Unknown.reportSpec === null));
+var b1Mix = planSql(['bizDate', '机台'], ['planned', '幽灵指标']);
+check('B1: 混合（ambiguous+unknown）→ 优先反问（ambiguous）', b1Mix.status === 'ambiguous');
+var b1Clean = planSql(['bizDate', 'machine'], ['planned', 'done', 'completionRate']);
+check('B1: 全部规范成员 → ready 不回归', b1Clean.status === 'ready' && b1Clean.reportSpec.dataset.dimensions.indexOf('machine') >= 0);
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
