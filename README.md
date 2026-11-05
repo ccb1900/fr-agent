@@ -661,3 +661,26 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **AbandonedMutexException 最小实验**（r16 §5 要求一手验证非采信文档）：本机实测 TerminateProcess 后下一 WaitOne 返回 True **不抛异常**→证实"恢复不能靠 abandoned 信号、必须靠进程身份"，R15/R16 设计正确。
 - **验收**：`verify/integration_runtime.ps1` 重写为真 create/patch 路径故障注入 **S1–S17 全绿**（S5 崩溃孤儿身份杀·S5b patch 也记 java.pid 并杀·S14 身份不符放过仍继续·S6 活锁拒·S16 损坏拒·S8 排队·S15 三并发串行+隔离·S17 patch 证据 fail-closed）；合并全门一次跑通 GREEN：STATIC0/INTEG0/FAST13/SCAN48/R1-R8/负门5路/默认双铁证 CBEB42E3·A8EF39AB 逐字节。
 - **r16 原则**：Runtime 不再扩功能面；互斥只信 OS Mutex、恢复只信进程身份、结果只信完整证据。三性质（互斥/恢复安全/结果可信）经故障注入站稳。
+
+
+#88 r17「Runtime 身份/异常退出五 P1 + 两 P2 边界收口」（2026-11-05，外部审查 r17.md 令执行；基准 main/6ae6364；docs/gpt/r17.md 入库；评审确认 R16 不回滚、R17 只修边界不再造基础设施，全部修复落在 .NET/Win32 原生能力内无新组件）：
+- **P1-1 验证与击杀必须同一 Process 对象**：r16「先查一次→再按 pid 重新 Get-Process→Kill」在 PID 复用窗口第二次查可能拿成无关进程直接杀；`_identity.ps1 Get-ClassifiedProcess` 一次取对象、读**该对象** StartTime、命中才在那一个对象上 Kill+WaitForExit（.NET Process 持原句柄，复用 PID 永不可能被误杀）。
+- **P1-2 三态身份取代 bool/-1**：alive/gone/unknown——「无法确认」（权限读不到 StartTime、查询失败非找不到进程、哨兵值损坏）一律 unknown → RUNTIME_BUSY 拒绝；废除 ProcStartTicks 把一切异常折成「-1=已死」的假 GO。★**实机指纹**（首轮集成 S2/S5/S5b/S14/S15/S20 六项 FAIL 抓出的回归自纠）：PS 5.1 `Get-Process -Id` 对不存在 pid 回抛 ProcessCommandException（FQID=`NoProcessFoundForGivenId`），typed catch 类型名不可靠→掉泛 catch→unknown→成功 run 的哨兵 HOLD 泄漏→下一次 create 全部 RUNTIME_BUSY——根因不是"恢复逻辑错"而是"找不到进程"被误判 unknown；分类改按稳定错误指纹字符串判定，重跑全绿。
+- **P1-3 java.pid 登记前移**（engine_launch.ps1）：spawn 前先写 `PENDING`，Start-Process 成功后立即覆盖 pid+start，spawn 抛则撤登记——宿主在「已起、未登记」窗口被杀时留下 PENDING=身份未知=下次**拒绝启动**（把「无身份双 JVM 并发」收缩为「安全拒绝」）；Windows Job Object 按审查建议评估过、**未引入**（现有 .NET/Win32 已够且 r17 禁止新增运行机制）。
+- **P1-4 java.pid 四态**：absent（从未登记=从未起→gone）/ pending（spawn 窗口崩溃）/ corrupt / unreadable——后三者一律 unknown 拒绝；r16 把「pidfile 有垃圾」当「无进程」与损坏 active.json 拒绝口径不一致。runtime.ps1 status 同步三态化（只报 live/gone/unknown，仍只读无动作）。
+- **P1-5 哨兵只在确认 Java 退出才清**（fr_agent finally）：release 前先 `Confirm-RunJavaGone`——只有 pidfile absent（从未起）或 recorded java 确认已退出才清 active.json；不能确认（alive/pending/corrupt/unreadable）→**保留哨兵** + history 记 HOLD，让下一次任务拒绝或按身份恢复，绝不「本进程看不到哨兵=没有遗留」。
+- **P2-1 RunId create-new 独占**：显式重复 RunId → `RUNID_EXISTS` 拒绝（New-Item 无 -Force 作并发窗口兜底）——消除 r16「第二次同 RunId 调用覆写同目录 compile.json/patch.json + Mutex 外 artifact 组装读到交叉数据」污染路径（GUID 默认只降低概率，显式重复必须硬拒）。
+- **P2-2 验收诚实口径 + 真宿主崩溃测试**：S5/S5b 明示为「decoy 构造遗留态 → 恢复**路径**」验证（README 此前「崩溃恢复全绿」的准确含义）；新增 **S20 真宿主崩溃**——活 powershell 宿主起引擎（java 已记真身份）后 TerminateProcess 宿主，真孤儿 Java 存活+哨兵留存，下一次 create 按身份杀孤儿并正常完成（非 decoy、非预置状态）；新增 S21（corrupt pidfile → 拒、decoy 无敌杀）/ S22（PENDING → 拒）/ S23（显式重复 RunId → 拒）。
+- **MaxLiveRuntime 定性修正**：history.log 是自报诊断不是内核互斥证明；互斥性证明 = S2/S4/S15 串行结果 + 同一时刻只有一个引擎 JVM，背书是 OS WaitOne 语义（验收表文档同步）。
+- **门**：STATIC 0（engine_launch.ps1 纳入 PARSE/ASCII 清单）/ 负门 5 路 GREEN / 默认双铁证 CBEB42E3·A8EF39AB（+ 6161F402 模板基线）逐字节复查 / 集成门 failures=0（S1–S23）。
+- **r17 原则**：R16 架构保留不回滚（OS Named Mutex/.NET Process/统一 Java 启动器/薄 active.json/Artifact 契约五件套）；不新增状态目录、Token、调度器或恢复命令；**身份「无法确认」永不当作「已消失」；验证与击杀同一对象；RunId 只登记一次（显式重复硬拒）**。
+
+
+#89 coverage 看板对齐增强（2026-11-05，"批次归属≠实现状态"错位收口——A 表参考批次逐类补全 + 新增 D 表批次↔探针对齐）：
+- **动机**：A 表 40+ 条目"参考批次"列是"(漏账：批排期时人工归入)"——旧 batchOf 只认家族键全等，批次归属残缺；外部统计确认"参考批次=排期归属，不等于探针已认到实现"需机器可见对齐。
+- **版本包名差异 10 类逐一坐实**（非印象，引擎源码一手）：First/Previous/Next/Last/PageNavi 引擎= `com.fr.report.web.button.page.*`、Export/Print/FlashPrint/Email = `web.button.*`（object.js TOOLBAR_BUTTONS 1137-1149）、TemplateIdAttrMark = `iofile.attr.*`（object.js:904）——demo 记 `web.ui.impl.*`/`iofileattr` 为旧包名，**功能非真缺**（#81"10 个版本包名差异"点名全对上）。
+- **A 表归属补全（README 引证，不硬编）**：#600 工单头部 4 类（AttrTooltipRichText 192/NormalDataModel 180/AttrBorder 93/VanChartAxis 92）→"批B后继(#600 工单头部,未排)"；tooltip/axis 装饰域→批B后继；map/heatmap/热链 9 类→批I(挂账,#79)；Poly 2 类→批J(挂账,#80)；write 族 8 类+Verifier 族→批F后继(#75 挪章/#558/#600)；Database|DynamicSQLDict→批D(凭据注入工单,#539)；ObjectCondition→批A(定性,#45)；10 版本差异→"既有·版本包名差异(#81 已核)"。**真漏账只剩 9 类**（ChartCommonCondition/组合图/MultiFileEditor/表单树/CustomToolBarButton/ExcelTableData/RecursionTableData/DataSetDefinition/FileAttrErrorMarker）——无 README 批定义背书，保留显式"漏账·域(需批定义后归属)"标记不硬编。
+- **D 表（批次↔探针对齐）**：按批次码聚合家族键 full/missing + 类级账 partial+missing——批B=3+21、批F=1+8、批I=0+9（map/heatmap/热链全挂账）、批J=0+2、既有=10（版本差异类）、漏账=0+9；**当场暴露一处真错位**：批E 家族键仍挂 Commit2DBJavaScript 缺失而类级账已按 #75 挪批F——对齐表价值即在此。
+- **ALIGN 哨兵输出**：`ALIGN: batchAttributed=58 unattributed(漏账)=9 of 67`（★口径=missing+partial 67；曾把 full 兜底类算进漏账导致假 51，已修）。
+- **数字零漂移**：missing=50 partial=17 noncore=44 与基线一致；B/C 表逐行未动（标记行仅平移）；两次连续重生成内容一致（幂等，除时间戳）。
+- **修改面**：`probes/coverage_report.js`（BATCH_CLASS 67 项映射+A 表头对齐口径+D 表+ALIGN 统计）与再生成 `docs/architecture/coverage.md`；运行时链路零改动（与并行 r17 修复线完全解耦）。

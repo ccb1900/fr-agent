@@ -1,7 +1,15 @@
-# integration_runtime.ps1 - r16 acceptance: THIN single-instance executor, verified by FAULT INJECTION.
-# Three properties (docs/gpt/r16.md): mutual exclusion (OS mutex) / recovery safety (process identity, fail-closed)
-#   / result trust (contracts fail-closed). Tests run against an ISOLATED runtime dir + mutex (r16 P1#4: never touch
-#   production state). Full chain: PowerShell -> Nashorn -> Application -> FineReport runtime. ASCII-only.
+# integration_runtime.ps1 - r17 acceptance: THIN single-instance executor, verified by FAULT INJECTION.
+# Three properties (docs/gpt/r16.md + r17.md): mutual exclusion (OS mutex) / recovery safety (process identity,
+#   three-state fail-closed) / result trust (contracts fail-closed). Tests run against an ISOLATED runtime dir +
+#   mutex (r16 P1#4: never touch production state). Full chain: PowerShell -> Nashorn -> Application -> FineReport.
+# ASCII-only.
+# r17 HONEST SCOPE (P2-2): S5/S5b CONSTRUCT leftover state (decoy java + hand-written java.pid + dead-owner
+#   sentinel) - they prove the RECOVERY PATH, not a real host crash; "crash recovery green" means exactly that.
+#   S20 is the REAL host-crash test: a live powershell host is TerminateProcess'd while its engine JVM runs (a real
+#   orphan, no decoys). S21/S22 cover the new fail-closed pidfile verdicts (corrupt / PENDING -> RUNTIME_BUSY,
+#   r17 P1-3/P1-4), S23 covers RunId create-new exclusivity (r17 P2-1). MaxLiveRuntime is a diagnostic-only
+#   self-reported history check - NOT kernel proof of the mutex; the mutex itself rests on OS WaitOne semantics
+#   (S2/S4/S15 serial outcomes prove no second engine ran concurrently).
 $ErrorActionPreference = 'Continue'
 $ROOT = if ($env:FR_AGENT_HOME) { $env:FR_AGENT_HOME } else { 'D:\fineagent' }
 Set-Location $ROOT
@@ -30,6 +38,7 @@ function ArtExecOk($rid) {
   try { return (Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json).execution.ok } catch { return $null }
 }
 function Alive($procId) { return [bool](Get-Process -Id $procId -ErrorAction SilentlyContinue) }
+# r17: history.log is a self-reported DIAGNOSTIC, not kernel proof of the mutex; used only as an internal-consistency check.
 function MaxLiveRuntime() {
   $hist = "$rt\history.log"
   if (-not (Test-Path $hist)) { return 0 }
@@ -72,8 +81,8 @@ $null = Wait-Job $jobA,$jobB; Receive-Job $jobA,$jobB | Out-Null; Remove-Job $jo
 if ((ArtExecOk "it_s1a") -eq $true -and (ArtExecOk "it_s1b") -eq $true) { Pass "S2 both creates succeeded (serial)" } else { Fail "S2 not ok A=$(ArtExecOk 'it_s1a') B=$(ArtExecOk 'it_s1b')" }
 if ((MaxLiveRuntime) -le 1) { Pass "S4 mutual exclusion maxLiveRuntime=$(MaxLiveRuntime)" } else { Fail "S4 parallel runtimes $(MaxLiveRuntime)" }
 
-# ================= P2 recovery safety: crashed owner + orphan java (compile path) =================
-Write-Output "== S5 crashed owner + orphan java -> real create kills exactly it (WaitForExit), proceeds"
+# ================= P2 recovery safety (decoy-CONSTRUCTED leftover state, r17 honest scope): compile path =================
+Write-Output "== S5 leftover-state recovery path: constructed orphan java -> real create kills exactly it (WaitForExit), proceeds"
 Reset-Rt
 $decoy = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
 Start-Sleep -Seconds 1
@@ -83,8 +92,8 @@ New-Item -ItemType Directory -Force -Path "$runs\it_ghost" | Out-Null
 $null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s5" 2>&1
 if ((-not (Alive $decoy.Id)) -and (ArtExecOk "it_s5") -eq $true -and -not (Test-Path "$rt\active.json")) { Pass "S5 orphan java killed (identity), sentinel cleared, next run completed" } else { Fail "S5 broken orphanDead=$(-not (Alive $decoy.Id)) s5=$(ArtExecOk 'it_s5')" }
 
-# ================= P2 recovery safety: PATCH path also records java.pid (r16 P1#1) =================
-Write-Output "== S5b patch crash recovery: runraw records java.pid, orphan killed"
+# ================= P2 recovery safety (decoy-CONSTRUCTED): PATCH path also records java.pid (r16 P1#1) =================
+Write-Output "== S5b patch recovery path: runraw records java.pid, constructed orphan killed"
 Reset-Rt
 $deploy = "$ROOT\..\..\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent"
 $src = (Get-ChildItem "$deploy\*_api.cpt" -EA SilentlyContinue | Select-Object -First 1)
@@ -173,6 +182,70 @@ $env:AGENT_RUN_ID = 'it_s17'; $env:FR_AGENT_HOME = $ROOT; $env:AGENT_PATCH = "$r
 if ((ArtExecOk "it_s17") -ne $true) { Pass "S17 missing-manifest patch not accepted (fail-closed)" } else { Fail "S17 missing manifest treated as success" }
 Remove-Item env:AGENT_PATCH -ErrorAction SilentlyContinue
 Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+
+# ============ r17 P2-2: REAL host crash - a live host is killed while its engine JVM runs (no decoys) ============
+Write-Output "== S20 real host crash: powershell host TerminateProcess'd mid-run while its java runs -> next run identity-recovers"
+Reset-Rt
+$cmd20 = "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb create -Spec '$itRel/a.json' -RunId 'it_s20'"
+$child = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', $cmd20 -PassThru -WindowStyle Hidden
+# wait until the engine reached its REAL pid registration (past the PENDING pre-registration, r17 P1-3)
+$javaPid = 0
+for ($i = 0; $i -lt 240; $i++) {
+  Start-Sleep -Milliseconds 750
+  $pf20 = "$runs\it_s20\java.pid"
+  if (Test-Path $pf20) {
+    $t20 = ((Get-Content $pf20 -Raw -Encoding UTF8).Trim() -split ' ')
+    if ($t20.Count -ge 2 -and $t20[0] -ne 'PENDING') {
+      $cnd = 0; if ([int]::TryParse($t20[0], [ref]$cnd) -and $cnd -gt 0) { $javaPid = $cnd; break }
+    }
+  }
+}
+if ($javaPid -le 0) {
+  Stop-Process -Id $child.Id -Force -ErrorAction SilentlyContinue
+  Fail "S20 java.pid never reached real-pid registration (spawn/registration window broken)"
+} else {
+  Stop-Process -Id $child.Id -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Milliseconds 800
+  $orphanAlive = Alive $javaPid
+  # a crashed host never runs the release path -> the sentinel MUST still be there (this is what the next run reads)
+  $sentLeft = Test-Path "$rt\active.json"
+  if ($orphanAlive -and $sentLeft) {
+    $null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s20b" 2>&1
+    if ((-not (Alive $javaPid)) -and (ArtExecOk 'it_s20b') -eq $true) { Pass "S20 real host crash: orphan java $javaPid killed by identity, sentinel consumed, next create completed" }
+    else { Fail "S20 recovery broken orphanAlive=$(Alive $javaPid) s20b=$(ArtExecOk 'it_s20b')" }
+  } else { Fail "S20 preconditions: orphanAlive=$orphanAlive sentinelLeft=$sentLeft (host finished before the kill?)" }
+}
+
+# ============ r17 P1-4: corrupt java.pid must be UNKNOWN, never "no JVM found" ============
+Write-Output "== S21 corrupt java.pid + dead owner -> RUNTIME_BUSY, decoy java untouched, sentinel kept"
+Reset-Rt
+$decoy = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$runs\it_s21" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s21\java.pid", 'not-a-jvm-id', (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_s21'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$out21 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s21x" 2>&1 | Select-Object -Last 1
+if (($out21 -match 'RUNTIME_BUSY') -and ((ArtExecOk 'it_s21x') -ne $true) -and (Test-Path "$rt\active.json") -and (Alive $decoy.Id)) { Pass "S21 corrupt java.pid -> RUNTIME_BUSY (fail-closed), decoy untouched" } else { Fail "S21 broken: $out21 decoy=$(Alive $decoy.Id)" }
+Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+
+# ============ r17 P1-3: PENDING java.pid (host died in the spawn window) must be UNKNOWN -> refuse ============
+Write-Output "== S22 PENDING java.pid + dead owner -> RUNTIME_BUSY (never guess a JVM identity), sentinel kept"
+Reset-Rt
+$decoy = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$runs\it_s22" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s22\java.pid", 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_s22'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$out22 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s22x" 2>&1 | Select-Object -Last 1
+if (($out22 -match 'RUNTIME_BUSY') -and ((ArtExecOk 'it_s22x') -ne $true) -and (Test-Path "$rt\active.json") -and (Alive $decoy.Id)) { Pass "S22 PENDING java.pid -> RUNTIME_BUSY (fail-closed), decoy untouched" } else { Fail "S22 broken: $out22 decoy=$(Alive $decoy.Id)" }
+Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+
+# ============ r17 P2-1: explicit duplicate RunId is refused CREATE-NEW (no artifact cross-pollution) ============
+Write-Output "== S23 explicit duplicate RunId -> RUNID_EXISTS, second call refused"
+$out23a = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1 | Select-Object -Last 1   # first outcome irrelevant; only dir existence matters
+$out23b = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1 | Select-Object -Last 1
+$rc23 = $LASTEXITCODE
+if (($out23b -match 'RUNID_EXISTS') -and $rc23 -eq 1) { Pass "S23 explicit duplicate RunId refused (RUNID_EXISTS, exit 1)" } else { Fail "S23 broken: $out23b rc=$rc23" }
 
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

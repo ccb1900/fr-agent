@@ -10,8 +10,8 @@ function Fail($n) { Write-Output "STATIC FAIL: $n"; $script:fail++ }
 function Pass($n) { Write-Output "STATIC PASS: $n" }
 
 $allPs = @(
-  "$ROOT\run.ps1", "$ROOT\runraw.ps1",
-  "$ROOT\agent\tools\config.ps1", "$ROOT\agent\tools\runtime.ps1", "$ROOT\agent\tools\fr_agent.ps1",
+  "$ROOT\run.ps1", "$ROOT\runraw.ps1", "$ROOT\engine_launch.ps1",
+  "$ROOT\agent\tools\config.ps1", "$ROOT\agent\tools\_identity.ps1", "$ROOT\agent\tools\runtime.ps1", "$ROOT\agent\tools\fr_agent.ps1",
   "$ROOT\verify\integration_runtime.ps1", "$ROOT\verify\check_ps1_static.ps1"
 )
 # 1) parse every script
@@ -22,10 +22,10 @@ foreach ($f in $allPs) {
   if ($errs -and $errs.Count -gt 0) { Fail "PARSE $f ($($errs.Count) errors)" } else { Pass "PARSE $f" }
 }
 
-# 2) ASCII-only for agent tools + test harness (run.ps1/runraw.ps1/config.ps1 also kept ASCII by convention)
+# 2) ASCII-only for agent tools + test harness (run.ps1/runraw.ps1/engine_launch.ps1/config.ps1 also kept ASCII by convention)
 $asciiFiles = @(
-  "$ROOT\run.ps1", "$ROOT\runraw.ps1",
-  "$ROOT\agent\tools\config.ps1", "$ROOT\agent\tools\runtime.ps1", "$ROOT\agent\tools\fr_agent.ps1",
+  "$ROOT\run.ps1", "$ROOT\runraw.ps1", "$ROOT\engine_launch.ps1",
+  "$ROOT\agent\tools\config.ps1", "$ROOT\agent\tools\_identity.ps1", "$ROOT\agent\tools\runtime.ps1", "$ROOT\agent\tools\fr_agent.ps1",
   "$ROOT\verify\integration_runtime.ps1", "$ROOT\verify\check_ps1_static.ps1"
 )
 foreach ($f in $asciiFiles) {

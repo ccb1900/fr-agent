@@ -1,4 +1,4 @@
-# fr_agent.ps1 - stable tool surface for an external AI Agent (r7-B + r10 + r12 + r13 + r14 + r15).
+# fr_agent.ps1 - stable tool surface for an external AI Agent (r7-B + r10 + r12 + r13 + r14 + r15 + r16 + r17).
 # Verbs: discover | resolve | plan | plan2spec | compile(create) | patch(modify) | validate | preview
 # Contract: every verb prints ONE ASCII JSON line {"ok":bool,"runId":"...","result":"logs/agent/runs/<runId>/<verb>.json"};
 #   detailed payload (UTF-8) is written into the per-run dir. Exit 0 = verb AND artifact ok; 1 = failure; 2 = usage.
@@ -7,6 +7,12 @@
 #   TerminateProcess frees the mutex WITHOUT raising it); instead the main flow (Invoke-UnderMutex) inspects a leftover
 #   sentinel by PROCESS IDENTITY (confirmed orphan java -> Kill+WaitForExit; cannot confirm -> RUNTIME_BUSY refuse).
 #   No queue/owner.json/OwnerToken/done records (artifact.json = result truth). runtime.ps1 is read-only status only.
+# r17 boundary hardening (docs/gpt/r17.md), no new infrastructure:
+#   P1-1 identity check and Kill use ONE Process object (no PID-reuse race); P1-2 all identity reads are three-state
+#   (alive/gone/unknown - unknown => RUNTIME_BUSY refuse, never "gone"); P1-3/P1-4 a java.pid that is pending (host
+#   died in the spawn window), corrupt or unreadable is UNKNOWN, never "no JVM"; P1-5 the active sentinel is released
+#   only when THIS run's java is confirmed exited (else keep it so the next run refuses/recovers by identity);
+#   P2-1 a RunId is registered CREATE-NEW - an explicit duplicate is refused (RUNID_EXISTS), no artifact cross-pollution.
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview')][string]$Verb,
@@ -26,7 +32,6 @@ $FR = $cfg.FrHome
 $java = $cfg.Java
 $jar = $cfg.NashornJar
 $agentDir = $cfg.AgentDir
-$runtimePs1 = Join-Path $PSScriptRoot 'runtime.ps1'
 
 $inner = $Verb
 if ($Verb -eq 'create') { $inner = 'compile' }
@@ -35,7 +40,12 @@ if ($Verb -eq 'modify') { $inner = 'patch' }
 if (-not $RunId) { $RunId = [guid]::NewGuid().ToString('N') }
 if (-not (Test-RunId $RunId)) { Write-Output '{"ok":false,"error":"-RunId must match ^[A-Za-z0-9_-]{1,64}$"}'; exit 2 }
 $runDir = "$agentDir\runs\$RunId"
-New-Item -ItemType Directory -Force -Path $runDir | Out-Null
+# r17 P2-1: a RunId is registered CREATE-NEW. The r16 shape (New-Item -Force) silently REUSED an existing run dir,
+#   so a repeated explicit RunId could overwrite a finished run's compile.json/patch.json while its Artifact was
+#   still being assembled outside the mutex -> cross-run pollution. Now: explicit duplicate => RUNID_EXISTS, refuse;
+#   the tiny concurrent race (both pass Test-Path) is caught by the -ErrorAction Stop fallback (no -Force anywhere).
+if (Test-Path $runDir) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+try { New-Item -ItemType Directory -Path $runDir -ErrorAction Stop | Out-Null } catch { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
 $env:FR_AGENT_HOME = $ROOT
 $env:AGENT_RUN_ID = $RunId
@@ -48,16 +58,20 @@ function WriteAtomic([string]$path, [string]$text) {
   [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
   try { [System.IO.File]::Replace($tmp, $path, $null) } catch { Move-Item -Force $tmp $path }
 }
-# r16 P1#2 + step3: the WHOLE critical section (mutex + leftover-check + kill + active sentinel claim/release + run)
-#   lives in the main flow (this function), so recovery can ONLY happen while holding the execution right - there is
-#   no standalone dangerous recover/enter action anymore. Mutual exclusion = OS named Mutex (kernel). Crash
-#   recovery = leftover-process IDENTITY check (java.pid pid+StartTime): confirmed orphan -> Kill + WaitForExit (r16
-#   async-kill); cannot confirm (live owner / corrupt sentinel / JVM stuck) -> RUNTIME_BUSY refuse, never start a 2nd.
-#   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold (r16 sec.3).
-#   Returns @{gained; busy; rc}.
+# r16 P1#2 + step3 (revised r17): the WHOLE critical section (mutex + leftover-check + kill + active sentinel
+#   claim/release + run) lives in the main flow (this function), so recovery can ONLY happen while holding the
+#   execution right - there is no standalone dangerous recover/enter action anymore. Mutual exclusion = OS named
+#   Mutex (kernel). Crash recovery = leftover-process IDENTITY check, r17 THREE-STATE (docs/gpt/r17.md):
+#   - owner alive OR owner identity unknown (access error / corrupt sentinel values) -> RUNTIME_BUSY refuse;
+#   - owner gone -> identity-scoped orphan kill: proceed on gone/killed/spared; unknown/stuck -> refuse.
+#   - java.pid pending (host died in the spawn window, P1-3) / corrupt / unreadable (P1-4) is UNKNOWN,
+#     never "no JVM found" - refuse instead of racing an unidentifiable JVM.
+#   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold
+#   (r16 sec.3). Returns @{gained; busy; rc}.
 function Invoke-UnderMutex([scriptblock]$RunBody) {
   . (Join-Path $PSScriptRoot '_identity.ps1')
   $activeFile = "$($cfg.RuntimeDir)\active.json"
+  $histFile = "$($cfg.RuntimeDir)\history.log"
   $mtx = New-Object System.Threading.Mutex($false, $cfg.MutexName)
   $gained = $false; $busy = $false; $rc = $null
   try {
@@ -69,24 +83,37 @@ function Invoke-UnderMutex([scriptblock]$RunBody) {
       $a = $null
       try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
       if (-not $a) { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }   # corrupt -> fail-closed
-      if (IdentityAlive ([int]$a.ownerPid) ([long]$a.ownerStart)) { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }  # live owner -> refuse
-      # owner confirmed dead -> identity-scoped kill of its orphan JVM, WAIT for exit (r16 async-kill)
+      $ownerCls = Classify-Owner ([int]$a.ownerPid) ([long]$a.ownerStart)
+      # 'gone' only: definitive verdict. alive = live owner; unknown = cannot confirm (r17 P1-2) -> both refuse.
+      if ($ownerCls -ne 'gone') { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }
       $st = Kill-OrphanJvm $cfg.RunsDir ([string]$a.runId)
-      # 'spared' = recorded pid is now a DIFFERENT process (PID reused) -> our orphan already gone, proceed; do NOT kill it.
-      # only 'stuck' (killed but did not exit) means we cannot confirm the leftover is gone -> refuse (never start a 2nd).
-      if ($st -eq 'stuck') { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }
+      # proceed on gone (nothing registered / exited / recorded pid recycled - the reusing process is never
+      #   touched) / killed (verified object killed, exit confirmed).
+      #   unknown (pidfile pending/corrupt/unreadable, identity unreadable) or stuck (kill did not take
+      #   effect in time) => we cannot confirm the leftover JVM is gone -> REFUSE, never start a 2nd (r17).
+      if ($st -ne 'gone' -and $st -ne 'killed' -and $st -ne 'spared') { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }
       if (Test-Path $cfg.FineDbLck) { Remove-Item $cfg.FineDbLck -Force -ErrorAction SilentlyContinue }
-      Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " RECOVER " + [string]$a.runId) -Encoding ASCII -ErrorAction SilentlyContinue
+      Add-Content -Path $histFile -Value ((Get-Date).ToString('o') + " RECOVER " + [string]$a.runId) -Encoding ASCII -ErrorAction SilentlyContinue
     }
-    # claim sentinel
-    $ost = ProcStartTicks $PID
+    # claim sentinel (owner identity = this process; the java identity is registered separately in java.pid by engine_launch)
+    $ost = SelfStartTicks
     WriteAtomic $activeFile ((@{ runId = $RunId; ownerPid = $PID; ownerStart = $ost; claimedAt = (Get-Date).ToString('o') } | ConvertTo-Json -Compress))
-    Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " ACQUIRE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+    Add-Content -Path $histFile -Value ((Get-Date).ToString('o') + " ACQUIRE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
     try { $rc = & $RunBody } finally {
-      # release sentinel only if it is ours
-      $cur = $null; try { if (Test-Path $activeFile) { $cur = (Get-Content $activeFile -Raw -Encoding UTF8 | ConvertFrom-Json) } } catch { }
-      if ($cur -and [string]$cur.runId -eq $RunId) { Remove-Item $activeFile -Force -ErrorAction SilentlyContinue }
-      Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " RELEASE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+      # r17 P1-5: clear the sentinel ONLY when THIS run's java is confirmed gone (engine_launch waits for exit on the
+      #   normal path; an exception in the body may leave the JVM alive). Unconfirmed (alive / pending / corrupt /
+      #   unreadable pidfile) -> KEEP the sentinel + history HOLD: the next run then refuses or identity-recovers
+      #   instead of seeing "no sentinel -> no leftover" and racing a live JVM.
+      $javaGone = Confirm-RunJavaGone $cfg.RunsDir $RunId
+      $cur = $null; try { if (Test-Path $activeFile) { $t2 = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t2) { $cur = $t2 | ConvertFrom-Json } } } catch { }
+      if ($cur -and [string]$cur.runId -eq $RunId) {
+        if ($javaGone) {
+          Remove-Item $activeFile -Force -ErrorAction SilentlyContinue
+          Add-Content -Path $histFile -Value ((Get-Date).ToString('o') + " RELEASE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+        } else {
+          Add-Content -Path $histFile -Value ((Get-Date).ToString('o') + " HOLD " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+        }
+      }
     }
     return @{ gained = $true; busy = $false; rc = $rc }
   } finally {
