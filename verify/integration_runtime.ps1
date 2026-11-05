@@ -283,21 +283,71 @@ if (($outA24 -match 'RUNID_EXISTS') -and ($outB24 -match 'RUNID_EXISTS') -and ((
   Pass "S24a both concurrent compiles refused (mutex-serial, artifact untouched, no engine started)"
 } else { Fail "S24a broken outA=$outA24 outB=$outB24" }
 
-# ============ r23 P1: REAL same-RunId concurrent re-entry race (from zero artifacts) ============
-Write-Output "== S24b real race: two hosts, same RunId, no pre-existing artifact -> exactly ONE engine run, other RUNID_EXISTS"
+# ============ r23 P1: REAL same-RunId concurrent re-entry race, DETERMINISTIC (r24: gate/signals, no sleep) ============
+# r24 review: bare Start-Process "started close together" does NOT guarantee both callers passed the entry check
+#   before A wrote compile.json (a late B would be refused at the OUTSIDE entry and never reach the in-mutex
+#   recheck). Deterministic construction (test-layer sync only, zero production change, zero sleep-gambling):
+#     1) test process holds the SAME named mutex the agents use (FR_AGENT_MUTEX env);
+#     2) two wrapper processes each: write a ready signal file -> wait ManualResetEvent('IT_S24_GATE') ->
+#        spawn fr_agent compile (real spec); while the mutex is held their entry checks pass (compile.json
+#        absent) and they block queued on WaitOne;
+#        "both wrappers ready" is proven by both ready signal files appearing (event-driven poll, no fixed delay);
+#        window argument: engine run (60s+) dwarfs the millisecond skew of two entry checks, so B's entry check
+#        always happens before A writes compile.json;
+#     3) Set the event (ManualReset broadcasts to both waiters) -> both fr_agents queue on WaitOne -> mutex serial;
+#     4) winner runs the engine and writes compile.json (r22e assembly also inside the mutex, visible before
+#        release); loser hits the IN-MUTEX recheck -> RUNID_EXISTS;
+#     5) assert exactly one ok:true + exactly one RUNID_EXISTS + single runresult with success=true.
+Write-Output "== S24b real race (deterministic gate): two hosts same RunId from zero artifacts -> exactly ONE engine run"
 Reset-Rt
 [System.IO.File]::WriteAllText("$itAbs\s24race.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_S24RACE"'), (New-Object System.Text.UTF8Encoding($false)))
-$r24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24ra.txt" -RedirectStandardError "$itAbs\s24ra.err"
-$r24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24rb.txt" -RedirectStandardError "$itAbs\s24rb.err"
-$null = $r24a.WaitForExit(600000); $null = $r24b.WaitForExit(600000)
-$outRa = [string]([System.IO.File]::ReadAllText("$itAbs\s24ra.txt")); $outRb = [string]([System.IO.File]::ReadAllText("$itAbs\s24rb.txt"))
-$okR24 = 0; $refR24 = 0
-if ($outRa -match '"ok":true') { $okR24++ } elseif ($outRa -match 'RUNID_EXISTS') { $refR24++ }
-if ($outRb -match '"ok":true') { $okR24++ } elseif ($outRb -match 'RUNID_EXISTS') { $refR24++ }
-$rrJson = $null; try { $rrJson = Get-Content "$runs\it_s24r\runresult.json" -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
-$singleEngine = (($okR24 -eq 1) -and ($refR24 -eq 1) -and ($null -ne $rrJson) -and ($rrJson.success -eq $true))
-if ($singleEngine) { Pass "S24b real race closed: exactly one engine run (ok=1, RUNID_EXISTS=1), single truthful runresult" } else { Fail "S24b broken ok=$okR24 ref=$refR24 outA=$outRa outB=$outRb" }
-Remove-Item "D:\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent\IT_S24RACE_api.*" -Force -ErrorAction SilentlyContinue
+Remove-Item "$itAbs\s24gate_ready_a.txt", "$itAbs\s24gate_ready_b.txt" -Force -ErrorAction SilentlyContinue
+$gateCreated = $false
+$gate24 = New-Object System.Threading.EventWaitHandle($false, [System.Threading.EventResetMode]::ManualReset, 'IT_S24_GATE', [ref]$gateCreated)
+# r24: readiness is signaled by the wrappers themselves via two AutoReset events - the harness blocks on
+#   kernel WaitOne (NO sleep, NO polling). A wrapper that died before signaling simply times the wait out.
+$rdA = $false; $rdB = $false
+try { $rdA = New-Object System.Threading.EventWaitHandle($false, [System.Threading.EventResetMode]::AutoReset, 'IT_S24_READY_A', [ref]$true) } catch { }
+try { $rdB = New-Object System.Threading.EventWaitHandle($false, [System.Threading.EventResetMode]::AutoReset, 'IT_S24_READY_B', [ref]$true) } catch { }
+$mtx24 = New-Object System.Threading.Mutex($false, $env:FR_AGENT_MUTEX)
+$null = $mtx24.WaitOne(10000)   # hold the SAME mutex the agents use: their WaitOne queues behind us
+$wrapA = "Set-Location '$ROOT'; Set-Content -Path '$itAbs\s24gate_ready_a.txt' -Value 'w'; [void][System.Threading.EventWaitHandle]::OpenExisting('IT_S24_READY_A').Set(); " + "`$e=[System.Threading.EventWaitHandle]::OpenExisting('IT_S24_GATE'); [void]`$e.WaitOne(180000); & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'"
+$wrapB = "Set-Location '$ROOT'; Set-Content -Path '$itAbs\s24gate_ready_b.txt' -Value 'w'; [void][System.Threading.EventWaitHandle]::OpenExisting('IT_S24_READY_B').Set(); " + "`$e=[System.Threading.EventWaitHandle]::OpenExisting('IT_S24_GATE'); [void]`$e.WaitOne(180000); & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'"
+$r24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', $wrapA -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24ra.txt" -RedirectStandardError "$itAbs\s24ra.err"
+$r24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', $wrapB -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24rb.txt" -RedirectStandardError "$itAbs\s24rb.err"
+$readyA = [bool]$rdA -and $rdA.WaitOne(120000)   # kernel-block until each wrapper signals ready (no sleep)
+$readyB = [bool]$rdB -and $rdB.WaitOne(120000)
+if ((-not $readyA) -or (-not $readyB) -or (Test-Path "$runs\it_s24r\compile.json")) {
+  Fail "S24b readiness broken readyA=$readyA readyB=$readyB artifactEarly=$(Test-Path "$runs\it_s24r\compile.json")"
+  try { $gate24.Set() | Out-Null } catch { }
+  try { $null = $mtx24.ReleaseMutex() } catch { }
+  $mtx24.Dispose()
+  $null = $r24a.WaitForExit(120000); $null = $r24b.WaitForExit(120000)
+} else {
+  $gate24.Set() | Out-Null          # broadcast: both wrappers spawn fr_agent, pass the entry check (no artifact yet), queue on WaitOne
+  $null = $mtx24.ReleaseMutex()     # hand the mutex to the queue: winner runs the engine, loser hits the in-mutex recheck
+  $null = $r24a.WaitForExit(600000); $null = $r24b.WaitForExit(600000)
+  $outRa = [string]([System.IO.File]::ReadAllText("$itAbs\s24ra.txt")); $outRb = [string]([System.IO.File]::ReadAllText("$itAbs\s24rb.txt"))
+  $okR24 = 0; $refR24 = 0
+  if ($outRa -match '"ok":true') { $okR24++ } elseif ($outRa -match 'RUNID_EXISTS') { $refR24++ }
+  if ($outRb -match '"ok":true') { $okR24++ } elseif ($outRb -match 'RUNID_EXISTS') { $refR24++ }
+  $rrJson = $null; try { $rrJson = Get-Content "$runs\it_s24r\runresult.json" -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
+  $singleEngine = (($okR24 -eq 1) -and ($refR24 -eq 1) -and ($null -ne $rrJson) -and ($rrJson.success -eq $true))
+  if ($singleEngine) { Pass "S24b deterministic race closed: both hosts past entry while mutex held, exactly ONE engine run (ok=1, RUNID_EXISTS=1), single truthful runresult" } else { Fail "S24b broken ok=$okR24 ref=$refR24 outA=$outRa outB=$outRb" }
+  Remove-Item "D:\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent\IT_S24RACE_api.*" -Force -ErrorAction SilentlyContinue
+}
+try { $gate24.Dispose() } catch { }; try { $rdA.Dispose() } catch { }; try { $rdB.Dispose() } catch { }; $mtx24.Dispose()
+
+# r24 second deliverable: patch path gets its own concurrent acceptance (pre-seeded patch.json -> both refuse)
+Write-Output "== S24c patch path: pre-seeded patch.json -> two concurrent modify hosts both RUNID_EXISTS"
+Reset-Rt
+New-Item -ItemType Directory -Force -Path "$runs\it_s24p" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s24p\patch.json", '{"tool":"patch","runId":"it_s24p","ok":true,"exit":0}', (New-Object System.Text.UTF8Encoding($false)))
+$p24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb modify -RunId 'it_s24p'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24pa.txt" -RedirectStandardError "$itAbs\s24pa.err"
+$p24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb modify -RunId 'it_s24p'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24pb.txt" -RedirectStandardError "$itAbs\s24pb.err"
+$null = $p24a.WaitForExit(180000); $null = $p24b.WaitForExit(180000)
+$outPa = [string]([System.IO.File]::ReadAllText("$itAbs\s24pa.txt")); $outPb = [string]([System.IO.File]::ReadAllText("$itAbs\s24pb.txt"))
+if (($outPa -match 'RUNID_EXISTS') -and ($outPb -match 'RUNID_EXISTS')) { Pass "S24c patch path: both concurrent modifies refused (patch.json DupCheckFile honored)" } else { Fail "S24c broken outA=$outPa outB=$outPb" }
 
 # ============ r18 P2: registration-failure fault injection (e2e + white-box) ============
 Write-Output "== S25 pre-spawn registration unusable (pidfile PARENT is a regular file - deterministic fault, no drive dependency) -> rc!=0, NO java spawned"

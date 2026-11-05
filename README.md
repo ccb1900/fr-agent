@@ -764,3 +764,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **最小修（Mutex 内复查，不加任何锁/队列/Token）**：`Invoke-UnderMutex` 增 `DupCheckFile` 参数——取 Mutex 后、claim 哨兵**前**复查引擎产物（r22e 把 artifact 组装移回互斥内使 compile.json 在 release 前完整可见，正是此复查可行的前提）；存在→`dup=true` 返回，verb 侧输出 `RUNID_EXISTS` exit 1（不 claim、无引擎）。compile/patch 两 verb 各传自己的 artFile。
 - **S24 拆 a/b**：S24a（原预置双拒保留改名）+ **S24b 真竞态**——两独立进程同 RunId（it_s24r）同真实 spec（IT_S24RACE）从零产物并发起跑，断言 **恰一 `"ok":true`（引擎恰跑一次）+ 恰一 `RUNID_EXISTS`（Mutex 内复查命中）+ runresult 单份且 success=true**；跑后清 IT_S24RACE_api.* 部署件。集成门 S1–S28+ 全绿（S24b 首吃真实并发）。
 - **审查四项结论全认**（Golden v1 五步闭环/数据真值/实渲染/修改与原件保留=仓库记录完成）；裁定的注意力转向照单执行：**不再修基础设施，转回 Agent 的需求理解、报表创作质量与修改可靠性。**
+
+
+#100 r24 并发测试确定性化 + patch 路径验收 → Runtime 收尾正式关闭（2026-11-05，外部审查入 docs/gpt/r24-deterministic-gate.md 逐字；裁定=015e40a 生产代码修复通过静态审查、S24b 尚未充分证明竞态被命中，确定性化后正式关闭）：
+- **审查指认的证明缺口**：裸 `Start-Process` 两进程"启动得很近"≠ 两者都在 A 写 compile.json 前过入口——B 晚到时在 **Mutex 外入口**被拒，Mutex 内复查根本没被走到（测试通过但没测到新检查）。
+- **确定性构造（零 sleep、零生产改动）**：① 测试进程**持与 Agent 同名 Mutex**（FR_AGENT_MUTEX env）→ 两个 wrapper 进程各自"写 ready 信号 → **Set 独立 AutoResetEvent（IT_S24_READY_A/B）** → 等 IT_S24_GATE"——wrapper 在持锁窗口内 spawn fr_agent：入口检查（compile.json 不存在）必然通过、阻塞排队；② harness **内核 WaitOne 两个 ready 事件**（零轮询零 sleep——第一版用 100ms 轮询循环被用户当场否决，改纯事件等待；首跑曾因 wrapper 漏 Set ready 事件被红如实记录，补 Set 后绿）；③ 双 ready 齐 → `gate.Set()` 广播 + `ReleaseMutex()` → 两 fr_agent 同时排队；④ 先者引擎+写 compile.json（Mutex 内可见），**后者 Mutex 内复查命中 → RUNID_EXISTS**；⑤ 断言恰一 ok:true/恰一 RUNID_EXISTS/runresult 单份 success=true——**确定性命中 Mutex 内复查路径**（不再依赖调度碰巧）。
+- **S24c patch 路径并发验收补齐**：预置 patch.json → 两个并发 modify host 双 RUNID_EXISTS（patch.json DupCheckFile 被正确传入的证明）。S24 终形态=**S24a**（预置 compile 双拒）+ **S24b**（确定性真竞态恰一引擎）+ **S24c**（patch 路径双拒）。
+- **事故与清理记档**：中途曾停止一次跑错版本的门，遗留 13 个 it_* 孤儿 java——按 java.pid 身份清零（不扫全机，纪律保持）；审查入档 r24-deterministic-gate.md 逐字。
+- **Runtime 收尾正式关闭**：Mutex 内复查位置/compile 重入/patch 重入/同 RunId 首次并发防护/S24b 真实竞态覆盖 五项全绿；架构保持冻结。**下一步=产品线：需求理解、报表创作质量、修改可靠性。**
