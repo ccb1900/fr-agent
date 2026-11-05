@@ -251,31 +251,37 @@ $out22 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -
 if (($out22 -match 'RUNTIME_BUSY') -and ((ArtExecOk 'it_s22x') -ne $true) -and (Test-Path "$rt\active.json") -and (Alive $decoy.Id)) { Pass "S22 PENDING java.pid -> RUNTIME_BUSY (fail-closed), decoy untouched" } else { Fail "S22 broken: $out22 decoy=$(Alive $decoy.Id)" }
 Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
 
-# ============ r17 P2-1: explicit duplicate RunId is refused CREATE-NEW (no artifact cross-pollution) ============
-Write-Output "== S23 explicit duplicate RunId -> RUNID_EXISTS, second call refused"
-$out23a = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1 | Select-Object -Last 1   # first outcome irrelevant; only dir existence matters
-$out23b = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1 | Select-Object -Last 1
-$rc23 = $LASTEXITCODE
-if (($out23b -match 'RUNID_EXISTS') -and $rc23 -eq 1) { Pass "S23 explicit duplicate RunId refused (RUNID_EXISTS, exit 1)" } else { Fail "S23 broken: $out23b rc=$rc23" }
-
-# ============ r18 P2: CONCURRENT RunId race - two independent processes, same RunId, exactly one must win ============
-# r19 honesty: the 300ms launch stagger is best-effort - it does NOT strictly prove both callers passed Test-Path
-#   inside the race window. What S24 proves is concurrent invocation + OS create-new single-winner; a deterministic
-#   barrier would need an out-of-prod sync handle (scope-discipline: not added this round).
-Write-Output "== S24 two concurrent hosts race for the SAME RunId -> exactly one wins, other RUNID_EXISTS"
+# ============ r17 P2-1 REFINED r22e: the duplicate verdict is the ENGINE ARTIFACT, not the directory ============
+# r22e product semantics (reverse-engineered from the demo one-runId flow): zero-engine products (plan.json/
+#   reportSpec.json) in a run dir are the legal chain handoff (plan->plan2spec->create share ONE runId); the
+#   refusal surface is the ENGINE artifact (compile.json / patch.json) - a REAL re-entry would overwrite it.
+# S23: pre-seed a compile.json (no engine), then a real compile verb call must refuse. The zero-engine chain
+#     must NOT refuse (plan on a dir with only plan.json re-enters, S26 failures covered elsewhere).
+# S24: two concurrent compile hosts over the pre-seeded artifact both refuse (mutex-serial: no second engine,
+#     no artifact race). The former directory-race verdict moved into the artifact-existence rule.
+Write-Output "== S23 compile verb with existing compile.json -> RUNID_EXISTS; zero-engine plan on same dir re-enters"
 Reset-Rt
-$s24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb discover -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24a.txt" -RedirectStandardError "$itAbs\s24a.err"
-$s24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb discover -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24b.txt" -RedirectStandardError "$itAbs\s24b.err"
-Start-Sleep -Milliseconds 300   # both must be PAST Test-Path before either creates the dir (best effort launch sync)
+New-Item -ItemType Directory -Force -Path "$runs\it_s23" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s23\compile.json", '{"tool":"compile","runId":"it_s23","ok":true,"exit":0}', (New-Object System.Text.UTF8Encoding($false)))
+$out23b = & "$ROOT\agent\tools\fr_agent.ps1" -Verb compile -RunId "it_s23" 2>&1 | Select-Object -Last 1
+$rc23 = $LASTEXITCODE
+$planRe23 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb plan -Intent "$itRel/a.json" -RunId "it_s23" 2>&1 | Select-Object -Last 1
+# zero-engine re-entry proof = NO RUNID_EXISTS from the entry registration (plan.status may legitimately be
+#   rejected for out-of-model terms in the rows intent - the re-entry gate itself is what we're asserting).
+$orchid = ($out23b -match 'RUNID_EXISTS') -and ($rc23 -eq 1) -and ($planRe23 -notmatch 'RUNID_EXISTS')
+if ($orchid) { Pass "S23 engine artifact re-entry refused; zero-engine chain handoff allowed on the same runId" } else { Fail "S23 broken: compile=$out23b rc=$rc23 plan=$planRe23" }
+
+Write-Output "== S24 two concurrent compile hosts over pre-seeded engine artifact -> both refuse (no race write)"
+Reset-Rt
+New-Item -ItemType Directory -Force -Path "$runs\it_s24" | Out-Null
+[System.IO.File]::WriteAllText("$runs\it_s24\compile.json", '{"tool":"compile","runId":"it_s24","ok":true,"exit":0}', (New-Object System.Text.UTF8Encoding($false)))
+$s24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24a.txt" -RedirectStandardError "$itAbs\s24a.err"
+$s24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24b.txt" -RedirectStandardError "$itAbs\s24b.err"
 $null = $s24a.WaitForExit(180000); $null = $s24b.WaitForExit(180000)
-$outA24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24a.txt"))
-$outB24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24b.txt"))
-$wins24 = @(); $losers24 = @()
-if ($outA24 -match '"ok":true') { $wins24 += 'a' } elseif ($outA24 -match 'RUNID_EXISTS') { $losers24 += 'a' }
-if ($outB24 -match '"ok":true') { $wins24 += 'b' } elseif ($outB24 -match 'RUNID_EXISTS') { $losers24 += 'b' }
-if ($wins24.Count -eq 1 -and $losers24.Count -eq 1 -and $wins24[0] -ne $losers24[0] -and (ArtExecOk 'it_s24') -ne $true) {
-  Pass "S24 same-RunId race: winner=$wins24 loser=$losers24 (one win, one RUNID_EXISTS, no cross-write)"
-} else { Fail "S24 broken wins=$wins24 losers=$losers24 outA=$outA24 outB=$outB24" }
+$outA24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24a.txt")); $outB24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24b.txt"))
+if (($outA24 -match 'RUNID_EXISTS') -and ($outB24 -match 'RUNID_EXISTS') -and ((Get-Content "$runs\it_s24\compile.json" -Raw) -match '"runId":"it_s24"' -and (Get-Content "$runs\it_s24\compile.json" -Raw) -notmatch 'queue')) {
+  Pass "S24 both concurrent compiles refused (mutex-serial, artifact untouched, no engine started)"
+} else { Fail "S24 broken outA=$outA24 outB=$outB24" }
 
 # ============ r18 P2: registration-failure fault injection (e2e + white-box) ============
 Write-Output "== S25 pre-spawn registration unusable (pidfile PARENT is a regular file - deterministic fault, no drive dependency) -> rc!=0, NO java spawned"

@@ -40,12 +40,17 @@ if ($Verb -eq 'modify') { $inner = 'patch' }
 if (-not $RunId) { $RunId = [guid]::NewGuid().ToString('N') }
 if (-not (Test-RunId $RunId)) { Write-Output '{"ok":false,"error":"-RunId must match ^[A-Za-z0-9_-]{1,64}$"}'; exit 2 }
 $runDir = "$agentDir\runs\$RunId"
-# r17 P2-1: a RunId is registered CREATE-NEW. The r16 shape (New-Item -Force) silently REUSED an existing run dir,
-#   so a repeated explicit RunId could overwrite a finished run's compile.json/patch.json while its Artifact was
-#   still being assembled outside the mutex -> cross-run pollution. Now: explicit duplicate => RUNID_EXISTS, refuse;
-#   the tiny concurrent race (both pass Test-Path) is caught by the -ErrorAction Stop fallback (no -Force anywhere).
-if (Test-Path $runDir) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
-try { New-Item -ItemType Directory -Path $runDir -ErrorAction Stop | Out-Null } catch { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+# r17 P2-1 -> r22d -> r22e refined RunId registration, judged by THE ENGINE ARTIFACT, not the directory:
+#   the cross-pollution site is compile.json/patch.json being overwritten while assembly reads it - so an
+#   engine verb refuses ONLY when its OWN engine artifact already exists in the run dir (REAL re-entry).
+#   Zero-engine products (plan.json/reportSpec.json) in the same dir are the demo-defined chain handoff
+#   (plan->plan2spec->create must share one runId). New-Item without -Force still guards the concurrent
+#   first-create window.
+$artFile = $null
+if ($inner -eq 'compile') { $artFile = "$runDir\compile.json" }
+elseif ($inner -eq 'patch') { $artFile = "$runDir\patch.json" }   # zero-engine verbs: artFile stays $null = re-entry allowed
+if ($artFile -and (Test-Path $artFile)) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+if (-not (Test-Path $runDir)) { try { New-Item -ItemType Directory -Path $runDir -ErrorAction Stop | Out-Null } catch { } }
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
 $env:FR_AGENT_HOME = $ROOT
 $env:AGENT_RUN_ID = $RunId
@@ -193,6 +198,7 @@ switch ($inner) {
     if (-not $Spec) { Write-Output '{"ok":false,"error":"-Spec required"}'; exit 2 }
     $specText = [System.IO.File]::ReadAllText((Join-Path $ROOT $Spec), [System.Text.Encoding]::UTF8)
     $outName = [string]($specText | ConvertFrom-Json).outName
+    $r = $null
     $body = {
       $env:REPORT_SPEC = $Spec
       $env:FR_AGENT_RESULT = "$runDir\runresult.json"
@@ -214,18 +220,20 @@ switch ($inner) {
         cptExists = (Test-Path $cpt); pngExists = (Test-Path $png)
       }
       WriteAtomic "$runDir\compile.json" ($obj | ConvertTo-Json -Depth 6)
-      $rc   # return rc; create_report runs OUTSIDE the mutex (r16 sec.3)
+      # r22e: artifact assembly moved BACK INSIDE the mutex (r16 sec.3 shortened the hold, but the r22e
+      #   registration judged by engine-artifact existence only works if compile.json is complete+visible
+      #   BEFORE the mutex releases - a second same-RunId call must see it and refuse, never race the
+      #   artifact read across the release point). ~1s nashorn step, no engine lock cost.
+      $env:AGENT_RUN_ID = $RunId
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js" | Out-Null
+      $artRc = $LASTEXITCODE
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      @{ rc = $rc; artRc = $artRc }   # both codes; caller surfaces ONE contract line
     }
     $r = Invoke-UnderMutex $body
-    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
-    $rc = $r.rc
-    # artifact assembly is pure JS (no engine) -> run AFTER ReleaseMutex to shorten the lock hold (r16 sec.3)
-    $env:AGENT_RUN_ID = $RunId
-    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
-    $artRc = $LASTEXITCODE
-    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/compile.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
@@ -249,17 +257,18 @@ switch ($inner) {
       if (Test-Path $manifest) { $mf = [System.IO.File]::ReadAllText($manifest, [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
       $obj = [ordered]@{ tool = 'patch'; runId = $RunId; ok = ($rc -eq 0); exit = $rc; patch = $Patch; log = $log; manifestPath = $manifest; stagingDir = $stagingDir; manifest = $mf }
       WriteAtomic "$runDir\patch.json" ($obj | ConvertTo-Json -Depth 8)
-      $rc   # return rc; modify_report runs OUTSIDE the mutex (r16 sec.3)
+      # r22e: artifact assembly inside the mutex (same rationale as the compile verb - patch.json must be
+      #   complete+visible before ReleaseMutex so a second same-RunId modify call refuses instead of racing).
+      $env:AGENT_RUN_ID = $RunId
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js" | Out-Null
+      $artRc = $LASTEXITCODE
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      @{ rc = $rc; artRc = $artRc }
     }
     $r = Invoke-UnderMutex $body
-    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
-    $rc = $r.rc
-    $env:AGENT_RUN_ID = $RunId
-    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
-    $artRc = $LASTEXITCODE
-    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/patch.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
