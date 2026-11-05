@@ -103,10 +103,10 @@ check('serialization-only 能力（tooltip/条件超链/填报结构）agentAvai
   var tt = find('chart.tooltip'), lk = find('condition.then.link'), ws = find('write.structure');
   return tt && tt.rendering === 'serialization-only' && tt.agentAvailable === false && lk && lk.agentAvailable === false && ws && ws.agentAvailable === false;
 })());
-check('批B 渲染端待达三项 rendering=pending（stack/label/conditionalSeries）', (function () {
+check('批B 渲染端三案收案 rendering=verified（stack/label/conditionalSeries；probe_r4m3/m7/m9+test_vanchart 载体实跑）', (function () {
   var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
   var s = find('chart.stack'), l = find('chart.label'), cs = find('chart.conditionalSeries');
-  return s && s.rendering === 'pending' && s.agentAvailable === false && l && l.rendering === 'pending' && cs && cs.rendering === 'pending';
+  return s && s.rendering === 'verified' && s.agentAvailable === true && l && l.rendering === 'verified' && l.agentAvailable === true && cs && cs.rendering === 'verified' && cs.agentAvailable === true;
 })());
 check('批H cell.sort 与 I6 style patch rejected（不硬凑）', (function () {
   var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
@@ -121,9 +121,9 @@ check('manifest 带 evidence 引证（README/carrier/probe 可溯源）', (funct
   var ok = true; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (!c.evidence || !String(c.evidence).match(/README #\d+|probe_|carrier|integration_runtime/)) ok = false; }); });
   return ok;
 })());
-check('agentAvailableNames 扁平名单非空且含 runtime.serial 不含 stack', (function () {
+check('agentAvailableNames 扁平名单非空:含 runtime.serial/stack（渲染已收）、不含 tooltip（serialization-only）', (function () {
   var names = CapabilityManifest.agentAvailableNames();
-  return names.length > 0 && names.indexOf('agent.runtime.serial') >= 0 && names.indexOf('chart.stack') < 0;
+  return names.length > 0 && names.indexOf('agent.runtime.serial') >= 0 && names.indexOf('chart.stack') >= 0 && names.indexOf('chart.tooltip') < 0;
 })());
 // r11 P1 两套能力视图的机器可验证关系：词汇视图(ReportSpec.capabilities)与成熟度视图(manifest)不得互相矛盾——
 //   凡 construction/serialization/rendering/regression 任一为 rejected 的能力，agentAvailable 必须为 false。

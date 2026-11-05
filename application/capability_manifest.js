@@ -36,9 +36,9 @@ var CapabilityManifest = (function () {
     cap('chart.vmap', 'pending', 'pending', 'pending', 'pending', 'README #79 绑定10参+MapMatchResult+GIS 底图，无轻量通路'),
     cap('chart.heatmap', 'pending', 'pending', 'pending', 'pending', 'README #80 极端图族登记'),
     cap('chart.tooltip', 'verified', 'verified', 'serialization-only', 'verified', 'README #72 AttrTooltip 全家序列化；tooltip 为 web 交互行为静态 PNG 不现形（同官方）'),
-    cap('chart.label', 'constructed', 'verified', 'pending', 'pending', 'README #72 诚实边界：labelAttr 序列化在、柱顶数值未现'),
-    cap('chart.stack', 'constructed', 'verified', 'pending', 'pending', 'README #72 诚实边界：setStackAndAxisCondition 官方形序列化在、渲染仍分组'),
-    cap('chart.conditionalSeries', 'constructed', 'verified', 'pending', 'pending', 'README #72 AttrColor 挂上未染'),
+    cap('chart.label', 'verified', 'verified', 'verified', 'verified', 'probe_r4m9 定案(m5 L_a/m9 n1·n3 双证)：label 必挂命名 ConditionAttr+恒真 ListCondition 才渲染,DefaultAttr 序列化在渲染无;官方 Demo.cpt 条件属性4 同构；carrier test_vanchart 实跑柱顶数值'),
+    cap('chart.stack', 'verified', 'verified', 'verified', 'verified', 'probe_r4m3 结案：isStackChart 只认 vanChartPlotType==STACK/STACK_BY_PERCENT,补 setter 后 stackCols>0 实拍堆叠；carrier test_vanchart 实跑'),
+    cap('chart.conditionalSeries', 'verified', 'verified', 'verified', 'verified', 'probe_r4m7 D_a 实拍：系列条件染色正类=AttrBackground+ColorBackground(AttrColor 引擎不染)；carrier test_vanchart 实跑'),
     cap('chart.trendLine', 'verified', 'verified', 'verified', 'verified', 'README #72 LineStyleInfo 门槛补齐后红趋势线画出 PNG'),
     cap('chart.axisYUnit', 'verified', 'verified', 'pending', 'pending', 'README #72 序列化 customMainUnit=true 在、刻度密度渲染待达'),
     cap('chart.hyperlinkCell', 'pending', 'pending', 'pending', 'pending', 'README #79 ChartHyperRelateCellLink 挂接面未探完，随地图批')

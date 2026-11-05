@@ -1,6 +1,11 @@
 // test_vanchart.js — v4.2 VanChart 插件图表族自检：柱/线/面积/散点/饼/仪表盘
 // 批B（README 待回填）追加：装饰层（tooltip/label/marker/lineStyle/trend/stack/条件系列色/alpha/bg/border/axisY.unit 主刻度）
 // 散点 bubbleSize 显式（官方 气泡图 bubbleSize 属性同位——购置 #46 大蓝点修复）；vpie legend position 实验块（#46 图例 4 见 3 尝试）。
+// 批B渲染端收案（2026-11-06，probe_r4m3/m7/m9-m13 一手）：① stack 必补 plot.setVanChartPlotType(STACK|STACK_BY_PERCENT)
+//   （isStackChart 只认它）；② label 必挂命名 ConditionAttr+恒真 ListCondition（DefaultAttr 序列化在渲染无）；
+//   ③ 条件系列色正类=AttrBackground+ColorBackground（AttrColor 引擎不染）；④ vpie"图例 4 见 3"=引擎图例区按图表
+//   高度分享、不够静默截条（m11 300pt 全出/m12 170pt 只 2 条/setMaxHeight 无效/m13 position=3 横排容量最高）——
+//   非实现缺陷，第一 vpie 臂升 260pt 示范给足高度；第二臂 170pt+position=2 留作截断示警样本。
 var SPEC = {
   outName: '能力自检_VanChart',
   allowNoFormula: true,
@@ -19,7 +24,7 @@ var SPEC = {
         { type: 'chart', kind: 'vline', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160 },
         { type: 'chart', kind: 'varea', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160 },
         { type: 'chart', kind: 'vscatter', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 160 },
-        { type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 170 },
+        { type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 340 },  // 批B渲染端收案:图例区随图表高度分享,340pt 下 4 条全出(m11 300 全出/m12 170 只 2/m13 横排 260 仍 3——空间法实证)
         { type: 'chart', kind: 'vgauge', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 170 },
         { type: 'chart', kind: 'vbubble', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 240 },
         { type: 'space', heightPt: 8 },

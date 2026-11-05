@@ -772,3 +772,13 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **S24c patch 路径并发验收补齐**：预置 patch.json → 两个并发 modify host 双 RUNID_EXISTS（patch.json DupCheckFile 被正确传入的证明）。S24 终形态=**S24a**（预置 compile 双拒）+ **S24b**（确定性真竞态恰一引擎）+ **S24c**（patch 路径双拒）。
 - **事故与清理记档**：中途曾停止一次跑错版本的门，遗留 13 个 it_* 孤儿 java——按 java.pid 身份清零（不扫全机，纪律保持）；审查入档 r24-deterministic-gate.md 逐字。
 - **Runtime 收尾正式关闭**：Mutex 内复查位置/compile 重入/patch 重入/同 RunId 首次并发防护/S24b 真实竞态覆盖 五项全绿；架构保持冻结。**下一步=产品线：需求理解、报表创作质量、修改可靠性。**
+
+
+#101 批B 渲染端四项收案（2026-11-06，接续 opencode 断点侦察件 9 枚入库 214e952；新探针 probe_r4m9~m13 一手实证；四案全结，manifest 三能力升 verified）：
+- **stack 渲染**：根因=`isStackChart()` 只认 `plot.vanChartPlotType==STACK/STACK_BY_PERCENT`（probe_r4m3 变异实拍 stackCols：原 stack 接线 NORMAL 不堆叠，补 setter 后堆叠）——只走 `setStackAndAxisCondition` 时序列化在、渲染仍分组；修=object.js stack 块补 `setVanChartPlotType(percent?STACK_BY_PERCENT:STACK)`（guard setVanChartPlotType 存在性）。
+- **label 显示**：根因=label 挂 **DefaultAttr 序列化在但引擎不渲染**（m5 L_a 实拍无 label + m9 n3 隔离对照再证）；官方 Demo.cpt"条件属性4"同构=**命名 ConditionAttr+恒真 ListCondition 承载 AttrLabel**（m9 n1/n2 实拍柱顶/段内数值）；修=object.js label 改挂命名 lTag（'数值标签'）。
+- **条件系列色**：根因=`AttrColor` 引擎不染（m5 C_a~C_c 全哑）；正类=**AttrBackground+ColorBackground**（m7 D_a 全染实拍，引擎 DateProcessor4SeriesColorCondition 同路）；修=object.js `then.seriesColor` 换 `new AttrBackground(bgColor(...))`——顺带销账 coverage AttrBackground（missing 50→49）。
+- **组合互不压制**：m10 载体同构三件同图（tooltip@dTag+label@lTag+stack@plotType）渲染全绿——堆叠段内白字数值标签实拍（120/98、200/93、160/85），红染+标签并存（C_combo）。
+- **vpie 图例 4 见 3**：**非实现缺陷**——引擎图例区随图表高度分享、空间不够静默截条（m11 隔离同构 300pt 四条全出；m12 170pt 只 2 条且 `setMaxHeight(120)` 无效；m13 position 1..4 扫描：3=底部横排 260pt 仍 3 条；4=右竖排）；载体第一 vpie 臂升 **340pt 四条全出**、第二臂 170pt+position=2 留作截断示警样本；remedy 文档化=给足高度或横排（官方 demo 大图不触发此边界）。
+- **门**：fast 13 GREEN（fast_contracts 三案 verified 断言先行红→修后绿；扁平名单断言同步含 stack 去 tooltip）/scan 48+1skip/负门 5 路 GREEN/双铁证 CBEB42E3+A8EF39AB 逐字节（carrier 轮覆盖 demo_api.cpt 后默认 spec 收尾回补纪律两次执行）/SECRET GATE clean；manifest `chart.stack/chart.label/chart.conditionalSeries` 四层全 verified+agentAvailable=true；coverage missing 50→49。
+- 教案重申：**挂接必回读 count、渲染案必 PNG 实拍**（fast/scan 只保序列化形状，渲染端不证不升层——批B 8h 二分教训的制度化收益）。

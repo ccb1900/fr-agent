@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Fri Nov 06 07:09:01 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Fri Nov 06 07:34:56 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
 > 不追范围（2026-11-05 拍板终口径="基本授权有的内容都可以做；额外收费的不做；移动端不做"）：① FVS 大屏付费插件扩展图族 14 包（kpi/meter/wisdomtree/globe/catalog/fluid/time/particlecounter/multidata/map.groupmap/column.arccolumn/column.carouselbar/column.shapecolumn/pie.carouselpie）——类物理定义于 plugin-com.fr.plugin.bigScreen.v11 fr-plugin-extendedCharts jar（缺口账 36 类命中；核心 jar 零交叉）；② com.fr.extended.chart.*（付费扩展图族配套数据集基建，类虽在核心 jar 但消费者全在付费插件）；③ 移动端 com.fr.report.mobile.* + com.fr.form.ui.mobile.*（4 类；MobileReg=手机号校验属基本功能不在其列）。
@@ -25,7 +25,6 @@
 | com.fr.chart.chartattr.ChartCommonCondition | 14 | missing | 漏账·图表条件(需批定义后归属) |
 | com.fr.plugin.chart.custom.VanChartCustomPlot | 12 | missing | 漏账·组合图(需批定义后归属) |
 | com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | missing | 批B后继·tooltip 深水区(未排) |
-| com.fr.chart.base.AttrBackground | 12 | missing | 批B后继·chart attr 装饰(未排) |
 | com.fr.plugin.chart.map.attr.AttrMapLabel | 8 | missing | 批I(挂账,#79/#597) |
 | com.fr.plugin.chart.base.AttrBorderWithAlpha | 8 | missing | 批B后继·chart attr 装饰(未排) |
 | com.fr.plugin.chart.base.format.AttrTooltipXFormat | 8 | missing | 批B后继·tooltip 深水区(未排) |
@@ -164,7 +163,7 @@
 | 既有 | sheet、background、funcgroup、summary、formula、condition、html、richtext、formulaPresent、float、watermark、toolbar、chart legacy、chartdata、image、局部样式(样式肾上) | 34/1 | stylesOf | 10+0 | #45、#21/#45、#33、#52 A、#26、#45 观察、#31 |
 | v4.2 | editor (参数控件族) | 8/0 | — | 0+0 | v4.2/待回填 |
 | 批A | condActionsExt | 4/0 | — | 1+0 | #72 |
-| 批B | chartDeco | 5/1 | AttrBorder | 3+21 | 待回填 |
+| 批B | chartDeco | 5/1 | AttrBorder | 3+20 | 待回填 |
 | 批C | headerfooter、template marks | 6/0 | — | 0+0 | #73 |
 | 批D | dict、formats | 9/0 | — | 2+1 | #45、数字格式既有 |
 | 批E | webpage、hyperlink、jsEvents | 9/1 | Commit2DBJavaScript | 0+0 | #45、#25/#45、#?/#45 |
