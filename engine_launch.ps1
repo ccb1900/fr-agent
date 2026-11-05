@@ -35,25 +35,41 @@ function Start-EngineJava {
   $java = "$FrHome\jre\bin\java.exe"
   $heapArg = "-Xmx$Heap"
   if ($PidFile) {
-    # agent path: register FIRST (P1-3), spawn so we can record identity, then wait for exit (r16: Kill is async - the holder must WAIT)
+    # agent path: register FIRST (r17 P1-3), spawn so we can record identity, then wait for exit (r16: Kill is async)
     $parent = Split-Path $PidFile -Parent
     if ($parent -and -not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
-    [System.IO.File]::WriteAllText($PidFile, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
     $argList = @('-Djava.awt.headless=true', $heapArg, '-cp', $cp, 'jdk.nashorn.tools.Shell', $Script)
     $sp = @{ FilePath = $java; ArgumentList = $argList; NoNewWindow = $true; PassThru = $true }
     if ($Out -ne '') { $sp['RedirectStandardOutput'] = $Out; $sp['RedirectStandardError'] = "$Out.err" }
+    # r18 P1-2: PRE-SPAWN failures (PENDING write / Start-Process throw) are the ONLY path that may un-register:
+    #   at this point no java exists, so removing the file still means truthfully "never started".
     $p = $null
     try {
+      [System.IO.File]::WriteAllText($PidFile, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
       $p = Start-Process @sp
-      $st = -1; try { $st = $p.StartTime.Ticks } catch { }
-      [System.IO.File]::WriteAllText($PidFile, ($p.Id.ToString() + ' ' + $st.ToString()), (New-Object System.Text.UTF8Encoding($false)))
     } catch {
-      # spawn never happened -> drop the pre-registration so "absent" stays the truthful verdict
       Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
       return 1
     }
-    $p.WaitForExit()
-    return $p.ExitCode
+    # r18 P1-2: everything AFTER a successful spawn is a "started but unregistered" situation. NEVER delete the
+    #   PENDING registration to claim "not started" - either collect the JVM on the SAME object (Kill + confirmed
+    #   WaitForExit -> registration may be dropped) or keep PENDING so the next run refuses (r17 fail-closed).
+    $st = -1
+    try { $st = [long]$p.StartTime.Ticks } catch { $st = -1 }
+    if ($st -gt 0) {
+      try {
+        [System.IO.File]::WriteAllText($PidFile, ($p.Id.ToString() + ' ' + $st.ToString()), (New-Object System.Text.UTF8Encoding($false)))
+      } catch {
+        Collect-UnregisteredSpawn $p $PidFile | Out-Null
+        return 1
+      }
+      $p.WaitForExit()
+      return $p.ExitCode
+    }
+    # StartTime unreadable on a LIVE spawn -> do NOT write a "pid -1" fake identity (would re-trigger the r18
+    #   parseable-garbage fail-open). Collect the just-spawned JVM or leave PENDING behind.
+    Collect-UnregisteredSpawn $p $PidFile | Out-Null
+    return 1
   }
   if ($Out -ne '') {
     & $java '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script *> $Out
@@ -61,4 +77,21 @@ function Start-EngineJava {
   }
   & $java '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script | Out-Host
   return $LASTEXITCODE
+}
+
+# r18 P1-2: collect a JVM that WAS spawned but whose identity could not be registered (StartTime unreadable or
+#   pidfile write failed). Kill on the SAME Process object we hold and wait for exit; ONLY a confirmed exit may
+#   drop the pre-registration. If it cannot be confirmed dead, the pending registration STAYS so the next run
+#   refuses (identity unknown) instead of racing an unspecified JVM. Returns 'confirmed' | 'kept-pending'.
+function Collect-UnregisteredSpawn($p, [string]$PidFile) {
+  $confirmed = $false
+  try {
+    $p.Kill()
+    if ($p.WaitForExit(15000)) { $confirmed = $true }
+  } catch { $confirmed = $false }
+  if ($confirmed) {
+    Remove-Item $PidFile -Force -ErrorAction SilentlyContinue
+    return 'confirmed'
+  }
+  return 'kept-pending'
 }

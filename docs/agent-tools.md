@@ -98,14 +98,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 - `runtimeState`(queued/running/released/lost) 与 `businessResult`(pending/succeeded/failed) 正交：释放执行权 ≠ 报表成功。
 - 路径/策略单源于 `agent/tools/config.ps1`；`verify/check_ps1_static.ps1` 静态把关（禁硬编路径、ASCII-only）；`scripts/run-integration-tests.ps1` = 静态门 + 全链故障注入（现行 S 号见 `docs/architecture/runtime-supervisor.md` §5；S1–S19 为 r13/r14 历史编号）。
 
-## r15 薄执行器（当前态，覆盖并简化 r13/r14 协议；r17 边界硬化）
+## r15 薄执行器（当前态，覆盖并简化 r13/r14 协议；r17 边界硬化 + r18 严格身份与登记失败收口）
 
-单机单实例前提下 Runtime 尽可能薄：**互斥=OS 命名 Mutex；恢复=进程身份判定**（无 queue/OwnerToken/done/FIFO/recover-previous 独立动作，结果真相=artifact.json）。
+单机单实例前提下 Runtime 尽可能薄：**互斥=OS 命名 Mutex（作用域=单 Windows 登录 Session，跨 Session 消费者不受保护，需 Global\+ACL 另行评估，见 docs/architecture/runtime-supervisor.md §0）；恢复=进程身份判定**（无 queue/OwnerToken/done/FIFO/recover-previous 独立动作，结果真相=artifact.json）。
 
 - compile/modify 临界区（r16 起整套临界区只在 fr_agent 主流程里，runtime.ps1 只读 status）：`WaitOne → 遗留检测 → claim → run.ps1(-NoKill,记 java.pid) → release → ReleaseMutex`。
-- 遗留检测语义（r17 三态）：哨兵缺失→放行；损坏哨兵/活持有者/身份不可读→`RUNTIME_BUSY` 拒绝（fail-closed，绝不为恢复清哨兵或起第二个 FineReport）；前手确认已死→按 `runs/<runId>/java.pid` 身份化处理：pidfile 缺失=放行；**PENDING（宿主在 spawn 与登记之间被杀，r17 P1-3）/损坏/不可读=拒绝**（绝不猜）；身份命中→同一 Process 对象 Kill+WaitForExit（退出=放行，未退出=拒绝；start 不符=pid 被复用，复用者对象绝不动）。
+- 遗留检测语义（r17 三态 + r18 严格身份）：哨兵缺失→放行；损坏哨兵/活持有者/身份不可读→`RUNTIME_BUSY` 拒绝（fail-closed，绝不为恢复清哨兵或起第二个 FineReport）；前手确认已死→按 `runs/<runId>/java.pid` 身份化处理：pidfile 缺失=放行；**PENDING（宿主在 spawn 与登记之间被杀，r17 P1-3）/corrupt/不可读=拒绝**（绝不猜；r18 起"可转成整数"不构成身份——**恰好两字段 pid>0 且 start>0** 才合法，`1234 -1` 类一律 corrupt，防止 pid-only 降级误杀无关进程/带幽灵身份放行）；严格命中（同一 Process 对象 verify+Kill，复用 PID 永不误杀）→ WaitForExit 确认退出=放行，未退出=拒绝；start 不符=pid 被复用，复用者对象绝不动。
 - **哨兵释放**（r17 P1-5）：只在本 run 的 Java 确认退出（或从未启动）时清 active.json，否则保留哨兵（history 记 HOLD），让下一次任务拒绝/按身份恢复。
-- **RunId create-new 独占**（r17 P2-1）：显式重复 RunId → `RUNID_EXISTS` 拒绝（并发窗口由 New-Item 无 -Force 兜底）——消除两次同 RunId 调用在 Mutex 外组装 artifact 时的交叉污染。
-- **java.pid 登记前移**（r17 P1-3，engine_launch.ps1）：spawn 前先写 `PENDING`，进程起来后立即覆盖为 "pid start"；spawn 本身失败则撤登记。Windows Job Object 方案评估过、未引入（现有 .NET/Win32 已够，且 r17 禁止新增运行机制）。
+- **RunId create-new 独占**（r17 P2-1 + r18 并发证明）：显式重复 RunId → `RUNID_EXISTS` 拒绝；两个独立进程并发抢同一 RunId 时 New-Item 的 create-new 语义在 OS 层单赢（S24 实证）——消除同 RunId 调用在 Mutex 外组装 artifact 时的交叉污染。
+- **java.pid 登记前移与失败收口**（r17 P1-3 + r18 P1-2，engine_launch.ps1）：spawn 前先写 `PENDING`，进程起来后立即覆盖为 "pid start"；**spawn 前任一步失败可撤登记**（此刻确实没有 java）；**spawn 成功后的登记失败（StartTime 读取失败/pidfile 覆盖失败）绝不删 PENDING 冒充"没启动"**——`Collect-UnregisteredSpawn` 在已持有的同对象上 Kill+WaitForExit，确认退出才清登记，否则 PENDING 留守（下一次拒绝）；StartTime 失败绝不写 `pid -1` 伪身份。Windows Job Object 方案评估过、未引入（现有 .NET/Win32 已够，且 r17/r18 禁止新增运行机制）。
 - `FR_AGENT_HEAP` env 可覆盖堆（embedded spec 无 j2v8，测试用低堆保证故障注入确定性）；`FR_AGENT_RUNTIME_DIR`/`FR_AGENT_MUTEX` env 供测试隔离。
-- 验收 `verify/integration_runtime.ps1` 故障注入（r17 诚实口径：互斥 S2/S4/S15·遗留**路径**（decoy 构造，非真宿主崩溃）S5/S5b·放过 S14·活锁拒绝 S6·损坏拒绝 S16·真宿主崩溃 S20（活宿主杀掉后保哨兵、下一次身份恢复）·损坏 java.pid 拒 S21·PENDING 拒 S22·RunId 重复拒 S23·排队 S8·patch 证据 S17）。协议详见 `docs/architecture/runtime-supervisor.md`。
+- 验收 `verify/integration_runtime.ps1` 故障注入（r17/r18 诚实口径：互斥 S2/S4/S15·遗留**路径**（decoy 构造）S5/S5b·放过 S14·活锁拒绝 S6·损坏拒绝 S16·真宿主崩溃 S20·**java.pid 六变体拒绝 S21**（整数可解析垃圾也算 corrupt，r18）·PENDING 拒 S22·RunId 重复拒 S23·**同 RunId 并发单赢 S24**·**spawn 前登记故障无泄漏 S25**·**spawn 后登记失败白盒收集 S26**（确认退出才清/Kill 失败或未退出 PENDING 留守）·排队 S8·patch 证据 S17）。协议详见 `docs/architecture/runtime-supervisor.md`。

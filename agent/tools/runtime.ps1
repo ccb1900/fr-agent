@@ -23,7 +23,7 @@ switch ($Action) {
     $ownerState = Classify-Owner ([int]$a.ownerPid) ([long]$a.ownerStart)
     $javaState = 'absent'
     $jp = Read-JavaPid $cfg.RunsDir ([string]$a.runId)
-    if ($jp.file -eq 'ok') { $javaState = Classify-Process ([int]$jp.pid) ([long]$jp.start) }
+    if ($jp.file -eq 'ok') { $javaState = Classify-Process ([int]$jp.pid) ([long]$jp.start) $true }   # r18: java = kill-target semantics
     elseif ($jp.file -eq 'pending') { $javaState = 'unknown' }
     elseif ($jp.file -eq 'corrupt') { $javaState = 'corrupt' }
     elseif ($jp.file -eq 'unreadable') { $javaState = 'unknown' }

@@ -216,17 +216,27 @@ if ($javaPid -le 0) {
   } else { Fail "S20 preconditions: orphanAlive=$orphanAlive sentinelLeft=$sentLeft (host finished before the kill?)" }
 }
 
-# ============ r17 P1-4: corrupt java.pid must be UNKNOWN, never "no JVM found" ============
-Write-Output "== S21 corrupt java.pid + dead owner -> RUNTIME_BUSY, decoy java untouched, sentinel kept"
+# ============ r18 P1: corrupt java.pid VARIANTS (integer-parseable garbage must NOT become a killable identity) ============
+Write-Output "== S21 corrupt java.pid variants -> RUNTIME_BUSY, decoy untouched, sentinel kept"
+$variants21 = @('not-a-jvm-id', '1234 -1', '1234 0', '0 123456789', '-1 123456789', '1234 123456789 extra')
+$bad21 = 0
+$idx21 = 0
+foreach ($v21 in $variants21) {
+  $idx21++
+  Reset-Rt
+  $decoy = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+  Start-Sleep -Seconds 1
+  New-Item -ItemType Directory -Force -Path "$runs\it_s21_$idx21" | Out-Null
+  [System.IO.File]::WriteAllText("$runs\it_s21_$idx21\java.pid", $v21, (New-Object System.Text.UTF8Encoding($false)))
+  [System.IO.File]::WriteAllText("$rt\active.json", (@{ runId="it_s21_$idx21"; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+  $out21 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s21x$idx21" 2>&1 | Select-Object -Last 1
+  if (-not (($out21 -match 'RUNTIME_BUSY') -and ((ArtExecOk "it_s21x$idx21") -ne $true) -and (Test-Path "$rt\active.json") -and (Alive $decoy.Id))) {
+    Write-Output "S21 VARI'$v21' FAIL: out=$out21 decoyAlive=$(Alive $decoy.Id) sent=$(Test-Path "$rt\active.json")"; $bad21++
+  }
+  Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+}
 Reset-Rt
-$decoy = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
-Start-Sleep -Seconds 1
-New-Item -ItemType Directory -Force -Path "$runs\it_s21" | Out-Null
-[System.IO.File]::WriteAllText("$runs\it_s21\java.pid", 'not-a-jvm-id', (New-Object System.Text.UTF8Encoding($false)))
-[System.IO.File]::WriteAllText("$rt\active.json", (@{ runId='it_s21'; ownerPid=999999; ownerStart=-1; claimedAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
-$out21 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s21x" 2>&1 | Select-Object -Last 1
-if (($out21 -match 'RUNTIME_BUSY') -and ((ArtExecOk 'it_s21x') -ne $true) -and (Test-Path "$rt\active.json") -and (Alive $decoy.Id)) { Pass "S21 corrupt java.pid -> RUNTIME_BUSY (fail-closed), decoy untouched" } else { Fail "S21 broken: $out21 decoy=$(Alive $decoy.Id)" }
-Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+if ($bad21 -eq 0) { Pass "S21 corrupt java.pid variants x$idx21 -> RUNTIME_BUSY (fail-closed), decoys untouched" } else { Fail "S21 broken variants=$bad21" }
 
 # ============ r17 P1-3: PENDING java.pid (host died in the spawn window) must be UNKNOWN -> refuse ============
 Write-Output "== S22 PENDING java.pid + dead owner -> RUNTIME_BUSY (never guess a JVM identity), sentinel kept"
@@ -246,6 +256,62 @@ $out23a = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1
 $out23b = & "$ROOT\agent\tools\fr_agent.ps1" -Verb discover -RunId "it_s23" 2>&1 | Select-Object -Last 1
 $rc23 = $LASTEXITCODE
 if (($out23b -match 'RUNID_EXISTS') -and $rc23 -eq 1) { Pass "S23 explicit duplicate RunId refused (RUNID_EXISTS, exit 1)" } else { Fail "S23 broken: $out23b rc=$rc23" }
+
+# ============ r18 P2: CONCURRENT RunId race - two independent processes, same RunId, exactly one must win ============
+Write-Output "== S24 two concurrent hosts race for the SAME RunId -> exactly one wins, other RUNID_EXISTS"
+Reset-Rt
+$s24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb discover -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24a.txt" -RedirectStandardError "$itAbs\s24a.err"
+$s24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb discover -RunId 'it_s24'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24b.txt" -RedirectStandardError "$itAbs\s24b.err"
+Start-Sleep -Milliseconds 300   # both must be PAST Test-Path before either creates the dir (best effort launch sync)
+$null = $s24a.WaitForExit(180000); $null = $s24b.WaitForExit(180000)
+$outA24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24a.txt"))
+$outB24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24b.txt"))
+$wins24 = @(); $losers24 = @()
+if ($outA24 -match '"ok":true') { $wins24 += 'a' } elseif ($outA24 -match 'RUNID_EXISTS') { $losers24 += 'a' }
+if ($outB24 -match '"ok":true') { $wins24 += 'b' } elseif ($outB24 -match 'RUNID_EXISTS') { $losers24 += 'b' }
+if ($wins24.Count -eq 1 -and $losers24.Count -eq 1 -and $wins24[0] -ne $losers24[0] -and (ArtExecOk 'it_s24') -ne $true) {
+  Pass "S24 same-RunId race: winner=$wins24 loser=$losers24 (one win, one RUNID_EXISTS, no cross-write)"
+} else { Fail "S24 broken wins=$wins24 losers=$losers24 outA=$outA24 outB=$outB24" }
+
+# ============ r18 P2: registration-failure fault injection (e2e + white-box) ============
+Write-Output "== S25 pre-spawn registration unusable (pidfile on missing drive) -> rc!=0, NO java spawned"
+$env:FR_AGENT_JAVA_PIDFILE = 'Q:\no-such-drive\bad\java.pid'
+& "$ROOT\run.ps1" -Script "$itAbs\_decoy_sleep.js" -Heap 640m -NoKill | Out-Null
+$rc25 = $LASTEXITCODE
+Remove-Item env:FR_AGENT_JAVA_PIDFILE -ErrorAction SilentlyContinue
+# identity-based leak check (ANOTHER SESSION may run its own java concurrently - never count foreign java)
+$leaked25 = @(Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue | Where-Object { [string]($_.CommandLine) -match '_decoy_sleep\.js' }).Count
+if (($rc25 -ne 0) -and ($leaked25 -eq 0)) { Pass "S25 pre-spawn registration failure -> rc=$rc25, no leaked decoy java (identity-checked)" } else { Fail "S25 broken rc=$rc25 leaked=$leaked25" }
+
+Write-Output "== S26 white-box Collect-UnregisteredSpawn: confirmed exit clears registration; cannot-confirm keeps PENDING"
+. "$ROOT\engine_launch.ps1"   # r18: exposes Collect-UnregisteredSpawn (started-but-unregistered JVM collector)
+# A) real java alive -> same-object Kill+Wait confirmed -> registration may be dropped
+$decoy26 = Start-Process $cfgJava -ArgumentList '-cp', $cfgJar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$itAbs\s26a" | Out-Null
+$pf26a = "$itAbs\s26a\java.pid"
+[System.IO.File]::WriteAllText($pf26a, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
+$r26a = Collect-UnregisteredSpawn $decoy26 $pf26a
+$ok26a = (($r26a -eq 'confirmed') -and (-not (Alive $decoy26.Id)) -and (-not (Test-Path $pf26a)))
+# B) Kill fails (stub) -> PENDING must STAY (fail-closed: the JVM may still be alive)
+$stubB26 = New-Object PSObject
+$stubB26 | Add-Member -MemberType ScriptMethod -Name Kill -Value { throw 'simulated kill failure' }
+$stubB26 | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param([int]$ms) throw 'simulated wait failure' }
+New-Item -ItemType Directory -Force -Path "$itAbs\s26b" | Out-Null
+$pf26b = "$itAbs\s26b\java.pid"
+[System.IO.File]::WriteAllText($pf26b, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
+$r26b = Collect-UnregisteredSpawn $stubB26 $pf26b
+$ok26b = (($r26b -eq 'kept-pending') -and (Test-Path $pf26b))
+# C) Kill ok but WaitForExit false (stub) -> PENDING must STAY
+$stubC26 = New-Object PSObject
+$stubC26 | Add-Member -MemberType ScriptMethod -Name Kill -Value { }
+$stubC26 | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param([int]$ms) return $false }
+New-Item -ItemType Directory -Force -Path "$itAbs\s26c" | Out-Null
+$pf26c = "$itAbs\s26c\java.pid"
+[System.IO.File]::WriteAllText($pf26c, 'PENDING', (New-Object System.Text.UTF8Encoding($false)))
+$r26c = Collect-UnregisteredSpawn $stubC26 $pf26c
+$ok26c = (($r26c -eq 'kept-pending') -and (Test-Path $pf26c))
+if ($ok26a -and $ok26b -and $ok26c) { Pass "S26 unregistered-spawn collector: confirmed=$r26a kept=($r26b/$r26c) fail-closed" } else { Fail "S26 broken a=$ok26a($r26a) b=$ok26b($r26b) c=$ok26c($r26c)" }
 
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

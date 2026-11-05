@@ -25,6 +25,11 @@ function Get-AgentConfig {
     # r15: thin single-instance executor. Mutual exclusion = OS named Mutex (kernel). Crash recovery = leftover-process
     #   IDENTITY check (java.pid pid+StartTime) inside the mutex; refuse when a leftover cannot be confirmed dead.
     #   No queue/, no OwnerToken, no done/ records (artifact.json is the result truth) - see docs/gpt/r15.md.
+    # r18 P1-3 SCOPE: this mutex name has NO Global\ prefix -> it lives in the LOCAL (system.object per login
+    #   session) namespace. The deployment contract is SINGLE Windows login session (all callers on this host run
+    #   inside one interactive session - the documented product shape). Cross-session callers (desktop apps, task
+    #   scheduler, services, other login sessions) are NOT covered by this lock - if that ever becomes a real
+    #   consumer, Global\ + ACL must be evaluated FIRST (docs/architecture/runtime-supervisor.md).
     MutexName         = $mtx
     Heap              = if ($env:FR_AGENT_HEAP) { $env:FR_AGENT_HEAP } else { '1200m' }   # env-overridable (README #47); embedded specs need no j2v8
     AcquireTimeoutSec = 900     # waiter blocks on the mutex up to this; never steals a live holder
