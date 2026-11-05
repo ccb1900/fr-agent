@@ -16,30 +16,32 @@
 | 预览/成功判断 | runresult 11 阶段 + `RESULT_DUMP` 栅格 + `agent/tools/preview.js` + `artifact.json` 契约（r10） |
 | 用户修改（不推倒重来） | modify verb = PatchSpec → `template/{ops,validator,locator,diff,reader,inspector,patch}.js`（I6；staging 隔离、原件保留、执行回归+像素 diff） |
 
-## 2. 案例选型（推荐）
+## 2. 案例选型（推荐；验收范围以 §6.1 GOLDEN v1 为唯一口径——r22b 审查要求消除两套口径）
 
 **主案例：机台生产日报**
-- 输入（自然语言示例）："给我出一份激光机台的生产日报：按机台汇总昨天及近几天的计划数、完成数、完成率（比率用完成/计划百分数），按机台过滤到某一台或全部，完成数取检测合格分≥0.9 的件数口径，要按天分组、按机台 TOP、最后放一张每日完成数柱状图；样式按生产同款（SimHei，表头加粗，合计在最右）"。
-- 为什么选它：覆盖**多字段多口径（COUNT/score≥0.9/ratio×100）、分组+合计、参数筛选、TOP N、柱状图**——最能一次打中 sort/topN/filters/presentation.chart（I5.3 三项+图表均已引擎 live 端到端验证）。
+
+- **输入（自然语言，v1 唯一口径）**："出一份激光机台生产日报：固定日期区间 2026-09-13 至 2026-09-22，按业务日期、机台分组；每天每台给计划数（件数）、完成数（score≥0.9 口径件数）、完成率（完成/计划×100，展示层指标不进 SQL）；合计行在最右，版式按生产同款（SimHei、表头加粗、边框全留）"。
+- **历史输入草案（仅档案，不作 v1 承诺）**：原设计曾含"按机台过滤、按天 TOP、每日完成数柱状图、阈值可改"——该四项已被 r22 审查证实为未打通能力（sqlbuilder 跨表 filter 拒 / ops 白名单两 op / 真值粒度 / TOP 行级语义与图表绑同 ds1），随 §6.2 移入 v2+，**Agent 不得按旧草案实施**。
+- 为什么选它：分组+合计+三口径+JOIN 安全性一次覆盖既有链路强项；§6.2 的 v2+ 项在 v1 基准成立后按审查节奏逐项解锁。
 - 版式对标：`docs/cpt-samples/3D翘曲检查数据分析V2.cpt`（生产同款版式学习源：合并组带表头、行高冗余、SimHei 112 全员——AGENTS 排版红线）。
-- **配套 modify 回归**：第一次生成后，用户口头"把标题改为《生产日报（复核）》、把合格分阈值口径改为 ≥0.8"——Agent 走 modify（PatchSpec）**patch 原报表**而非重新生成，验收执行回归逐格不变（除被改格）+ 像素 diff < 5% + 原件保留。
+- **配套 modify 回归（v1 唯一承诺的修改）**：第一次生成后，用户口头"把标题改为《生产日报（复核）》"——Agent 走 modify（PatchSpec `replace_cell_value`）**patch 原报表**而非重新生成，验收执行回归逐格不变（除被改格）+ 像素 diff < 5% + 原件保留；阈值修改 v1 不做（§6.2）。
 
 **备选**：纯报表基线可对照 `docs/cpt-samples/销售明细.cpt`（demo 家族源样式）与 `销售明细_参数面板_api.cpt`（管线自产、参数面板/提交按钮代表）；若审查方第二步认为参数面板应入 Golden 主线，再升级。
 
-## 3. 验收口径（四条，全部复用既有工具，不新写框架）
+## 3. 验收口径（四条，全部复用既有工具，不新写框架；口径以 §6.1 v1 为准）
 
 1. **需求→spec 正确**：plan 输出 ready 且字段/口径与用户表达一致；ambiguous 必须反问（requiresConfirmation）不得自动选；unknown 不臆造字段（I3/I4 r2 §3.3/§4.3 原样保留）。
 2. **生成可打开**：runresult 11 阶段 passed（含 cpt_validate 回归门）＋ preview 导出 PNG/PDF 落盘＋cpValidate 无 style count mismatch；**人工肉眼过目**由用户执行（AGENTS 惯例：产品验证走文件层，用户决定看什么）。
-3. **数据真值对拍**：`RESULT_DUMP` 栅格与独立真值逐格等值（`verify/verify_sql_data.js` 哨兵 + `verify/compare_paths.js` 三线对拍，缺真值 SKIP 不假绿）——真值锚定 `data/db_laser_sub_truth.txt` 与 `models/production/model.json` 的业务口径（计划=COUNT(*)、完成 score≥0.9、完成率 r×100、平均分全加权）。
-4. **修改不推倒重来**：modify 走 I6 patch 通道，patch 前后执行回归坐标屏蔽比对（PatchSpec 坐标）、渲染像素 diff<5%、原 CPT 保留（staging 出货）。
+3. **数据真值对拍（v1=日期×机台级）**：`RESULT_DUMP` 栅格与 **`data/db_laser_machine_daily_truth.txt`** 逐格等值（`verify/verify_sql_data.js` 复合键模式 + `verify/compare_paths.js` 复合键对照——r22b 本轮已补 env 驱动，默认旧路径零漂移）——真值口径（计划=COUNT(*)、完成 score≥0.9、完成率 r×100）与 `models/production/model.json` 一致；真值探针与生产 SQL **同用 INNER JOIN**（join_sanity 另证 LEFT 等价：matched/unmatched/fanout 三计数）。
+4. **修改不推倒重来**：modify 走 I6 patch 通道（v1 只改标题格），patch 前后执行回归坐标屏蔽比对（PatchSpec 坐标）、渲染像素 diff<5%、原 CPT 保留（staging 出货）。
 （北方口径提醒：数据集受只读闸、部署件凭据自动门、`?` 绑定=FR 后端不支持用受控字面量——均为既定架构边界，不因 Golden 案例翻动。）
 
 ## 4. 资产索引（审查方接车地图）
 
 - CPT 样张（**仓库现首次入库，未提交全部 CPT，凭据扫描零命中**）：`docs/cpt-samples/3D翘曲检查数据分析V2.cpt`（生产版式对标）、`docs/cpt-samples/销售明细.cpt`（demo 源样式）、`docs/cpt-samples/销售明细_参数面板_api.cpt`（参数面板代表）。
 - 数据结构/口径：`models/production/model.json`（5 实体/15 映射/6 指标/3 维度/3 关系，业务口径已锚真值）、`data/db_laser_tables_prod.json`（生产库结构）、`data/db_tables_profile.txt`/`data/db_br_truth.txt`（历史真值参照）、I2 schema（`data/schema_atom_live_demo.json` 演示库命物；生产库结构见上）。
-- 真值对拍锚：`data/db_laser_sub_truth.txt`（栅格真值哨兵源）。
-- 工具：`agent/tools/fr_agent.ps1`（verb 契约 docs/agent-tools.md）、`verify/compare_paths.js`、`verify/verify_sql_data.js`、产物契约 `application/contracts.js`（ReportArtifact/RunResult）。
+- 真值对拍锚：`data/db_laser_machine_daily_truth.txt`（day×machine 真值，INNER JOIN 同生产语义 + join_sanity matched/unmatched/fanout 自证；`db_laser_sub_truth.txt` 为日期级历史锚）。
+- 工具：`agent/tools/fr_agent.ps1`（verb 契约 docs/agent-tools.md）、`verify/compare_paths.js`（复合键 env `AGENT_GRID_KEYCOLS`）、`verify/verify_sql_data.js`（复合键 env `TRUTH_DAY_MACHINE`）、产物契约 `application/contracts.js`（ReportArtifact/RunResult）。
 - 可复现雏形记录：`docs/agent-demo-machine-daily.md`（r7 首次完整演示）、README #58/#59/#61/#62/#82。
 
 ## 5. 如实清点：现在还缺什么（等审查方第二步指认）

@@ -734,3 +734,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **真值资产（审查点名第一项）**：`data/db_laser_machine_daily_truth.txt`——day×machine 三段真值（detail 10 行/逐日小计/grand）+ **join_sanity 自证段（base=joined=33531 未放大、10 distinct key）**；口径与 v1 逐字一致（score≥0.9、recordToFile、固定区间、ratio 只走展示层参考列）；grand 33531/26531/79.1238 与既有真值逐位对拍成链。产线=`probes/probe_machine_daily_truth.js`（只读 JDBC，不启 FineReport 不杀 java，沿 probe_dbtruth2 惯例；探针踩过两个 SQL Server 语义坑已修：GROUP BY 需与 SELECT 字面表达式同形、相关子查询引用外层别名无效）。资产层实况一句话：**库内当前机台维度单值（laser3-aaa），day×machine 键结构稳定、数据日后多机自动分组**。
 - **留账待 v1 开跑前（审查第二项）**：`compare_paths.js` 明细键从第一列升复合键（日期+机台）、`verify_sql_data.js` 机台级对拍——修现有工具不造二套框架。
 - Runtime 冻结裁定不变；GOLDEN v1 基准规格即查即用，等审查方回话再开 `plan → create → validate → preview → modify` 全链。
+
+
+#96 golden v1 开跑前收齐（2026-11-05，外部审查入 docs/gpt/r22b-golden-readiness.md 逐字；裁定=ed7a48a 方向认可，三项收尾后直接进第一次真实运行）。按审查范围表三件全做，不再动语义层/SQL Builder/Runtime/Patch：
+- **P1 文档两套口径消除**：golden 文档 §2/§3 原仍把筛选/TOP/图表/阈值改当主案例能力——已整体改写：§2 输入换 v1 口径 + 旧草案明标"历史输入草案（仅档案，Agent 不得按旧草案实施）"，§3 各条对齐 §6.1 并前呼 §6；资产索引同步（新真值优先、日期级旧真值降为历史锚）。
+- **P1 JOIN 自证补足**：`probe_machine_daily_truth.js` 三主段改 **INNER JOIN**（与生产 sqlbuilder 关系语义一致）；join_sanity 升五计数 `base/joined/matched/unmatched/fanout`——实证 `33531=33531=33531/0/0`（INNER==LEFT 等价：全部匹配、零未匹配、零放大）。★fanout 语义实跑取证纠错：首版误按"左键在 join 后组内行数"计数得 10（属正常业务=多检测记录共用一个文件键），直查发现 laser_files 全表 538 行键 538 全唯一（I5.1 证据仍成立）后改为 figurative 语义"**laser_files 侧同键多记录的键数**"（独立 f 表子查询）→ 0。
+- **P2 复合键工具适配（上轮留账完成）**：`verify/verify_sql_data.js` 增 **`TRUTH_DAY_MACHINE=1`** 模式（读 day×machine 真值，grid 按 5 列 day|machine|plan|done|rate 逐行 day@machine 对拍 + rate 容差 ±0.01，总计对 grand 三值）；`verify/compare_paths.js` 增 **`AGENT_GRID_KEYCOLS`**（如 0,1 拼复合键；c 循环从键列后起）+ **键重复哨兵 `keyDupsA/B` 计入 equal 判定**（r22 §2-P1"同日多机台静默覆盖"教训固化为显式 Fail）。两者**未设 env=旧路径一字不动（零漂移）**。
+- **smoke 实证**（复合键正/负 + 零漂移 + 哨兵）：① 正例 10 行+总计 5 CHECK 全 PASS；② 负例改 1 格精确检出 exit 1；③ 不设 env 旧 grid 路径照旧；④ compare_paths 复合键同/异两例 dataEqual true/false 精确切中；⑤ **同日两机台在复合键下 dataEqual=true（不再覆盖），单键模式下 keyDups 哨兵使其显式 false**。五例全绿（快门/边界/SCAN 同步复跑 GREEN）。
+- **下一步（审查钦定）**：停止准备，直接第一次真实运行——`plan`（自然语言输入查字段/指标识别）→`create`→`validate`→`preview`（FineReport 实开导 PNG/PDF）→`modify`（改标题、原报表保留、未改内容不变）。

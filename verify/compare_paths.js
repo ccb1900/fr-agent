@@ -3,6 +3,8 @@
 //     AGENT_GRID_A / AGENT_GRID_B   RESULT_DUMP 栅格
 //     AGENT_PNG_A  / AGENT_PNG_B    PNG 绝对路径
 //     AGENT_RES_A  / AGENT_RES_B    RunResult JSON
+//     AGENT_GRID_KEYCOLS            可选复合键（r22b-golden-readiness.md）：如 '0,1' → col0+col1 拼键
+//                                   （GOLDEN v1 的 day@machine）；未设 = 旧单键行为一字不动（零漂移）。
 //   输出 logs/agent/a2_compare.json：{grid:{equal,diffs}, totals:{a,b}, png:{equal,shaA,shaB,bytes}, run:{okA,okB,stagesA,stagesB}}
 //   数值按十进制字符串规范化比较（不丢精度），文本严格比较。
 var J = function (n) { return Java.type(n); };
@@ -53,10 +55,16 @@ if (ga && gb) {
   }
   out.grid.equal = equal; out.grid.diffs = diffs;
 
-  // 数据区对照（A2 真正要证明的）：按日期键对齐明细行 + 合计行数值；标题/脚注/表头差异单独记
+  // 数据区对照（A2 真正要证明的）：按键对齐明细行 + 合计行数值；标题/脚注/表头差异单独记
+  // r22b 复合键：AGENT_GRID_KEYCOLS（如 '0,1'）→ 键=KEYCOLS 各列 canon 用 '@' 拼接；未设=旧单键 col0。
+  var KEYC = (System.getenv('AGENT_GRID_KEYCOLS') || '').split(',').filter(Boolean)
+    .map(function (x) { return +x; }).filter(function (x) { return !isNaN(x) && x >= 0; });
+  if (KEYC.length === 0) KEYC = [0];
   function isDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(String(s).trim()); }
   function isTotal(row) { return row && /合计|总计/.test(String(row[0])); }
-  function detailMap(g) { var m = {}; g.forEach(function (row) { var k = canon(row[0]); if (isDate(k)) m[k] = row; }); return m; }
+  function rowKey(row) { return KEYC.map(function (c) { return canon(row[c]); }).join('@'); }
+  function isDetail(row) { return isDate(String(row[KEYC[0]]).trim()); }
+  function detailMap(g) { var m = {}; g.forEach(function (row) { var k = rowKey(row); if (isDetail(row)) m[k] = row; }); return m; }
   function totalsOf(g) { for (var i = g.length - 1; i >= 0; i--) if (isTotal(g[i])) return g[i]; return null; }
   var da = detailMap(ga), db = detailMap(gb);
   var ka = Object.keys(da).sort(), kb = Object.keys(db).sort();
@@ -64,7 +72,7 @@ if (ga && gb) {
   ka.forEach(function (k) {
     if (!db[k]) return;
     var ra = da[k], rb = db[k], n = Math.max(ra.length, rb.length);
-    for (var c = 1; c < n; c++) {   // c0 是日期键，已对齐
+    for (var c = KEYC.length; c < n; c++) {   // 键列(前 KEYC.length 列)已对齐，从其后才开始逐格比较
       if (canon(ra[c]) !== canon(rb[c])) {
         dataEqual = false;
         if (dataDiffs.length < 10) dataDiffs.push({ key: k, c: c, a: ra[c], b: rb[c] });
@@ -76,11 +84,15 @@ if (ga && gb) {
   (ta || []).forEach(function (x) { var n = Number(canon(x)); if (isFinite(n) && canon(x) !== '') na.push(n); });
   (tb || []).forEach(function (x) { var n = Number(canon(x)); if (isFinite(n) && canon(x) !== '') nb.push(n); });
   var totalEqual = na.length === nb.length && na.every(function (v, i) { return v === nb[i]; });
+  // 键重复哨兵（r22 §2-P1 教训：单键时同日多机台会被静默覆盖）——dupe 明细行数>0 即键设计不足，必须可见
+  function dupCount(g) { var seen = {}, d = 0; g.forEach(function (row) { if (!isDetail(row)) return; var k = rowKey(row); if (seen[k]) d++; seen[k] = 1; }); return d; }
+  var dupA = dupCount(ga), dupB = dupCount(gb);
   out.data = {
-    equal: dataEqual && totalEqual, detailEqual: dataEqual,
+    equal: dataEqual && totalEqual && dupA === 0 && dupB === 0, detailEqual: dataEqual,
+    keycols: KEYC.join(','), keyDupsA: dupA, keyDupsB: dupB,
     daysA: ka.length, daysB: kb.length, diffs: dataDiffs,
     totalA: na, totalB: nb, totalEqual: totalEqual,
-    structureNote: '标题/表头/脚注/行数差异按结构差异记录，不参与数据等价判定'
+    structureNote: '标题/表头/脚注/行数差异按结构差异记录，不参与数据等价判定；键重复(keyDups)计入 equal 判定'
   };
   out.totals.a = na; out.totals.b = nb;
 }
