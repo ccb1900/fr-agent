@@ -271,7 +271,7 @@ $planRe23 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb plan -Intent "$itRel/a.json
 $orchid = ($out23b -match 'RUNID_EXISTS') -and ($rc23 -eq 1) -and ($planRe23 -notmatch 'RUNID_EXISTS')
 if ($orchid) { Pass "S23 engine artifact re-entry refused; zero-engine chain handoff allowed on the same runId" } else { Fail "S23 broken: compile=$out23b rc=$rc23 plan=$planRe23" }
 
-Write-Output "== S24 two concurrent compile hosts over pre-seeded engine artifact -> both refuse (no race write)"
+Write-Output "== S24a two concurrent compile hosts over pre-seeded engine artifact -> both refuse (no race write)"
 Reset-Rt
 New-Item -ItemType Directory -Force -Path "$runs\it_s24" | Out-Null
 [System.IO.File]::WriteAllText("$runs\it_s24\compile.json", '{"tool":"compile","runId":"it_s24","ok":true,"exit":0}', (New-Object System.Text.UTF8Encoding($false)))
@@ -280,8 +280,24 @@ $s24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','
 $null = $s24a.WaitForExit(180000); $null = $s24b.WaitForExit(180000)
 $outA24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24a.txt")); $outB24 = [string]([System.IO.File]::ReadAllText("$itAbs\s24b.txt"))
 if (($outA24 -match 'RUNID_EXISTS') -and ($outB24 -match 'RUNID_EXISTS') -and ((Get-Content "$runs\it_s24\compile.json" -Raw) -match '"runId":"it_s24"' -and (Get-Content "$runs\it_s24\compile.json" -Raw) -notmatch 'queue')) {
-  Pass "S24 both concurrent compiles refused (mutex-serial, artifact untouched, no engine started)"
-} else { Fail "S24 broken outA=$outA24 outB=$outB24" }
+  Pass "S24a both concurrent compiles refused (mutex-serial, artifact untouched, no engine started)"
+} else { Fail "S24a broken outA=$outA24 outB=$outB24" }
+
+# ============ r23 P1: REAL same-RunId concurrent re-entry race (from zero artifacts) ============
+Write-Output "== S24b real race: two hosts, same RunId, no pre-existing artifact -> exactly ONE engine run, other RUNID_EXISTS"
+Reset-Rt
+[System.IO.File]::WriteAllText("$itAbs\s24race.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_S24RACE"'), (New-Object System.Text.UTF8Encoding($false)))
+$r24a = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24ra.txt" -RedirectStandardError "$itAbs\s24ra.err"
+$r24b = Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-Command', "Set-Location '$ROOT'; & '$ROOT\agent\tools\fr_agent.ps1' -Verb compile -Spec 'logs/agent/it/s24race.json' -RunId 'it_s24r'" -PassThru -WindowStyle Hidden -RedirectStandardOutput "$itAbs\s24rb.txt" -RedirectStandardError "$itAbs\s24rb.err"
+$null = $r24a.WaitForExit(600000); $null = $r24b.WaitForExit(600000)
+$outRa = [string]([System.IO.File]::ReadAllText("$itAbs\s24ra.txt")); $outRb = [string]([System.IO.File]::ReadAllText("$itAbs\s24rb.txt"))
+$okR24 = 0; $refR24 = 0
+if ($outRa -match '"ok":true') { $okR24++ } elseif ($outRa -match 'RUNID_EXISTS') { $refR24++ }
+if ($outRb -match '"ok":true') { $okR24++ } elseif ($outRb -match 'RUNID_EXISTS') { $refR24++ }
+$rrJson = $null; try { $rrJson = Get-Content "$runs\it_s24r\runresult.json" -Raw -Encoding UTF8 | ConvertFrom-Json } catch { }
+$singleEngine = (($okR24 -eq 1) -and ($refR24 -eq 1) -and ($null -ne $rrJson) -and ($rrJson.success -eq $true))
+if ($singleEngine) { Pass "S24b real race closed: exactly one engine run (ok=1, RUNID_EXISTS=1), single truthful runresult" } else { Fail "S24b broken ok=$okR24 ref=$refR24 outA=$outRa outB=$outRb" }
+Remove-Item "D:\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent\IT_S24RACE_api.*" -Force -ErrorAction SilentlyContinue
 
 # ============ r18 P2: registration-failure fault injection (e2e + white-box) ============
 Write-Output "== S25 pre-spawn registration unusable (pidfile PARENT is a regular file - deterministic fault, no drive dependency) -> rc!=0, NO java spawned"

@@ -757,3 +757,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **☆r22e RunId 语义正名（三撞实录）**：①r22c 收尾后 plan→plan2spec 同 runId 被 RUNID_EXISTS 拒（r17 P2-1 目录级粗判误伤 demo 定义的"单 runId 贯穿"接力）；②改为 verb 分级（引擎=拒/零引擎=续）后 create 仍拒——目录由零引擎链先建；③最终判据正名=-=**引擎产物存在性**（compile.json/patch.json 各自拒、真实 re-entry 才拒）；零引擎产物（plan.json/reportSpec.json）同目录=合法链路接力。artifact 组装**移回互斥内**（r16 sec.3 缩锁后产物在 ReleaseMutex 点才可见的竞写窗随之关闭，r22e 注记）。S23/S24 重构至新语义（S23=预置 compile.json 后 compile=拒、同目录 plan 续跑=未拒即续跑证据；S24=预置产物下双并发 compile 全拒、无第二引擎、无竞写）。集成门 S1–S28 全绿后进 GOLDEN 链（第一次 S23 断言错在"要求 plan ready"，实际 rows 版 intent 含模型外术语被拒属 planner 正当行为——改断言为"入口未被 RUNID_EXISTS 拒"）。
 - ★preview 教学：`-Png` 吃的是**编译产出的 PNG 绝对路径**（preview.js 是零引擎 PNG 检视器：尺寸/字节/blankish），不是输出路径。
 - 验收四条对照（golden-e2e-case.md §6.1）：①plan ready 且字段/口径与表达一致（ambiguous 反问语义保留）✓；②11 阶段+实渲染+无 style mismatch ✓；③day@machine 逐格==真值（含一滴不假绿：verify_sql_data 的双侧重复键/双向键集合已入防）✓；④patch 未动格一致+原件保留 ✓。**验收工具不能假通过+真实 FineReport 环境跑出第一份 Golden 报表 = r22c 审查的两条件全兑现。**
+
+
+#99 r23 同 RunId 并发重入竞态闭口（2026-11-05，外部审查入 docs/gpt/r23-concurrent-rerun.md 逐字；裁定=Golden v1 五步/真值/预览/修改四项全认，唯 RunId 并发安全一项阻断——不重开 Runtime、不加锁/队列/Token）：
+- **P1 竞态窗**：入口 `Test-Path compile.json` 在 WaitOne 之前——A/B 两进程同 RunId 都无产物时双通过；A 进 Mutex 跑完引擎写 compile.json 释放；B 进 Mutex **不复查**→ 第二次引擎执行（恰是 r22e 想防的场景）。现有 S24 只测"预置产物双拒"，从"产物不存在"起跑的竞态窗口没覆盖。
+- **最小修（Mutex 内复查，不加任何锁/队列/Token）**：`Invoke-UnderMutex` 增 `DupCheckFile` 参数——取 Mutex 后、claim 哨兵**前**复查引擎产物（r22e 把 artifact 组装移回互斥内使 compile.json 在 release 前完整可见，正是此复查可行的前提）；存在→`dup=true` 返回，verb 侧输出 `RUNID_EXISTS` exit 1（不 claim、无引擎）。compile/patch 两 verb 各传自己的 artFile。
+- **S24 拆 a/b**：S24a（原预置双拒保留改名）+ **S24b 真竞态**——两独立进程同 RunId（it_s24r）同真实 spec（IT_S24RACE）从零产物并发起跑，断言 **恰一 `"ok":true`（引擎恰跑一次）+ 恰一 `RUNID_EXISTS`（Mutex 内复查命中）+ runresult 单份且 success=true**；跑后清 IT_S24RACE_api.* 部署件。集成门 S1–S28+ 全绿（S24b 首吃真实并发）。
+- **审查四项结论全认**（Golden v1 五步闭环/数据真值/实渲染/修改与原件保留=仓库记录完成）；裁定的注意力转向照单执行：**不再修基础设施，转回 Agent 的需求理解、报表创作质量与修改可靠性。**

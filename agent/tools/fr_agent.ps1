@@ -73,7 +73,7 @@ function WriteAtomic([string]$path, [string]$text) {
 #     never "no JVM found" - refuse instead of racing an unidentifiable JVM.
 #   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold
 #   (r16 sec.3). Returns @{gained; busy; rc}.
-function Invoke-UnderMutex([scriptblock]$RunBody) {
+function Invoke-UnderMutex([scriptblock]$RunBody, [string]$DupCheckFile = '') {
   . (Join-Path $PSScriptRoot '_identity.ps1')
   $activeFile = "$($cfg.RuntimeDir)\active.json"
   $histFile = "$($cfg.RuntimeDir)\history.log"
@@ -83,6 +83,13 @@ function Invoke-UnderMutex([scriptblock]$RunBody) {
     try { $gained = $mtx.WaitOne([TimeSpan]::FromSeconds($cfg.AcquireTimeoutSec)) }
     catch [System.Threading.AbandonedMutexException] { $gained = $true }
     if (-not $gained) { return @{ gained = $false; busy = $false; rc = $null } }
+    # r23 P1: the entry RunId check happens BEFORE WaitOne, so two same-RunId callers can BOTH pass it.
+    #   The mutex serializes them and (r22e) the first caller writes its engine artifact BEFORE releasing -
+    #   so re-checking the artifact HERE, inside the mutex and before the claim, makes the second caller
+    #   refuse deterministically: the same RunId can never run the engine twice. (No lock/queue/token added.)
+    if ($DupCheckFile -and (Test-Path $DupCheckFile)) {
+      return @{ gained = $true; busy = $false; dup = $true; rc = $null }
+    }
     # leftover-process check (only reachable while we hold the mutex)
     # r19 P1: Test-Path false is NOT proof of absence - classify with Get-FilePresence, refuse on unreadable/unknown.
     $pres = Get-FilePresence $activeFile
@@ -230,8 +237,9 @@ switch ($inner) {
       Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
       @{ rc = $rc; artRc = $artRc }   # both codes; caller surfaces ONE contract line
     }
-    $r = Invoke-UnderMutex $body
+    $r = Invoke-UnderMutex $body $artFile
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }   # r23: artifact appeared while we waited -> same RunId already ran
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
     $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
@@ -265,8 +273,9 @@ switch ($inner) {
       Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
       @{ rc = $rc; artRc = $artRc }
     }
-    $r = Invoke-UnderMutex $body
+    $r = Invoke-UnderMutex $body $artFile
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }   # r23
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
     $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
