@@ -703,3 +703,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **S21 十变体**：在 r18 六变体上补**多连续空格 / 制表符分隔 / PID 超 Int32 / StartTime 超 Int64** 四条格式边界（解析层 TryParse 失败或字段数≠2 一律 corrupt，铁证区域零放宽）。
 - **门**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN（本轮一次跑过，无并会竞态） / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S27 failures=0**（S20 真宿主崩溃复验：orphan 37800 killed；S21 x10；S26 四分支；S27+S27b 双线）。
 - **r19 原则**：R16/R17/R18 五件套与薄执行器不动；不新增状态目录/Token/调度器；新增不变量——**「文件状态无法确认」永不当作「不存在」（哨兵与 pidfile 一体适用）；Kill 的成败不裁决 PENDING 去留，WaitForExit 的退出才是裁决。**
+
+
+#92 r19 收尾轮「runtime.ps1 穷尽状态映射 + unreadable 分支证明」（2026-11-05，收尾审查入 r19.md（docs/gpt/r19.md 附「收尾审查」节，逐字）；审查确认 R19 两 P1 实质修好、架构零倒退、只修两项收尾）：
+- **P2 runtime.ps1 status 穷尽映射**：`Read-JavaPid` 六态（absent/readable→ok/pending/corrupt/unreadable/**unknown**）但 status 的 if/elseif 链没有 unknown 分支——锁定状态的 java.pid 被**误显示为 absent**（红探针实读：`javaState:"absent"` ← file='unknown'），与「文件状态无法确认≠不存在」新原则自相矛盾；虽是只读诊断层不直接引发双 JVM，却会把运维引向正好是 fail-closed 契约最在意的现场。修=switch 穷尽映射 + **default→'unknown'**（未知状态值也绝不落 absent 初值）——行为变白盒红→绿实读验证。
+- **P2 S27e unreadable 分支证明**：四分类唯一没有专项测的分支。确定性注入=**`icacls /deny *S-1-1-0:(R)`（Everyone 拒读）**——显式 Deny ACE 先于任何 Allow（含继承），且默认令牌的 SeBackupPrivilege 处于停用态、普通 `File.Open` 无 backup flag 不走备份语义→**管理员/提升运行也成立**（审查点名的不确定性诉求）；验后 `/remove:d *S-1-1-0`（owner 隐含 WRITE_DAC 必能还原）+删文件清理。断言 `Get-FilePresence == 'unreadable'`（绝不折叠成 absent）。
+- **P3（审查评定暂不阻塞）**：Get-FilePresence 先检查后由调用方读取的两开窗口——读取失败本就按 unknown 保守拒绝，留账**后续统一读取接口**（一次打开返回内容），本轮不动。
+- **门**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S27+e failures=0**（IT FAIL=0：S26 四分支·S27 四态+S27b 黑盒·S27e unreadable·全绿）。
+- **收尾裁定**：Runtime 冻结（薄执行器五件套不动）；既有边界继续：互斥=单 Windows 登录 Session；手动 run.ps1 全杀 java 机器级副作用、agent 路径一律 -NoKill。

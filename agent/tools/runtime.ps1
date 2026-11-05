@@ -24,12 +24,19 @@ switch ($Action) {
     try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
     if (-not $a) { Write-Output '{"ok":true,"active":"CORRUPT"}'; exit 0 }
     $ownerState = Classify-Owner ([int]$a.ownerPid) ([long]$a.ownerStart)
-    $javaState = 'absent'
-    $jp = Read-JavaPid $cfg.RunsDir ([string]$a.runId)
-    if ($jp.file -eq 'ok') { $javaState = Classify-Process ([int]$jp.pid) ([long]$jp.start) $true }   # r18: java = kill-target semantics
-    elseif ($jp.file -eq 'pending') { $javaState = 'unknown' }
-    elseif ($jp.file -eq 'corrupt') { $javaState = 'corrupt' }
-    elseif ($jp.file -eq 'unreadable') { $javaState = 'unknown' }
+    # r19/portfolio P2: EXHAUSTIVE mapping of the pidfile state - unknown state must surface as 'unknown',
+    #   NEVER silently fall back to the 'absent' initializer (a locked/unconfirmable java.pid is a REAL
+    #   diagnostic state, and reporting it as "no java registered" lies to the operator about exactly the
+    #   case the fail-closed contract cares about).
+    $javaState = switch ($jp.file) {
+      'ok' { Classify-Process ([int]$jp.pid) ([long]$jp.start) $true }   # r18: java = kill-target semantics
+      'absent' { 'absent' }
+      'pending' { 'unknown' }
+      'corrupt' { 'corrupt' }
+      'unreadable' { 'unknown' }
+      'unknown' { 'unknown' }
+      default { 'unknown' }
+    }
     Write-Output ('{"ok":true,"active":' + (ConvertTo-Json @{ runId = [string]$a.runId; ownerState = "$ownerState"; javaState = "$javaState" } -Compress) + '}')
     exit 0
   }

@@ -357,5 +357,18 @@ $out27 = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -
 $fs27b.Close()
 if (($out27 -match 'RUNTIME_BUSY') -and (Test-Path "$rt\active.json")) { Pass "S27b locked sentinel -> RUNTIME_BUSY (fail-closed, not touched)" } else { Fail "S27b broken: $out27" }
 
+# S27e - r19 endgame: the UNREADABLE branch must have its own proof. Deny-Read for Everyone is deterministic even
+#   for elevated/administrative runners: explicit Deny ACE precedes any Allow (incl. inherited), and
+#   SeBackupPrivilege stays DISABLED by default so normal File.Open evaluates deny -> AccessDenied.
+Write-Output "== S27e unreadable branch: Everyone-deny Read -> 'unreadable' (never absent/unknown)"
+New-Item -ItemType Directory -Force -Path "$itAbs\s27u" | Out-Null
+$f27u = "$itAbs\s27u\denied.pid"
+[System.IO.File]::WriteAllText($f27u, 'x', (New-Object System.Text.UTF8Encoding($false)))
+icacls $f27u /deny '*S-1-1-0:(R)' | Out-Null
+$cls27u = Get-FilePresence $f27u
+icacls $f27u /remove:d '*S-1-1-0' | Out-Null   # owner has implicit WRITE_DAC -> deny removal always possible
+Remove-Item $f27u -Force -ErrorAction SilentlyContinue
+if ($cls27u -eq 'unreadable') { Pass "S27e unreadable branch proven (Everyone-deny Read; not folded into absent)" } else { Fail "S27e broken: cls=$cls27u (expected unreadable)" }
+
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })
