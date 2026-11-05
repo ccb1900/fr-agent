@@ -34,12 +34,13 @@ preview     → {"ok":true,"result":"logs/agent/runs/R/preview.json"}
 - `validate`（栅格 13 行：10 天 × 机台明细 + 合计）：合计行 = 明细之和（planned 33531、done 26531）；`completionRate = done/planned×100`（79.1238±0.01）；与外部真值 `33531:26531` 对拍通过。
 - `preview`：PNG 尺寸/字节/非空白。
 
-## 4. 并发与隔离（r12）
+## 4. 并发与隔离（r24 终态：单实例薄执行器）
 
-- 同时提交 A、B 两个 create：A 取全局锁执行、B 排队；A 成功释放后 B 自动开始；`history.log` 证明 `maxLiveRuntime=1`（从不两个 runtime 并行）。
+- 同时提交 A、B 两个 create：A 取全局 Mutex 执行、B 排队；A 成功释放后 B 自动开始；`history.log` 证明 `maxLiveRuntime=1`（从不两个 runtime 并行）。
+- 同 RunId 重入防护（r22e/r23/r24）：RunId 判据=**引擎产物存在性**——零引擎产物（plan.json/reportSpec.json）同目录是合法接力（plan→plan2spec→create 共用一个 runId）；compile.json/patch.json 已存在则引擎 verbs 拒绝（入口快查 + **Mutex 内复查**双防，确定性测试 S24a/S24b/S24c）。
 - A 失败不污染 B（各 runId 独立 compile.json/artifact.json）。
-- runtime 崩溃：Supervisor 仅在确认 current.json 持有者 pid 已死后才 Recovery（清 FineDB 遗留锁 + 把 abandoned run 标 `failed/RUNTIME_LOST`，**绝不标成功**），队列可恢复。
-- 模板修改（modify）产物/预览/manifest 落各自 `runs/{runId}/staging/`，互不覆盖。
+- runtime 崩溃：Supervisor 仅在确认哨兵持有者进程身份（pid+StartTime）已死后才按身份清理（清 FineDB 遗留锁），**绝不标成功**；无法确认身份时 RUNTIME_BUSY 拒绝（fail-closed）。
+- 模板修改（modify）产物/预览/manifest 落各自 `runs/{runId}/staging/`，互不覆盖；原始 CPT 以 `.orig.cpt` 快照保留。
 
 ## 5. 这说明什么
 
@@ -50,13 +51,16 @@ preview     → {"ok":true,"result":"logs/agent/runs/R/preview.json"}
 ## 6. 复现命令
 
 ```powershell
-# 单 runId 贯穿（-Verb 命名参数；create/modify 为 compile/patch 的业务别名）
+# 单 runId 贯穿（-Verb 命名参数；create/modify 为 compile/patch 的业务别名；r22e 起 plan→plan2spec→create→
+#   validate→preview→modify 全程可共用同一 runId——RunId 判据=引擎产物存在性，零引擎产物同目录是合法接力）
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb discover
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb plan -Intent logs/agent/it/sql_intent.json -RunId R1
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb plan2spec -RunId R1
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb create -Spec logs/agent/runs/R1/reportSpec.json -RunId R1
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb validate -RunId R1 -ExpectTotals "33531:26531"
 powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Verb preview -Png "<编译产出的 png 绝对路径>" -RunId R1
-# 集成验收（6 场景 + plan 分流，覆盖 PowerShell/Nashorn/Application/FineReport Runtime 全链）
+# 修改（I6 patch 通道：原报表保留，staging 出货，diff clean 验证"未改部分不变"）
+# powershell ... -Verb modify -Patch <PatchSpec.json> -RunId R1
+# 集成验收（S1–S28+ 故障注入，覆盖 PowerShell/Nashorn/Application/FineReport Runtime 全链）
 powershell -NoProfile -ExecutionPolicy Bypass -File verify/integration_runtime.ps1
 ```
