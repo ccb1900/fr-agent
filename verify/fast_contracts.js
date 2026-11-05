@@ -45,6 +45,15 @@ check('patch diff 不干净→DIFF_UNCLEAN', pd.some(function (x) { return x.cod
 check('patch 执行失败→REGRESSION_EXECUTION', pd.some(function (x) { return x.code === 'REGRESSION_EXECUTION' && x.stage === 'regression'; }));
 check('patch 数据集不符→DATASET_MISMATCH', pd.some(function (x) { return x.code === 'DATASET_MISMATCH'; }));
 check('patch 执行视图 ok=false', ReportArtifact.executionFromPatch(pj).ok === false);
+// ===== r14 P1: Patch 证据缺失必须 fail-closed（缺 manifest/diffClean/execution/render 不得当成成功） =====
+check('r14 patch 完整证据→ok=true', ReportArtifact.executionFromPatch({ ok: true, exit: 0, manifest: { diffClean: true, execution: { pass: true }, render: { pass: true } } }).ok === true);
+check('r14 patch manifest 缺失→ok=false（!==false 假通过已修）', ReportArtifact.executionFromPatch({ ok: true, exit: 0 }).ok === false);
+check('r14 patch manifest 空→ok=false', ReportArtifact.executionFromPatch({ ok: true, exit: 0, manifest: {} }).ok === false);
+check('r14 patch 缺 execution 回归→ok=false', ReportArtifact.executionFromPatch({ ok: true, exit: 0, manifest: { diffClean: true, render: { pass: true } } }).ok === false);
+check('r14 patch 缺 render 回归→ok=false', ReportArtifact.executionFromPatch({ ok: true, exit: 0, manifest: { diffClean: true, execution: { pass: true } } }).ok === false);
+check('r14 patch diffClean 缺失→ok=false', ReportArtifact.executionFromPatch({ ok: true, exit: 0, manifest: { execution: { pass: true }, render: { pass: true } } }).ok === false);
+check('r14 patch manifest 缺失诊断含 MANIFEST_MISSING', ReportArtifact.diagnosticsFromPatch({ ok: true, exit: 0 }).some(function (x) { return x.code === 'MANIFEST_MISSING' && x.severity === 'error'; }));
+check('r14 patch 缺 execution 诊断含 REGRESSION_EXECUTION', ReportArtifact.diagnosticsFromPatch({ ok: true, exit: 0, manifest: { diffClean: true, render: { pass: true } } }).some(function (x) { return x.code === 'REGRESSION_EXECUTION'; }));
 
 // 验收口径
 var failed = ReportArtifact.create({

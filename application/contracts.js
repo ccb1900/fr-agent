@@ -44,18 +44,30 @@ var ReportArtifact = (function () {
     return out;
   }
   // patch.json（patch_main 产物）→ 执行视图 + 诊断
+  // r14 P1: FAIL-CLOSED. Patch success REQUIRES manifest present + diffClean===true + execution & render regressions
+  //   passed. Missing evidence is NOT evidence of success — the old `mf.diffClean !== false` treated an absent
+  //   diffClean (or absent manifest) as pass, so a patch whose manifest.json was missing could still be declared ok.
   function executionFromPatch(pj) {
     pj = pj || {};
-    var mf = pj.manifest || {};
-    var ok = pj.ok === true && mf.diffClean !== false;
-    return { ok: ok, exit: typeof pj.exit === 'number' ? pj.exit : null, stages: null, failedStage: ok ? null : 'patch', source: 'patch' };
+    var mf = pj.manifest;
+    var ok = pj.ok === true && !!mf && mf.diffClean === true
+      && !!mf.execution && mf.execution.pass === true
+      && !!mf.render && mf.render.pass === true;
+    var failedStage = null;
+    if (!ok) {
+      failedStage = (pj.ok !== true) ? 'patch'
+        : (!mf || mf.diffClean !== true) ? 'diff'
+        : 'regression';
+    }
+    return { ok: ok, exit: typeof pj.exit === 'number' ? pj.exit : null, stages: null, failedStage: failedStage, source: 'patch' };
   }
   function diagnosticsFromPatch(pj) {
-    var out = [], mf = (pj && pj.manifest) || {};
+    var out = [], mf = (pj && pj.manifest);
     if (pj && pj.ok !== true) out.push({ code: 'PATCH_FAILED', path: 'patch', message: 'patch_main 退出码 ' + (pj.exit == null ? '?' : pj.exit), stage: 'patch', severity: 'error' });
-    if (mf.diffClean === false) out.push({ code: 'DIFF_UNCLEAN', path: 'diff', message: '未改部分出现非预期变化', stage: 'diff', severity: 'error' });
+    if (!mf) { out.push({ code: 'MANIFEST_MISSING', path: 'manifest', message: 'patch manifest 缺失——无法证明回归通过，判失败（fail-closed）', stage: 'diff', severity: 'error' }); return out; }
+    if (mf.diffClean !== true) out.push({ code: 'DIFF_UNCLEAN', path: 'diff', message: '未改部分出现非预期变化或 diffClean 缺失', stage: 'diff', severity: 'error' });
     ['execution', 'render'].forEach(function (k) {
-      if (mf[k] && mf[k].pass === false) out.push({ code: 'REGRESSION_' + String(k).toUpperCase(), path: k, message: String(mf[k].reason || ''), stage: 'regression', severity: 'error' });
+      if (!mf[k] || mf[k].pass !== true) out.push({ code: 'REGRESSION_' + String(k).toUpperCase(), path: k, message: mf[k] ? String(mf[k].reason || '') : (k + ' 回归证据缺失'), stage: 'regression', severity: 'error' });
     });
     (mf.datasetChecks || []).forEach(function (c) {
       if (c && c.pass === false) out.push({ code: 'DATASET_MISMATCH', path: 'dataset', message: String(c.reason || ''), stage: 'regression', severity: 'error' });
