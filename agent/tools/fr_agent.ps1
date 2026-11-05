@@ -20,6 +20,7 @@ param(
   [string]$Patch = '',
   [string]$Term = '',
   [string]$Png = '',
+  [string]$Pdf = '',
   [string]$Intent = '',
   [string]$ExpectTotals = '',
   [string]$RunId = ''
@@ -175,11 +176,13 @@ switch ($inner) {
     exit $rc
   }
   'preview' {
-    if (-not $Png) { Write-Output '{"ok":false,"error":"-Png required"}'; exit 2 }
+    if (-not $Png -and -not $Pdf) { Write-Output '{"ok":false,"error":"-Png or -Pdf required"}'; exit 2 }
     $env:AGENT_PNG = $Png
+    $env:AGENT_PDF = $Pdf
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\agent\tools\preview.js"
     $rc = $LASTEXITCODE
     Remove-Item env:AGENT_PNG -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_PDF -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) "logs/agent/runs/$RunId/preview.json"
     exit $rc

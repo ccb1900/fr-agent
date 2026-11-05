@@ -117,3 +117,29 @@ b298c28（sqlbuilder+断言）；（validate.js 修复见下一条 commit。）
 
 ### 下一项工作
 回到链路走查（E 主线 validate.js 已顺带完成）；继续评估 P3 候选。
+
+## 2026-11-06 01:20
+
+### 工作目标（循环#4）
+交付三件套自动验收缺口：preview verb 只检 PNG，PDF 无任何自动验收（P3"报表生成后的自动验收"）。
+
+### 代码证据
+- `agent/tools/preview.js`：仅 ImageIO 读 PNG；`agent/tools/fr_agent.ps1` preview case 仅传 AGENT_PNG。
+- GOLDEN v1 产出 PDF（26558 字节）但全链无一处检查它（%PDF 头/非空）。
+
+### 实施内容
+- preview.js 增 PDF 分支（AGENT_PDF env）：exists + bytes>1000 + **%PDF 头（偏移 0 实测）** + 尾段 /Type /Page 或大文件；preview.json 输出 pdfHeader/hasPageObject 字段；PNG 路径行为一字不动。
+- fr_agent.ps1 preview case：`-Pdf` 参数 + AGENT_PDF 透传（-Png/-Pdf 二选一）。
+
+### 验证结果
+- GOLDEN PDF 实测：exists=True、bytes=26558、pdfHeader=True、hasPageObject=True、blankish=False → ok:true；PNG 回归 ok:true 零漂移；STATIC 0。
+- 首跑 FAIL（pdfHeader=False）根因=`FileInputStream.read(JS Array)` 的 J2N 转换不可靠——改 `Files.readAllBytes` + JS 索引（&255 修正符号位）。
+
+### 未验证事项
+- PDF 页数/文本抽取（最小验收不涉及；如需可后续接 PDFBox——按规范先不加依赖）。
+
+### Commit
+（见下一条 commit SHA。）
+
+### 下一项工作
+E 主线走查完成（create_report.js/contracts.js 失败路径干净，无新缺陷）。任务三四条主线（A/B/C/D/E）全部覆盖。**停止条件评估达成（剩余候选均依赖审查方解锁或价值边际）——夜间会话收尾。**
