@@ -22,8 +22,8 @@ var SPEC = {
         { type: 'space', heightPt: 8 },
         { type: 'chart', kind: 'vbar', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], axisY: { min: 0, max: 250 }, heightPt: 160 },
         { type: 'chart', kind: 'vline', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160 },
-        { type: 'chart', kind: 'varea', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160 },
-        { type: 'chart', kind: 'vscatter', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 160 },
+        { type: 'chart', kind: 'varea', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160, areaFill: { color: 0x77BBFF, alpha: 0.45 } },
+        { type: 'chart', kind: 'vscatter', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 160, tooltip: { muti: true, formats: { x: '#,##0', y: '#,##0', size: '#,##0' } } },
         { type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 340 },  // 批B渲染端收案:图例区随图表高度分享,340pt 下 4 条全出(m11 300 全出/m12 170 只 2/m13 横排 260 仍 3——空间法实证)
         { type: 'chart', kind: 'vgauge', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 170 },
         { type: 'chart', kind: 'vbubble', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 240 },
@@ -37,16 +37,19 @@ var SPEC = {
         {
           type: 'chart', kind: 'vbar', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'],
           stack: { stacked: true, stackId: 'S1' },
-          tooltip: { muti: false, formats: { series: true, value: '#,##0', percent: true } },
+          tooltip: { muti: false, formats: { series: true, value: '#,##0', percent: true }, richText: { content: '系列 ${SERIES} 值 ${VALUE}', auto: true } },
           label: { enable: true, position: 2 },
+          seriesBorder: { color: 0x3355AA, style: 1, alpha: 0.9 },
           alpha: 0.9, heightPt: 240
         },
         {
           type: 'chart', kind: 'vline', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'],
-          marker: { type: 'circle', radius: 5 },
+          marker: { type: 'circle', radius: 5, alpha: 0.8 },
           lineStyle: { type: 'solid', style: 'curve', width: 2 },
           trend: { type: 'linear', name: '产量趋势', pre: 2, after: 2 },
           axisY: { min: 0, max: 260, unit: 50 },
+          effect: { enabled: true, period: 1 },
+          hotTooltip: { position: 1, showMutiSeries: false, whiteBackground: true, seriesLabel: '${SERIES}', format: '#,##0', percentFormat: '#0.##%' },
           heightPt: 240
         },
         {
