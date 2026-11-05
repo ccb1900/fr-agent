@@ -90,3 +90,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 | validate | -ExpectTotals | validate.json + 刷新 artifact.json | 否 |
 | preview | -Png | preview.json | 否 |
 | modify（=patch） | -Patch | patch.json + staging/ + artifact.json | 是 |
+
+## r13 Supervisor 正确性协议（详见 docs/architecture/runtime-supervisor.md）
+
+- 锁生死**只由 owner 身份判定**（pid 存活 + StartTime 匹配，防 PID 复用）；`initializing` 窗口（lock 在、owner.json 未写、<InitGraceSec）waiter **只等待不删锁**（杜绝双获取竞态）；`TaskSuspectSec` 年龄仅 `status.suspect` 告警，**绝不触发恢复/杀进程**。
+- `release`/recovery 必须校验 **OwnerToken**（错 token 不能删他人锁）；恢复**只杀 CommandLine 匹配 pipelineTag 的 java**（不误杀无关 java），FineDB 锁仅在确认 owner 已死后删。
+- `runtimeState`(queued/running/released/lost) 与 `businessResult`(pending/succeeded/failed) 正交：释放执行权 ≠ 报表成功。
+- 路径/策略单源于 `agent/tools/config.ps1`；`verify/check_ps1_static.ps1` 静态把关（禁硬编路径、ASCII-only）；`scripts/run-integration-tests.ps1` = 静态门 + S1–S16 全链故障注入。

@@ -24,6 +24,7 @@ run.ps1 -Script make_api.js
   - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（fast_parse + fast_ir_contract + fast_runresult + fast_browser_sql + fast_report_spec 五套件，任一 rc≠0 整体 exit 1）
   - 零误伤扫描（无引擎）：`nashorn.jar ... Shell probes/scan_all_specs.js`（reports/ 全量 compile+validate，合法报表=回归门）
   - 引擎负门（需 java/FineDB，会杀 java）：`scripts/run-engine-negative-tests.ps1`——断言"失败必非零退出码、无假绿"，末步自动回补默认 spec 护基线
+  - 工具链集成门（r13，改 agent/tools/*、runtime supervisor、config.ps1、run.ps1 必跑）：`scripts/run-integration-tests.ps1`（`verify/check_ps1_static.ps1` 静态门：PSParser tokenize+ASCII-only+无硬编路径；`verify/integration_runtime.ps1` S1–S16 全链故障注入：双获取/年龄/token/崩溃识别/重复 RunId/无关 java/三任务串行/饿死剔除）。**Runtime Supervisor 状态协议见 `docs/architecture/runtime-supervisor.md`；不变量必须配能主动制造故障并证明系统正确拒绝的测试（r13 原则，不以 GREEN 自证）**
 
 ## 2. 排版红线（自动销项，别等用户提）
 
