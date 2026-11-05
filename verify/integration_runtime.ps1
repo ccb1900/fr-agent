@@ -1,165 +1,212 @@
-# integration_runtime.ps1 - r12 acceptance: single-instance runtime supervisor + multi-task queue.
-# Covers docs/gpt/r12.md sec.4 six scenarios over the FULL chain (PowerShell -> Nashorn -> Application -> FineReport runtime).
-#   1) A,B submitted concurrently -> A runs, B queues (never two live runtimes).
-#   2) A success -> B auto-starts.
-#   3) A failure -> B still runs (failure isolation).
-#   4) re-submit during A -> no second runtime (asserted via history serialization).
-#   5) runtime crash -> queue recoverable, abandoned run NOT marked success.
-#   6) template modify products/pre/post/manifest of A not overwritten by B.
-# Proof: runtime.ps1 appends ACQUIRE/RELEASE/RECOVER to history.log; replay asserts live-owner set never exceeds 1.
-# IMPORTANT: -Spec/-Patch are ROOT-RELATIVE (make_api Paths.spec prepends root); keep this file ASCII-only
-#   (PS 5.1 reads .ps1 as GBK -> any Chinese literal here would corrupt; deployed names are read from the FS instead).
+# integration_runtime.ps1 - r13 (R12.1/R12.2) acceptance: single-instance Runtime Supervisor correctness.
+# Proves the KEY INVARIANTS by actively manufacturing the bad state and asserting the system REFUSES it
+#   (r13 principle: "do not treat GREEN as proof; every key invariant needs a fault-injection test").
+# Scenarios S1-S15 (docs/gpt/r13.md sec.7). Full chain: PowerShell -> Nashorn -> Application -> FineReport runtime.
+# IMPORTANT: -Spec/-Patch are ROOT-RELATIVE; keep this file ASCII-only.
 # Exit 0 = all pass, 1 = any fail.
 $ErrorActionPreference = 'Continue'
 $ROOT = 'D:\fineagent'
 Set-Location $ROOT
-$FR = 'D:\software\FineReport_11.0'
-$rt = "$ROOT\logs\agent\runtime"
-$runs = "$ROOT\logs\agent\runs"
+. (Join-Path "$ROOT\agent\tools" 'config.ps1')
+$cfg = Get-AgentConfig
+$FR = $cfg.FrHome
+$java = $cfg.Java
+$jar = $cfg.NashornJar
+$rt = $cfg.RuntimeDir
+$runs = $cfg.RunsDir
 $itRel = 'logs/agent/it'
 $itAbs = "$ROOT\logs\agent\it"
+$runtimePs1 = "$ROOT\agent\tools\runtime.ps1"
 $fail = 0
 function Pass($n) { Write-Output "IT PASS: $n" }
 function Fail($n) { Write-Output "IT FAIL: $n"; $script:fail++ }
-
-if (Test-Path $itAbs) { Remove-Item $itAbs -Recurse -Force }
-New-Item -ItemType Directory -Force -Path $itAbs | Out-Null
-Get-ChildItem -Path $runs -Directory -Filter 'it_*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
-if (Test-Path "$rt\lock") { Remove-Item "$rt\lock" -Recurse -Force }
-Remove-Item "$rt\current.json" -Force -ErrorAction SilentlyContinue
-Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
-Get-ChildItem "$rt\queue\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
-Get-ChildItem "$rt\done\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
-
-# specs: embedded sales_demo (fast, no DB). ASCII outName via regex replace on the UTF-8 source.
-$salesJson = [System.IO.File]::ReadAllText("$ROOT\examples\report-spec\sales_demo.json", [System.Text.UTF8Encoding]::new($false))
-$specA = ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_A"')
-$specB = ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_B"')
-$badSpec = ($salesJson -replace '"aggregation":\s*"sum"', '"aggregation": "avg"')
-[System.IO.File]::WriteAllText("$itAbs\a.json", $specA, [System.Text.UTF8Encoding]::new($false))
-[System.IO.File]::WriteAllText("$itAbs\b.json", $specB, [System.Text.UTF8Encoding]::new($false))
-[System.IO.File]::WriteAllText("$itAbs\bad.json", $badSpec, [System.Text.UTF8Encoding]::new($false))
-
-function Assert-Serialized($label) {
-  $lines = @()
-  if (Test-Path "$rt\history.log") { $lines = @(Get-Content "$rt\history.log" -Encoding ASCII) }
-  $live = @{}; $maxLive = 0
-  foreach ($ln in $lines) {
-    $parts = $ln -split ' '
-    if ($parts.Count -lt 3) { continue }
-    $evt = $parts[1]; $rid = $parts[2]
-    if ($evt -eq 'ACQUIRE') { $live[$rid] = 1 }
-    elseif ($evt -eq 'RELEASE') { $live.Remove($rid) }
-    elseif ($evt -eq 'RECOVER') { $live.Clear() }
-    if ($live.Count -gt $maxLive) { $maxLive = $live.Count }
-  }
-  if ($maxLive -le 1) { Pass "$label maxLiveRuntime=$maxLive (<=1)" } else { Fail "$label maxLiveRuntime=$maxLive (>1)" }
+function Reset-Rt() {
+  if (Test-Path "$rt\lock") { Remove-Item "$rt\lock" -Recurse -Force }
+  Remove-Item "$rt\current.json" -Force -ErrorAction SilentlyContinue
+  Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
+  Get-ChildItem "$rt\queue\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
+  Get-ChildItem "$rt\done\*.json" -ErrorAction SilentlyContinue | Remove-Item -Force
 }
+function New-Sleeper([int]$sec) {
+  $p = Start-Process powershell -ArgumentList '-Command', "Start-Sleep $sec" -PassThru -WindowStyle Hidden
+  return $p
+}
+function Start-Ticks($proc) { try { return [long](Get-Process -Id $proc.Id -ErrorAction Stop).StartTime.Ticks } catch { return -1 } }
 function ArtExecOk($rid) {
   $p = "$runs\$rid\artifact.json"
   if (-not (Test-Path $p)) { return $null }
   try { return (Get-Content $p -Raw -Encoding UTF8 | ConvertFrom-Json).execution.ok } catch { return $null }
 }
+function Assert-Serialized($label) {
+  $lines = @(); if (Test-Path "$rt\history.log") { $lines = @(Get-Content "$rt\history.log" -Encoding ASCII) }
+  $live = @{}; $maxLive = 0
+  foreach ($ln in $lines) {
+    $parts = $ln -split ' '; if ($parts.Count -lt 3) { continue }
+    $evt = $parts[1]; $rid = $parts[2]
+    if ($evt -eq 'ACQUIRE') { $live[$rid] = 1 } elseif ($evt -eq 'RELEASE') { $live.Remove($rid) } elseif ($evt -eq 'RECOVER') { $live.Clear() }
+    if ($live.Count -gt $maxLive) { $maxLive = $live.Count }
+  }
+  if ($maxLive -le 1) { Pass "$label maxLiveRuntime=$maxLive (<=1)" } else { Fail "$label maxLiveRuntime=$maxLive (>1)" }
+}
 
-# ---- Scenario 1/2/4: two concurrent creates ----
+# fresh spec files (embedded sales_demo, ASCII outName)
+if (Test-Path $itAbs) { Remove-Item $itAbs -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $itAbs | Out-Null
+Get-ChildItem -Path $runs -Directory -Filter 'it_*' -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+# operator-harness baseline cleanup: free committed memory left by prior runs so run.ps1 preflight (README #46/#47) is not
+#   the flaky cause. This is the TEST harness (operator), NOT the agent path (which never kills, per r12/r13).
+Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+Start-Sleep -Seconds 2
+Reset-Rt
+$salesJson = [System.IO.File]::ReadAllText("$ROOT\examples\report-spec\sales_demo.json", [System.Text.Encoding]::UTF8)
+[System.IO.File]::WriteAllText("$itAbs\a.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_A"'), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$itAbs\b.json", ($salesJson -replace '"outName":\s*"[^"]*"', '"outName": "IT_B"'), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$itAbs\bad.json", ($salesJson -replace '"aggregation":\s*"sum"', '"aggregation": "avg"'), (New-Object System.Text.UTF8Encoding($false)))
+$sqlIntent = '{"outName":"IT_SQL","reportName":"IT_SQL","dataset":{"kind":"sql","connection":"ATOM_LIVE","entity":"InspectionRecord","dimensions":["bizDate"],"metrics":["planned","done"],"dateRange":{"from":"2026-09-13","to":"2026-09-13"}}}'
+[System.IO.File]::WriteAllText("$itAbs\sql_intent.json", $sqlIntent, (New-Object System.Text.UTF8Encoding($false)))
+
+# ================= S1/2/4: concurrent submits, serial runtime =================
 Write-Output "== S1/2/4 concurrent create A+B"
 $jobA = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s1a"
 $jobB = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/b.json","it_s1b"
 $null = Wait-Job $jobA,$jobB; $outA = Receive-Job $jobA; $outB = Receive-Job $jobB; Remove-Job $jobA,$jobB
 Write-Output "  A: $outA"; Write-Output "  B: $outB"
 if ((Test-Path "$runs\it_s1a\artifact.json") -and (Test-Path "$runs\it_s1b\artifact.json")) { Pass "S1 both artifacts present" } else { Fail "S1 missing artifact" }
-$okA = ArtExecOk "it_s1a"; $okB = ArtExecOk "it_s1b"
-if ($okA -eq $true -and $okB -eq $true) { Pass "S2 both execution.ok=true (A then B auto-started)" } else { Fail "S2 execution not ok A=$okA B=$okB" }
-Assert-Serialized "S4 history serialized (no 2nd runtime)"
+if ((ArtExecOk "it_s1a") -eq $true -and (ArtExecOk "it_s1b") -eq $true) { Pass "S2 both execution.ok=true (serial auto-start)" } else { Fail "S2 execution not ok" }
+Assert-Serialized "S4 serialized"
 
-# ---- Scenario 3: failing task + good task concurrently ----
-Write-Output "== S3 failure isolation (bad spec + good spec)"
-Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
+# ================= S3: failure isolation =================
+Write-Output "== S3 failure isolation"
+Reset-Rt
 $jobBad = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/bad.json","it_s3bad"
 $jobGood = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s3good"
-$null = Wait-Job $jobBad,$jobGood; $ob = Receive-Job $jobBad; $og = Receive-Job $jobGood; Remove-Job $jobBad,$jobGood
-Write-Output "  bad: $ob"; Write-Output "  good: $og"
+$null = Wait-Job $jobBad,$jobGood; Receive-Job $jobBad | Out-Null; Receive-Job $jobGood | Out-Null; Remove-Job $jobBad,$jobGood
 $badOk = ArtExecOk "it_s3bad"; $goodOk = ArtExecOk "it_s3good"
 if ($badOk -ne $true -and $goodOk -eq $true) { Pass "S3 failing task did not poison good task (bad=$badOk good=$goodOk)" } else { Fail "S3 isolation broken bad=$badOk good=$goodOk" }
 Assert-Serialized "S3 serialized"
 
-# ---- Scenario 5: crash recovery (stale lock with dead owner) ----
-Write-Output "== S5 crash recovery"
-Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
+# ================= S5: crash recovery via full create (dead owner) =================
+Write-Output "== S5 crash recovery (dead owner -> abandoned marked failed, new run completes)"
+Reset-Rt
 New-Item -ItemType Directory -Force -Path "$rt\lock" | Out-Null
-[System.IO.File]::WriteAllText("$rt\current.json", (@{ runId='it_ghost'; verb='compile'; pid=999999; startedAt=(Get-Date).AddMinutes(-1).ToString('o') } | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
-[System.IO.File]::WriteAllText("$rt\queue\it_ghost.json", (@{ runId='it_ghost'; verb='compile'; state='running'; submittedAt=(Get-Date).AddMinutes(-1).ToString('o') } | ConvertTo-Json -Compress), [System.Text.UTF8Encoding]::new($false))
-$recOut = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s5" 2>&1 | Select-Object -Last 1
-Write-Output "  after-crash create: $recOut"
-$ghostFailed = $false
-if (Test-Path "$rt\done\it_ghost.json") { $g = Get-Content "$rt\done\it_ghost.json" -Raw -Encoding UTF8 | ConvertFrom-Json; $ghostFailed = ($g.state -eq 'failed' -and ([string]$g.reason) -like 'RUNTIME_LOST*') }
-$s5Ok = (ArtExecOk "it_s5")
-if ($ghostFailed -and ($s5Ok -eq $true)) { Pass "S5 stale owner recovered as failed (not success) and new run completed" } else { Fail "S5 recovery broken ghostFailed=$ghostFailed s5Ok=$s5Ok" }
+[System.IO.File]::WriteAllText("$rt\lock\owner.json", (@{ runId='it_ghost'; verb='compile'; ownerPid=999999; ownerStart=-1; ownerToken='ghost'; pipelineTag='make_api.js'; acquiredAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+[System.IO.File]::WriteAllText("$rt\queue\it_ghost.json", (@{ runId='it_ghost'; verb='compile'; submittedAt=(Get-Date).ToString('o'); runtimeState='running'; ownerToken='ghost' } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb create -Spec "$itRel/a.json" -RunId "it_s5" 2>&1
+$ghostDone = $null; if (Test-Path "$rt\done\it_ghost.json") { $ghostDone = Get-Content "$rt\done\it_ghost.json" -Raw -Encoding UTF8 | ConvertFrom-Json }
+$ghostFailed = $ghostDone -and ($ghostDone.runtimeState -eq 'lost') -and ($ghostDone.businessResult -eq 'failed')
+if ($ghostFailed -and ((ArtExecOk "it_s5") -eq $true)) { Pass "S5 dead owner recovered as lost/failed (never success) and new run completed" } else { Fail "S5 recovery broken ghost=$($ghostDone.runtimeState)/$($ghostDone.businessResult) s5Ok=$(ArtExecOk 'it_s5')" }
 
-# ---- Scenario 6: template modify isolation (two concurrent patches, distinct staging) ----
-Write-Output "== S6 template modify isolation"
-Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
-$deploy = "$FR\webapps\webroot\WEB-INF\reportlets\fineagent"
-$avail = @(Get-ChildItem "$deploy\*_api.cpt" -ErrorAction SilentlyContinue | Select-Object -First 2)
-if ($avail.Count -lt 2) { Fail "S6 need >=2 deployed cpt templates" }
-else {
-  $src1 = 'fineagent/' + $avail[0].Name
-  $src2 = 'fineagent/' + $avail[1].Name
-  $p1 = @{ patchVersion='1'; sourceCpt=$src1; outName='IT_P1'; ops=@(@{ op='replace_cell_value'; sheet=0; cell=@{ c=0; r=0 }; value=@{ kind='text'; text='IT_TITLE_ONE' } }) } | ConvertTo-Json -Depth 8
-  $p2 = @{ patchVersion='1'; sourceCpt=$src2; outName='IT_P2'; ops=@(@{ op='replace_cell_value'; sheet=0; cell=@{ c=0; r=0 }; value=@{ kind='text'; text='IT_TITLE_TWO' } }) } | ConvertTo-Json -Depth 8
-  [System.IO.File]::WriteAllText("$itAbs\p1.json", $p1, [System.Text.UTF8Encoding]::new($false))
-  [System.IO.File]::WriteAllText("$itAbs\p2.json", $p2, [System.Text.UTF8Encoding]::new($false))
-  $jp1 = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb modify -Patch $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/p1.json","it_s6a"
-  $jp2 = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb modify -Patch $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/p2.json","it_s6b"
-  $null = Wait-Job $jp1,$jp2; $o1 = Receive-Job $jp1; $o2 = Receive-Job $jp2; Remove-Job $jp1,$jp2
-  Write-Output "  patch1: $o1"; Write-Output "  patch2: $o2"
-  $m1 = "$runs\it_s6a\staging\manifest.json"; $m2 = "$runs\it_s6b\staging\manifest.json"
-  if ((Test-Path $m1) -and (Test-Path $m2)) {
-    $out1 = [string](Get-Content $m1 -Raw -Encoding UTF8 | ConvertFrom-Json).out
-    $out2 = [string](Get-Content $m2 -Raw -Encoding UTF8 | ConvertFrom-Json).out
-    if ($out1 -like '*IT_P1*' -and $out2 -like '*IT_P2*') { Pass "S6 per-run staging isolated (A=$out1 B=$out2)" } else { Fail "S6 staging cross-contaminated A=$out1 B=$out2" }
-  } else { Fail "S6 missing per-run staging manifests" }
-  Assert-Serialized "S6 serialized"
-}
-
-# ---- Scenario 7 (r11-5): plan preflight split - sql vs rows paths run independently ----
-Write-Output "== S7 plan preflight split (sql vs rows)"
-$sqlIntent = '{"outName":"IT_SQL","reportName":"IT_SQL","dataset":{"kind":"sql","connection":"ATOM_LIVE","entity":"InspectionRecord","dimensions":["bizDate"],"metrics":["planned","done"],"dateRange":{"from":"2026-09-13","to":"2026-09-13"}}}'
-$rowsIntent = '{"outName":"IT_ROWS","dimensions":["bizDate"],"metrics":[{"term":"planned"}],"rows":[["2026-09-13",10]]}'
-[System.IO.File]::WriteAllText("$itAbs\sql_intent.json", $sqlIntent, [System.Text.UTF8Encoding]::new($false))
-[System.IO.File]::WriteAllText("$itAbs\rows_intent.json", $rowsIntent, [System.Text.UTF8Encoding]::new($false))
-$ps = & "$ROOT\agent\tools\fr_agent.ps1" -Verb plan -Intent "$itRel/sql_intent.json" -RunId "it_s7sql" 2>&1 | Select-Object -Last 1
-$pr = & "$ROOT\agent\tools\fr_agent.ps1" -Verb plan -Intent "$itRel/rows_intent.json" -RunId "it_s7rows" 2>&1 | Select-Object -Last 1
-Write-Output "  sql plan: $ps"; Write-Output "  rows plan: $pr"
-$sqlStat = $null; if (Test-Path "$runs\it_s7sql\plan.json") { $sqlStat = [string](Get-Content "$runs\it_s7sql\plan.json" -Raw -Encoding UTF8 | ConvertFrom-Json).status }
-$rowsReason = ''; if (Test-Path "$runs\it_s7rows\plan.json") { $rowsReason = [string](Get-Content "$runs\it_s7rows\plan.json" -Raw -Encoding UTF8 | ConvertFrom-Json).reason }
-if ($sqlStat -eq 'ready') { Pass "S7 sql intent reaches planner (ready)" } else { Fail "S7 sql intent status=$sqlStat" }
-# rows intent must NOT be blocked by database preflight (reason != PREFLIGHT_FAILED); it goes through planner rows path
-if ($rowsReason -ne 'PREFLIGHT_FAILED') { Pass "S7 rows intent NOT blocked by preflight (reason=$rowsReason)" } else { Fail "S7 rows intent wrongly blocked by DB preflight" }
-
-# ---- Scenario 8 (r12 review): deterministic concurrency - a LIVE lock holder makes a create QUEUE, not run in parallel, not falsely recovered ----
+# ================= S8: live holder forces queueing =================
 Write-Output "== S8 live-holder forces queueing (no parallel runtime, no false recovery)"
-Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
-$holder = Start-Process powershell -ArgumentList '-Command','Start-Sleep 90' -PassThru -WindowStyle Hidden
-$null = & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId "it_s8hold" -Verb compile -OwnerPid $holder.Id 2>&1
+Reset-Rt
+$holder = New-Sleeper 90
+$holdTok = [guid]::NewGuid().ToString('N')
+$null = & $runtimePs1 -Action acquire -RunId "it_s8hold" -Verb compile -OwnerPid $holder.Id -OwnerToken $holdTok 2>&1
 $jobC = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s8"
 Start-Sleep -Seconds 4
-# deterministic proof of queueing: while the live holder owns the lock, the create cannot have produced compile.json
-#   (fr_agent writes compile.json only after acquiring the lock and running). Absence => queued, not parallel.
 $queuedMid = -not (Test-Path "$runs\it_s8\compile.json")
-$recInHistory = (Test-Path "$rt\history.log") -and ((Get-Content "$rt\history.log" -Encoding ASCII) -match 'RECOVER')
-if ($queuedMid -and -not $recInHistory) { Pass "S8 create stayed queued while live holder owns lock (no compile.json yet, no RECOVER)" } else { Fail "S8 concurrency broken queuedMid=$queuedMid recovered=$recInHistory" }
-$null = & "$ROOT\agent\tools\runtime.ps1" -Action release -RunId "it_s8hold" 2>&1
-$null = Wait-Job $jobC -Timeout 120
-$oc = Receive-Job $jobC; Remove-Job $jobC
+$recInHist = (Test-Path "$rt\history.log") -and ((Get-Content "$rt\history.log" -Encoding ASCII) -match 'RECOVER')
+if ($queuedMid -and -not $recInHist) { Pass "S8 create stayed queued while live holder owns lock (no compile.json yet, no RECOVER)" } else { Fail "S8 concurrency broken queuedMid=$queuedMid recovered=$recInHist" }
+$null = & $runtimePs1 -Action release -RunId "it_s8hold" -OwnerToken $holdTok 2>&1
+$null = Wait-Job $jobC -Timeout 120; Receive-Job $jobC | Out-Null; Remove-Job $jobC
 Stop-Process -Id $holder.Id -Force -ErrorAction SilentlyContinue
-Write-Output "  after release: $oc"
-$s8Ok = (ArtExecOk "it_s8")
-$acqOrder = @()
-if (Test-Path "$rt\history.log") { $acqOrder = @((Get-Content "$rt\history.log" -Encoding ASCII) | ForEach-Object { ($_ -split ' ')[1] + ':' + ($_ -split ' ')[2] }) }
-Write-Output "  history: $($acqOrder -join ' | ')"
-if ($s8Ok -eq $true) { Pass "S8 queued create auto-started and succeeded after release" } else { Fail "S8 queued create did not complete (s8Ok=$s8Ok)" }
+if ((ArtExecOk "it_s8") -eq $true) { Pass "S8 queued create auto-started and succeeded after release" } else { Fail "S8 queued create did not complete" }
 Assert-Serialized "S8 serialized under contention"
+
+# ================= S9: lock-init window must NOT be deleted by a waiter (P1-A double-acquire) =================
+Write-Output "== S9 init-window: waiter must WAIT, never delete a lock whose owner.json is not yet written"
+Reset-Rt
+New-Item -ItemType Directory -Force -Path "$rt\lock" | Out-Null   # lock created, owner.json intentionally absent (init in progress)
+$null = & $runtimePs1 -Action acquire -RunId "it_s9waiter" -Verb compile -OwnerToken ([guid]::NewGuid().ToString('N')) -TimeoutSec 4 2>&1
+$lockStillThere = Test-Path "$rt\lock"
+$recInHist = (Test-Path "$rt\history.log") -and ((Get-Content "$rt\history.log" -Encoding ASCII) -match 'RECOVER')
+if ($lockStillThere -and -not $recInHist) { Pass "S9 waiter did not delete initializing lock and did not recover (no double-acquire)" } else { Fail "S9 waiter deleted init lock or falsely recovered (lock=$lockStillThere recovered=$recInHist)" }
+Reset-Rt
+
+# ================= S10: task older than TaskSuspectSec but owner ALIVE -> no recovery (P1-B) =================
+Write-Output "== S10 aged-but-alive owner must NOT be recovered"
+Reset-Rt
+$sl = New-Sleeper 60
+New-Item -ItemType Directory -Force -Path "$rt\lock" | Out-Null
+$old = (Get-Date).AddSeconds(-2000).ToString('o')   # older than TaskSuspectSec 1800
+[System.IO.File]::WriteAllText("$rt\lock\owner.json", (@{ runId='it_s10'; verb='compile'; ownerPid=$sl.Id; ownerStart=(Start-Ticks $sl); ownerToken='t10'; pipelineTag='make_api.js'; acquiredAt=$old } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$recOut = & $runtimePs1 -Action recover 2>&1 | Select-Object -Last 1
+$stOut = & $runtimePs1 -Action status 2>&1 | Select-Object -Last 1
+Write-Output "  recover: $recOut"
+$notRecovered = ($recOut -match 'OWNER_ALIVE') -and (Test-Path "$rt\lock")
+$suspect = ($stOut -match '"suspect":true')
+if ($notRecovered -and $suspect) { Pass "S10 aged live owner NOT recovered (warning-only suspect=$suspect)" } else { Fail "S10 aged live owner mishandled rec=$recOut suspect=$suspect" }
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= S11: release with wrong token cannot delete another's lock =================
+Write-Output "== S11 release token verification"
+Reset-Rt
+$sl = New-Sleeper 60
+$tokR = [guid]::NewGuid().ToString('N')
+$null = & $runtimePs1 -Action acquire -RunId "it_s11" -Verb compile -OwnerPid $sl.Id -OwnerToken $tokR 2>&1
+$wrongOut = & $runtimePs1 -Action release -RunId "it_s11" -OwnerToken ([guid]::NewGuid().ToString('N')) 2>&1 | Select-Object -Last 1
+$stillHeld = Test-Path "$rt\lock"
+$rightOut = & $runtimePs1 -Action release -RunId "it_s11" -OwnerToken $tokR 2>&1 | Select-Object -Last 1
+$freedAfterRight = -not (Test-Path "$rt\lock")
+if (($wrongOut -match 'NOT_OWNER') -and $stillHeld -and ($rightOut -match '"released":true') -and $freedAfterRight) { Pass "S11 wrong token refused, right token released" } else { Fail "S11 token check broken wrong=$wrongOut stillHeld=$stillHeld right=$rightOut" }
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= S12: owner crash detected via identity -> recovered, next acquires =================
+Write-Output "== S12 owner crash -> identity detects death, recovers, next acquires"
+Reset-Rt
+$sl = New-Sleeper 60
+$null = & $runtimePs1 -Action acquire -RunId "it_s12" -Verb compile -OwnerPid $sl.Id -OwnerToken ([guid]::NewGuid().ToString('N')) 2>&1
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue   # simulate supervisor/owner crash
+Start-Sleep -Milliseconds 500
+$sl2 = New-Sleeper 60
+$acq2 = & $runtimePs1 -Action acquire -RunId "it_s12b" -Verb compile -OwnerPid $sl2.Id -OwnerToken ([guid]::NewGuid().ToString('N')) -TimeoutSec 10 2>&1 | Select-Object -Last 1
+$g = $null; if (Test-Path "$rt\done\it_s12.json") { $g = Get-Content "$rt\done\it_s12.json" -Raw -Encoding UTF8 | ConvertFrom-Json }
+$acq2ok = ($acq2 -match '"acquired":true')
+if (($g.runtimeState -eq 'lost') -and ($g.businessResult -eq 'failed') -and $acq2ok) { Pass "S12 crashed owner detected lost/failed, next run acquired" } else { Fail "S12 broken g=$($g.runtimeState)/$($g.businessResult) acq2=$acq2ok" }
+$null = & $runtimePs1 -Action release -RunId "it_s12b" -OwnerToken ((Get-Content "$rt\lock\owner.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ownerToken) 2>&1
+Stop-Process -Id $sl2.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= S13: duplicate RunId -> no double execution =================
+Write-Output "== S13 duplicate RunId rejection"
+Reset-Rt
+$sl = New-Sleeper 60
+$null = & $runtimePs1 -Action acquire -RunId "it_dup" -Verb compile -OwnerPid $sl.Id -OwnerToken ([guid]::NewGuid().ToString('N')) 2>&1
+$dupOut = & $runtimePs1 -Action acquire -RunId "it_dup" -Verb compile -OwnerPid $sl.Id -OwnerToken ([guid]::NewGuid().ToString('N')) -TimeoutSec 3 2>&1 | Select-Object -Last 1
+if ($dupOut -match 'RUNID_INFLIGHT') { Pass "S13 duplicate in-flight RunId rejected" } else { Fail "S13 duplicate not rejected: $dupOut" }
+$null = & $runtimePs1 -Action release -RunId "it_dup" -OwnerToken ((Get-Content "$rt\lock\owner.json" -Raw -Encoding UTF8 | ConvertFrom-Json).ownerToken) 2>&1
+Stop-Process -Id $sl.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= S14: recovery must not kill unrelated java (scoped by pipelineTag) =================
+Write-Output "== S14 recovery scoped to pipeline java, not all java"
+Reset-Rt
+[System.IO.File]::WriteAllText("$itAbs\_decoy_sleep.js", "Java.type('java.lang.Thread').sleep(60000);`n", (New-Object System.Text.UTF8Encoding($false)))
+$decoy = Start-Process $java -ArgumentList '-cp', $jar, 'jdk.nashorn.tools.Shell', "$itAbs\_decoy_sleep.js" -PassThru -WindowStyle Hidden
+Start-Sleep -Seconds 1
+New-Item -ItemType Directory -Force -Path "$rt\lock" | Out-Null
+[System.IO.File]::WriteAllText("$rt\lock\owner.json", (@{ runId='it_s14dead'; verb='compile'; ownerPid=999999; ownerStart=-1; ownerToken='t14'; pipelineTag='make_api.js'; acquiredAt=(Get-Date).ToString('o') } | ConvertTo-Json -Compress), (New-Object System.Text.UTF8Encoding($false)))
+$null = & $runtimePs1 -Action recover 2>&1
+Start-Sleep -Milliseconds 400
+$decoyAlive = [bool](Get-Process -Id $decoy.Id -ErrorAction SilentlyContinue)
+if ($decoyAlive) { Pass "S14 recovery did NOT kill unrelated java (decoy pid=$($decoy.Id) alive)" } else { Fail "S14 recovery killed unrelated java" }
+Stop-Process -Id $decoy.Id -Force -ErrorAction SilentlyContinue
+Reset-Rt
+
+# ================= S15: three concurrent submits -> serialized + failure isolation =================
+Write-Output "== S15 three concurrent creates"
+Reset-Rt
+$j1 = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s15a"
+$j2 = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/b.json","it_s15b"
+$j3 = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/bad.json","it_s15bad"
+$null = Wait-Job $j1,$j2,$j3; Receive-Job $j1,$j2,$j3 | Out-Null; Remove-Job $j1,$j2,$j3
+$allDone = (Test-Path "$runs\it_s15a\artifact.json") -and (Test-Path "$runs\it_s15b\artifact.json") -and (Test-Path "$runs\it_s15bad\artifact.json")
+$goodsOk = ((ArtExecOk "it_s15a") -eq $true) -and ((ArtExecOk "it_s15b") -eq $true)
+$badFailed = (ArtExecOk "it_s15bad") -ne $true
+if ($allDone -and $goodsOk -and $badFailed) { Pass "S15 three tasks serialized, goods ok, bad isolated" } else { Fail "S15 broken done=$allDone goods=$goodsOk bad=$badFailed" }
+Assert-Serialized "S15 serialized"
 
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

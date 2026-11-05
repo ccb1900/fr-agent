@@ -1,6 +1,7 @@
 param([Parameter(Mandatory = $true)][string]$Script, [string]$Out = '', [string]$Heap = '1200m', [switch]$NoKill)
 # 2026-11-04 heap cap (README #46/#47): memory-tight host needs -Xmx ceiling; override with -Heap
-$FR = 'D:\software\FineReport_11.0'
+# r13 P2-C: FR install root from env FR_HOME (single source, matches Paths.js), default preserved for manual gate use
+$FR = if ($env:FR_HOME) { $env:FR_HOME } else { 'D:\software\FineReport_11.0' }
 if (-not $NoKill) { Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force }
 $lck = "$FR\webapps\webroot\WEB-INF\embed\finedb\db.lck"
 if (-not $NoKill -and (Test-Path $lck)) { Remove-Item $lck -Force }

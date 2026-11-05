@@ -1,6 +1,7 @@
 param([Parameter(Mandatory = $true)][string]$Script, [string]$Heap = '1200m')
 # 2026-11-04 heap cap (README #46/#47): -Xmx ceiling, override with -Heap; no java-kill / no FineDB lock cleanup by design
-$FR = 'D:\software\FineReport_11.0'
+# r13 P2-C: FR install root from env FR_HOME (single source), default preserved
+$FR = if ($env:FR_HOME) { $env:FR_HOME } else { 'D:\software\FineReport_11.0' }
 $cp = @(
   "$FR\jre\lib\ext\nashorn.jar",
   "$FR\jre\lib\tools.jar",
