@@ -648,3 +648,16 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **★审查发现（故障注入的价值兑现）**：S5 崩溃恢复测试抓到 `IdentityAlive([int]$pid,…)` 参数撞 PowerShell 自动变量 `$PID`（只读）→赋值 VariableNotWritable→身份判定失效→孤儿 Java 没被杀——**与 r13 OwnerAlive 完全同款陷阱**，正因先造验证器（S5 主动制造"前手崩溃+孤儿 Java 存活"）才当场暴露。修=参数改名 $procId。另 FR_AGENT_HEAP env（embedded 无 j2v8，测试低堆保确定性）。
 - **保留的非基础设施（领域逻辑，非调度）**：contracts.js patch/create fail-closed、termnorm.js 候选契约归一、capability_manifest 五层——r15 只减自研调度基础设施，不动这些解决报表特有问题域的逻辑。
 - **验收**：`verify/integration_runtime.ps1` **S1–S17 全绿**（互斥 S2/S4/S15·孤儿身份杀 S5·放过 S14·活锁拒绝 S6·损坏拒绝 S16·排队 S8·patch 证据 S17）；静态门/fast13/scan48/R1–R8 GREEN；真实 create/patch 端到端仍验收；默认双铁证 CBEB42E3/A8EF39AB 逐字节。
+
+
+#87 r16「Runtime 与 Artifact 双边界交叉验证」落地批（2026-11-05，外部审查 r16.md 令执行；基准 main/f7c8d74；docs/gpt/r16.md 入库；r16 审的是 R14 代码，逐条对照 R15 当前态定适用性）：
+- **交叉验证结论**：r16 多数 P1 针对 R14 的 queue/owner.json/OwnerToken/recover-previous/FIFO——R15 已删；但逐条核对一手代码后确认 **5 项仍适用于 R15**，全部修复：P1#1 patch 路径 runraw.ps1 裸 `& java` 不记 java.pid（孤儿 JVM 无从定位）；P1#2 `enter` 仍可独立调用杀 JVM（绕过互斥）；P1#3 损坏 owner 只在独立 recover 测、未测真 create；P1#4 集成测试 Reset-Rt 清**生产** runtime 目录（测试与真任务并发会互删状态）；Kill 异步未 WaitForExit（孤儿 java 没确认退出就起新实例→FineDB 冲突）。
+- **P1#1 统一 Java 启动**：新 `engine_launch.ps1`（run.ps1/runraw.ps1 共用，消除 classpath 重复；FR_AGENT_JAVA_PIDFILE 时走 Start-Process 记 pid+StartTime）→ patch 路径也记 java.pid。★**审查中发现并修 rc 传播回归**：函数把 java stdout + "EXIT=" 串泄进管道，`$rc = Start-EngineJava` 捕成数组→`exit $rc` 退化 exit0→负门 json-bad-spec 假绿；修=函数只 return rc、java 输出走 Out-Host/文件、run/runraw `exit (Start-EngineJava)`。
+- **P1#2 恢复只在主流程**：enter 折入 fr_agent Invoke-UnderMutex（WaitOne 后、持锁内做遗留检测+身份杀+claim/release）；runtime.ps1 降为**只读 status**，无独立危险恢复入口（r16「恢复只能由持有执行权的主流程内部完成」）。
+- **Kill 异步**：`Kill-OrphanJvm` 用 Process.Kill()+WaitForExit(15s)，返回 gone/killed/spared/stuck——spared（PID 复用非我 java）放行不杀、stuck（杀了没退出）拒绝启动（绝不与未确认退出的孤儿并发）。
+- **create/modify_report 移出锁**（r16 §3 缩短持锁）：纯 JS 验收不碰引擎，移到 ReleaseMutex 之后。
+- **P1#4 测试隔离**：config 加 `FR_AGENT_RUNTIME_DIR`/`FR_AGENT_MUTEX` env，集成测试用 `logs/agent/_it_runtime` + 独立 mutex，绝不清生产 runtime；启动只按 it_*/java.pid 身份清自己遗留 java，不扫全 java。
+- **P1#3 fail-closed 真路径**：损坏 active.json/活 owner → 真 create 返回 RUNTIME_BUSY、不启动、不清哨兵（S6/S16）。
+- **AbandonedMutexException 最小实验**（r16 §5 要求一手验证非采信文档）：本机实测 TerminateProcess 后下一 WaitOne 返回 True **不抛异常**→证实"恢复不能靠 abandoned 信号、必须靠进程身份"，R15/R16 设计正确。
+- **验收**：`verify/integration_runtime.ps1` 重写为真 create/patch 路径故障注入 **S1–S17 全绿**（S5 崩溃孤儿身份杀·S5b patch 也记 java.pid 并杀·S14 身份不符放过仍继续·S6 活锁拒·S16 损坏拒·S8 排队·S15 三并发串行+隔离·S17 patch 证据 fail-closed）；合并全门一次跑通 GREEN：STATIC0/INTEG0/FAST13/SCAN48/R1-R8/负门5路/默认双铁证 CBEB42E3·A8EF39AB 逐字节。
+- **r16 原则**：Runtime 不再扩功能面；互斥只信 OS Mutex、恢复只信进程身份、结果只信完整证据。三性质（互斥/恢复安全/结果可信）经故障注入站稳。
