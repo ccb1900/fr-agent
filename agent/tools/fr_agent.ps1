@@ -127,11 +127,19 @@ switch ($inner) {
     $specText = [System.IO.File]::ReadAllText((Join-Path $ROOT $Spec), [System.Text.Encoding]::UTF8)
     $specObj = $specText | ConvertFrom-Json
     $outName = [string]$specObj.outName
+    # r12: acquire the global runtime lock (serializes FineReport runtime; concurrent tasks queue, never parallel JVMs)
+    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb compile | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      Write-Output ('{"ok":false,"runId":"' + $RunId + ',"reason":"QUEUE_TIMEOUT"}')
+      exit 1
+    }
     $env:REPORT_SPEC = $Spec
     $env:FR_AGENT_RESULT = "$runDir\runresult.json"
     $env:RESULT_DUMP = "$runDir\grid.txt"
     $log = "$runDir\compile.log"
-    # r11-2: agent normal path does NOT kill other java processes nor delete the global FineDB lock
+    # r11-2/r12: agent path runs under the lock with -NoKill (supervisor guarantees a single live runtime;
+    #   stale FineDB locks are cleared only by the supervisor's Recovery, never as a default pre-action)
     & "$ROOT\run.ps1" -Script make_api.js -Out $log -NoKill | Out-Null
     $rc = $LASTEXITCODE
     Remove-Item env:REPORT_SPEC -ErrorAction SilentlyContinue
@@ -148,6 +156,7 @@ switch ($inner) {
     WriteAtomic "$runDir\compile.json" ($obj | ConvertTo-Json -Depth 6)
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
     $artRc = $LASTEXITCODE
+    & "$ROOT\agent\tools\runtime.ps1" -Action release -RunId $RunId | Out-Null
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     $outRel = "logs/agent/runs/$RunId/compile.json"
     $artifactRel = "logs/agent/runs/$RunId/artifact.json"
@@ -158,6 +167,13 @@ switch ($inner) {
   }
   'patch' {
     if (-not $Patch) { Write-Output '{"ok":false,"error":"-Patch required"}'; exit 2 }
+    # r12: patch_main spawns a FineReport runtime (readTemplateWorkBook+render) -> same global lock
+    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb patch | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}')
+      exit 1
+    }
     $env:TEMPLATE_PATCH = $Patch
     # r11-2: per-run staging isolation - patch_main honors TEMPLATE_STAGING env
     $stagingDir = "$runDir\staging"
@@ -175,6 +191,7 @@ switch ($inner) {
     WriteAtomic "$runDir\patch.json" ($obj | ConvertTo-Json -Depth 8)
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
     $artRc = $LASTEXITCODE
+    & "$ROOT\agent\tools\runtime.ps1" -Action release -RunId $RunId | Out-Null
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     $outRel = "logs/agent/runs/$RunId/patch.json"
     $artifactRel = "logs/agent/runs/$RunId/artifact.json"

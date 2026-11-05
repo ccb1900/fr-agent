@@ -68,3 +68,25 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
   - `create`（=compile 别名）／`modify`（=patch 别名）：业务命名入口，行为与底层 verb 一致。
 - **能力声明**：`discover` 输出 `capabilityManifest`（四层 construction/serialization/rendering/agentAvailable，逐能力带 README/probe 引证）与 `agentAvailable` 扁平名单——**只有 agentAvailable=true 的能力才可对外承诺**；serialization-only/pending 的能力仅内部使用或明确告知未达。
 - **artifact.json**：带 `runId`；`artifactId = sourceType:outName@runId`（每次操作唯一）；acceptance 口径不变（执行成功+无 error 诊断+validation≠false）。
+
+## r12 执行模型：单实例 Runtime Supervisor + 多任务队列
+
+任务可**并发提交**，但 FineReport Runtime **串行执行**（全局单执行权）。这是 `application` 与 FineReport Runtime 之间的正式基础设施（`agent/tools/runtime.ps1`），不是散落在脚本里的互斥逻辑。
+
+- 全局锁 = `logs/agent/runtime/lock`（目录原子创建，跨进程互斥）；`current.json` 记持有者 runId+pid+startedAt；`queue/` `done/` 记任务态；`history.log` 记 ACQUIRE/RELEASE/RECOVER 事件流。
+- `create`/`modify` 两条起 Runtime 的路径经 `acquire → run.ps1 -NoKill → release` 包裹；零引擎 verb（discover/resolve/plan/plan2spec/validate/preview）不取锁。
+- **run.ps1 默认不再随意杀 JVM**：agent 路径用 `-NoKill`；kill+删 FineDB 锁降格为 Supervisor 的 Recovery 动作，且**仅在确认 current 持有者 pid 已死后**才执行（abandoned run 标 `failed/RUNTIME_LOST`，绝不标成功）。
+- 验收（`verify/integration_runtime.ps1`，覆盖 PowerShell/Nashorn/Application/FineReport Runtime 全链）：S1/2/4 并发提交串行（maxLiveRuntime=1）、S3 失败隔离、S5 崩溃恢复、S6 模板 staging 不串、S7 plan sql/rows 分流。
+
+## r10/r12 verb 全表
+
+| Verb | 参数 | 产物（logs/agent/runs/{runId}/） | 取 Runtime 锁 |
+|---|---|---|---|
+| discover | — | discover.json（含 capabilityManifest 五层 + agentAvailable 名单） | 否 |
+| resolve | -Term | resolve.json | 否 |
+| plan | -Intent | plan.json（ready/ambiguous/rejected） | 否 |
+| plan2spec | （同 runId） | reportSpec.json（ready 的 spec 落盘） | 否 |
+| create（=compile） | -Spec | compile.json + artifact.json | 是 |
+| validate | -ExpectTotals | validate.json + 刷新 artifact.json | 否 |
+| preview | -Png | preview.json | 否 |
+| modify（=patch） | -Patch | patch.json + staging/ + artifact.json | 是 |

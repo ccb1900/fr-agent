@@ -71,36 +71,50 @@ check('create 不改输入 parts', (function () {
   return JSON.stringify(parts) === snap;
 })());
 
-// ===== r10-B：CapabilityManifest 四层能力状态 =====
+// ===== r10-B/r11-5：CapabilityManifest 五层能力状态（含 regression） =====
 var mf = CapabilityManifest.build();
-  var SEGS = ['chart', 'condition', 'write', 'page'];
-check('manifest 有四大段（chart/condition/write/page）', SEGS.every(function (s) { return Array.isArray(mf[s]) && mf[s].length > 0; }));
-check('每能力四层状态齐全（construction/serialization/rendering/agentAvailable）', (function () {
+var SEGS = ['chart', 'condition', 'write', 'page', 'product'];
+check('manifest 有五大段（chart/condition/write/page/product）', SEGS.every(function (s) { return Array.isArray(mf[s]) && mf[s].length > 0; }));
+check('每能力五层状态齐全（含 regression，r11-5）', (function () {
   var ok = true;
   SEGS.forEach(function (seg) {
     (mf[seg] || []).forEach(function (cap) {
-      if (!cap.name || typeof cap.construction !== 'string' || typeof cap.serialization !== 'string' || typeof cap.rendering !== 'string' || typeof cap.agentAvailable !== 'boolean') ok = false;
+      if (!cap.name || typeof cap.construction !== 'string' || typeof cap.serialization !== 'string' || typeof cap.rendering !== 'string' || typeof cap.regression !== 'string' || typeof cap.agentAvailable !== 'boolean') ok = false;
     });
   });
   return ok;
 })());
-check('agentAvailable = 四层全 verified（仅构造层的不广告）', (function () {
+check('agentAvailable = 四层全 verified（含 regression；仅构造/仅序列化/无回归的不广告）', (function () {
   var allTrue = [], someFalse = [];
   SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.agentAvailable) allTrue.push(c); else someFalse.push(c); }); });
-  return allTrue.every(function (c) { return c.construction === 'verified' && c.serialization === 'verified' && c.rendering === 'verified'; }) && someFalse.length > 0;
+  return allTrue.every(function (c) { return c.construction === 'verified' && c.serialization === 'verified' && c.rendering === 'verified' && c.regression === 'verified'; }) && someFalse.length > 0;
 })());
-check('批B 渲染端待达四项 rendering=pending（stack/label/conditionalSeries/vpieLegend）', (function () {
+check('serialization-only 能力（tooltip/条件超链/填报结构）agentAvailable=false（渲染属 web 行为不外宣）', (function () {
+  var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
+  var tt = find('chart.tooltip'), lk = find('condition.then.link'), ws = find('write.structure');
+  return tt && tt.rendering === 'serialization-only' && tt.agentAvailable === false && lk && lk.agentAvailable === false && ws && ws.agentAvailable === false;
+})());
+check('批B 渲染端待达三项 rendering=pending（stack/label/conditionalSeries）', (function () {
   var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
   var s = find('chart.stack'), l = find('chart.label'), cs = find('chart.conditionalSeries');
   return s && s.rendering === 'pending' && s.agentAvailable === false && l && l.rendering === 'pending' && cs && cs.rendering === 'pending';
 })());
-check('批H sort rejected（不硬凑）', (function () {
-  var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === 'detail.sort') r = c; }); });
-  return r && r.serialization === 'rejected';
+check('批H cell.sort 与 I6 style patch rejected（不硬凑）', (function () {
+  var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
+  var so = find('cell.sort'), sp = find('template.patch.style');
+  return so && so.serialization === 'rejected' && sp && sp.construction === 'rejected';
 })());
-check('manifest 带 evidence 引证（README 条目可溯源）', (function () {
-  var ok = true; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (!c.evidence || !String(c.evidence).match(/README #\d+|probe_/)) ok = false; }); });
+check('r12 agent.runtime.serial 已收（agentAvailable=true）', (function () {
+  var find = function (n) { var r = null; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (c.name === n) r = c; }); }); return r; };
+  var rt = find('agent.runtime.serial'); return rt && rt.agentAvailable === true;
+})());
+check('manifest 带 evidence 引证（README/carrier/probe 可溯源）', (function () {
+  var ok = true; SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) { if (!c.evidence || !String(c.evidence).match(/README #\d+|probe_|carrier|integration_runtime/)) ok = false; }); });
   return ok;
+})());
+check('agentAvailableNames 扁平名单非空且含 runtime.serial 不含 stack', (function () {
+  var names = CapabilityManifest.agentAvailableNames();
+  return names.length > 0 && names.indexOf('agent.runtime.serial') >= 0 && names.indexOf('chart.stack') < 0;
 })());
 
 print('SELFTEST END, failures=' + FAILS);

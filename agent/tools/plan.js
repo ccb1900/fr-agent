@@ -33,8 +33,11 @@ var model = JSON.parse(readUtf('models/production/model.json'));
 var schemaName = 'schema_' + (model.source || 'atom_live_demo') + '.json';
 var schema = JSON.parse(readUtf('data/' + schemaName));
 
-// make_api SQL 路同款前置：preflight 统一检查（r6）——模型回溯 + 唯一性证据指纹/时效（与 make_api/preflight
-//   同一套 env 默认，保证 plan 与 compile 判定一致）。ModelValidator 单独调会缺证据 → UNSUPPORTED_RELATION_KEY 误拒。
+// make_api SQL 路同款前置：preflight 统一检查（r6）——模型回溯 + 唯一性证据指纹/时效。
+//   r11-5 分流：仅 sql 数据集意图需要数据库关系证据；内嵌 rows 意图不依赖库，跳过 preflight（否则被关系证据误阻断）。
+function genv(k, d) { var v = System.getenv(k); return (v == null || v === '') ? d : String(v); }
+var isSqlIntent = !!(intent.dataset && intent.dataset.kind === 'sql');
+if (isSqlIntent) {
 load(ROOT + '/semantic/model/validator.js');
 load(ROOT + '/semantic/model/evidence.js');
 load(ROOT + '/semantic/preflight.js');
@@ -42,7 +45,6 @@ var evRaw = null;
 try {
   evRaw = ModelEvidence.parse(readUtf('data/i55_relation_unique_truth.json'));
 } catch (eEv) { evRaw = null; }
-function genv(k, d) { var v = System.getenv(k); return (v == null || v === '') ? d : String(v); }
 var drvC = genv('SQL_DRIVER', 'com.microsoft.sqlserver.jdbc.SQLServerDriver');
 var urlC = genv('SQL_URL', 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false');
 var usrC = genv('SQL_USER', 'sa');
@@ -57,6 +59,7 @@ if (!pf.ok) {
   writeJson(runDir + '/plan.json', { tool: 'plan', runId: runId, status: 'rejected', reason: 'PREFLIGHT_FAILED', issues: pf.diagnostics.filter(function (d) { return d.severity !== 'info'; }), intentPath: intentPath });
   print('{"ok":false,"runId":"' + runId + '","status":"rejected","result":"logs/agent/runs/' + runId + '/plan.json"}');
   System.exit(1);
+}
 }
 
 // 术语归一（工具层胶水，r10-C）：intent 中的业务词（中文名/label/列名）先经 resolver 归一为模型 name，

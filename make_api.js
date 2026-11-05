@@ -84,7 +84,7 @@ try {
     load(Paths.lib('isodate.js'));      // I5.1 P4 单点：spec_validator 与 sqlbuilder 共用日历有效性（须在 spec_validator 前）
     load(Paths.lib('spec_validator.js'));
     load(Paths.lib('spec_compiler.js'));
-    var rsText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(specPath))), 'UTF-8'));
+    var rsText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(specPath))), 'UTF-8')).replace(/^\uFEFF/, '');
     var rs = null;
     try { rs = JSON.parse(rsText); } catch (eJson) { throw new Error('REPORTSPEC JSON parse failed: ' + eJson); }
     var rsErrs = SpecValidator.validate(rs);
