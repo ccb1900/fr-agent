@@ -16,14 +16,36 @@ $cp = @(
 ) -join ';'
 $java = "$FR\jre\bin\java.exe"
 $heapArg = "-Xmx$Heap"
-# 2026-11-04 commit preflight (README #46/#47): fail fast with actionable msg instead of JVM "Could not reserve"
-$os = Get-CimInstance Win32_OperatingSystem
-$freeMB = [int]($os.FreeVirtualMemory/1KB)
+# 2026-11-04 commit preflight (README #46/#47): fail fast with actionable msg instead of JVM "Could not reserve".
+# r14: committed memory can lag a few seconds after a previous JVM exits (serial creates back-to-back); retry the
+#   preflight a bounded number of times before declaring COMMIT_LIMIT_LOW, so a transient decommit dip does not fail a
+#   legitimate run. Still fails (exit 8) if memory never frees.
 $heapMB = [int]($Heap.TrimEnd('M','m'))
 $needMB = $heapMB + 900
+$freeMB = 0
+for ($try = 0; $try -lt 6; $try++) {
+  $os = Get-CimInstance Win32_OperatingSystem
+  $freeMB = [int]($os.FreeVirtualMemory/1KB)
+  if ($freeMB -ge $needMB) { break }
+  Start-Sleep -Seconds 3
+}
 if ($freeMB -lt $needMB) {
   Write-Output ("COMMIT_LIMIT_LOW: free={0}MB need~{1}MB (heap {2} + ~900MB native/headroom).{3}Close memory hogs (vmmemWSL => wsl --shutdown) or enlarge pagefile, then rerun. See README #46/#47." -f $freeMB, $needMB, $Heap, [char]10)
   exit 8
+}
+# r14: agent path records the spawned java PID + StartTime to a pidfile so the Supervisor's recovery can kill EXACTLY
+#   this run's JVM (identity-scoped), never all java. Manual gate (no pidfile env) keeps the original synchronous path.
+if ($env:FR_AGENT_JAVA_PIDFILE) {
+  $argList = @('-Djava.awt.headless=true', $heapArg, '-cp', $cp, 'jdk.nashorn.tools.Shell', $Script)
+  $sp = @{ FilePath = $java; ArgumentList = $argList; NoNewWindow = $true; PassThru = $true }
+  if ($Out -ne '') { $sp['RedirectStandardOutput'] = $Out; $sp['RedirectStandardError'] = "$Out.err" }
+  $p = Start-Process @sp
+  $st = -1; try { $st = $p.StartTime.Ticks } catch { }
+  [System.IO.File]::WriteAllText($env:FR_AGENT_JAVA_PIDFILE, ($p.Id.ToString() + ' ' + $st.ToString()))
+  $p.WaitForExit()
+  $rc = $p.ExitCode
+  if ($Out -ne '') { "EXIT=$rc log=$Out" }
+  exit $rc
 }
 if ($Out -ne '') {
   & $java '-Djava.awt.headless=true' $heapArg '-cp' $cp 'jdk.nashorn.tools.Shell' $Script *> $Out

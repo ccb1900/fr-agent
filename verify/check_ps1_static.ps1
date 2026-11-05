@@ -4,7 +4,7 @@
 #   3) agent tools must NOT hardcode the root/FR paths (config.ps1 is the single source; r13 P2-C)
 # Wired into the gate suite. Exit 0 = clean, 1 = any violation. ASCII-only file.
 $ErrorActionPreference = 'Continue'
-$ROOT = 'D:\fineagent'
+$ROOT = if ($env:FR_AGENT_HOME) { $env:FR_AGENT_HOME } else { 'D:\fineagent' }
 $fail = 0
 function Fail($n) { Write-Output "STATIC FAIL: $n"; $script:fail++ }
 function Pass($n) { Write-Output "STATIC PASS: $n" }

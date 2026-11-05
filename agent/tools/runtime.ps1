@@ -1,214 +1,174 @@
-# runtime.ps1 - r13 (R12.1) Runtime Supervisor: single-instance FineReport runtime, multi-task queue, CORRECT lock protocol.
-# Model (docs/gpt/r12.md + r13.md): tasks may be SUBMITTED concurrently but the FineReport RUNTIME executes SERIALLY.
-#
-# r13 fixes over r12:
-#   P1-A lock-init race: lock dir create + owner.json write are two steps. A waiter must NEVER delete a lock just
-#        because owner.json is momentarily absent (that is INITIALIZING, not stale). Staleness is decided by OWNER
-#        IDENTITY (pid alive AND process start-time matches), never by file absence alone.
-#   P1-B MaxLockAgeSec must NOT equal owner-death: a live-owner task older than TaskSuspectSec is a WARNING only,
-#        never killed. Only a dead owner (pid gone, or pid reused -> start-time mismatch) triggers Recovery.
-#   OwnerToken: release/recovery verify the token, not just RunId (a wrong RunId cannot delete another's lock).
-#   Recovery scope: kill only java whose CommandLine matches THIS runtime's pipelineTag, never all java on the box.
-#   runtimeState (queued/running/released/lost) is separate from businessResult (pending/succeeded/failed):
-#        releasing the execution right is NOT the same as the report succeeding.
-#   FIFO: only the oldest still-queued waiter attempts to claim the lock (best-effort FIFO ordering).
-#   Duplicate RunId: a runId already queued/running cannot be acquired again (no double execution).
-#
-# NOTE: ASCII-only (PS 5.1 GBK ANSI-read lesson). Paths/policy come from config.ps1 (single source).
+# runtime.ps1 - r14 Runtime Supervisor RECORD/state manager (the mutex itself is held by fr_agent.ps1).
+# Model (docs/gpt/r14.md): mutual exclusion is an OS named Mutex (kernel-enforced, abandonment proves owner death).
+#   This script manages the durable RECORDS: atomic RunId claim, owner.json (current holder identity), queue/done state,
+#   history event stream, and identity-scoped recovery of a crashed holder's JVM.
+# Invariants (r14):
+#   - RunId claim is atomic (FileMode.CreateNew): two same-RunId acquires, exactly one wins (no TOCTOU).
+#   - finalize verifies runId + ownerToken against owner.json; a missing owner.json is OWNER_STATE_UNKNOWN (not success).
+#   - recovery kills ONLY the java process recorded in the crashed run's java.pid (pid + StartTime verified), never all java.
+#   - runtimeState (queued/running/released/lost) is orthogonal to businessResult (pending/succeeded/failed).
+# NOTE: ASCII-only (PS 5.1 GBK ANSI-read lesson). Paths/policy from config.ps1 (single source).
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('acquire', 'release', 'status', 'recover')][string]$Action,
+  [Parameter(Mandatory = $true)][ValidateSet('register', 'unregister', 'mark-running', 'finalize', 'recover-previous', 'status', 'recover')][string]$Action,
   [string]$RunId = '',
   [string]$Verb = '',
   [string]$OwnerToken = '',
   [string]$PipelineTag = 'make_api.js',
   [string]$BusinessResult = 'pending',
-  [int]$OwnerPid = 0,
-  [int]$TimeoutSec = 0
+  [int]$OwnerPid = 0
 )
 $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot 'config.ps1')
 $cfg = Get-AgentConfig
-$effTimeout = if ($TimeoutSec -gt 0) { $TimeoutSec } else { $cfg.AcquireTimeoutSec }
 $rtDir = $cfg.RuntimeDir
-$lockDir = "$rtDir\lock"
-$ownerFile = "$rtDir\lock\owner.json"
+$ownerFile = "$rtDir\owner.json"
 $queueDir = "$rtDir\queue"
 $doneDir = "$rtDir\done"
 $historyFile = "$rtDir\history.log"
+New-Item -ItemType Directory -Force -Path $rtDir | Out-Null
+New-Item -ItemType Directory -Force -Path $queueDir | Out-Null
+New-Item -ItemType Directory -Force -Path $doneDir | Out-Null
 
+function ReadJson([string]$path) {
+  if (-not (Test-Path $path)) { return $null }
+  try {
+    $t = (Get-Content $path -Raw -Encoding UTF8).TrimStart([char]0xFEFF)
+    if (-not $t) { return $null }
+    return ($t | ConvertFrom-Json)
+  } catch { return $null }
+}
 function WriteJsonNoBom([string]$path, $obj) {
   $parent = Split-Path $path -Parent
   if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
   $tmp = "$path.tmp"
   [System.IO.File]::WriteAllText($tmp, ($obj | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
-  Move-Item -Force $tmp $path
-}
-function ReadJson([string]$path) {
-  if (-not (Test-Path $path)) { return $null }
-  try { return (Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json) } catch { return $null }
+  try { [System.IO.File]::Replace($tmp, $path, $null) } catch { Move-Item -Force $tmp $path }
 }
 function WriteHistory([string]$evt, [string]$runId) {
   try { Add-Content -Path $historyFile -Value ((Get-Date).ToString('o') + ' ' + $evt + ' ' + $runId) -Encoding ASCII } catch { }
 }
-# Process start-time ticks (PID-reuse guard). -1 if not found / not readable.
 function ProcStartTicks([int]$procId) {
   if ($procId -le 0) { return -1 }
-  try {
-    $p = Get-Process -Id $procId -ErrorAction Stop
-    return [long]$p.StartTime.Ticks
-  } catch { return -1 }
+  try { $p = Get-Process -Id $procId -ErrorAction Stop; return [long]$p.StartTime.Ticks } catch { return -1 }
 }
-# Owner identity alive = pid exists AND its start-time still matches the recorded one (PID not recycled).
-function OwnerIdentityAlive($owner) {
-  if (-not $owner) { return $false }
-  $opid = 0
-  try { $opid = [int]$owner.ownerPid } catch { return $false }
+function OwnerIdentityAlive($o) {
+  if (-not $o) { return $false }
+  $opid = 0; try { $opid = [int]$o.ownerPid } catch { return $false }
   $st = ProcStartTicks $opid
-  if ($st -lt 0) { return $false }                       # pid gone
-  # only enforce the start-time match when a VALID start was recorded (ownerStart>0); if it was unreadable (-1) at
-  #   acquire time, fall back to pid-alive so a live owner is never misjudged dead (r13 review)
-  if ($owner.ownerStart -and [long]$owner.ownerStart -gt 0 -and [long]$owner.ownerStart -ne $st) { return $false }  # pid reused -> different process
+  if ($st -lt 0) { return $false }
+  if ($o.ownerStart -and [long]$o.ownerStart -gt 0 -and [long]$o.ownerStart -ne $st) { return $false }  # pid reused
   return $true
 }
-# Returns: free | owned_alive | owned_dead | initializing | init_stalled
-function Get-LockState() {
-  if (-not (Test-Path $lockDir)) { return 'free' }
-  $owner = ReadJson $ownerFile
-  if ($owner) {
-    if (OwnerIdentityAlive $owner) { return 'owned_alive' }
-    return 'owned_dead'
-  }
-  # lock dir exists but owner.json not yet written
-  $ageSec = 0
-  try { $ageSec = ((Get-Date) - (Get-Item $lockDir).CreationTime).TotalSeconds } catch { $ageSec = 9999 }
-  if ($ageSec -lt $cfg.InitGraceSec) { return 'initializing' }
-  return 'init_stalled'
-}
-# Best-effort FIFO: only the oldest still-queued waiter may attempt to claim the lock.
-#   r13 review fix: a queued waiter whose owning process DIED cannot self-clean its queue slot; if it stayed "oldest"
-#   every younger waiter would defer to it forever (starvation). So prune dead-queued entries before ordering.
-function Is-OldestQueued([string]$runId) {
-  $entries = @()
-  foreach ($file in @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue)) {
-    $e = ReadJson $file.FullName
-    if (-not $e) { continue }
-    if ([string]$e.runtimeState -ne 'queued') { continue }
-    # a queued entry with a dead ownerPid is an abandoned waiter -> drop its slot, do not let it block others
-    $opid = 0; try { $opid = [int]$e.ownerPid } catch { $opid = 0 }
-    if ($opid -gt 0 -and $opid -ne $PID -and (ProcStartTicks $opid) -lt 0) {
-      Remove-Item $file.FullName -Force -ErrorAction SilentlyContinue
-      continue
-    }
-    $entries += $e
-  }
-  if ($entries.Count -eq 0) { return $true }
-  $sorted = @($entries | Sort-Object submittedAt, runId)
-  return ([string]$sorted[0].runId -eq $runId)
-}
-function Mark-Done([string]$runId, [string]$runtimeState, [string]$businessResult, [string]$reason) {
-  $q = ReadJson "$queueDir\$runId.json"
-  $rec = @{ runId = $runId; verb = $(if ($q) { [string]$q.verb } else { '' }); submittedAt = $(if ($q) { [string]$q.submittedAt } else { '' }); runtimeState = $runtimeState; businessResult = $businessResult; finishedAt = (Get-Date).ToString('o') }
-  if ($reason) { $rec.reason = $reason }
-  WriteJsonNoBom "$doneDir\$runId.json" $rec
-  Remove-Item "$queueDir\$runId.json" -Force -ErrorAction SilentlyContinue
-}
-# Recovery ONLY after owner identity confirmed dead (or init stalled). Scoped java kill; FineDB lock only when owner verified gone.
-function Invoke-Recovery([string]$reason, [bool]$killJava) {
-  $owner = ReadJson $ownerFile
-  $lostRun = if ($owner) { [string]$owner.runId } else { '' }
-  if ($killJava -and $owner -and $owner.pipelineTag) {
-    # kill only java whose command line matches THIS runtime's pipeline script (never all java on the box)
+# Atomic exclusive claim of a file: returns $true if THIS call created it (won), $false if it already existed.
+function Try-CreateNew([string]$path, $obj) {
+  try {
+    $fs = [System.IO.File]::Open($path, [System.IO.FileMode]::CreateNew, [System.IO.FileAccess]::Write)
     try {
-      $procs = Get-CimInstance Win32_Process -Filter "Name='java.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -and $_.CommandLine -match [regex]::Escape([string]$owner.pipelineTag) }
-      foreach ($pr in $procs) { Stop-Process -Id $pr.ProcessId -Force -ErrorAction SilentlyContinue }
-    } catch { }
-    # FineDB lock is removed only because we verified the owning instance's owner is dead
-    if (Test-Path $cfg.FineDbLck) { Remove-Item $cfg.FineDbLck -Force -ErrorAction SilentlyContinue }
+      $bytes = (New-Object System.Text.UTF8Encoding($false)).GetBytes(($obj | ConvertTo-Json -Depth 6))
+      $fs.Write($bytes, 0, $bytes.Length)
+    } finally { $fs.Dispose() }
+    return $true
+  } catch [System.IO.FileExistsException] { return $false } catch { return $false }
+}
+# Identity-scoped kill of the crashed holder's JVM via its recorded pidfile (pid + StartTime verified).
+function Kill-RecordedJava([string]$lostRun) {
+  if (-not $lostRun) { return }
+  $pf = "$($cfg.RunsDir)\$lostRun\java.pid"
+  if (-not (Test-Path $pf)) { return }
+  $parts = ((Get-Content $pf -Raw -Encoding UTF8).Trim() -split ' ')
+  if ($parts.Count -lt 1) { return }
+  $jpid = 0; try { $jpid = [int]$parts[0] } catch { return }
+  $jstart = -1; if ($parts.Count -ge 2) { try { $jstart = [long]$parts[1] } catch { $jstart = -1 } }
+  $cur = ProcStartTicks $jpid
+  if ($cur -lt 0) { return }                       # already gone
+  if ($jstart -gt 0 -and $cur -ne $jstart) { return }  # pid reused by another process -> NOT our java, do not kill
+  Stop-Process -Id $jpid -Force -ErrorAction SilentlyContinue
+}
+function Do-Recover-Previous() {
+  $owner = ReadJson $ownerFile
+  if (-not $owner) { return '' }
+  $lostRun = [string]$owner.runId
+  Kill-RecordedJava $lostRun
+  if (Test-Path $cfg.FineDbLck) { Remove-Item $cfg.FineDbLck -Force -ErrorAction SilentlyContinue }
+  if ($lostRun) {
+    $q = ReadJson "$queueDir\$lostRun.json"
+    WriteJsonNoBom "$doneDir\$lostRun.json" @{ runId = $lostRun; verb = [string]$owner.verb; submittedAt = $(if ($q) { [string]$q.submittedAt } else { '' }); runtimeState = 'lost'; businessResult = 'failed'; reason = 'RUNTIME_LOST:owner-crashed'; finishedAt = (Get-Date).ToString('o') }
+    Remove-Item "$queueDir\$lostRun.json" -Force -ErrorAction SilentlyContinue
   }
-  if (Test-Path $lockDir) { Remove-Item $lockDir -Force -Recurse -ErrorAction SilentlyContinue }
-  if ($lostRun) { Mark-Done $lostRun 'lost' 'failed' "RUNTIME_LOST:$reason" }
-  WriteHistory "RECOVER $reason" $lostRun
+  Remove-Item $ownerFile -Force -ErrorAction SilentlyContinue
+  WriteHistory "RECOVER $lostRun" $lostRun
   return $lostRun
 }
 
 switch ($Action) {
-  'acquire' {
-    if (-not $RunId -or -not $Verb) { Write-Output '{"ok":false,"error":"acquire needs -RunId and -Verb"}'; exit 2 }
+  'register' {
+    if (-not $RunId -or -not $Verb) { Write-Output '{"ok":false,"error":"register needs -RunId and -Verb"}'; exit 2 }
     if (-not (Test-RunId $RunId)) { Write-Output '{"ok":false,"error":"illegal runId"}'; exit 2 }
-    if (-not $OwnerToken) { Write-Output '{"ok":false,"error":"acquire needs -OwnerToken"}'; exit 2 }
-    # duplicate RunId policy: an in-flight (queued/running) runId cannot be acquired again (no double execution)
-    $existing = ReadJson "$queueDir\$RunId.json"
-    if ($existing) { Write-Output ('{"ok":false,"acquired":false,"reason":"RUNID_INFLIGHT","runId":"' + $RunId + '"}'); exit 1 }
-    # queue slot ownerPid = THIS acquire process (the spinner): while queued it is alive; if the acquirer is killed the
-    #   slot is prunable so it cannot starve younger waiters. owner.json ownerPid (below) = the long-lived caller (fr_agent).
-    WriteJsonNoBom "$queueDir\$RunId.json" @{ runId = $RunId; verb = $Verb; submittedAt = (Get-Date).ToString('o'); runtimeState = 'queued'; ownerToken = $OwnerToken; ownerPid = $PID }
-    $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    while ($true) {
-      if (Is-OldestQueued $RunId) {
-        try {
-          New-Item -ItemType Directory -Path $lockDir -ErrorAction Stop | Out-Null
-          # I own the lock dir now (atomic). Write owner identity INSIDE it.
-          $opid = if ($OwnerPid -gt 0) { $OwnerPid } else { $PID }
-          $ost = ProcStartTicks $opid
-          WriteJsonNoBom $ownerFile @{ runId = $RunId; verb = $Verb; ownerPid = $opid; ownerStart = $ost; ownerToken = $OwnerToken; pipelineTag = $PipelineTag; acquiredAt = (Get-Date).ToString('o') }
-          $q = ReadJson "$queueDir\$RunId.json"; if ($q) { $q.runtimeState = 'running'; WriteJsonNoBom "$queueDir\$RunId.json" $q }
-          WriteHistory "ACQUIRE" $RunId
-          Write-Output ('{"ok":true,"acquired":true,"runId":"' + $RunId + '","waitedMs":' + [int]$sw.ElapsedMilliseconds + '}')
-          exit 0
-        } catch {
-          # lock exists; classify WITHOUT ever deleting on a mere missing-owner assumption
-          $state = Get-LockState
-          if ($state -eq 'owned_dead') { $null = Invoke-Recovery 'owner-dead' $true; continue }
-          if ($state -eq 'init_stalled') { $null = Invoke-Recovery 'init-stalled' $false; continue }
-          # owned_alive / initializing / free(race) -> wait, never delete
-        }
-      }
-      if ($sw.Elapsed.TotalSeconds -gt $effTimeout) {
-        Remove-Item "$queueDir\$RunId.json" -Force -ErrorAction SilentlyContinue
-        $pos = @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue).Count
-        Write-Output ('{"ok":false,"acquired":false,"reason":"QUEUE_TIMEOUT","runId":"' + $RunId + '","queueDepth":' + $pos + '}')
-        exit 1
-      }
-      Start-Sleep -Milliseconds 150
-    }
+    if (-not $OwnerToken) { Write-Output '{"ok":false,"error":"register needs -OwnerToken"}'; exit 2 }
+    $opid = if ($OwnerPid -gt 0) { $OwnerPid } else { $PID }
+    $ost = ProcStartTicks $opid
+    $slot = @{ runId = $RunId; verb = $Verb; submittedAt = (Get-Date).ToString('o'); runtimeState = 'queued'; ownerToken = $OwnerToken; ownerPid = $opid; ownerStart = $ost }
+    # r14 P1#1: atomic exclusive claim via FileMode.CreateNew - exactly one same-RunId register wins.
+    #   NO reclaim-on-dead-owner here (that heuristic made duplicate-RunId non-strict): the slot is cleaned by
+    #   finalize (normal) or recover-previous (crashed holder via OS mutex abandonment), never by a guessing waiter.
+    if (Try-CreateNew "$queueDir\$RunId.json" $slot) { WriteHistory "SUBMITTED $RunId" $RunId; Write-Output ('{"ok":true,"registered":true,"runId":"' + $RunId + '"}'); exit 0 }
+    Write-Output ('{"ok":false,"registered":false,"reason":"RUNID_INFLIGHT","runId":"' + $RunId + '"}'); exit 1
   }
-  'release' {
-    if (-not $RunId -or -not $OwnerToken) { Write-Output '{"ok":false,"error":"release needs -RunId and -OwnerToken"}'; exit 2 }
+  'unregister' {
+    if (-not $RunId) { Write-Output '{"ok":false,"error":"unregister needs -RunId"}'; exit 2 }
+    Remove-Item "$queueDir\$RunId.json" -Force -ErrorAction SilentlyContinue
+    Write-Output ('{"ok":true,"unregistered":true,"runId":"' + $RunId + '"}'); exit 0
+  }
+  'mark-running' {
+    if (-not $RunId -or -not $OwnerToken) { Write-Output '{"ok":false,"error":"mark-running needs -RunId and -OwnerToken"}'; exit 2 }
+    $opid = if ($OwnerPid -gt 0) { $OwnerPid } else { $PID }
+    $ost = ProcStartTicks $opid
+    WriteJsonNoBom $ownerFile @{ runId = $RunId; verb = $Verb; ownerPid = $opid; ownerStart = $ost; ownerToken = $OwnerToken; pipelineTag = $PipelineTag; acquiredAt = (Get-Date).ToString('o') }
+    $q = ReadJson "$queueDir\$RunId.json"; if ($q) { $q.runtimeState = 'running'; $q.ownerPid = $opid; $q.ownerStart = $ost; WriteJsonNoBom "$queueDir\$RunId.json" $q }
+    WriteHistory "ACQUIRE $RunId" $RunId
+    Write-Output ('{"ok":true,"running":true,"runId":"' + $RunId + '"}'); exit 0
+  }
+  'finalize' {
+    if (-not $RunId -or -not $OwnerToken) { Write-Output '{"ok":false,"error":"finalize needs -RunId and -OwnerToken"}'; exit 2 }
     $owner = ReadJson $ownerFile
-    if (-not $owner) {
-      # no owner record: either already released or lock held in init. Idempotent: finalize our queue slot if present.
-      if (Test-Path "$queueDir\$RunId.json") { Mark-Done $RunId 'released' $BusinessResult '' }
-      Write-Output ('{"ok":true,"released":true,"idempotent":true,"runId":"' + $RunId + '"}'); exit 0
+    if (-not $owner) { Write-Output ('{"ok":false,"finalized":false,"reason":"OWNER_STATE_UNKNOWN","runId":"' + $RunId + '"}'); exit 1 }
+    if (([string]$owner.runId -ne $RunId) -or ([string]$owner.ownerToken -ne $OwnerToken)) {
+      Write-Output ('{"ok":false,"finalized":false,"reason":"NOT_OWNER","runId":"' + $RunId + '"}'); exit 1
     }
-    if ([string]$owner.ownerToken -ne $OwnerToken) {
-      # wrong token: never delete another owner's lock (r13 S11)
-      Write-Output ('{"ok":false,"released":false,"reason":"NOT_OWNER","runId":"' + $RunId + '"}'); exit 1
-    }
-    Remove-Item $lockDir -Force -Recurse -ErrorAction SilentlyContinue
-    Mark-Done $RunId 'released' $BusinessResult ''
-    WriteHistory "RELEASE" $RunId
-    Write-Output ('{"ok":true,"released":true,"runId":"' + $RunId + '","businessResult":"' + $BusinessResult + '"}')
-    exit 0
+    $q = ReadJson "$queueDir\$RunId.json"
+    WriteJsonNoBom "$doneDir\$RunId.json" @{ runId = $RunId; verb = [string]$owner.verb; submittedAt = $(if ($q) { [string]$q.submittedAt } else { '' }); runtimeState = 'released'; businessResult = $BusinessResult; finishedAt = (Get-Date).ToString('o') }
+    Remove-Item "$queueDir\$RunId.json" -Force -ErrorAction SilentlyContinue
+    Remove-Item $ownerFile -Force -ErrorAction SilentlyContinue
+    WriteHistory "RELEASE $RunId" $RunId
+    Write-Output ('{"ok":true,"finalized":true,"runId":"' + $RunId + '","businessResult":"' + $BusinessResult + '"}'); exit 0
+  }
+  'recover-previous' {
+    $lost = Do-Recover-Previous
+    Write-Output ('{"ok":true,"recovered":' + $(if ($lost) { 'true' } else { 'false' }) + ',"lostRunId":"' + $lost + '"}'); exit 0
   }
   'status' {
     $owner = ReadJson $ownerFile
-    $state = Get-LockState
-    $queued = @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue | ForEach-Object { ReadJson $_.FullName } | Where-Object { $_ } | Sort-Object submittedAt, runId | ForEach-Object { $_.runId })
     $alive = OwnerIdentityAlive $owner
+    $queued = @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue | ForEach-Object { ReadJson $_.FullName } | Where-Object { $_ } | Sort-Object submittedAt, runId | ForEach-Object { $_.runId })
     $suspect = $false
     if ($owner -and $alive) { try { $age = ((Get-Date) - [datetime]::Parse([string]$owner.acquiredAt)).TotalSeconds; if ($age -gt $cfg.TaskSuspectSec) { $suspect = $true } } catch { } }
     $cur = 'null'
-    if ($owner) { $cur = (ConvertTo-Json @{ runId = [string]$owner.runId; verb = [string]$owner.verb; pid = [int]$owner.ownerPid; alive = $alive; state = $state } -Compress) }
-    Write-Output ('{"ok":true,"lockState":"' + $state + '","owner":' + $cur + ',"suspect":' + $suspect.ToString().ToLower() + ',"queued":' + (ConvertTo-Json $queued -Compress) + '}')
+    if ($owner) { $cur = (ConvertTo-Json @{ runId = [string]$owner.runId; verb = [string]$owner.verb; pid = [int]$owner.ownerPid; alive = $alive } -Compress) }
+    Write-Output ('{"ok":true,"owner":' + $cur + ',"suspect":' + $suspect.ToString().ToLower() + ',"queued":' + (ConvertTo-Json $queued -Compress) + '}')
     exit 0
   }
   'recover' {
-    $state = Get-LockState
-    if ($state -eq 'owned_dead') { $lost = Invoke-Recovery 'owner-dead-manual' $true; Write-Output ('{"ok":true,"recovered":true,"lostRunId":"' + $lost + '"}') }
-    elseif ($state -eq 'init_stalled') { $lost = Invoke-Recovery 'init-stalled-manual' $false; Write-Output ('{"ok":true,"recovered":true,"lostRunId":"' + $lost + '"}') }
-    elseif ($state -eq 'owned_alive') { Write-Output '{"ok":true,"recovered":false,"reason":"OWNER_ALIVE"}' }
-    elseif ($state -eq 'initializing') { Write-Output '{"ok":true,"recovered":false,"reason":"INIT_IN_PROGRESS"}' }
-    else { Write-Output '{"ok":true,"recovered":false,"reason":"NO_LOCK"}' }
+    # standalone probe: open the named mutex; if it is FREE but owner.json exists -> the holder crashed without releasing -> recover.
+    # if the mutex is HELD (WaitOne(0) false) -> a live owner -> never touch.
+    $mtx = New-Object System.Threading.Mutex($false, $cfg.MutexName)
+    $acquired = $false
+    try {
+      try { $acquired = $mtx.WaitOne(0) } catch [System.Threading.AbandonedMutexException] { $acquired = $true }
+      if (-not $acquired) { Write-Output '{"ok":true,"recovered":false,"reason":"OWNER_ALIVE"}'; exit 0 }
+      $owner = ReadJson $ownerFile
+      if ($owner) { $lost = Do-Recover-Previous; Write-Output ('{"ok":true,"recovered":true,"lostRunId":"' + $lost + '"}') }
+      else { Write-Output '{"ok":true,"recovered":false,"reason":"NO_OWNER_RECORD"}' }
+    } finally { if ($acquired) { try { $mtx.ReleaseMutex() } catch { } }; $mtx.Dispose() }
     exit 0
   }
   default { Write-Output '{"ok":false,"error":"unknown action"}'; exit 2 }

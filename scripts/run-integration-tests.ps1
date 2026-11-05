@@ -2,7 +2,7 @@
 #   Static part is engine-free; integration part spawns real FineReport runtime (serial, one at a time).
 #   Any failure => exit 1. ASCII-only.
 $ErrorActionPreference = 'Continue'
-$ROOT = 'D:\fineagent'
+$ROOT = if ($env:FR_AGENT_HOME) { $env:FR_AGENT_HOME } else { 'D:\fineagent' }
 $fail = 0
 
 Write-Output "== static check"
