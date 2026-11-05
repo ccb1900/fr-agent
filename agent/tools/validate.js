@@ -43,17 +43,20 @@ else {
     var rows = lines.map(function (l) { return l.split('|'); });
     ck('栅格行数>0', rows.length > 0, rows.length);
     if (rows.length >= 2) {
-      var total = rows[rows.length - 1];
-      var numsOf = function (r) { return r.map(num); };
-      var tn = numsOf(total).filter(function (x) { return x != null; });
-      var sumPlan = 0, sumDone = 0;
-      for (var i = 0; i < rows.length - 1; i++) {
+      function numsOf(r) { return r.map(num); }
+      // night-shift：总计行按"合计|总计"判定（与 compare_paths totalsOf 一致化），不再假设最后一行——
+      //   报表带脚注行（presentation.footnote）时"最后一行"会取到脚注导致合计自洽误报。
+      function isTotalRow(r) { return /合计|总计/.test(String(r && r[0])); }
+      var total = null, sumPlan = 0, sumDone = 0;
+      for (var i = 0; i < rows.length; i++) {
+        if (isTotalRow(rows[i])) { total = rows[i]; continue; }
         var dn = numsOf(rows[i]).filter(function (x) { return x != null; });
         if (dn.length >= 2) { sumPlan += dn[0]; sumDone += dn[1]; }
       }
+      var tn = total ? numsOf(total).filter(function (x) { return x != null; }) : [];
       var t3 = tn.slice(-3);
       var tPlan = t3[0], tDone = t3[1], tRate = t3[2];
-      ck('合计行含 [计划,完成,完成率]', t3.length >= 3, JSON.stringify(tn));
+      ck('合计行存在且含 [计划,完成,完成率]', t3.length >= 3, JSON.stringify(tn));
       if (t3.length >= 3) {
         ck('计划合计 = 明细之和', Math.abs(tPlan - sumPlan) < 0.5, 'total=' + tPlan + ' sum=' + sumPlan);
         ck('完成合计 = 明细之和', Math.abs(tDone - sumDone) < 0.5, 'total=' + tDone + ' sum=' + sumDone);
