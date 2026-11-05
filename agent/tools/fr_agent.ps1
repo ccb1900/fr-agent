@@ -47,22 +47,47 @@ function WriteAtomic([string]$path, [string]$text) {
   [System.IO.File]::WriteAllText($tmp, $text, (New-Object System.Text.UTF8Encoding($false)))
   try { [System.IO.File]::Replace($tmp, $path, $null) } catch { Move-Item -Force $tmp $path }
 }
-# r15 thin single-instance executor: acquire OS mutex -> leftover-process check (enter) -> claim sentinel -> run body
-#   -> release sentinel (always, even on body throw) -> release mutex. Mutual exclusion is kernel-enforced; crash
-#   recovery is identity-based inside `enter` (confirmed orphan java killed; unconfirmable -> RUNTIME_BUSY refuse).
-#   No OwnerToken / queue / finalize / businessResult records (artifact.json is the result truth). Returns {gained; busy; result}.
-function Invoke-UnderMutex([scriptblock]$Body) {
+# r16 P1#2 + step3: the WHOLE critical section (mutex + leftover-check + kill + active sentinel claim/release + run)
+#   lives in the main flow (this function), so recovery can ONLY happen while holding the execution right - there is
+#   no standalone dangerous `recover`/`enter` action anymore. Mutual exclusion = OS named Mutex (kernel). Crash
+#   recovery = leftover-process IDENTITY check (java.pid pid+StartTime): confirmed orphan -> Kill + WaitForExit (r16
+#   async-kill); cannot confirm (live owner / corrupt sentinel / JVM stuck) -> RUNTIME_BUSY refuse, never start a 2nd.
+#   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold (r16 sec.3).
+#   Returns @{gained; busy; rc}.
+function Invoke-UnderMutex([scriptblock]$RunBody) {
+  . (Join-Path $PSScriptRoot '_identity.ps1')
+  $activeFile = "$($cfg.RuntimeDir)\active.json"
   $mtx = New-Object System.Threading.Mutex($false, $cfg.MutexName)
-  $gained = $false; $result = $null; $busy = $false
+  $gained = $false; $busy = $false; $rc = $null
   try {
     try { $gained = $mtx.WaitOne([TimeSpan]::FromSeconds($cfg.AcquireTimeoutSec)) }
     catch [System.Threading.AbandonedMutexException] { $gained = $true }
-    if (-not $gained) { return @{ gained = $false; busy = $false; result = $null } }
-    & $runtimePs1 -Action enter -RunId $RunId | Out-Null
-    if ($LASTEXITCODE -ne 0) { $busy = $true; return @{ gained = $true; busy = $true; result = $null } }
-    & $runtimePs1 -Action claim -RunId $RunId -OwnerPid $PID | Out-Null
-    try { $result = & $Body } finally { & $runtimePs1 -Action release -RunId $RunId | Out-Null }
-    return @{ gained = $true; busy = $false; result = $result }
+    if (-not $gained) { return @{ gained = $false; busy = $false; rc = $null } }
+    # leftover-process check (only reachable while we hold the mutex)
+    if (Test-Path $activeFile) {
+      $a = $null
+      try { $t = (Get-Content $activeFile -Raw -Encoding UTF8).TrimStart([char]0xFEFF); if ($t) { $a = $t | ConvertFrom-Json } } catch { $a = $null }
+      if (-not $a) { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }   # corrupt -> fail-closed
+      if (IdentityAlive ([int]$a.ownerPid) ([long]$a.ownerStart)) { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }  # live owner -> refuse
+      # owner confirmed dead -> identity-scoped kill of its orphan JVM, WAIT for exit (r16 async-kill)
+      $st = Kill-OrphanJvm $cfg.RunsDir ([string]$a.runId)
+      # 'spared' = recorded pid is now a DIFFERENT process (PID reused) -> our orphan already gone, proceed; do NOT kill it.
+      # only 'stuck' (killed but did not exit) means we cannot confirm the leftover is gone -> refuse (never start a 2nd).
+      if ($st -eq 'stuck') { $busy = $true; return @{ gained = $true; busy = $true; rc = $null } }
+      if (Test-Path $cfg.FineDbLck) { Remove-Item $cfg.FineDbLck -Force -ErrorAction SilentlyContinue }
+      Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " RECOVER " + [string]$a.runId) -Encoding ASCII -ErrorAction SilentlyContinue
+    }
+    # claim sentinel
+    $ost = ProcStartTicks $PID
+    WriteAtomic $activeFile ((@{ runId = $RunId; ownerPid = $PID; ownerStart = $ost; claimedAt = (Get-Date).ToString('o') } | ConvertTo-Json -Compress))
+    Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " ACQUIRE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+    try { $rc = & $RunBody } finally {
+      # release sentinel only if it is ours
+      $cur = $null; try { if (Test-Path $activeFile) { $cur = (Get-Content $activeFile -Raw -Encoding UTF8 | ConvertFrom-Json) } } catch { }
+      if ($cur -and [string]$cur.runId -eq $RunId) { Remove-Item $activeFile -Force -ErrorAction SilentlyContinue }
+      Add-Content -Path "$($cfg.RuntimeDir)\history.log" -Value ((Get-Date).ToString('o') + " RELEASE " + $RunId) -Encoding ASCII -ErrorAction SilentlyContinue
+    }
+    return @{ gained = $true; busy = $false; rc = $rc }
   } finally {
     if ($gained) { try { $mtx.ReleaseMutex() } catch { } }
     try { $mtx.Dispose() } catch { }
@@ -156,15 +181,19 @@ switch ($inner) {
         cptExists = (Test-Path $cpt); pngExists = (Test-Path $png)
       }
       WriteAtomic "$runDir\compile.json" ($obj | ConvertTo-Json -Depth 6)
-      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
-      $artRc = $LASTEXITCODE
-      @{ okAll = (($rc -eq 0) -and ($artRc -eq 0)) }
+      $rc   # return rc; create_report runs OUTSIDE the mutex (r16 sec.3)
     }
     $r = Invoke-UnderMutex $body
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
-    $okAll = $r.result.okAll
+    $rc = $r.rc
+    # artifact assembly is pure JS (no engine) -> run AFTER ReleaseMutex to shorten the lock hold (r16 sec.3)
+    $env:AGENT_RUN_ID = $RunId
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
+    $artRc = $LASTEXITCODE
+    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/compile.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
   }
@@ -187,15 +216,18 @@ switch ($inner) {
       if (Test-Path $manifest) { $mf = [System.IO.File]::ReadAllText($manifest, [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
       $obj = [ordered]@{ tool = 'patch'; runId = $RunId; ok = ($rc -eq 0); exit = $rc; patch = $Patch; log = $log; manifestPath = $manifest; stagingDir = $stagingDir; manifest = $mf }
       WriteAtomic "$runDir\patch.json" ($obj | ConvertTo-Json -Depth 8)
-      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
-      $artRc = $LASTEXITCODE
-      @{ okAll = (($rc -eq 0) -and ($artRc -eq 0)) }
+      $rc   # return rc; modify_report runs OUTSIDE the mutex (r16 sec.3)
     }
     $r = Invoke-UnderMutex $body
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
-    $okAll = $r.result.okAll
+    $rc = $r.rc
+    $env:AGENT_RUN_ID = $RunId
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
+    $artRc = $LASTEXITCODE
+    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/patch.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
     exit $(if ($okAll) { 0 } else { 1 })
   }

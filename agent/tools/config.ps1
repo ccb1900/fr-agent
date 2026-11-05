@@ -7,6 +7,11 @@ function Get-AgentConfig {
   $fr   = if ($env:FR_HOME) { $env:FR_HOME } else { 'D:\software\FineReport_11.0' }
   $root = $root -replace '[\\]+$',''
   $fr   = $fr -replace '[\\]+$',''
+  # r16 P1#4: runtime state directory is overridable so tests can use an isolated dir without
+  #   clobbering the real production runtime. Default keeps the existing path (back-compat).
+  $rt   = if ($env:FR_AGENT_RUNTIME_DIR) { $env:FR_AGENT_RUNTIME_DIR } else { "$root\logs\agent\runtime" }
+  $rt   = $rt -replace '[\\]+$',''
+  $mtx  = if ($env:FR_AGENT_MUTEX) { $env:FR_AGENT_MUTEX } else { 'fr-agent-fine-report-runtime' }
   return [pscustomobject]@{
     Root            = $root
     FrHome          = $fr
@@ -14,13 +19,13 @@ function Get-AgentConfig {
     NashornJar      = "$fr\jre\lib\ext\nashorn.jar"
     AgentDir        = "$root\logs\agent"
     RunsDir         = "$root\logs\agent\runs"
-    RuntimeDir      = "$root\logs\agent\runtime"
+    RuntimeDir      = $rt
     DeployDir       = "$fr\webapps\webroot\WEB-INF\reportlets\fineagent"
     FineDbLck       = "$fr\webapps\webroot\WEB-INF\embed\finedb\db.lck"
     # r15: thin single-instance executor. Mutual exclusion = OS named Mutex (kernel). Crash recovery = leftover-process
     #   IDENTITY check (java.pid pid+StartTime) inside the mutex; refuse when a leftover cannot be confirmed dead.
     #   No queue/, no OwnerToken, no done/ records (artifact.json is the result truth) - see docs/gpt/r15.md.
-    MutexName         = 'fr-agent-fine-report-runtime'
+    MutexName         = $mtx
     Heap              = if ($env:FR_AGENT_HEAP) { $env:FR_AGENT_HEAP } else { '1200m' }   # env-overridable (README #47); embedded specs need no j2v8
     AcquireTimeoutSec = 900     # waiter blocks on the mutex up to this; never steals a live holder
   }
