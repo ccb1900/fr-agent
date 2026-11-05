@@ -727,3 +727,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **冻结裁定落地（审查原话）**：不要再开 R22、不要再扩展状态机、不要再增加恢复机制；"完成后不再安排 Runtime 专项修复"，回到 fr-agent 核心目标——让 Agent 稳定地生成、修改和验证 FineReport 报表。五件套终态：OS Named Mutex（单 Session 互斥）+ active.json（运行哨兵）+ java.pid（JVM 身份）+ .NET Process/WaitForExit（生命周期与退出确认）+ Get-FilePresence/Read-JavaPid/Classify-Process/Kill-OrphanJvm（身份与文件状态 fail-closed，不可确认一律拒绝）。
 - **冻结复跑（本轮）**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S28 failures=0**（IT FAIL=0；日志仅一条真 END）。
 - **收口记事**：r14→r21b 共 8 轮外部审查闭环，架构层零回滚、每轮以一手故障注入证伪（r14 六 P1 → r15 减法 → r16 交叉验证 → r17 身份/异常退出 → r18 严格身份/PENDING 收口 → r19 文件四分类/自退竞态 → r21 status 链回归 → r21b 冻结）；同步发生的能力线（批 0–I 看板）另账并行。
+
+
+#95 Golden E2E v1 范围收敛 + 机台级真值资产（2026-11-05，外部审查入 docs/gpt/r22-golden-scope.md（逐字，裁定 fe516b0 的 GOLDEN CASE 范围"不通过"）；按审查指令只做两件事，不同时修六七个模块）：
+- **收敛进 golden 文档**：`docs/golden-e2e-case.md` §6 新增——四项未打通能力（机台跨表筛选=sqlbuilder 明拒/SQL 阈值修改超 patch 白名单/现有真值粒度到不了机台/TOP-N 与图表业务语义未对齐）逐条入"GOLDEN v1 验收线"外；v1=**2026-09-13~2026-09-22 固定区间 + 日期×机台分组 + 三指标（COUNT/score≥0.9/ratio×100）+ recordToFile JOIN + 合计 + 标题 patch（v1 唯一承诺修改）**；v2+ 暂缓清单（筛选/TOP-N/图表/阈值 toast 修改均留解锁条件）；语义两细节同步记档（「机台」术语双指 ambiguous；Machine.key=[source_id] 与 laser_files 真主键三列不符——不阻断 recordToFile JOIN）。
+- **真值资产（审查点名第一项）**：`data/db_laser_machine_daily_truth.txt`——day×machine 三段真值（detail 10 行/逐日小计/grand）+ **join_sanity 自证段（base=joined=33531 未放大、10 distinct key）**；口径与 v1 逐字一致（score≥0.9、recordToFile、固定区间、ratio 只走展示层参考列）；grand 33531/26531/79.1238 与既有真值逐位对拍成链。产线=`probes/probe_machine_daily_truth.js`（只读 JDBC，不启 FineReport 不杀 java，沿 probe_dbtruth2 惯例；探针踩过两个 SQL Server 语义坑已修：GROUP BY 需与 SELECT 字面表达式同形、相关子查询引用外层别名无效）。资产层实况一句话：**库内当前机台维度单值（laser3-aaa），day×machine 键结构稳定、数据日后多机自动分组**。
+- **留账待 v1 开跑前（审查第二项）**：`compare_paths.js` 明细键从第一列升复合键（日期+机台）、`verify_sql_data.js` 机台级对拍——修现有工具不造二套框架。
+- Runtime 冻结裁定不变；GOLDEN v1 基准规格即查即用，等审查方回话再开 `plan → create → validate → preview → modify` 全链。

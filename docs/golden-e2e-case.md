@@ -49,3 +49,26 @@
 - **样式覆盖深度**：ReportSpec 表达力到部分样式；A2 对照曾记录 PNG 与旧 JS 的样式差异（#68）。
 - **图表通道**：presentation.chart 三型（bar/pie/line）；更多图型走缺口账（coverage.md）。
 - 上述皆属"链上补窟窿"，不触碰冻结的 Runtime 五件套。
+
+## 6. GOLDEN v1 范围收敛（2026-11-05，外部审查 docs/gpt/r22-golden-scope.md 裁定"GOLDEN CASE 当前范围不通过"后收敛）
+
+审查对本次资产入库给出的正确性事实——四项能力**尚未打通**、v1 不得组合宣称：
+1. **机台跨表筛选不支持**：sqlbuilder 的 filter 只接受主实体（laser_aaa/InspectionRecord）可过滤列；machine 维度实来自 `laser_files.source_id`（跨表）→ 明确 `UNKNOWN_REF` 拒绝（r22 §2-P1）。
+2. **SQL 阈值修改超 PatchSpec 能力**：template/ops.js 白名单仅 `replace_cell_value`/`replace_dataset`（后者=EmbeddedTableData 替换，不改原 SQL 数据集条件）；`set_report_title` 未实现（r22 §2-P1）。
+3. **现有真值粒度到不了机台**：`db_laser_sub_truth.txt` 是 日期×工序(L/R)；`verify_sql_data.js` 只对拍日期级；`compare_paths.js` 以第一列为键、同日多机台会覆盖（r22 §2-P1）。
+4. **TOP-N/图表业务语义未对齐**：`SELECT TOP n ... GROUP BY 日期,机台` 是"行级 TOP"而非"区间内 TOP N 台/每日 TOP N 台"；图表与表格绑同一 ds1、没有"每日总量"独立数据集（r22 §2-P2）。
+另两条语义细节记档：术语「机台」双指（Machine.machineId label 与 machine 维度 label 同名 → resolver 候选多；planner SQL 分支对未归一维度走成员缺失=rejected 而非反问，与"模糊需求必须反问"承诺差半步）；`Machine.key=[source_id]` 与 laser_files 真实主键（source_id+collection_date+file_id）不严谨——不阻断 JOIN（走的是 recordToFile 关系，不是按 Machine 唯一行 JOIN）（r22 §3）。
+
+### 6.1 GOLDEN v1（本轮收敛后的第一阶段验收线）
+
+**输入（自然语言，v1 口径）**："出一份激光机台生产日报：固定日期区间 2026-09-13 至 2026-09-22，按业务日期、机台分组；每天每台给计划数（件数）、完成数（score≥0.9 口径件数）、完成率（完成/计划×100，展示层指标不进 SQL）；合计行在最右，版式按生产同款（SimHei、表头加粗、边框全留）"。
+**验收线**：固定字面日期区间（I5 既定字面安全）；GROUP BY 日期+机台经 `recordToFile` 安全 JOIN（I5.1 证据指纹绑定）；指标=现有模型三口径；合计行；FineReport 真实预览（PNG/PDF+人工肉眼）；一次**标题**修改走现有 `replace_cell_value`（v1 只承诺标题，阈值修改不做）。
+
+### 6.2 v2+（暂缓清单，基准成立后由审查方点名逐项解锁）
+
+机台跨表筛选（需 sqlbuilder 安全路径扩展）、TOP-N 排名（先定义区间级/每日级业务语义）、每日汇总图表（需独立每日汇总数据集）、SQL 阈值修改（需 I6 白名单扩项，R0 探针先证——README #61 纪律"扩项需探针先证"）。
+
+### 6.3 验收资产增量（r22 §4 明示）
+
+1. **`data/db_laser_machine_daily_truth.txt`**（本轮新增）：日期 × 机台三段真值（detail day×machine / 逐日小计 / grand），SQL 与 v1 口径一致（score≥0.9 + recordToFile JOIN），固定区间 2026-09-13~2026-09-22；产线=`probes/probe_machine_daily_truth.js`（只读 JDBC 直查业务库，不启 FineReport，同 probe_dbtruth2 惯例）。
+2. **验证工具复合键支持**（待 v1 开跑前完成，非本轮——审查明示不本轮）：`compare_paths.js` 的明细键从"第一列"升为"可与真值头对齐的复合键（日期+机台）"，`verify_sql_data.js` 同步机台级对拍——修现有工具，不造第二套框架。
