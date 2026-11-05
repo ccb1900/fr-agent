@@ -42,6 +42,9 @@ if (MACH) {
     if (p.length >= 5 && /^20\d\d-\d\d-\d\d$/.test(p[0])) {
       var k = p[0] + '@' + p[1];
       if (gMach[k]) dupG++; else gMach[k] = { plan: +p[2], done: +p[3], rate: +p[4] };
+    } else if (p.length >= 5 && /^总计/.test(p[0]) && p[0].indexOf('@') < 0) {
+      // 总计行实测形态（GOLDEN v1 grid）：总计|<machine-col 合并占位 0>|plan|done|rate —— p1 是机台列占位
+      gTotalM = { plan: +p[2], done: +p[3], rate: +p[4] };
     } else if (p.length >= 4 && /^总计/.test(p[0]) && p[0].indexOf('@') < 0) gTotalM = { plan: +p[1], done: +p[2], rate: +p[3] };
   });
   check('grid(复合键) day@machine 明细行数=' + Object.keys(gMach).length + '（>=1）+ 总计', Object.keys(gMach).length >= 1 && !!gTotalM);
