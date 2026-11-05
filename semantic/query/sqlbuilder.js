@@ -186,7 +186,17 @@ var SqlBuilder = (function () {
       else topSql = ' TOP ' + n;
     }
     if (errs.length) return { errors: errs };
-    var order = orderBits.length ? orderBits.join(', ') : '1';
+    // 确定性全序（night-shift）：MSSQL 对 GROUP BY 后未列入 ORDER BY 的键列不保证行序——多维度分组时
+    //   "同首列、其余维度不同"的行会抖动（真值 day@machine 对拍与报表可复现性都受害）。规则：
+    //   无 sort → ORDER BY 1（首列）+ 其余 GROUP 列（单列组时即 ORDER BY 1，保持历史文本）；
+    //   有 sort → sort 主序 + 全部 GROUP 列 tie-breaker（冗余排序键合法且消抖）。
+    var order;
+    if (orderBits.length) {
+      order = orderBits.join(', ');
+      if (groupBits.length) order += ', ' + groupBits.join(', ');
+    } else {
+      order = groupBits.length > 1 ? ('1, ' + groupBits.slice(1).join(', ')) : '1';
+    }
 
     var sql = 'SELECT' + topSql + ' ' + selectBits.join(', ') + ' FROM ' + table +
       (joins.length ? ' ' + joins.join(' ') : '') +

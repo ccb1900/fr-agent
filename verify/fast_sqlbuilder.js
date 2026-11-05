@@ -70,15 +70,18 @@ var revDate = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: 
 check('P4 from>to→拒', !revDate.sql && (revDate.errors || []).some(function (e) { return e.code === 'INVALID_SHAPE'; }));
 check('P4 同表正常查询仍过（跨表闸不误伤）', (SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate', 'stage'], metrics: ['planned', 'done', 'completionRate'], dateRange: { from: '2026-09-13', to: '2026-09-22' } }).sql || '').indexOf('FROM laser_aaa') >= 0);
 
-// I5.3-A sort + topN
+// I5.3-A sort + topN（r24 夜：确定性全序——sort 主序后追加 GROUP 列 tie-breaker，消多机台同键行序抖动）
 var srt = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned', 'done'], sort: [{ field: 'done', dir: 'desc' }] });
-check('I5.3-A sort→ORDER BY 别名 DESC + JOIN 保留', /ORDER BY done DESC$/.test(srt.sql || '') && /INNER JOIN laser_files/.test(srt.sql || ''));
+check('I5.3-A sort→ORDER BY 别名 DESC + JOIN 保留', /ORDER BY done DESC, laser_files\.source_id$/.test(srt.sql || '') && /INNER JOIN laser_files/.test(srt.sql || ''));
 var sDeriv = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'done', 'completionRate'], sort: [{ field: 'completionRate' }] });
 check('I5.3-A 按派生比率排序→拒（不在 SQL）', codeAt(sDeriv, 'UNKNOWN_REF', 'sort'));
 var sBadDir = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], sort: [{ field: 'planned', dir: 'sideways' }] });
 check('I5.3-A 坏 sort.dir→INVALID_ENUM', codeAt(sBadDir, 'INVALID_ENUM', 'sort'));
 var tp = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], sort: [{ field: 'planned', dir: 'desc' }], topN: { n: 10 } });
-check('I5.3-A topN→SELECT TOP 10', /^SELECT TOP 10 /.test(tp.sql || '') && /ORDER BY planned DESC$/.test(tp.sql || ''));
+check('I5.3-A topN→SELECT TOP 10', /^SELECT TOP 10 /.test(tp.sql || '') && /ORDER BY planned DESC, laser_files\.source_id$/.test(tp.sql || ''));
+// night-shift：多维无 sort → 首列序 + 其余 GROUP 列 tie-breaker（day×machine 行序确定，真值对拍可复现）
+var multiNoSort = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done', 'completionRate'], dateRange: { from: '2026-09-13', to: '2026-09-22' } });
+check('night-shift 多维无 sort→ORDER BY 1, 其余 GROUP 列（全序 tie-breaker）', /ORDER BY 1, laser_files\.source_id$/.test(multiNoSort.sql || ''));
 check('I5.3-A topN 无 sort→INVALID_SHAPE', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], topN: { n: 10 } }), 'INVALID_SHAPE', 'topN'));
 check('I5.3-A topN 非正整数→INVALID_NUMBER', codeAt(SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['machine'], metrics: ['planned'], sort: [{ field: 'planned' }], topN: { n: 0 } }), 'INVALID_NUMBER', 'topN'));
 
