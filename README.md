@@ -719,3 +719,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **S27e 审查认定有价值保留**（Everyone-deny Read 的 unreadable 分支专项证明）；P3 两开窗口继续留账。
 - **门**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S28 failures=0**（S28 黑盒链全绿）。
 - **r21 裁定**：Runtime 继续冻结（审查确认无执行模型变更、无队列/Token/调度回潮）；边界不变：Mutex=单 Windows 登录 Session、run.ps1 全杀 java=手动门专用、agent 路径一律 -NoKill；P3 两开窗口留账不阻塞。
+
+
+#94 最终冻结裁定（2026-11-05，收尾审查入 docs/gpt/r21b-freeze.md 逐字；审查基准 447e2b5，确认 r21 两项修复有效、Runtime 架构可冻结）：
+- **P3-A S28 后的提前 `INTEGRATION END` 删除**：r21 插 S28 场景时把末尾统计行一并留在 S26 块后，测试日志会提前宣告结束（不改变执行/退出码，但日志误导）；删之，文件末尾真 `INTEGRATION END` 保留——冻结复跑日志实证全文仅一条 END。
+- **P3-B S 编号档案同步**：`scripts/run-integration-tests.ps1`（r13 时代 "S1-S19" 硬描述）与 AGENTS §1 工具链集成门条目同步为「现行场景集合 S1..S28，**权威对照表以 `docs/architecture/runtime-supervisor.md` §5 为准**」——"S1–S19"标注为 r13/r14 历史编号、只作档案不作现行断言；该脚本同时补上"任何失败 exit 1"的既有语义注释。
+- **冻结裁定落地（审查原话）**：不要再开 R22、不要再扩展状态机、不要再增加恢复机制；"完成后不再安排 Runtime 专项修复"，回到 fr-agent 核心目标——让 Agent 稳定地生成、修改和验证 FineReport 报表。五件套终态：OS Named Mutex（单 Session 互斥）+ active.json（运行哨兵）+ java.pid（JVM 身份）+ .NET Process/WaitForExit（生命周期与退出确认）+ Get-FilePresence/Read-JavaPid/Classify-Process/Kill-OrphanJvm（身份与文件状态 fail-closed，不可确认一律拒绝）。
+- **冻结复跑（本轮）**：STATIC 0 / FAST 13 套件绿 / SCAN 48（bad=0）/ R1–R8 干净 / 负门 5 路 GREEN / 默认三铁证 CBEB42E3·A8EF39AB·6161F402 逐字节 / 集成 **S1–S28 failures=0**（IT FAIL=0；日志仅一条真 END）。
+- **收口记事**：r14→r21b 共 8 轮外部审查闭环，架构层零回滚、每轮以一手故障注入证伪（r14 六 P1 → r15 减法 → r16 交叉验证 → r17 身份/异常退出 → r18 严格身份/PENDING 收口 → r19 文件四分类/自退竞态 → r21 status 链回归 → r21b 冻结）；同步发生的能力线（批 0–I 看板）另账并行。

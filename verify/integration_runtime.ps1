@@ -349,8 +349,6 @@ $java28b = $null; try { $java28b = ([string]$out28b | ConvertFrom-Json).active.j
 Stop-Process -Id $decoy28.Id -Force -ErrorAction SilentlyContinue
 if (($java28a -eq 'alive') -and ($java28b -eq 'unknown')) { Pass "S28 status chain: live pidfile -> alive, locked pidfile -> unknown (no absent leak)" } else { Fail "S28 broken A=$java28a ($out28) B=$java28b" }
 
-Write-Output ("INTEGRATION END, failures=" + $fail)
-
 # ============ r19 P1: file presence classification - "cannot confirm" is NEVER "absent" ============
 Write-Output "== S27 Get-FilePresence 4-state: absent / readable / unreadable-ish unknown via locks & lying paths"
 . "$ROOT\agent\tools\_identity.ps1"   # r19: exposes Get-FilePresence
