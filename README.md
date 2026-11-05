@@ -607,3 +607,15 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **r10-D 真实任务闭环（三场景，Agent 只调工具）**：① 生产日报——plan(ready)→reportSpec 自动落盘→create→validate（栅格自洽+外部真值 4238:2854 对拍）→preview 全 ok；② 图表报表——intent 带 presentation.chart → plan ready → create → preview ok；③ 已有模板修改——modify verb + PatchSpec（生产日报_I5闭环 换标题格）→ 结构 diff clean + 回归全过 → artifact ok=true。全程零人工 JSON 中间产物（reportSpec 由 plan 产出，PatchSpec 由 Agent 依 discover 契约生成）。
 - **执行中暴露并当场修**：validate.js num() 丢失（重写漏带，首轮实跑 ReferenceError 当场修）；plan.js idx 先用后赋值；evidence 须走 preflight.filter 归一；/tmp 路径经 PS 环境传给 Nashorn 的 Windows 解析问题（改用仓内相对路径）。
 - **门禁**：fast 13 GREEN（fast_contracts 扩 runId 唯一性+manifest 四层断言 9 项）、scan 48、R1–R8、负门 5 路 GREEN、默认 CBEB42E3 逐字节。
+
+
+#83 r11/r12「Agent 创作链执行模型修正 + 可靠性收口」落地批（2026-11-05，外部审查 r11.md→r12.md 令执行；r12 对 r11 补充，冲突以 r12 为准；docs/gpt/r11.md+r12.md 入库）：
+- **r12 执行模型（核心修正）**：任务可并发提交、独立 runId 目录、独立追踪，但 FineReport Runtime **单实例串行**（全局锁+队列+受控恢复）。基础设施 `agent/tools/runtime.ps1`——全局锁=`logs/agent/runtime/lock` 目录原子创建（跨进程互斥）；current.json 记持有者 runId+pid+startedAt；queue/done 任务态；history.log 事件流（ACQUIRE/RELEASE/RECOVER）；acquire 自旋取锁含陈旧持有者判定、release 幂等（非 owner 不释放）、status/recover。**Recovery 仅在确认 current pid 已死后才 kill+删 FineDB 锁**，abandoned run 标 failed/RUNTIME_LOST 绝不标成功（r12 §3 运行生命周期管理，非每次执行默认前置动作）。
+- **fr_agent 接入**：compile/create、patch/modify 两条起 Runtime 路径经 `acquire → run.ps1 -NoKill → release` 包裹；run.ps1 加 `-NoKill`（agent 路径绝不误杀在跑的 JVM，kill 降格为 Supervisor Recovery 专用）；零引擎 verb（discover/resolve/plan/plan2spec/validate/preview）不取锁。
+- **r11 收口**：r11-1 plan.js 双拼路径修复（删本地 readUtf 用 _lib 版，相对/绝对双验）；r11-2 patch 链 per-run staging（TEMPLATE_STAGING=runDir/staging，modify_report 读 pj.stagingDir）；r11-3 原子写修复（不预删目标+ATOMIC_MOVE|REPLACE_EXISTING 优先+失败清 tmp 保原目标；fr_agent WriteAtomic 统一 compile/patch.json）；r11-4 RunId 严格（comp.runId||'' 不等即拒缺 runId；PS GUID+_lib checkRunId 字符集白名单防穿越）；r11-5 manifest 升 **五层**（construction/serialization/rendering/**regression**/agentAvailable，agentAvailable=四层全 verified）+ product 段扩 spec/template/agent 覆盖 + plan preflight 按数据集类型分流（sql 跑/rows 跳）；r11-6 docs 全更新。make_api JSON spec 剥 BOM（外部 Agent 健壮性正解）。
+- **★审查修复循环（r12 基线，三轮，独立复测非采信提交说明）**：
+  - 轮1 **OwnerPid 根因**（复现确认）：acquire 曾记子进程自身 $PID（打印即退）→ 下一 acquire 误判持有者已死 → 错误 Recovery 杀在跑的 JVM；S2 侥幸只因 Job 启动延迟掩盖。修=acquire 记调用方存活 pid（-OwnerPid），fr_agent 传 $PID；活持有者下第二 acquire 实测 QUEUE_TIMEOUT 排队、history 无 RECOVER。
+  - 轮2 超时幽灵排队项清理（waiter 放弃时删自己 queue 登记）+ 两视图机器可验证关系（rejected 能力绝不可 agentAvailable=true，fast 断言）。
+  - 轮3 代码残留旧固定路径扫描（零）+ 文档一致性。
+- **集成验收 `verify/integration_runtime.ps1`（覆盖 PowerShell/Nashorn/Application/FineReport Runtime 全链，JS 单测不可替代）S1–S8 全绿**：并发 create A/B 串行（maxLiveRuntime=1）、失败隔离、崩溃恢复（ghost 标 failed 非 success）、模板 staging 不串、plan sql/rows 分流、**S8 确定性并发**（活持有者 4s 内 create 无 compile.json=排队非并行，释放后自动跑成）。
+- **门禁**：fast 13 GREEN（fast_contracts 扩 runId 唯一+manifest 五层+两视图一致断言）、scan 48、R1–R8、负门 5 路 GREEN、默认双铁证 CBEB42E3/A8EF39AB 逐字节。

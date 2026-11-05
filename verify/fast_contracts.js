@@ -116,6 +116,16 @@ check('agentAvailableNames 扁平名单非空且含 runtime.serial 不含 stack'
   var names = CapabilityManifest.agentAvailableNames();
   return names.length > 0 && names.indexOf('agent.runtime.serial') >= 0 && names.indexOf('chart.stack') < 0;
 })());
+// r11 P1 两套能力视图的机器可验证关系：词汇视图(ReportSpec.capabilities)与成熟度视图(manifest)不得互相矛盾——
+//   凡 construction/serialization/rendering/regression 任一为 rejected 的能力，agentAvailable 必须为 false。
+check('manifest 无 rejected 能力被标 agentAvailable（两视图不矛盾）', (function () {
+  var ok = true;
+  SEGS.forEach(function (seg) { (mf[seg] || []).forEach(function (c) {
+    var anyRejected = (c.construction === 'rejected' || c.serialization === 'rejected' || c.rendering === 'rejected' || c.regression === 'rejected');
+    if (anyRejected && c.agentAvailable) ok = false;
+  }); });
+  return ok;
+})());
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

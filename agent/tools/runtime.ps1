@@ -115,6 +115,8 @@ switch ($Action) {
         }
         if ($sw.Elapsed.TotalSeconds -gt $TimeoutSec) {
           $pos = @(Get-ChildItem "$queueDir\*.json" -ErrorAction SilentlyContinue).Count
+          # r12 review: drop our own queued registration so status doesn't show a phantom waiter for a task that gave up
+          Remove-Item "$queueDir\$RunId.json" -Force -ErrorAction SilentlyContinue
           Write-Output ('{"ok":false,"acquired":false,"reason":"QUEUE_TIMEOUT","runId":"' + $RunId + '","queueDepth":' + $pos + '}')
           exit 1
         }
