@@ -9,7 +9,8 @@ var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
 load(ROOT + '/agent/tools/_lib.js');
 var runId = runIdOf();
 var runDir = runDirOf(runId);
-function readUtf(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(ROOT + '/' + p)), 'UTF-8')); }
+// r11-1 修复：readUtf 统一用 _lib 版（不拼 ROOT；absOf 负责相对→绝对）。
+//  原本地版无条件拼 ROOT+'/'，与 absOf 组合产生双重拼接——绝对/相对路径都读不到（r11 P1）。
 
 var intentPath = System.getenv('AGENT_INTENT');
 if (!intentPath) { print('{"ok":false,"error":"AGENT_INTENT required (intent JSON file path)"}'); System.exit(2); }

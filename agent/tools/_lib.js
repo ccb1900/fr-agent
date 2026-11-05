@@ -12,15 +12,21 @@ function absOf(p) { return /^[A-Za-z]:[\\\/]/.test(String(p)) ? String(p) : (ROO
 function tryJson(abs) { try { return JSON.parse(readUtf(abs)); } catch (e) { return null; } }
 
 // runId：环境注入（fr_agent.ps1 生成）；无 env 时本地兜底生成（时间戳+随机）
+// r11-4：runId 严格化——环境注入优先；本地兜底用 GUID（UUID.randomUUID，严格唯一非秒级+随机）；
+//   显式 runId 必须过字符集白名单 ^[A-Za-z0-9_-]{1,64}$（防路径穿越/注入），违规即抛
 function runIdOf() {
   var rid = System.getenv('AGENT_RUN_ID');
-  if (rid) return String(rid);
-  var t = new (J('java.text.SimpleDateFormat'))('yyyyMMdd_HHmmss_SSS').format(new (J('java.util.Date'))());
-  return 'local_' + t + '_' + Math.floor(Math.random() * 9000 + 1000);
+  if (rid) return checkRunId(String(rid));
+  return String(J('java.util.UUID').randomUUID());
 }
-function runDirOf(rid) { return ROOT + '/logs/agent/runs/' + rid; }
+function checkRunId(rid) {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(String(rid))) throw new Error('[AGENT] illegal runId (charset ^[A-Za-z0-9_-]{1,64}$): ' + rid);
+  return String(rid);
+}
+function runDirOf(rid) { return ROOT + '/logs/agent/runs/' + checkRunId(rid); }
 
-// 原子写 UTF-8 文本（同目录 .tmp → ATOMIC_MOVE；跨盘不适用，tmp 与目标同目录）
+// 原子写 UTF-8 文本（r11-3 修复：不预删目标——先 ATOMIC_MOVE+REPLACE_EXISTING 原子覆盖，
+//   失败才降级 REPLACE_EXISTING 普通替换；移动失败时清理 tmp、原目标保留。tmp 与目标同目录保证同盘可原子移动）
 function atomicWriteUtf(abs, text) {
   var p = Pth.get(abs);
   var parent = p.toAbsolutePath().getParent();
@@ -28,10 +34,14 @@ function atomicWriteUtf(abs, text) {
   var tmp = Files.createTempFile(parent, 'agent_', '.tmp');
   Files.write(tmp, J('java.lang.String').valueOf(text).getBytes('UTF-8'));
   try {
-    try { Files.delete(p); } catch (eDel) { }
-    Files.move(tmp, p, J('java.nio.file.StandardCopyOption').ATOMIC_MOVE);
-  } catch (eMove) {
-    Files.move(tmp, p, J('java.nio.file.StandardCopyOption').REPLACE_EXISTING);
+    Files.move(tmp, p, J('java.nio.file.StandardCopyOption').ATOMIC_MOVE, J('java.nio.file.StandardCopyOption').REPLACE_EXISTING);
+  } catch (eAtomic) {
+    try {
+      Files.move(tmp, p, J('java.nio.file.StandardCopyOption').REPLACE_EXISTING);
+    } catch (eFall) {
+      try { Files.delete(tmp); } catch (eTmp) { }
+      throw eFall;
+    }
   }
 }
 

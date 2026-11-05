@@ -6,7 +6,7 @@
 #   Exit codes: 0 = verb AND artifact both ok; 1 = any failure; 2 = usage error. (r10 P1 fix: artifact failure can no longer hide behind exit 0.)
 # NOTE: keep this file ASCII-only (PS 5.1 GBK ANSI-read lesson, AGENTS sec.5).
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'compile', 'create', 'patch', 'modify', 'validate', 'preview')][string]$Verb,
+  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview')][string]$Verb,
   [string]$Spec = '',
   [string]$Patch = '',
   [string]$Term = '',
@@ -28,8 +28,10 @@ if ($Verb -eq 'create') { $inner = 'compile' }
 if ($Verb -eq 'modify') { $inner = 'patch' }
 
 if (-not $RunId) {
-  $RunId = 'r' + (Get-Date -Format 'yyyyMMdd_HHmmss') + '_' + (Get-Random -Maximum 9000 -Minimum 1000)
+  $RunId = [guid]::NewGuid().ToString('N')
 }
+# r11-4: charset guard against path traversal / injection
+if ($RunId -notmatch '^[A-Za-z0-9_-]{1,64}$') { Write-Output '{"ok":false,"error":"-RunId must match ^[A-Za-z0-9_-]{1,64}$"}'; exit 2 }
 $runDir = "$agentDir\runs\$RunId"
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
@@ -38,6 +40,13 @@ $env:AGENT_RUN_ID = $RunId
 
 function Emit([bool]$ok, [string]$resultRel) {
   Write-Output ('{"ok":' + $ok.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"' + $resultRel + '"}')
+}
+
+# r11-3: atomic write helper (temp in same dir -> ATOMIC_MOVE REPLACE_EXISTING; tmp removed on failure)
+function WriteAtomic([string]$path, [string]$text) {
+  $tmp = "$path.tmp"
+  [System.IO.File]::WriteAllText($tmp, $text, [System.Text.Encoding]::UTF8)
+  try { [System.IO.File]::Replace($tmp, $path, $null) } catch { Move-Item -Force $tmp $path }
 }
 
 switch ($inner) {
@@ -70,6 +79,14 @@ switch ($inner) {
     $outRel = "logs/agent/runs/$RunId/plan.json"
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     # plan is informational: ready -> ok true; ambiguous/rejected -> ok false (exit 1) with structured result
+    Emit ($rc -eq 0) $outRel
+    exit $rc
+  }
+  'plan2spec' {
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\agent\tools\plan2spec.js"
+    $rc = $LASTEXITCODE
+    $outRel = "logs/agent/runs/$RunId/reportSpec.json"
+    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) $outRel
     exit $rc
   }
@@ -114,7 +131,8 @@ switch ($inner) {
     $env:FR_AGENT_RESULT = "$runDir\runresult.json"
     $env:RESULT_DUMP = "$runDir\grid.txt"
     $log = "$runDir\compile.log"
-    & "$ROOT\run.ps1" -Script make_api.js -Out $log | Out-Null
+    # r11-2: agent normal path does NOT kill other java processes nor delete the global FineDB lock
+    & "$ROOT\run.ps1" -Script make_api.js -Out $log -NoKill | Out-Null
     $rc = $LASTEXITCODE
     Remove-Item env:REPORT_SPEC -ErrorAction SilentlyContinue
     Remove-Item env:FR_AGENT_RESULT -ErrorAction SilentlyContinue
@@ -127,7 +145,7 @@ switch ($inner) {
       cptPath = $cpt; pngPath = $png; pdfPath = $pdf
       cptExists = (Test-Path $cpt); pngExists = (Test-Path $png)
     }
-    [System.IO.File]::WriteAllText("$runDir\compile.json", ($obj | ConvertTo-Json -Depth 6), [System.Text.Encoding]::UTF8)
+    WriteAtomic "$runDir\compile.json" ($obj | ConvertTo-Json -Depth 6)
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
     $artRc = $LASTEXITCODE
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
@@ -141,15 +159,20 @@ switch ($inner) {
   'patch' {
     if (-not $Patch) { Write-Output '{"ok":false,"error":"-Patch required"}'; exit 2 }
     $env:TEMPLATE_PATCH = $Patch
+    # r11-2: per-run staging isolation - patch_main honors TEMPLATE_STAGING env
+    $stagingDir = "$runDir\staging"
+    New-Item -ItemType Directory -Force -Path $stagingDir | Out-Null
+    $env:TEMPLATE_STAGING = $stagingDir
     $log = "$runDir\patch.log"
     & "$ROOT\runraw.ps1" 'template/patch_main.js' *> $log
     $rc = $LASTEXITCODE
     Remove-Item env:TEMPLATE_PATCH -ErrorAction SilentlyContinue
-    $manifest = "$ROOT\logs\template_staging\manifest.json"
+    Remove-Item env:TEMPLATE_STAGING -ErrorAction SilentlyContinue
+    $manifest = "$stagingDir\manifest.json"
     $mf = $null
     if (Test-Path $manifest) { $mf = [System.IO.File]::ReadAllText($manifest, [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
-    $obj = [ordered]@{ tool = 'patch'; runId = $RunId; ok = ($rc -eq 0); exit = $rc; patch = $Patch; log = $log; manifestPath = $manifest; manifest = $mf }
-    [System.IO.File]::WriteAllText("$runDir\patch.json", ($obj | ConvertTo-Json -Depth 8), [System.Text.Encoding]::UTF8)
+    $obj = [ordered]@{ tool = 'patch'; runId = $RunId; ok = ($rc -eq 0); exit = $rc; patch = $Patch; log = $log; manifestPath = $manifest; stagingDir = $stagingDir; manifest = $mf }
+    WriteAtomic "$runDir\patch.json" ($obj | ConvertTo-Json -Depth 8)
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\modify_report.js"
     $artRc = $LASTEXITCODE
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)

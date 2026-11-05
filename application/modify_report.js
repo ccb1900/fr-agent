@@ -13,10 +13,12 @@ var runDir = runDirOf(runId);
 
 var pj = tryJson(runDir + '/patch.json');
 if (!pj) { writeJson(runDir + '/artifact.json', { ok: false, error: 'patch.json missing in run dir; run patch verb first', runId: runId }); print('{"ok":false,"error":"patch.json missing"}'); System.exit(1); }
-if (pj.runId && String(pj.runId) !== String(runId)) { print('{"ok":false,"error":"patch.json belongs to run ' + pj.runId + ', not ' + runId + '"}'); System.exit(1); }
+if (String(pj.runId || '') !== String(runId)) { print('{"ok":false,"error":"patch.json belongs to run ' + (pj.runId || '(missing)') + ', not ' + runId + '"}'); System.exit(1); }
 var mf = pj.manifest || {};
 var outAbs = mf.out || null;
-var postPng = ROOT + '/logs/template_staging/_post.png';
+// r11-2：staging 随 run 隔离——patch.json 带其 staging 目录，modify 只读本 run 的产物（防并发串扰）
+var stagingDir = pj.stagingDir || (ROOT + '/logs/template_staging');
+var postPng = stagingDir + '/_post.png';
 var checks = [];
 function ck(name, pass, detail) { checks.push({ name: name, pass: !!pass, detail: detail == null ? null : String(detail) }); }
 ck('结构 diff 未改部分不变', mf.diffClean === true, 'diffClean=' + mf.diffClean);
@@ -46,7 +48,7 @@ var art = ReportArtifact.create({
   diagnostics: ReportArtifact.diagnosticsFromPatch(pj),
   spec: null,
   patch: { path: pj.patch, exit: pj.exit, manifestPath: pj.manifestPath, namedStyles: mf.namedStyles, structDelta: mf.structDelta },
-  staging: { dir: ROOT + '/logs/template_staging', manifest: pj.manifestPath }
+  staging: { dir: stagingDir, manifest: pj.manifestPath }
 });
 var shape = ReportArtifact.validate(art);
 shape.issues.forEach(function (i) { art.diagnostics.push(ReportArtifact.normalizeDiagnostic(i)); });

@@ -13,7 +13,7 @@ var runDir = runDirOf(runId);
 
 var comp = tryJson(runDir + '/compile.json');
 if (!comp) { writeJson(runDir + '/artifact.json', { ok: false, error: 'compile.json missing in run dir; run compile verb first', runId: runId }); print('{"ok":false,"error":"compile.json missing"}'); System.exit(1); }
-if (comp.runId && String(comp.runId) !== String(runId)) { print('{"ok":false,"error":"compile.json belongs to run ' + comp.runId + ', not ' + runId + '"}'); System.exit(1); }
+if (String(comp.runId || '') !== String(runId)) { print('{"ok":false,"error":"compile.json belongs to run ' + (comp.runId || '(missing)') + ', not ' + runId + '"}'); System.exit(1); }
 var rr = tryJson(absOf(comp.runResult));
 // r10-A ③：validate.json 必须属于本 run（带 runId 且一致）才并入验收
 var valPath = runDir + '/validate.json';

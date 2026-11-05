@@ -1,9 +1,9 @@
-param([Parameter(Mandatory = $true)][string]$Script, [string]$Out = '', [string]$Heap = '1200m')
+param([Parameter(Mandatory = $true)][string]$Script, [string]$Out = '', [string]$Heap = '1200m', [switch]$NoKill)
 # 2026-11-04 heap cap (README #46/#47): memory-tight host needs -Xmx ceiling; override with -Heap
 $FR = 'D:\software\FineReport_11.0'
-Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force
+if (-not $NoKill) { Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force }
 $lck = "$FR\webapps\webroot\WEB-INF\embed\finedb\db.lck"
-if (Test-Path $lck) { Remove-Item $lck -Force }
+if (-not $NoKill -and (Test-Path $lck)) { Remove-Item $lck -Force }
 $cp = @(
   "$FR\jre\lib\ext\nashorn.jar",
   "$FR\jre\lib\tools.jar",
