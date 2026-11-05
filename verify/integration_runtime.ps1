@@ -137,5 +137,29 @@ if ($sqlStat -eq 'ready') { Pass "S7 sql intent reaches planner (ready)" } else 
 # rows intent must NOT be blocked by database preflight (reason != PREFLIGHT_FAILED); it goes through planner rows path
 if ($rowsReason -ne 'PREFLIGHT_FAILED') { Pass "S7 rows intent NOT blocked by preflight (reason=$rowsReason)" } else { Fail "S7 rows intent wrongly blocked by DB preflight" }
 
+# ---- Scenario 8 (r12 review): deterministic concurrency - a LIVE lock holder makes a create QUEUE, not run in parallel, not falsely recovered ----
+Write-Output "== S8 live-holder forces queueing (no parallel runtime, no false recovery)"
+Remove-Item "$rt\history.log" -Force -ErrorAction SilentlyContinue
+$holder = Start-Process powershell -ArgumentList '-Command','Start-Sleep 90' -PassThru -WindowStyle Hidden
+$null = & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId "it_s8hold" -Verb compile -OwnerPid $holder.Id 2>&1
+$jobC = Start-Job -ScriptBlock { param($root,$spec,$rid) Set-Location $root; & "$root\agent\tools\fr_agent.ps1" -Verb create -Spec $spec -RunId $rid 2>&1 | Select-Object -Last 1 } -ArgumentList $ROOT,"$itRel/a.json","it_s8"
+Start-Sleep -Seconds 4
+# deterministic proof of queueing: while the live holder owns the lock, the create cannot have produced compile.json
+#   (fr_agent writes compile.json only after acquiring the lock and running). Absence => queued, not parallel.
+$queuedMid = -not (Test-Path "$runs\it_s8\compile.json")
+$recInHistory = (Test-Path "$rt\history.log") -and ((Get-Content "$rt\history.log" -Encoding ASCII) -match 'RECOVER')
+if ($queuedMid -and -not $recInHistory) { Pass "S8 create stayed queued while live holder owns lock (no compile.json yet, no RECOVER)" } else { Fail "S8 concurrency broken queuedMid=$queuedMid recovered=$recInHistory" }
+$null = & "$ROOT\agent\tools\runtime.ps1" -Action release -RunId "it_s8hold" 2>&1
+$null = Wait-Job $jobC -Timeout 120
+$oc = Receive-Job $jobC; Remove-Job $jobC
+Stop-Process -Id $holder.Id -Force -ErrorAction SilentlyContinue
+Write-Output "  after release: $oc"
+$s8Ok = (ArtExecOk "it_s8")
+$acqOrder = @()
+if (Test-Path "$rt\history.log") { $acqOrder = @((Get-Content "$rt\history.log" -Encoding ASCII) | ForEach-Object { ($_ -split ' ')[1] + ':' + ($_ -split ' ')[2] }) }
+Write-Output "  history: $($acqOrder -join ' | ')"
+if ($s8Ok -eq $true) { Pass "S8 queued create auto-started and succeeded after release" } else { Fail "S8 queued create did not complete (s8Ok=$s8Ok)" }
+Assert-Serialized "S8 serialized under contention"
+
 Write-Output ("INTEGRATION END, failures=" + $fail)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

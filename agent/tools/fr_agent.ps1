@@ -128,7 +128,7 @@ switch ($inner) {
     $specObj = $specText | ConvertFrom-Json
     $outName = [string]$specObj.outName
     # r12: acquire the global runtime lock (serializes FineReport runtime; concurrent tasks queue, never parallel JVMs)
-    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb compile | Out-Null
+    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb compile -OwnerPid $PID | Out-Null
     if ($LASTEXITCODE -ne 0) {
       Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
       Write-Output ('{"ok":false,"runId":"' + $RunId + ',"reason":"QUEUE_TIMEOUT"}')
@@ -168,7 +168,7 @@ switch ($inner) {
   'patch' {
     if (-not $Patch) { Write-Output '{"ok":false,"error":"-Patch required"}'; exit 2 }
     # r12: patch_main spawns a FineReport runtime (readTemplateWorkBook+render) -> same global lock
-    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb patch | Out-Null
+    & "$ROOT\agent\tools\runtime.ps1" -Action acquire -RunId $RunId -Verb patch -OwnerPid $PID | Out-Null
     if ($LASTEXITCODE -ne 0) {
       Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
       Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}')

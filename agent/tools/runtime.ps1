@@ -9,6 +9,7 @@ param(
   [Parameter(Mandatory = $true)][ValidateSet('acquire', 'release', 'status', 'recover')][string]$Action,
   [string]$RunId = '',
   [string]$Verb = '',
+  [int]$OwnerPid = 0,
   [int]$TimeoutSec = 600,
   [int]$MaxLockAgeSec = 1800
 )
@@ -97,8 +98,11 @@ switch ($Action) {
     while ($true) {
       try {
         New-Item -ItemType Directory -Path $lockDir -ErrorAction Stop | Out-Null
-        # lock acquired (atomic): record ownership
-        WriteJsonAtomic $currentFile @{ runId = $RunId; verb = $Verb; pid = $PID; startedAt = (Get-Date).ToString('o') }
+        # lock acquired (atomic): record ownership. pid MUST be the CALLER (fr_agent) that lives across the runtime
+        #   execution - the acquire subprocess exits immediately, so recording its own $PID would make the owner
+        #   look dead at once and cause the next acquire to FALSELY recover (kill the running JVM). r12 review fix.
+        $ownerPid = if ($OwnerPid -gt 0) { $OwnerPid } else { $PID }
+        WriteJsonAtomic $currentFile @{ runId = $RunId; verb = $Verb; pid = $ownerPid; startedAt = (Get-Date).ToString('o') }
         $q = ReadJson "$queueDir\$RunId.json"; if ($q) { $q.state = 'running'; WriteJsonAtomic "$queueDir\$RunId.json" $q }
         WriteHistory "ACQUIRE" $RunId
         Write-Output ('{"ok":true,"acquired":true,"runId":"' + $RunId + '","waitedMs":' + [int]$sw.ElapsedMilliseconds + '}')
