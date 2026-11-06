@@ -308,6 +308,17 @@ check('D2 vmap 带 axisY 拒（无轴）', codeAt(chartIR('vmap', { axisY: { min
 check('D2 vmap point 零误报', errsOf(chartIR('vmap', { mapType: 'point', zoom: 0 })).length === 0);
 check('D2 vmap mapType=line 拒（未接）', codeAt(chartIR('vmap', { mapType: 'line' }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapType'));
 check('D2 非 vmap 带 mapType 拒', codeAt(chartIR('vbar', { mapType: 'point' }), 'INVALID_SHAPE', 'sheets[0].blocks[1].mapType'));
+// ===== D2 热力图（2026-11-07）：VanChartHeatMapPlot extends VanChartMapPlot（javap 一手）——
+//      官方 doc/Chart/HeatMap/网页热力图.cpt：HeatMapPlot + heat 四参（XML 序列化别名 VanChartHeatMapPlotAttr）
+//      + VanChartMapPlotAttr(point) + VanMapDefinition/pointDefinition（与 vmap point 同构）；官方无头渲染 RENDER-OK（probe_heatmap.js）=====
+check('D2 vheatmap 零误报（heat 四参 + 中国地理图）', errsOf(chartIR('vheatmap', { geoUrl: 'assets/map/geographic/world/中国.json', zoom: 0, heat: { radius: 35, blur: 45, minOpacity: 0, maxOpacity: 70 } })).length === 0);
+check('D2 vheatmap heat 缺省零误报（object 落官方缺省 35/45/0/70）', errsOf(chartIR('vheatmap', { geoUrl: 'assets/map/geographic/world/中国.json' })).length === 0);
+check('D2 vheatmap heat 非对象拒', codeAt(chartIR('vheatmap', { heat: '大' }), 'INVALID_TYPE', 'sheets[0].blocks[1].heat'));
+check('D2 vheatmap heat 未知键拒', codeAt(chartIR('vheatmap', { heat: { color: 1 } }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[1].heat.color'));
+check('D2 vheatmap heat 半径负数拒', codeAt(chartIR('vheatmap', { heat: { radius: -1 } }), 'INVALID_NUMBER', 'sheets[0].blocks[1].heat.radius'));
+check('D2 vheatmap heat 非数拒', codeAt(chartIR('vheatmap', { heat: { blur: '45' } }), 'INVALID_NUMBER', 'sheets[0].blocks[1].heat.blur'));
+check('D2 非 vheatmap 带 heat 拒', codeAt(chartIR('vmap', { heat: { radius: 35 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].heat'));
+check('D2 vheatmap 无轴同闸', codeAt(chartIR('vheatmap', { axisY: { min: 0 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY'));
 // ===== 2026-11-06 P1：合计行非 sum 聚合（IR aggregate.fn + sumCols.fn） =====
 function totalIR(agg) { return mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, aggregate: agg }; }); }
 check('P1 aggregate avg 零误报', errsOf(totalIR({ fn: 'avg', col: 1 })).length === 0);

@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Sat Nov 07 01:24:46 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Sat Nov 07 02:18:20 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 数字含义（勿混）：**unattributed=0 表示"缺口归属清零"**（每个 missing/partial 都有批次归属或明确判定），**不表示缺失类已实现**；missing 数才是仍未实现/未命中的类。二者不是一回事。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
@@ -41,7 +41,6 @@
 | com.fr.report.web.button.write.StashButton | 1 | missing | 批F后继·write 按钮(未排) |
 | com.fr.base.io.FileAttrErrorMarker | 1 | missing | 待探针确认(疑引擎内部 IO 标记,README #105) |
 | com.fr.report.poly.PolyWorkSheet | 1 | missing | 批J(挂账,#80/#586 块面 API 未探全) |
-| com.fr.plugin.chart.heatmap.VanChartHeatMapPlot | 1 | missing | 批I(挂账,#79; 核心 heatmap 包全做) |
 | com.fr.chartx.data.DataSetDefinition | 1 | missing | 非真缺:chartx legacy 数据接口,现有 chartdata 路已覆盖(README #105) |
 | com.fr.data.condition.ObjectCondition | 506 | partial | 批A(定性:cell 高亮面已覆盖,数据集级过滤仍缺口,#45/#515) |
 | com.fr.plugin.chart.base.AttrLabelDetail | 150 | partial | 批B 已收(label 扩容六 setter 接线,README #103;深水 content 域随 vmap/富文本后续) |
@@ -105,7 +104,7 @@
 | barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
 | map | partial (缺: AttrMapLabel) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| specialcharts | partial (缺: VanChartHeatMapPlot) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
+| specialcharts | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
 | poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | 局部样式(样式肾上) | partial (缺: stylesOf) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
@@ -155,6 +154,6 @@
 | 批F | writeButtons、submit (填报)、reg 校验族 | 11/1 | ValueVerifier | 1+8 | 待回填 |
 | 批G | freeze、subreport、barcode、group (自定义分组) | 4/0 | — | 0+0 | #31、待回填 |
 | 批H | sort | 1/0 | — | 0+0 | #45 受阻断 |
-| 批I | chart Van、map、specialcharts | 9/2 | AttrMapLabel+VanChartHeatMapPlot | 0+10 | #46、待回填、#79(bubble) |
+| 批I | chart Van、map、specialcharts | 10/1 | AttrMapLabel | 0+9 | #46、待回填、#79(bubble) |
 | 批J | poly | 0/2 | PolyECBlock+PolyWorkSheet | 0+2 | 待回填 |
 | 其他 | objCondition(定性) | 1/0 | — | 0+9 | #45/#72 |

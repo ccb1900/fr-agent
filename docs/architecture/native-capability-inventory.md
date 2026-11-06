@@ -81,14 +81,14 @@
 | 能力 | E1 | 证据 | 价值 | 建议 |
 |---|---|---|---|---|
 | 地图 vmap | ✓ | ✓ 已接（D2，2026-11-06） | **完成（area+point）**：VanChartMapPlot(mapType/geourl/zoom/viewcenter) + VanMapDefinition(areaDefinition|pointDefinition)(VanMapMoreNameCDDefinition 10 参, useAreaName)；carrier test_vmap/test_vmap_point 真引擎 failures=0，PNG 区域着色 / 散点标记；LINE/CUSTOM 未接 | P2→完成（area/point） |
-| 热力图 heatmap | ✓ 核心 heatmap 包 | manifest pending | 中低 | P3 |
+| 热力图 vheatmap | ✓ 核心 heatmap 包 | ✓ 已接（D2，2026-11-07） | **完成**：VanChartHeatMapPlot extends VanChartMapPlot（javap 一手；heat 四参直接在 plot，官方 XML VanChartHeatMapPlotAttr=序列化别名）；官方 网页热力图/热力地图.cpt 无头渲染 RENDER-OK（probe_heatmap R0）；carrier test_vheatmap 真引擎 failures=0，部署 cpt 与官方逐字段同构，PNG 5 省热力光晕+渐变色例 | P3→完成 |
 | Poly 块面 | ✓ 核心 jar | probe_r4m21 方法面 | 低 | P3（240 demo 仅 4-5 处） |
 | 组合图 VanChartCustomPlot | ✓ | **构造+序列化已证，渲染未达成**（D1，2026-11-06） | 中 → **阻塞** | 已打通：CustomStyle.parse/CustomPlotList/CustomDefinition+DefinitionMap(枚举键) → 部署 cpt 与官方 柱形图变形.cpt 同构；但渲染分类轴恒单类（4 行=1 类 6 系列），缺子图系列分配 ConditionCollection(AttrSeriesStackAndAxis)+分类 Present；plain Chart 外层 NPE。证据 probe_customplot*/probe_customtype/probe_customdef* + logs/d1_combo*。重开条件：先有可运行系列分配语料 |
 | 图表热链 ChartHyperRelateCellLink | ✓ | manifest pending | 低 | P3 |
 | 多 Sheet | ✓ | object 已支持（见 A 类） | 中低 | **A 类优先于 D** |
 | 模板继承/样式复用 | 待核实 | ir 零命中 | 中 | 待核实 |
 
-**D 类结论**：D2 地图（area+point）已完成接线并 PNG 实证；D1 组合图构造/序列化与官方同构、渲染受子图系列分配机制阻塞（三轮规则封存，重开条件已写）；D3–D5 维持 pending 不接线。
+**D 类结论**：D2 地图（area+point）已完成接线并 PNG 实证；**热力图（vheatmap）2026-11-07 完成**（官方渲染 R0+载体 PNG 热力光晕实证，区别于 D1）；D1 组合图构造/序列化与官方同构、渲染受子图系列分配机制阻塞（三轮规则封存，重开条件已写）；D3–D5 维持 pending 不接线。
 
 ## 6. 待逐项核实（诚实标注，不臆造）
 
@@ -104,6 +104,6 @@
 | **B：IR 已有、Agent 无入口** | 补 ReportSpec/Planner 字段 + 校验 + 载体 | ~~最高~~ → **已清空**（B1–B6 批 + R3-0/C2，2026-11-06） | 剩余 B 类边界：rowSpan plan→create 证据、多 filter AND、多 Sheet SQL extra（显式拒） |
 | A：Object 已有、IR 缺 | 放开 IR + 载体验证 | ~~高~~ → 多 Sheet 已完成（A1+#127/#135） | 无剩余 A 类确证项 |
 | C：Object 部分/原生类未接 | 复用已有构造/研究 API | 按价值 | 隐藏行列已完成（C2）；TemplateInfoAttrMark 裁定 noncore 不追；cell.sort/verifiers 诚实拒留账 |
-| D：Engine 支持未接 | 研究成熟 API + 真实样本 | 低（P2–P3） | vmap 已接（area+point，D2）；poly/heatmap/组合图（D1 blocked）继续 pending |
+| D：Engine 支持未接 | 研究成熟 API + 真实样本 | 低（P2–P3） | vmap 已接（area+point，D2）、热力图已接（vheatmap，2026-11-07）；poly/组合图（D1 blocked）继续 pending |
 
 **架构原则（本轮确立）**：**fr-agent 不做 FineReport 的重新实现，只做"让 Agent 安全完整调用 FR 已有能力"的语义接口层。** 新增能力的默认动作顺序 = 查原生 → 查 Object/CPT → 查 IR → 补 spec/planner，而不是从 IR 往下推。

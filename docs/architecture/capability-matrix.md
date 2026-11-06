@@ -75,7 +75,7 @@
 | 装饰（tooltip/label/stack/条件色/趋势线/轴） | ✓ 多数 | ✓ | ✓ | ✓/`~` 分层 | ✓/✗ | P1 | manifest（3 项 pending：seriesBorder/areaFill/seriesImage） |
 | 组合图（多 plot/双轴） | ✗ | ✗ | ✗ | **构造/序列化已证、渲染未达成（D1 第4轮，2026-11-06）** | ✗ | P2（D1 blocked） | 官方 柱形图变形.cpt 同构；线系列无头不可见（官方 demo 同）；重开条件=可运行系列分配语料；probes/probe_combo_sql_carrier.js + logs/d1_combo* |
 | 地图 vmap | ✓ mapType=area\|point（line/custom 拒） | ✓ | ✓ | ✓ PNG（区域着色/散点标记） | ✗（无省份数据源/无 plan→create e2e → agentAvailable=false） | P2→完成（area/point） | D2：test_vmap/test_vmap_point 载体；manifest chart.vmap |
-| 热力图 heatmap | ✗ | ✗ | ✗ | 引擎支持 | ✗ | P3 | manifest pending |
+| 热力图 vheatmap | ~~✗~~ **✓ kind=vheatmap（heat 四参，缺省官方 35/45/0/70）** | ✓ | ✓ | **✓ PNG（5 省热力光晕+渐变色例 96..40；官方模板无头渲染 RENDER-OK）** | ✗（无热度数据源/无 plan→create e2e → agentAvailable=false） | **P3→完成（2026-11-07）** | D2：probe_heatmap R0（javap 方法面+官方渲染）+ test_vheatmap 载体（cpt 与官方逐字段同构）；manifest chart.vheatmap |
 | 雷达/漏斗/词云 | ✗ | ✗ | ✗ | 部分原生 | ✗ | P3 | 无 IR 键 |
 | 图表单元格热链（ChartHyperRelateCellLink） | ✗ | ✗ | ✗ | — | ✗ | P3 | manifest chart.hyperlinkCell pending |
 
@@ -157,7 +157,7 @@
 | 3（**已实施 2026-11-06**） | **ReportSpec 参数面板 + 执行期筛选** | P1 | ✅ param 控件族（B2）+ `params[].filter` → IR.param.filters；param_filter 载体默认值 A线 → PNG 只渲染 A线 行；部署 cpt 参数面板 + 条件；fast 断言 |
 | 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
 
-**明确不做（本轮及下轮）**：vmap 已接（area+point，D2）~~/ poly / heatmap~~ / VLOOKUP / 跨表关联 / 绝对布局——poly/heatmap/VLOOKUP/跨表/绝对布局要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三；D1 组合图 blocked（第4轮结论）。多 Sheet 已完成 rows 路 spec/planner 入口+结构链路 e2e（SQL extra 待后续批）。
+**明确不做（本轮及下轮）**：vmap 已接（area+point，D2）、热力图已接（vheatmap，2026-11-07）~~/ poly~~ / VLOOKUP / 跨表关联 / 绝对布局——poly/VLOOKUP/跨表/绝对布局要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三；D1 组合图 blocked（第4轮结论）。多 Sheet 已完成 rows 路 spec/planner 入口+结构链路 e2e（SQL extra 待后续批）。
 
 ## 5. 实施记录（第一项：cells 多行合并表头）
 
