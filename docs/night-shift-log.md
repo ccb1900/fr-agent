@@ -1084,3 +1084,23 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 
 ### 验证
 - fast 15 套件 rc=0；scan 60 ok；基线 MD5 精确。
+
+## 2026-11-06 参数执行期筛选（B2 收尾 / 矩阵 P1 第3项）
+
+### 目标
+矩阵验收"spec 可表达 param + 执行期传参筛选真值"：此前 params 只有控件与默认值，无筛选语义。
+
+### 实施
+- spec_validator：PARAM_KEYS + filter；filter{column,op?} 键白名单/op 白名单（==|=|!=|>|>=|<|<=|contains）/column 必填/需具名参数（非 label/submit）/sql 路结构化拒（单元格条件仅 rows 路）。
+- spec_compiler：compile() 将 params[].filter 汇总为 ir.param.filters（column/op/parameter）。
+- 载体：examples/report-spec/param_filter.json（3 行 + editor 默认 A线 + filter line）。
+- 测试：fast_report_spec +7（零误报/op 越词/缺 column/未知键/label 拒/sql 拒/compile 发射）。
+- manifest：spec.params.filter 四层 verified（scope rendering）。
+- matrix：§4 第 3 项标为已实施。
+
+### 验证
+- 真引擎：param_filter failures=0；PNG 只渲染 A线 一行（B线/C线 被默认参数筛选掉）——执行期筛选真值。
+- fast 15 套件 rc=0；scan 60 ok；基线 MD5 精确。
+
+### 边界
+- 仅 rows 内嵌路（sql 路由 validator 拒）；op 语义由引擎 CommonCondition（= $参数）承担；多参数多 filter 逐格叠加未专项 PNG（可后续）。

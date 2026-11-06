@@ -261,6 +261,18 @@ check('审查1 params values 非数组拒', codeAt(baseRowsSpec(function (rs) { 
 check('审查1 params 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'e', magic: 1 }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].magic'));
 check('审查1 params 名 __proto__ 重复仍拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: '__proto__' }, { kind: 'editor', name: '__proto__' }]; }), 'DUPLICATE', 'params[1].name'));
 check('审查1 submit 缺文案拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'submit', name: 'go' }]; }), 'REQUIRED', 'params[0].text'));
+// 2026-11-06 参数执行期筛选
+check('参数 filter 零误报', errsOf(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', value: 'A', filter: { column: 'line', op: '=' } }]; })).length === 0);
+check('参数 filter.op 越词表拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { column: 'line', op: '~~' } }]; }), 'INVALID_ENUM', 'params[0].filter.op'));
+check('参数 filter.column 缺拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { op: '=' } }]; }), 'REQUIRED', 'params[0].filter.column'));
+check('参数 filter 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { column: 'line', magic: 1 } }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].filter.magic'));
+check('参数 filter 需具名（label 拒）', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'label', text: 'x', filter: { column: 'line' } }]; }), 'REQUIRED', 'params[0].name'));
+check('sql 路参数 filter 拒', codeAt(baseSqlSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { column: 'line' } }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].filter'));
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', value: 'A', filter: { column: 'line', op: '=' } }]; })); } catch (e) { check('参数 filter compile 不抛: ' + e, false); return; }
+  check('参数 filter compile: IR.param.filters 发射', !!(c.param && c.param.filters && c.param.filters.length === 1 && c.param.filters[0].column === 'line' && c.param.filters[0].parameter === 'line'));
+})();
 // P2：散点/气泡 spec 用 x/y（不再过校验后必挂 IR）
 check('审查1 vscatter 需 x/y', (function () {
   var es = errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vscatter', category: 'bizDate', value: 'planned' }; }));

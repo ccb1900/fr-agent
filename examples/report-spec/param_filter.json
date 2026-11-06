@@ -1,0 +1,19 @@
+{
+  "specVersion": "1",
+  "report": { "name": "参数筛选（B2 执行期）" },
+  "outName": "能力自检_参数筛选",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80], ["B线", 40], ["C线", 150]]
+  },
+  "params": [
+    { "kind": "editor", "name": "line", "value": "A线", "filter": { "column": "line", "op": "=" } }
+  ],
+  "presentation": { "type": "table", "showTotal": false }
+}

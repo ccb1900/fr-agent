@@ -154,7 +154,7 @@
 |---|---|---|---|
 | **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=待验证**（无 plan→create 证据） |
 | 2（待办） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | plan 路 detail 可表达 conditions；footnote/sort/topN 不再静默丢（或结构化拒）；载体+PNG 真值；golden 需求"<80% 高亮"可由 plan 直达 |
-| 3（待办） | **ReportSpec 参数面板 + 执行期筛选** | P1 | spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍 |
+| 3（**已实施 2026-11-06**） | **ReportSpec 参数面板 + 执行期筛选** | P1 | ✅ param 控件族（B2）+ `params[].filter` → IR.param.filters；param_filter 载体默认值 A线 → PNG 只渲染 A线 行；部署 cpt 参数面板 + 条件；fast 断言 |
 | 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
 
 **明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 已完成 rows 路 spec/planner 入口（SQL extra 待后续批）。
