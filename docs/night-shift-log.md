@@ -482,3 +482,32 @@ SQL Server 恢复后跑完整 e2e 收尾。
 
 ### 下一项工作
 按审查建议：暂停架构改动，重新做一次全局审查（生产代码/能力账本/Golden 产物/测试入口一致性）。
+
+
+## 2026-11-06 15:25（干净 clone 复验 + CRLF/.gitignore 两处修复）
+
+### 工作目标
+证明确实"干净 clone 能过 fast 15"（外部审查 P1 第 2 项的验收口径）。
+
+### 代码证据
+- `git clone` 到临时目录（core.autocrlf=true）后跑 fast_golden_closure：**truth 解析 0 行** → 逐格断言全假失败。根因=正则 `## name
+...` 只认 LF，clone 出 CRLF。
+- clone 里 `verify/fixtures/golden/staging/.orig.cpt` 不存在：`.gitignore` 的 `*.cpt` 全排除规则命中。
+
+### 实施内容
+- `.gitignore` 加 `!verify/fixtures/golden/**/*.cpt` 例外（fixture 是 logs/ 被排除后唯一受版本控制的 golden 证据副本）。
+- verify_sql_data.js 两处 section 正则、fast_golden_closure.js 一处 → `?
+` 兼容 CRLF。
+
+### 验证结果
+- 本地 LF：fast_golden_closure 14 断言全绿；fast 15 GREEN。
+- **真 clone（logs=NO）**：14 断言全绿（含负向 rc=1）；fixture 三件（grid.txt/patch.json/staging/.orig.cpt）均入库可读。
+
+### 未验证事项
+- 无。
+
+### Commit
+bcdfd13（.gitignore 例外）+ d21fde7（CRLF 正则）+ 本条文档。
+
+### 下一项工作
+按审查建议：暂停架构改动，重新做一次全局审查（生产代码/能力账本/Golden 产物/测试入口一致性）。
