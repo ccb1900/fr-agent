@@ -1,0 +1,30 @@
+{
+  "specVersion": "1",
+  "report": { "name": "多列求和 + 编辑器校验（B6）" },
+  "outName": "能力自检_sumcols",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" },
+    { "field": "done", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80, 70], ["B线", 40, 35]]
+  },
+  "params": [
+    { "kind": "editor", "name": "lineCode", "label": "线体编号", "value": "A01", "reg": { "custom": "^[A-Z]\\d{2}$", "err": "格式应为 A01" } }
+  ],
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "total": {
+      "label": "合计",
+      "sumCols": [
+        { "col": 1, "format": "#,##0" },
+        { "col": 2, "format": "#,##0" }
+      ]
+    }
+  }
+}

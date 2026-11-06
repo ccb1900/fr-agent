@@ -222,5 +222,16 @@ check('B5 chart label 装饰零误报', errsOf(baseSqlSpec(function (rs) { rs.pr
 check('B5 chart 未知装饰键拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.chart.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart.magic'));
 check('B5 chart 非法 kind 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.chart.kind = 'magic'; }), 'INVALID_ENUM', 'presentation.chart.kind'));
 
+// ===== B6（2026-11-06）：total.sumCols 多列求和 + params reg =====
+check('B6 total.sumCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { label: '合计', sumCols: [{ col: 1 }] }; })).length === 0);
+check('B6 total.sumCols 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: 'x' }; }), 'INVALID_ARRAY', 'presentation.total.sumCols'));
+check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'e', reg: { custom: '^x$' } }]; })).length === 0);
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }] }; })); } catch (e) { check('B6 compile 不抛: ' + e, false); return; }
+  var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
+  check('B6 compile: total 走 sumCols 通道（无 aggregate）', !!(t && t.sumCols && t.sumCols.length === 1 && !t.aggregate));
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
