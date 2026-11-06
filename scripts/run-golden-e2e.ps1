@@ -169,6 +169,6 @@ $md5 = (Get-FileHash (Join-Path $Root 'demo_api.cpt') -Algorithm MD5).Hash
 if ($rcRestore -ne 0) { Write-Host ("RESTORE FAIL: default spec exit={0}" -f $rcRestore); $fails++ }
 if ($md5 -ne 'CBEB42E3CE48E46E362B9AE80168026F') { Write-Host ("BASELINE FAIL: demo_api.cpt={0}" -f $md5); $fails++ }
 if ($null -ne $prevHeap) { $env:FR_AGENT_HEAP = $prevHeap } else { Remove-Item env:FR_AGENT_HEAP -ErrorAction SilentlyContinue }
-if ($fails -eq 0) { Write-Host ("GOLDEN E2E PASS (create+truth-grid+preview+modify, runId={0})" -f $RunId) }
+if ($fails -eq 0) { Write-Host ("GOLDEN E2E PASS (plan+create+validate+truth-grid+preview+modify+promote+restore+baseline-restore, runId={0})" -f $RunId) }
 else { Write-Host ("GOLDEN E2E FAIL, failures={0}" -f $fails) }
 exit $fails

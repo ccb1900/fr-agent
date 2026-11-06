@@ -1385,3 +1385,9 @@ backlog 剩余：B-复审B-4（等多 Sheet 图表接线一并补）；多 Sheet
 
 ### 下一项工作
 backlog P3 三项（词表去重/'=' helper/fast 样板）按 P4 纪律择机；B-复审B-4 等多 Sheet 图表接线一并补；vmap/vheatmap plan→create e2e（解锁 agentAvailable）。
+
+### D段补记（2026-11-07 05:10，核对者返馈修复——静态门红→修→绿，如实入账）
+- **静态门曾红（核对者实测检出，本轮复现）**：`powershell -File verify/check_ps1_static.ps1` → `STATIC FAIL: NON-ASCII D:\fineagent\scripts\run-c-maturity-e2e.ps1 (12 bytes >127)`——上一轮 C 段把补丁文案从 '[REVIEW]' 改 '（复审）' 时（Edit 引入 4 个全角字符），**改后未复跑静态门**，上一轮记录只引了改动前的那次绿跑，漏检。根因=改 .ps1 后未按门禁纪律立即复跑静态门（该门设计目的正是拦 PS5.1 GBK 读盘翻车）。
+- **修复**：scripts/run-c-maturity-e2e.ps1:78 文案改 ASCII ' (review)'（编辑器逐字替换，非 PS -replace/Set-Content；补丁文本禁 ']' 由 template/validator.js 把关不受影响；CJK 标题文本本就来自 UTF-8 fixture/inspect.json，不经本文件）。
+- **修后复跑（全部本轮真跑）**：静态门 `STATIC SCOPE: parse 20 / ascii 20, STATIC END, failures=0`（exit 0）；fast16 16/16 PASS + FAST GATE GREEN；集成门复跑（结果见下）；golden e2e 末行 PASS 文案同步为九步口径（plan+create+validate+truth-grid+preview+modify+promote+restore+baseline-restore——上轮已接 promote/restore 两步但末行文案仍写旧四步，顺带纠正）。
+- **诚实边界**：C 段 e2e 未因本次文案修改重跑全链（核对者明示勿动已绿部分；改动=字符串字面量交换，文件经静态门 parse 20 件覆盖语法验证；上一轮 GREEN 跑的是 '（复审）' 字面量，行为差异仅补丁文本内容，链路断言不依赖具体文案）。

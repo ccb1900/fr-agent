@@ -71,11 +71,14 @@ foreach ($fx in $fixtures) {
   if (-not $titleCell) { Fail 'inspect: no r0 cell (title) found'; continue }
   Ok ("inspect: title cell c={0} r={1} text={2}" -f $titleCell.c, $titleCell.r, $titleCell.text)
 
-  # ---- modify: replace the title cell with a review tag (coordinates from inspect output)
+  # ---- modify: replace the title cell with a review tag (coordinates from inspect output).
+  #   ASCII-only per AGENTS sec.5: the review tag is ASCII ' (review)'; patch values must not contain
+  #   ']' (template/validator.js) - ASCII parens/space are fine. The ORIGINAL title text itself is CJK
+  #   but it lives in the UTF-8 fixture JSON / inspect.json payload, never in this file.
   $md5Pre = (Get-FileHash $deployed -Algorithm MD5).Hash
   $patchSpec = @{
     patchVersion = '1'; sourceCpt = $cptRel; outName = ($outName + 'REVIEW')
-    ops = @(@{ op = 'replace_cell_value'; sheet = 0; cell = @{ c = $titleCell.c; r = $titleCell.r }; value = @{ kind = 'text'; text = ($titleCell.text + '（复审）') } })
+    ops = @(@{ op = 'replace_cell_value'; sheet = 0; cell = @{ c = $titleCell.c; r = $titleCell.r }; value = @{ kind = 'text'; text = ($titleCell.text + ' (review)') } })
   }
   $patchFile = "logs/agent/runs/$runId/patch_review.json"
   [System.IO.File]::WriteAllText((Join-Path $Root $patchFile), ($patchSpec | ConvertTo-Json -Depth 8), (New-Object System.Text.UTF8Encoding($false)))
