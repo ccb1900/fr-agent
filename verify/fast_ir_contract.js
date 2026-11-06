@@ -475,6 +475,13 @@ check('C2 消息明示 putDSCell 不合并', errsOf(cellsIR([{ c: 0, ds: { colum
 check('C2 ds 无 rowSpan 正例零误报（DSColumn 明细格合法）', errsOf(cellsIR([{ c: 0, ds: { column: 'a' } }, { c: 1, text: 'b' }])).length === 0);
 check('C2 span+ds 不在本次范围（现状不动）', errsOf(cellsIR([{ c: 0, ds: { column: 'a' }, span: 2 }])).length === 0);
 
+// ===== B段复审（2026-11-07）：cells item 列位越界静态拒——widthsPt 定表宽，c（或 c+span-1）越界
+//      会让引擎画出表外默认宽怪列；rawIR 载体作者可触，spec 路列宽由 columns 推导不可达。=====
+check('B段 c 越界拒（c=2 表宽 2）', codeAt(cellsIR([{ c: 2, text: 'x' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].c'));
+check('B段 span 越界拒（c=1 span=2 → 末列出界）', codeAt(cellsIR([{ c: 1, span: 2, text: 'x' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].c'));
+check('B段 c 负数拒', codeAt(cellsIR([{ c: -1, text: 'x' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].c'));
+check('B段 界内零误报（span=2 满宽 / c=1 单格）', errsOf(cellsIR([{ c: 0, span: 2, text: 'a' }])).length === 0 && errsOf(cellsIR([{ c: 1, text: 'b' }])).length === 0);
+
 
 // ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
 check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);
