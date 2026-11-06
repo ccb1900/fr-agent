@@ -258,6 +258,7 @@ check('审查1 showTotal=false 时 total 拒', codeAt(baseRowsSpec(function (rs)
 // P2：params values 形状 / 未知键 / submit 缺文案
 check('审查1 params values 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'combo', name: 'c', values: 'ab' }]; }), 'INVALID_ARRAY', 'params[0].values'));
 check('审查1 params 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'e', magic: 1 }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].magic'));
+check('审查1 params 名 __proto__ 重复仍拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: '__proto__' }, { kind: 'editor', name: '__proto__' }]; }), 'DUPLICATE', 'params[1].name'));
 check('审查1 submit 缺文案拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'submit', name: 'go' }]; }), 'REQUIRED', 'params[0].text'));
 // P2：散点/气泡 spec 用 x/y（不再过校验后必挂 IR）
 check('审查1 vscatter 需 x/y', (function () {

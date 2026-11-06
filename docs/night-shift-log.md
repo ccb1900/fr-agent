@@ -922,3 +922,20 @@ P2：hasOwn 修复把 '__proto__' 的假阳翻成假阴——`seenSheet['__proto
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 名称 map 无原型加固（同类模式收尾）
+
+### 背景
+多 Sheet 轮2 修了 sheetNames/seenSheet/seenDs 的 '__proto__' 假阴；同一模式还在 params 名、数据集索引、param filter 引用表中存在。
+
+### 实施
+- spec_validator：params seenNames → Object.create(null)（两个 '__proto__' 参数名现 DUPLICATE）。
+- ir.js：dsIdx（数据集名索引）、pnames（param.widgets 名 → filters.parameter 引用）→ Object.create(null)。
+- 测试：fast_report_spec +1（params __proto__ 重复拒）；fast_ir_contract +1（参数名 __proto__ 可被 filters 引用，无 UNKNOWN_REF）。
+
+### 验证
+- fast 15 套件 rc=0；baseline MD5 精确；scan ok=57 bad=0。
+- 多 Sheet 复审终评：converged（32293bd）。
+
+### Commit
+（本条提交。）
