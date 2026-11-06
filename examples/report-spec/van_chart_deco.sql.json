@@ -1,0 +1,24 @@
+{
+  "specVersion": "1",
+  "report": { "name": "Van 图表装饰（B5）" },
+  "outName": "能力自检_van装饰spec",
+  "dataset": {
+    "kind": "sql", "connection": "ATOM_LIVE", "entity": "InspectionRecord",
+    "dimensions": ["bizDate"], "metrics": ["planned", "done"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-17" }
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vbar",
+      "category": "bizDate",
+      "value": "planned",
+      "title": "每日计划数（Van 装饰）",
+      "heightPt": 260,
+      "label": { "enable": true, "position": 2 },
+      "legend": { "position": 2 },
+      "axisY": { "min": 0, "unit": 1000 }
+    }
+  }
+}

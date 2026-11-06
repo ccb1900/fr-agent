@@ -207,5 +207,20 @@ check('B4 sheet 合法键零误报', errsOf(baseRowsSpec(function (rs) { rs.shee
   check('B4 compile: watermark 注入 workbook 级', !!(c.watermark && c.watermark.text === 'W'));
 })();
 
+// ===== B5（2026-11-06）：Van 图表族 + 装饰键进 ReportSpec =====
+function baseSqlSpec(mut) {
+  var rs = { specVersion: '1', report: { name: 't' }, outName: 't',
+    dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord',
+      dimensions: ['bizDate'], metrics: ['planned'],
+      dateRange: { from: '2026-09-13', to: '2026-09-22' } },
+    presentation: { type: 'table', chart: { kind: 'vbar', category: 'bizDate', value: 'planned' } } };
+  if (mut) mut(rs);
+  return rs;
+}
+check('B5 vbar chart 零误报', errsOf(baseSqlSpec()).length === 0);
+check('B5 chart label 装饰零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart.label = { enable: true, position: 2 }; })).length === 0);
+check('B5 chart 未知装饰键拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.chart.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart.magic'));
+check('B5 chart 非法 kind 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.chart.kind = 'magic'; }), 'INVALID_ENUM', 'presentation.chart.kind'));
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
