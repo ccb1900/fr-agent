@@ -976,3 +976,15 @@ reports/test_visual_deco.js 顶部 `var J = Files class` 覆盖 make_api 全局 
 ### 验证
 - 真引擎：test_visual_deco failures=0；部署 cpt ImageBackground×2 / AttrSeriesImageBackground×1；PNG 目检柱体仍为纯蓝（棋盘未现形）→ rendering 维持 pending（证据从"无法判定"升级为"判别性阴性"）。
 - fast 15 套件 rc=0；scan ok=58 bad=0。
+
+## 2026-11-06 管线全局覆盖守卫（载体类测试 bug 的系统性封口）
+
+### 背景
+test_visual_deco 用 `var J = Java.type(...)` 覆盖 make_api 同作用域全局 J(n) 工厂 → make_api:273 TypeError（rc≠0 但堆栈难读）。全量扫 reports/ 确认仅此一处，probes/ 的 J 定义是各自独立脚本、不被 make_api load。
+
+### 实施
+- make_api.js：`J_FACTORY` 快照 + load 后守卫——`J` 被覆盖即 input_load failed、诊断写明"use a local name, e.g. var JF"、fail-closed 退出（不再裸 TypeError）。
+- 负门实测：临时载体 `var J = 1` → CARRIER GLOBAL CLOBBER + diagnostics + exit 2（日志 clobber_neg.log）；临时文件已删除。
+
+### 验证
+- fast 15 套件 rc=0；基线 MD5 精确；scan 不受影响（58 ok）。

@@ -4,6 +4,7 @@
 //   - 数据集自包含（EmbeddedTableData 直接进对象图），无需部署后注数
 //   - v2 校验器仍作回归门：Cpt.validate（落盘产物）+ Cpt.assertRoundTrip（自序列化产物）
 var J = function (n) { return Java.type(n); };
+var J_FACTORY = J;   // 载体 load() 与管线同全局作用域：SPEC 脚本若 `var J = Java.type(...)` 会覆盖本工厂（2026-11-06 实测 rc=102 TypeError）
 var Class = Java.type('java.lang.Class');
 var t0 = new Date().getTime();
 var stamp = function (s) { print('[' + (new Date().getTime() - t0) + 'ms] ' + s); };
@@ -163,6 +164,13 @@ try {
   finishRun(2);
 }
 if (typeof SPEC === 'undefined') { print('SPEC NOT FOUND in ' + specPath); RR.fail('input_load'); RR.diag('SPEC NOT FOUND: ' + specPath); finishRun(2); }
+// 载体全局覆盖守卫（fail-closed + 可读诊断）：载荷脚本与管线共享全局作用域，禁止覆盖 J 工厂
+if (typeof J !== 'function' || J !== J_FACTORY) {
+  stamp('CARRIER GLOBAL CLOBBER: J');
+  RR.fail('input_load');
+  RR.diag('carrier overrides pipeline global J (use a local name, e.g. var JF): ' + specPath);
+  finishRun(2);
+}
 if (!SPEC.dsName) SPEC.dsName = 'ds1';
 if (SPEC.IR) {
   stamp('SPEC ' + specPath + ' [IR 直通：官方 demo 重建路径]');
