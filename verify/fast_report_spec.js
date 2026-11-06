@@ -122,7 +122,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart bar|pie|line 已支持', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|vbar|vline|varea|vscatter|vbubble|vpie|vgauge');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return r.chart === 'unsupported' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
@@ -137,6 +137,12 @@ check('I1.1 镜像 schema：dataset 为 rows|sql 两形态 oneOf', (function () 
   return hasRows && hasSql;
 })());
 check('I1.1 镜像 schema：x-scope 同时列 rows/sql', !!(schemaMirror['x-scope'] && schemaMirror['x-scope'].rows && schemaMirror['x-scope'].sql));
+// 审查轮1 P2：schema 必须镜像 B1-B6/C2 新键（presentation.conditions/cells/total、params、sheet）
+check('审查1 镜像 schema：presentation 含 conditions/cells/total', (function () {
+  var pr = schemaMirror.properties.presentation.properties;
+  return !!(pr.conditions && pr.cells && pr.total);
+})());
+check('审查1 镜像 schema：顶层含 params/sheet', !!(schemaMirror.properties.params && schemaMirror.properties.sheet));
 
 // ===== B1（2026-11-06）：conditions 进 ReportSpec + rows 路静默丢弃拒 =====
 function baseRowsSpec(mut) {
@@ -231,7 +237,31 @@ check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params =
   try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }] }; })); } catch (e) { check('B6 compile 不抛: ' + e, false); return; }
   var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
   check('B6 compile: total 走 sumCols 通道（无 aggregate）', !!(t && t.sumCols && t.sumCols.length === 1 && !t.aggregate));
+  // 审查轮1 P1-B：label 合并区不得吞掉被求和列（span = 最小求和列号）
+  check('审查1 B6: sumCols total span = 最小求和列号', !!(t && t.span === 1));
 })();
+
+// ===== 审查轮1（2026-11-06）：P1/P2 负项 =====
+// P1-A：sql 路 conditions/cells/total 不发射 → 明确拒（不再绿着丢）
+check('审查1 sql 路 conditions 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.conditions = [{ when: { column: 'a', op: '<', value: 1 }, then: { bg: 1 } }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.conditions'));
+check('审查1 sql 路 cells 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.cells = [{ c: 0, text: 'x' }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.cells'));
+check('审查1 sql 路 total 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.total = { label: '合计' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
+// P2：presentation.cells 绝对 r 必撞块游标 → 前置拒
+check('审查1 presentation.cells 绝对 r 拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.cells = [{ c: 0, r: 0, text: 'x' }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.cells[0].r'));
+// P2：total 未知键 / showTotal=false + total
+check('审查1 total 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { magic: 1 }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.magic'));
+check('审查1 showTotal=false 时 total 拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.showTotal = false; rs.presentation.total = { label: 'x' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
+// P2：params values 形状 / 未知键 / submit 缺文案
+check('审查1 params values 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'combo', name: 'c', values: 'ab' }]; }), 'INVALID_ARRAY', 'params[0].values'));
+check('审查1 params 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'e', magic: 1 }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].magic'));
+check('审查1 submit 缺文案拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'submit', name: 'go' }]; }), 'REQUIRED', 'params[0].text'));
+// P2：散点/气泡 spec 用 x/y（不再过校验后必挂 IR）
+check('审查1 vscatter 需 x/y', (function () {
+  var es = errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vscatter', category: 'bizDate', value: 'planned' }; }));
+  return es.some(function (e) { return e.code === 'REQUIRED' && e.path === 'presentation.chart.x'; }) &&
+    es.some(function (e) { return e.code === 'UNSUPPORTED_CAPABILITY' && e.path === 'presentation.chart.category'; });
+})());
+check('审查1 vscatter x/y 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vscatter', x: 'planned', y: 'planned' }; })).length === 0);
 
 // ===== C2（2026-11-06）：隐藏行列（sheet.hideRows/hideCols → object 行高/列宽归零） =====
 check('C2 sheet.hideRows/hideCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [1, 3] }; })).length === 0);

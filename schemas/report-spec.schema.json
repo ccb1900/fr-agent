@@ -122,11 +122,22 @@
     "presentation": {
       "type": "object",
       "additionalProperties": false,
-      "description": "键白名单 {type,showTotal,heightsPt,chart}；未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）",
+      "description": "键白名单 {type,showTotal,heightsPt,chart,footnote,conditions,cells,total}；未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）",
       "properties": {
         "type": { "type": "string", "enum": ["table"], "default": "table" },
         "showTotal": { "type": "boolean", "default": true },
-        "footnote": { "type": "string", "description": "脚注文案（sql 路发射 space+cells 行；缺省不发射）" },
+        "footnote": { "type": "string", "description": "脚注文案（两路均发射 space+cells 行；缺省不发射）" },
+        "conditions": { "type": "array", "description": "rows 路单元格条件格式（sql 路拒）", "items": { "type": "object" } },
+        "cells": { "type": "array", "description": "rows 路额外 cells 块（不支持绝对 r；sql 路拒）", "items": { "type": "object" } },
+        "total": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "合计行定制（rows 路；showTotal=false 时拒）",
+          "properties": {
+            "label": { "type": "string" },
+            "sumCols": { "type": "array", "items": { "type": "object" } }
+          }
+        },
         "heightsPt": {
           "type": "object",
           "additionalProperties": false,
@@ -135,15 +146,71 @@
         "chart": {
           "type": "object",
           "additionalProperties": false,
-          "description": "仅 kind=sql 数据集支持（rows 路写→UNSUPPORTED_CAPABILITY，不静默丢图）",
-          "required": ["category", "value"],
+          "description": "仅 kind=sql 数据集支持（rows 路写→UNSUPPORTED_CAPABILITY，不静默丢图）；散点/气泡用 x/y，其余用 category/value",
+          "anyOf": [
+            { "required": ["category", "value"] },
+            { "required": ["x", "y"] }
+          ],
           "properties": {
-            "kind": { "type": "string", "enum": ["bar", "pie", "line"], "default": "bar" },
+            "kind": { "type": "string", "enum": ["bar", "pie", "line", "vbar", "vline", "varea", "vscatter", "vbubble", "vpie", "vgauge"], "default": "bar" },
             "category": { "type": "string", "description": "已选维度列别名" },
             "value": { "type": "string", "description": "基础度量列别名（派生比率不可作 value）" },
-            "title": { "type": "string" }
+            "x": { "type": "string", "description": "散点/气泡 x 度量别名" },
+            "y": { "type": "string", "description": "散点/气泡 y 度量别名" },
+            "bubbleSize": { "type": "string", "description": "气泡大小度量列名（可选）" },
+            "title": { "type": "string" },
+            "heightPt": { "type": "number" },
+            "tooltip": { "type": "object" }, "label": { "type": "object" }, "marker": { "type": "object" },
+            "lineStyle": { "type": "object" }, "trend": { "type": "object" }, "stack": { "type": "object" },
+            "conditions": { "type": "array" }, "alpha": { "type": "number" }, "bg": { "type": "number" },
+            "border": { "type": "object" }, "axisY": { "type": "object" }, "axisX": { "type": "object" },
+            "legend": { "type": "object" }, "barInterval": { "type": "number" },
+            "hotTooltip": { "type": "object" }, "seriesBorder": { "type": "object" },
+            "effect": { "type": "object" }, "areaFill": { "type": "object" }, "seriesImage": { "type": "object" }
           }
         }
+      }
+    },
+    "params": {
+      "type": "array",
+      "description": "参数面板控件（B2/B6）：kind 白名单、name 唯一、value 标量；reg 支持 none|phone|idcard|mobile|postcard 或 {custom,err}",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["label", "editor", "date", "combo", "number", "textarea", "radio", "checkbox", "combocheck", "treecombo", "nav", "iframe", "submit"] },
+          "name": { "type": "string" },
+          "label": { "type": "string" },
+          "text": { "type": "string" },
+          "value": { "type": ["string", "number", "boolean"] },
+          "values": { "type": "array", "items": { "type": ["string", "number", "boolean"] } },
+          "reg": {},
+          "url": { "type": "string" },
+          "bold": { "type": "boolean" },
+          "sizePt": { "type": "number" },
+          "allowDecimals": { "type": "boolean" },
+          "maxValue": { "type": "number" },
+          "minValue": { "type": "number" }
+        }
+      }
+    },
+    "sheet": {
+      "type": "object",
+      "description": "sheet 级扩展（B3/B4/C2）：headerFooter/floats/paper/hideRows/hideCols 为 sheet 级；watermark/toolbar 为 workbook 级（写在 sheet 对象便于阅读）",
+      "additionalProperties": false,
+      "properties": {
+        "headerFooter": { "type": "object" },
+        "floats": { "type": "array" },
+        "paper": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": { "width": { "type": "number" }, "height": { "type": "number" }, "top": { "type": "number" }, "left": { "type": "number" }, "bottom": { "type": "number" }, "right": { "type": "number" } }
+        },
+        "watermark": { "type": "object" },
+        "toolbar": { "type": "object" },
+        "hideRows": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "hideCols": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
       }
     },
     "filters": { "x-unsupported": "顶层 filters 仍拒；sql 路放 dataset.filters", "type": "array" },
@@ -151,14 +218,14 @@
   },
   "x-scope": {
     "rows": {
-      "supported": ["dimensions(text 分组键)", "metrics(sum 聚合)", "内嵌 dataset.rows", "presentation.table + showTotal", "widthPt/format/heightsPt 透传"],
+      "supported": ["dimensions(text 分组键)", "metrics(sum 聚合)", "内嵌 dataset.rows", "presentation.table + showTotal + footnote", "presentation.conditions", "presentation.cells（无绝对 r）", "presentation.total{label,sumCols}", "params 参数面板", "sheet 扩展（headerFooter/floats/paper/watermark/toolbar/hideRows/hideCols）", "widthPt/format/heightsPt 透传"],
       "unsupported": ["chart", "filters", "sort", "topN", "join", "dataset.query.type=semantic", "非 sum 聚合"]
     },
     "sql": {
-      "supported": ["Semantic Model 维度/指标（不受自由文本 SQL）", "dateRange", "dataset.filters", "sort", "topN", "presentation.chart bar|pie|line", "confirmed 安全关系(N:1/1:1，目标键机器验证唯一) INNER JOIN"],
-      "unsupported": ["自由文本 dataset.query（§5.2）", "跨表度量（JOIN 不改 grain）", "非安全基数 join（1:N/N:M）"]
+      "supported": ["Semantic Model 维度/指标（不受自由文本 SQL）", "dateRange", "dataset.filters", "sort", "topN", "presentation.chart bar|pie|line|Van 族(vbar/vline/varea/vscatter/vbubble/vpie/vgauge)+装饰键", "params 参数面板", "sheet 扩展（同 rows）", "confirmed 安全关系(N:1/1:1，目标键机器验证唯一) INNER JOIN"],
+      "unsupported": ["自由文本 dataset.query（§5.2）", "跨表度量（JOIN 不改 grain）", "非安全基数 join（1:N/N:M）", "presentation.conditions/cells/total（sql 路不发射）"]
     },
-    "multiSheet": "unsupported（同 IR 边界）",
+    "multiSheet": "后端 IR 支持多 sheet；ReportSpec/Planner 尚无入口（unsupported）",
     "entrypoint": "REPORT_SPEC=<path>.json run.ps1 make_api.js — make_api.js §0 后缀分支：JSON.parse→SpecValidator→SpecCompiler→SPEC={outName,IR} 复用 rawIR 直通路；旧 .js spec 走原 load() 路径不变"
   }
 }

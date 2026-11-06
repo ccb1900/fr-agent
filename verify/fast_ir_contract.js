@@ -136,7 +136,7 @@ check('默认 compile 不改输入 spec', trad.irVersion == null);
 var cap = Ir.capabilities();
 check('能力清单 irVersion 一致', cap.irVersion === Ir.IR_VERSION);
 check('能力清单 singleSheet=supported', cap.sheet.singleSheet === 'supported');
-check('能力清单 multiSheet=supported（A1）', String(cap.sheet.multiSheet).indexOf('supported') === 0);
+check('能力清单 multiSheet=supported（A1）', cap.sheet.multiSheet === 'supported');
 check('能力清单 reverseFromCpt=unsupported', cap.dataset.reverseFromCpt === 'unsupported');
 check('能力清单列 type 词表=I0-05 定案（迭代 3 标注兑现）', (function () {
   var ct = Ir.capabilities().columnType;
@@ -271,6 +271,21 @@ check('批B stack 仅 vbar/varea', codeAt(chartIR('vline', { stack: { stacked: t
 check('批B cond then 键白名单', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { bg: 1 } }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].conditions[0].then.bg'));
 check('批B cond alpha 越界', codeAt(chartIR('vbar', { conditions: [{ when: { formula: 'a' }, then: { alpha: 1.5 } }] }), 'INVALID_NUMBER', 'sheets[0].blocks[1].conditions[0].then.alpha'));
 check('批B axisY.unit 缺加成（老键不受扰）', errsOf(chartIR('vbar', { axisY: { min: 0, max: 100 } })).length === 0);
+// ===== 审查轮1（2026-11-06）P2：spec 白名单键的 IR 闸 =====
+check('审查1 legend 未知键拒', codeAt(chartIR('vbar', { legend: { magic: 1 } }), 'INVALID_ENUM', 'sheets[0].blocks[1].legend.magic'));
+check('审查1 legend position 非数拒', codeAt(chartIR('vbar', { legend: { position: 'x' } }), 'INVALID_NUMBER', 'sheets[0].blocks[1].legend.position'));
+check('审查1 legend 合法零误报', errsOf(chartIR('vbar', { legend: { fontPt: 10, color: 0x333333, position: 1, visible: true, bold: true } })).length === 0);
+check('审查1 barInterval 非数拒', codeAt(chartIR('vbar', { barInterval: '0.5' }), 'INVALID_NUMBER', 'sheets[0].blocks[1].barInterval'));
+check('审查1 sheet 缺名拒', codeAt(mut(function (ir) { delete ir.sheets[0].name; }), 'REQUIRED', 'sheets[0].name'));
+check('审查1 sheet 重名拒', codeAt(mut(function (ir) { ir.sheets.push(JSON.parse(JSON.stringify(ir.sheets[0]))); }), 'DUPLICATE', 'sheets[1].name'));
+check('审查1 paper 非数拒', codeAt(mut(function (ir) { ir.sheets[0].paper = { width: 'x', height: 100, top: 0, left: 0, bottom: 0, right: 0 }; }), 'INVALID_NUMBER', 'sheets[0].paper.width'));
+check('审查1 hideRows 非整数拒', codeAt(mut(function (ir) { ir.sheets[0].hideRows = [1.5]; }), 'INVALID_NUMBER', 'sheets[0].hideRows[0]'));
+check('审查1 hideRows/hideCols 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].hideRows = [1]; ir.sheets[0].hideCols = [0]; })).length === 0);
+check('审查1 多 sheet + write 拒', codeAt(mut(function (ir) {
+  ir.sheets.push({ name: 's2', blocks: [{ type: 'cells', heightPt: 20, items: [{ c: 0, text: 'y' }] }] });
+  ir.write = { table: { name: 't' }, columns: [{ name: 'c', cell: [0, 0] }] };
+}), 'UNSUPPORTED_CAPABILITY', 'write'));
+check('审查1 vscatter 缺 x/y 拒', codeAt(chartIR('vscatter', {}), 'REQUIRED', 'sheets[0].blocks[1]'));
 // ===== 批C（2026-11-05）页眉页脚 + 模板级 attrMark =====
 //   探针依据 probe_pagehf/_hf7/9（sheet.setHeader/setFooter(int,ReportHF)；裸 classpath 撞 license 墙、env 后可用）。
 function hfIR(hf, extra) {

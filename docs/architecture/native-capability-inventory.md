@@ -65,7 +65,7 @@
 | 单元格排序 cell.sort/SortHeader | ✓ FR 类可加载 | ✗ 未调用 setCellSortAttr（仅注释） | 缺语料（240 demo 无非空 cellSortAttr） | ir.js:522 rejected |
 | 写回 Verifier 族 | ✓ ValueVerifier 类在 | ✗ VerifyItem≠Verifier | 挂点未通 | ir.js:727 rejected |
 | 多 sheet（A 类同项） | ✓ | ✓ | 见 §2 | — |
-| 隐藏行列 | ✓ | ✓ 已接（C2，2026-11-06） | **完成**：IR `sheets[].hideRows/hideCols` + object 在 sheet 构建末 setRowHeight/setColumnWidth 归零 + ReportSpec `sheet.hideRows/hideCols` | 载体 test_hidden（rawIR）+ hidden.json（spec）：引擎 RowHeight[1]=0 / ColumnWidth[2]=0，PNG 表头行与「计划」列消失；基线 MD5 不变 |
+| 隐藏行列 | ✓ | ✓ 已接（C2，2026-11-06） | **完成**：IR `sheets[].hideRows/hideCols` + object 在 sheet 构建末 setRowHeight/setColumnWidth 归零 + ReportSpec `sheet.hideRows/hideCols` | 载体 test_hidden（rawIR）+ hidden.json（spec）：引擎 RowHeight[1]=0 / ColumnWidth[2]=0，PNG 表头行与「完成」列消失（hideCols:[2]）；基线 MD5 不变 |
 | 绝对布局（WAbsoluteLayout） | ✓ | ✓ BoundsWidget 已构造（浮动元素） | 部分（仅浮动，非整表布局） | 3D翘曲 5 处 |
 | TemplateInfoAttrMark | ✓（**cloud 插件包** `com.fr.plugin.cloud.analytics.attr.*`） | ✗ | **非缺口（noncore）**：core 包 `com.fr.base.iofile.attr.*` 无此类（ClassNotFoundException 探针实证），生产参考用的是云分析插件类，按范围圈定（`com.fr.plugin.cloud.*`=插件配置类）不追 | probe_ti.js + 3D翘曲 cpt class= 证据 |
 | WidgetDisplayEnhanceMarkAttr | ✓ | ✗ | 未接 | 生产参考 1 处 |

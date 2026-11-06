@@ -656,3 +656,36 @@ C3 cell.sort/verifiers 诚实拒落账；D1 组合图 VanChartCustomPlot 打通�
 
 ### 下一项工作
 D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff → P1/P2 修复 → 门 → 循环。
+
+## 2026-11-06 审查轮1（独立代理审 A/B/C 全量 diff → P1/P2 修复）
+
+### 审查范围
+独立代理（只读）审 A/B/C 提交与 `lib/{ir,object,spec_validator,spec_compiler,report_spec}.js`、verify、examples、schema、docs。返回 2 P1 + 9 P2。
+
+### 修复（本轮处置）
+- **P1-A sql 路 conditions/cells/total 静默丢**：spec_validator 对 sql 路三键结构化拒（此前过校验、编译器不发射）。
+- **P1-B total.sumCols label 合并区吞 SUM 格**：compiler `span = min(sumCols[].col)`（≥1）；B6 载体重新真引擎跑通，部署 cpt 校验：`合计` c0 无 cs、c1=`SUM(B3)`、c2=`SUM(C3)`，无重叠。
+- P2 散点/气泡：validator 改为必需 x/y（category/value 拒），compiler 发射 x/y/bubbleSize，schema 同步 anyOf。
+- P2 legend/barInterval 无 IR 闸：IR 新增 legend 键白名单+类型、barInterval 数值闸。
+- P2 params 词表宽于编译器：新增 PARAM_KEYS 白名单（与 buildParam 转发面一一对应）、values 数组+标量闸、submit 文案必需；buildParam 补 url/bold/sizePt/allowDecimals/maxValue/minValue 转发。
+- P2 total.label 被硬编码、未知键静默：aggregate 分支改用 label；TOTAL_KEYS 白名单；showTotal=false + total 拒。
+- P2 多 sheet 契约：IR sheet 名必填唯一（DUPLICATE）；多 sheet + write 结构化拒（挂点不明确）。
+- P2 paper 无校验：IR 对 width/height/top/left/bottom/right 数值闸。
+- P2 presentation.cells 绝对 r 陷阱：spec_validator 前置拒（块按块序追加，r 必撞游标）。
+- P2 声明面漂移：schema 补 params/sheet/conditions/cells/total/chart Van 族与 deco 键；report_spec capabilities 更新（sql chart Van、rows presentation、multiSheet 说明）；IR CAPABILITIES.multiSheet 改纯 token + note；fast_ir_contract 恢复精确等值断言；fast_report_spec 更新 capabilities/镜像 schema 断言并新增 9 条负项。
+- P2 docs 事实错误：inventory 隐藏列说明改「完成」列；capability-matrix 隐藏行列/多 Sheet/明确不做 三处更新。
+
+### 验证结果
+- fast 15 套件 rc=0（含新增审查轮断言，零 CHECK FAIL）。
+- 引擎：sumcols_reg（P1-B 后）failures=0 + cpt 校验无合并重叠；params.json failures=0；默认基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+- 零误伤扫描：ok=55 bad=0 skipped=1。
+
+### 未验证/延后
+- manifest 未新增 hideRows/hideCols/conditions/params/cells/sumCols/rowSpan 行（对账器 KEY_OF 同步属同一改动，避免半接线）→ 记 backlog。
+- vscatter 的 spec→compile 全链未在 fast 离线覆盖（需 deps 模型桩）；validator/IR 闸两侧已覆盖。
+
+### Commit
+（本条提交。）
+
+### 下一项工作
+审查轮2：复审本轮修复 diff（重点 spec_validator SQL 拒与 compiler labelSpan、IR 新闸），确认无新 P1/P2。

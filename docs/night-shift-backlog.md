@@ -86,3 +86,9 @@
 ### R3-4（P1）：planner deferred 阻断性
 - 证据：`capability.js:10-12` deferred 只写 warning 不阻断，spec 仍 ready（`planner.js:127`）→ Agent 可能"成功"产出少东西的报表。
 - 验收：deferred 进入 unresolvedQuestions 或明确降级告知；fast_planner 断言。
+
+## B-审查1-1 manifest 补新能力行（P2，2026-11-06）
+- 证据：application/capability_manifest.js 无 hideRows/hideCols/conditions/params/cells/sumCols/rowSpan 行；verify/fast_manifest_evidence.js KEY_OF 需同步。
+- 影响：能力权威表对 B/C 新能力沉默（不撒谎，但也不声明）。
+- 验收：6-7 行按四层状态 + regressionScope + agentAvailable 如实填写；KEY_OF 覆盖；fast_manifest_evidence 零 FAIL。
+- 依赖：无（纯声明层）。

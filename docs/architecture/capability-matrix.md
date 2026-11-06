@@ -37,7 +37,7 @@
 | header block 原生多层表头 | ✗ 单层 columns | — | — | — | ✗ | P1 | ir.js:8 `header{columns[],heightPt}` 仍单层；当前多层表头只能走 cells + r 坐标（上方已收） |
 | 边框/背景/字体/对齐 | ✓ `st` | ✓ | ✓ | ✓ | ✓ | P0 | 全量生产报表；AGENTS §2 排版红线 |
 | 行高/列宽 | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | ir.js heightsPt/widthsPt |
-| 隐藏行列 | **✗ 无键** | 待查 | — | — | ✗ | P2 | ir.js 零命中 hidden |
+| 隐藏行列 | ✓ `hideRows/hideCols` | ✓ setRowHeight/setColumnWidth(FU 0) | ✓ | ✓ PNG 实拍 | ✓ `sheet.hideRows/hideCols` | P2→完成 | C2（2026-11-06）：IR 整数闸 + object sheet 构建末归零 + spec 直通；rawIR/spec 双载体 RowHeight/ColumnWidth=0，表头行与列消失 |
 | 冻结（引擎侧重复表头） | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest `page.repeatHeaderRow` verified |
 | 冻结（web 端） | pending | — | — | — | ✗ | P2 | manifest `page.freezeWeb` pending（240 demo 零语料） |
 | 条件格式（8 族） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | manifest condition.* 全 verified；README #71 PNG |
@@ -97,7 +97,7 @@
 | CPT 创建（create） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | Golden e2e `ge20261106150630-a8693e` |
 | 局部修改（patch 2 op） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | template/patch.js:34/43；modify diffClean |
 | patch 其余 op（样式/行列增删） | rejected | — | — | — | ✗ | P2 | README #60 R0 探针不过，明确不做 |
-| 多 Sheet | rejected | — | — | 引擎支持 | ✗ | P2 | ir.js:469 UNSUPPORTED_CAPABILITY |
+| 多 Sheet | ✓ 多 sheet IR | ✓ 每 sheet 独立游标 | ✓ 两个 `<Report>` | ✓ | ✗（spec 无入口） | 后端完成 | A1（2026-11-06）：旧 si>0 throw 已拆；载体 test_multisheet 引擎 failures=0。manifest page.multiSheet agentAvailable=false |
 | 模板继承 / 样式复用 | ✗ 无键 | — | — | 引擎支持 | ✗ | P3 | ir.js 零命中 |
 | 页眉页脚 | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest page.headerFooter verified |
 | 模板级 marks（theme/id） | ✓ | ✓ | ✓ | ✓ | ✓ | P2 | manifest page.templateMarks |
@@ -157,7 +157,7 @@
 | 3（待办） | **ReportSpec 参数面板 + 执行期筛选** | P1 | spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍 |
 | 4（待办） | 合计行非 sum 聚合（avg/ratio/count） | P1 | IR aggregate.fn 白名单扩展；合计行 PNG 真值对拍 |
 
-**明确不做（本轮及下轮）**：vmap / poly / heatmap / 多 Sheet / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。
+**明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 后端已完成（A1），仅 ReportSpec/Planner 入口待开。
 
 ## 5. 实施记录（第一项：cells 多行合并表头）
 
