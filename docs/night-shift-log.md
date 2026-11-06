@@ -1119,3 +1119,10 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 
 ### 验证
 - 真引擎 param_filter failures=0（默认 A线 过滤仍生效）；fast 15 rc=0；scan 60 ok；基线 MD5 精确。
+
+## 2026-11-06 参数筛选复审终评：converged
+
+- 独立复审 eaccfab：5 项 P2 全部关闭，无新 P1/P2，参数筛选审查循环收敛。
+- 当前 HEAD 门：fast 15 rc=0 / scan 60 ok 0 bad / 基线 CBEB42E3CE48E46E362B9AE80168026F。
+- 本轮大干连续交付：多 Sheet e2e、合计非 sum 聚合、D2 地图 area+point、参数执行期筛选、D1 第4轮结论（不接线）、以及各轮复审修复。
+- 下一轮候选：D3 热力/图片地图（官方 网页热力图 结构待探）、D4 ChartHyperRelateCellLink、page.freezeWeb、write.submit（外部 DML 风险）、多 Sheet SQL extra（需 make_api deps 扩展）。
