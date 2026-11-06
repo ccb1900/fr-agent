@@ -115,3 +115,21 @@
 - 用户影响：低（断言缺口非功能缺陷；多 sheet 图表能力本身未接 SQL extra）。
 - 修改范围：断言循环改全 sheets；或等多 sheet 图表能力接线时一并补。
 - 验收：多 sheet+图表载体真引擎轮断言命中第二 sheet 图表 XML。
+
+## 阶段2 挂账（2026-11-07，外部 34-commit 审查 P3 未修项——如实分级，不冒充高优）
+
+### P3-A：图表 kind 词表多处手同步
+- 证据：CHART_KINDS 在 lib/spec_validator.js:34 与 lib/ir.js:358 各一份（report_spec.js capabilities 串第三处文案）；spec_validator 已单向依赖 ReportSpec（`hasOwn(ReportSpec.AGGREGATIONS…)`），可由 report_spec.js 导出 CHART_KINDS 去重一份；lib/ir.js 受红线保护不反向依赖。
+- 验收：spec_validator 引 ReportSpec.CHART_KINDS、fast16 绿、scan 零误伤。
+- 优先级：P3（每次新图表 kind 三处手改是真实维护成本，但无正确性影响——词表漏项由各层 INVALID_ENUM 拒）。
+
+### P3-B：object.js 公式 '=' 规范化 6 处重复
+- 证据：lib/object.js:114/1051/1247/1344/1386/1581 各自 `charAt(0) === '='`；可提 formulaOf(f) 单点。零行为差异机械重构，改后必跑默认 spec+61 spec scan 双 byte-gate。
+- 优先级：P3（维护成本真实但低频；回归面成本≈收益）。
+
+### P3-C：fast 套件样板 16 份
+- 证据：verify/fast_*.js 各自复制 J/Files/check/src 前导 ~15 行；可抽 verify/_fast_lib.js。
+- 优先级：P3/P4（改门禁面文件需全 16 套件复跑验证；收益=样板收缩）。
+
+### truthy 缺省（b.bold !== false 类）
+- 判定：**不修**——「缺省=开」是 TABLE_DESIGN_STANDARD 既定版式语义，改动=行为变化；审查项按缺陷报，实测为口径分歧，留档不 action。

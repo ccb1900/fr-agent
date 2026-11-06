@@ -53,13 +53,18 @@ else {
       // night-shift：总计行按"合计|总计"判定（与 compare_paths totalsOf 一致化），不再假设最后一行——
       //   报表带脚注行（presentation.footnote）时"最后一行"会取到脚注导致合计自洽误报。
       function isTotalRow(r) { return /合计|总计/.test(String(r && r[0])); }
-      var header = rows[0];
-      var idxPlan = -1, idxDone = -1, idxRate = -1;
-      for (var hi = 0; hi < header.length; hi++) {
-        var h = String(header[hi]);
-        if (idxPlan < 0 && h.indexOf('计划') >= 0 && h.indexOf('率') < 0) { idxPlan = hi; continue; }
-        if (idxRate < 0 && h.indexOf('完成率') >= 0) { idxRate = hi; continue; }
-        if (idxDone < 0 && h.indexOf('完成') >= 0) { idxDone = hi; }
+      // 表头签名行定位：栅格第 0 行可能是标题（合并格重复值，golden 即如此）——在前 3 行里找同时点名
+      //   计划+完成率 的那一行作表头；找不到=非 demo 形状（按形状跳过，不假绿不误报）。
+      var header = null, idxPlan = -1, idxDone = -1, idxRate = -1;
+      for (var hs = 0; hs < Math.min(rows.length, 3); hs++) {
+        var cand = rows[hs], cp = -1, cd = -1, cr = -1;
+        for (var hi = 0; hi < cand.length; hi++) {
+          var h = String(cand[hi]);
+          if (cp < 0 && h.indexOf('计划') >= 0 && h.indexOf('率') < 0) { cp = hi; continue; }
+          if (cr < 0 && h.indexOf('完成率') >= 0) { cr = hi; continue; }
+          if (cd < 0 && h.indexOf('完成') >= 0) { cd = hi; }
+        }
+        if (cp >= 0 && cd >= 0 && cr >= 0) { header = cand; idxPlan = cp; idxDone = cd; idxRate = cr; break; }
       }
       if (idxPlan >= 0 && idxDone >= 0 && idxRate >= 0) {
         var total = null, sumPlan = 0, sumDone = 0;
@@ -85,8 +90,8 @@ else {
         }
       } else {
         var expect2 = System.getenv('AGENT_EXPECT_TOTALS');
-        if (expect2) ck('合计对拍外部真值(' + expect2 + ')', false, '栅格表头无 计划/完成/完成率 签名，无对拍口径: ' + header.join('|'));
-        else ck('合计自洽（非 demo 表头签名，按形状跳过，不假绿不误报）', true, 'header=' + header.join('|').slice(0, 120));
+        if (expect2) ck('合计对拍外部真值(' + expect2 + ')', false, '栅格前 3 行无 计划/完成/完成率 表头签名，无对拍口径: ' + String(rows[0].join('|')).slice(0, 120));
+        else ck('合计自洽（非 demo 表头签名，按形状跳过，不假绿不误报）', true, 'first-row=' + String(rows[0].join('|')).slice(0, 120));
       }
     }
   } else ck('栅格可用（缺省跳过，不假绿）', true, 'no grid (RESULT_DUMP 未开启)');

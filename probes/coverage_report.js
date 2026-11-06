@@ -263,7 +263,7 @@ B.push('## B. 已实现族·组合稳定证据（“已支持特性可稳定组�
 B.push('');
 B.push(tableRow(['family', '状态', '关键组合载体 spec', '快速门套件', 'README 实证位']));
 B.push('|---|---|---|---|---|');
-var GATES = 'verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB';
+var GATES = 'verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB';
 FAMILIES.forEach(function (f) {
   var stv = famStatus(f);
   var ch = carrierHit(f.carriers);

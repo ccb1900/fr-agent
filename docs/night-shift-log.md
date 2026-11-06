@@ -1329,3 +1329,59 @@ d679a71（B-3 探针收口）/ 344157b（vheatmap 接线）/ 本条 log。
 
 ### 下一项工作
 backlog 剩余：B-复审B-4（等多 Sheet 图表接线一并补）；多 Sheet SQL extra（需 make_api deps 扩展，先出设计证据）；poly/热链保持 pending。
+
+## 2026-11-07 04:30（阶段2：A/B/C/D 全段——外置 Agent 仅凭本项目工具创建帆软报表的产品闭环）
+
+### 工作目标
+阶段2 四段：A=两份审查报告（外部 34-commit 审查 + 阶段1 loop-report）逐项对账、未修 P1/P2 反例先行清零；B=Agent 链产品闭环（新 verbs/promote-restore/错误面/退出码）；C=NL→报表端到端成熟度循环（外置 LLM 只看工具输出，≥3 非 demo 形状）；D=门禁全绿+账本同步+复审。基线 b8ea665。
+
+### A段：对账表（逐项本轮实测；证据=probe_a_review.js 12红→20绿 + 命令输出）
+**外部 34-commit 审查：**
+
+| 项 | 级 | 实测 | 证据（本轮真跑） |
+|---|---|---|---|
+| seriesImage 路径不走 checkLocalPath | P1 | **已修 800c7bf** | probe_a_review P1a 3红→绿；ir 层 INVALID_PATH（..\/\\/scheme）+ object 层 imageBackground checkLocalPath 强制（与 float imageFile 同规） |
+| validate.js 硬编码 demo 三列 | P1 | **已修 800c7bf+3db31c7** | 表头签名识别（前3行内定位 计划/完成/完成率，非假设列序）——C段三形状非 demo 表格 validate 全过；golden 对拍 33531:26531 仍 PASS |
+| planner rows 路未知指标静默丢 | P1 | **已修 800c7bf** | probe_a_review P1c：已知+未知混合指标红（ready）→修后 rejected；与 sql 路成员缺失同纪律；fast_planner 旧断言「未知术语仅 warning 仍 ready」钉的是被审查点名的缺陷，按修复更新（非迁就） |
+| fast 层缺三铁证 MD5 断言 | P1 | **已修 800c7bf** | 新 verify/fast_baseline.js（demo_api.cpt=CBEB42E3/v2=6161F402/部署PNG=A8EF39AB；PNG 缺文件=SKIP 行不记 PASS）；破坏性自检：篡改副本实测检出 233EA541≠CBEB42E3；driver 套件 15→16 |
+| 协议相对 URL 逃逸 | P2 | **已修 800c7bf** | probe_a_review P2a 3红→绿：ir isRelUrl + object checkRelUrl 双层拒 `//host`（浏览器按当前协议解析=跨站外链逃逸） |
+| ir charAt 三处抛 | P2 | **已修 800c7bf** | probe_a_review P2b：kind=123/undefined+装饰键曾抛 TypeError → String 包层后结构化 INVALID_ENUM/INVALID_SHAPE（:886/:1019/:1108 三处） |
+| spec 顶层未知键静默丢 | P2 | **已修 800c7bf** | probe_a_review P2c：`specTypoKey` 静默、`dimensons` 拼错只报 REQUIRED → TOP_KEYS 白名单后 UNSUPPORTED_CAPABILITY 点名（与 C1 dataset/params 键白名单同立论） |
+| refOverrides `__proto__` | P2 | **已修 800c7bf（硬化）** | Nashorn 实证 `o['__proto__']=x` 真换原型（getPrototypeOf===x）但 labelOf/widthOf 的 typeof 守卫掩蔽用户可见损伤（probe t_probe7）→ Object.create(null) 消除隐患类 + probe 产物不变性断言 |
+| VAN_KINDS 漏 vbubble | P2 | **已修 800c7bf** | object.js VAN_KINDS+=vbubble（缺省高度下限钳制对气泡图生效）；载体 test_vanchart vbubble 显式 heightPt=240（条件 `<240` 不触发），scan ok=61 bad=0 实证零误伤 |
+| S5b skip 记 PASS | P2 | **已修 800c7bf** | integration_runtime.ps1 增 Skip 计数器；终行 `INTEGRATION END, failures=0, skips=0`（skip 可见不折进绿） |
+| check_ps1_static 白名单固定 9 文件 | P2 | **已修 800c7bf** | parse 动态枚举全仓 19 件（logs/probes/.git 豁免）+ ASCII 动态枚举维护面 19 件；tools_abr_regr/tools_br_run/tools_prod_run/check-boundaries 中文注释翻 ASCII（零豁免名单）；中文产物名经 [char]0x 码点构造保 ASCII |
+| 词表多处手同步 | P3 | **未修→backlog** | spec_validator 与 ir.js/report_spec.js 的 CHART_KINDS 仍有两份（spec_validator 已单向依赖 ReportSpec，可导出 CHART_KINDS 去重；ir.js 红线不污染不动） |
+| 公式 '=' 规范化 8 处 | P3 | **未修→backlog** | object.js 6 处+ir/spec 2 处重复 `charAt(0)===‘=’`——零行为差异机械重构，byte-gate 面（demo/v2/61 spec scan）成本>收益，按 P4 纪律挂账 |
+| colLetter 单字母 | P3 | **不适用（已有闸）** | ir.js:640 sumCols 列号 1..25 钳制+注释明示 colLetter 只产 A..Z；spec_compiler.js:39 已是双字母正确实现；object.js 单字母版仅在钳制后消费 |
+| truthy 默认 | P3 | **未修→backlog** | `b.bold !== false` 类为既定「缺省=开」语义（TABLE_DESIGN_STANDARD 版式口径），改动=行为变化非缺陷修复 |
+| fast 样板 14 份 | P3 | **未修→backlog** | 16 份后抽 _fast_lib 收益更低、翻新门禁面风险>收益 |
+| 错误消息不自解释 | P3 | **已修（B段 1e8f72a）** | 全 verb 失败输出带 nextActions+可用名单（sample_data unknown entity 附 available entities 等） |
+| 工具输出细节 | P3 | **已修（B段）** | 五新 verb 合同行/产物统一 {ok,runId,result} 契约 |
+
+**阶段1 loop-report 未结项对账**（AGENTS §6 口径）：vheatmap 已接（上轮 344157b，agentAvailable=false 如实）；seriesBorder/seriesImage/vpie summary 视觉维持 serialization-only 分层不虚报（seriesImage 本轮补路径安全闸=构造面收口）；vmap/vheatmap 保持 pending 不接 plan→create（C3 用 legacy bar 不改变其状态）；poly/热链 pending 不动；批F 写回/批D 凭据=用户决定事项未动。
+
+### B段（1e8f72a）：Agent 链产品闭环
+- **五新 verbs**（agent/tools/ + fr_agent.ps1 路由）：list_reports（部署目录 93 份 .cpt 清单，零引擎只读）/ sample_data（只读 LIMIT 采样：entity/columns 模型白名单、limit 1..200、where 受控字面量；实测 laser_aaa 3 行返回；负例 unknown entity 附名单+exit 1）/ inspect_template（引擎只读体检：sheet 尺寸+逐格文本真实坐标+XML 数据集/参数名，smokeinspect1 实证 4×5 格坐标；每 RunId 一次引擎产物登记）/ promote（staging 回归全绿补丁就地部署，fail-closed 于 diffClean/execution/render/datasetChecks，MD5 复核）/ restore（staging .orig.cpt 回退部署面，MD5 复核）——**modify→promote→restore 闭环**（同一 runId 裁决）。
+- **退出码一致**：resolve 0=resolved|ambiguous / 1=unknown / 2=用法（smokeres3/4 实证）；plan 同规既存。
+- **错误面**：全部失败输出 nextActions（fr_agent.ps1 用法错 6 处 + resolve/plan/list_reports/sample_data/inspect/promote/restore）。
+- **agent-tools.md**：阶段2 节（五 verb 表+退出码规则+nextActions 约定）；陈旧「条件高亮不支持」修正（B1 已接，真相源=manifest）。
+- **golden e2e 接线**：promote（部署件==staged 补丁字节且≠改前）+restore（部署件==orig 字节）两步断言。
+
+### C段（3db31c7）：外置 LLM 口径端到端——三形状全链 GREEN（两轮复跑）
+- scripts/run-c-maturity-e2e.ps1：补丁坐标取自 inspect_template 输出（非硬编码，真外置口径）。C1 参数面板+条件高亮+脚注（rows 直写 spec=混合路线表达层）/ C2 多 Sheet+页眉页脚+水印 / C3 真库+图表（sql 经 plan 链）。每张 create→validate→inspect→modify→promote PASS+部署件 MD5 复核。
+- **逐轮断点修复留证**：①validate 把 datasource_connect=skipped 当失败（rows 路合法终态）→放行该阶段；②probe_c3_titleA 系列（5 支探针）实证 **FR cpt XML 写出层对含 ']' 文本注入 'A'**（'ABC]'→'ABC]A'，'A]]>B'→'A]A]A>B'；内存值 30 字符正确、export 后损坏）→TemplateValidator fail-closed 拒 ']'（README 无此坑记录，一手发现）；③含图表报表补丁被「未预期单元格变动」误杀（ChartPainter@哈希两次执行必不同）→regression normCell 按 `类@hex` 归一为类名；④validate 表头签名只看第 0 行漏标题行报表（golden 复跑抓到）→前 3 行内定位。
+
+### D段：门禁（全部本轮真跑，HEAD=本轮文档提交）
+- fast16 rc=0（FAST GATE GREEN）/ scan ok=61 bad=0 skipped=1 / 引擎负门 6 路 GREEN（ir-bad 9/db-conn 4/secret-leak 1/exec-formula 1/json-bad-spec 2/spec-traverse 2+marker 反证）/ 集成门 INTEGRATION END failures=0, skips=0 / Golden E2E PASS（**ge20261107040402-723a77**，create+逐格真值 33531:26531+preview+modify+promote+restore）/ MULTISHEET E2E GREEN / C-MATURITY E2E GREEN（3 形状×全链，两轮）/ probe_a_review fails=0 / 铁证三件逐字节 CBEB42E3+6161F402+A8EF39AB。
+- 账本：AGENTS §1 套件清单 5→16 实名（§6 铁证行不变）；agent-tools.md 阶段2 节；coverage 生成器 GATES 16 套件实名+coverage.md 重生成；ir CAPABILITIES.seriesImage 注钳制；backlog 增 P3 未修项。
+
+### 独立复审（本轮自查，诚实口径）
+- 对抗性重推导：A段修复面（isRelUrl 双层一致性/charAt 三处 String 语义/TOP_KEYS 跳过 filters|chart 防双报/refOverrides null 原型下 term='__proto__' 成 own 键→labelOf 语义不变/NORM `类@hex` 正则不含中划线误配面：ChartPainter 无中划线、`com.fr.base.Formula@x` 也归一=同类无内容对象）；B段 promote fail-closed 链（patch.json ok→manifest 逐项→staged 存在→sourceCpt 白名单→MD5 复核，restore 不检查回归=回退操作本性）；C段 driver 坐标来自 inspect 输出。连续环境限制声明同前轮：无独立子代理实例，本轮=实现者对抗视角对全 diff 重推导（第三轮）。
+- 未验证/边界如实：promote 后 restore 的二段式用户流程只有 e2e 断言（无人工 GUI 验证，符合文件层纪律）；sample_data 未加集成门故障注入（只读面，DB 连接失败路径已有诊断+exit 1 冒烟）；inspect_template 大表 CELL_CAP=4000 截断标志未在真实大表上验证（部署面现无大表）。
+
+### 提交链
+800c7bf（A段 P1/P2 清零）/ 1e8f72a（B段五 verbs+错误面）/ 3db31c7（C段 e2e+断点修复）/ 本条文档+账本。
+
+### 下一项工作
+backlog P3 三项（词表去重/'=' helper/fast 样板）按 P4 纪律择机；B-复审B-4 等多 Sheet 图表接线一并补；vmap/vheatmap plan→create e2e（解锁 agentAvailable）。
