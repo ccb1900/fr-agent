@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Fri Nov 06 09:33:15 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Sat Nov 07 01:24:46 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 数字含义（勿混）：**unattributed=0 表示"缺口归属清零"**（每个 missing/partial 都有批次归属或明确判定），**不表示缺失类已实现**；missing 数才是仍未实现/未命中的类。二者不是一回事。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
@@ -19,14 +19,11 @@
 | com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat | 54 | missing | 批I(map.tooltip 域,消费者 mapfather/mapson 一手,README #102/#106) |
 | com.fr.chart.web.ChartHyperRelateCellLink | 18 | missing | 批I(挂账,#79/#581 图表热链随地图批) |
 | com.fr.chart.chartattr.ChartCommonCondition | 14 | missing | 非真缺:chart 条件通道已用 CommonCondition 实证(m7 D_c 全染),变体类同语义(README #105) |
-| com.fr.plugin.chart.custom.VanChartCustomPlot | 12 | missing | 批B后继·组合图车道(双轴多plot组合,需批定义显式排期,README #105) |
 | com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | missing | 批I(map.tooltip 域,消费者 mapfather/mapson 一手,README #102/#106) |
 | com.fr.plugin.chart.map.attr.AttrMapLabel | 8 | missing | 批I(挂账,#79/#597) |
 | com.fr.plugin.chart.map.attr.AttrMapTooltip | 8 | missing | 批I(挂账,#79/#597) |
-| com.fr.plugin.chart.map.data.VanMapMoreNameCDDefinition | 7 | missing | 批I(挂账,#79/#597) |
 | com.fr.plugin.chart.map.line.condition.AttrCurve | 6 | missing | 批I(挂账, map.line 域,#79) |
 | com.fr.plugin.chart.bubble.attr.VanChartAttrBubble | 6 | missing | 批I后继·bubble 属性(未排; bubble plot 已收 #79) |
-| com.fr.plugin.chart.map.VanChartMapPlot | 6 | missing | 批I(挂账,#79/#597 GIS 底图) |
 | com.fr.plugin.chart.map.line.condition.AttrLineEffect | 6 | missing | 批I(挂账, map.line 域,#79) |
 | com.fr.form.ui.MultiFileEditor | 5 | missing | 编辑器扩项·参数控件族后继(文件上传控件,需 widget kind 批定义,README #105) |
 | com.fr.report.web.button.form.TreeNodeToggleButton | 4 | missing | 表单树控件域(需表单树批定义,README #105) |
@@ -53,6 +50,7 @@
 | com.fr.data.impl.DatabaseDictionary | 60 | partial | 批D(凭据注入工单,#539) |
 | com.fr.base.SimpleDateFormatThreadSafe | 53 | partial | 批D(日期/文本缺) |
 | com.fr.base.iofileattr.TemplateIdAttrMark | 23 | partial | 既有·版本包名差异(引擎=iofile.attr.TemplateIdAttrMark,#81 已核) |
+| com.fr.plugin.chart.custom.VanChartCustomPlot | 12 | partial | 批B后继·组合图车道(双轴多plot组合,需批定义显式排期,README #105) |
 | com.fr.chart.chartattr.ValueAxis | 10 | partial | 批B axis 实例配置非构造(README #103) |
 | com.fr.data.impl.DynamicSQLDict | 6 | partial | 批D(凭据注入工单,#539) |
 | com.fr.data.VerifyItem | 5 | partial | 批F后继·Verifier 族工单(#557 Verifier≠VerifyItem 教案) |
@@ -71,46 +69,46 @@
 
 | family | 状态 | 关键组合载体 spec | 快速门套件 | README 实证位 |
 |---|---|---|---|---|
-| sheet | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| background | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| funcgroup | full | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #21/#45 |
-| summary | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #33 |
-| formula | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #52 A |
-| condition | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| condActionsExt | full | test_hla2.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #72 |
-| objCondition(定性) | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45/#72 |
-| html | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| richtext | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| formulaPresent | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| float | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| watermark | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| toolbar | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| writeButtons | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| editor (参数控件族) | full | test_widgets.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | v4.2/待回填 |
-| dict | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| formats | full | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 数字格式既有 |
-| chart legacy | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
-| chart Van | full | test_vanchart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #46 |
-| chartDeco | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| chartdata | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
-| webpage | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
-| hyperlink | partial (缺: Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
-| jsEvents | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #?/#45 |
-| freeze | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
-| headerfooter | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
-| template marks | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
-| submit (填报) | partial (缺: ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| reg 校验族 | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| sort | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 受阻断 |
-| subreport | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| diagonal | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
-| map | missing (缺: VanChartMapPlot+AttrMapLabel+VanMapMoreNameCDDefinition) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| specialcharts | partial (缺: VanChartHeatMapPlot) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
-| poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
-| 局部样式(样式肾上) | partial (缺: stylesOf) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门5路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
+| sheet | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| background | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| funcgroup | full | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #21/#45 |
+| summary | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #33 |
+| formula | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #52 A |
+| condition | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| condActionsExt | full | test_hla2.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #72 |
+| objCondition(定性) | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45/#72 |
+| html | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| richtext | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| formulaPresent | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| float | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| watermark | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| toolbar | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| writeButtons | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| editor (参数控件族) | full | test_widgets.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | v4.2/待回填 |
+| dict | full | test_cellattrs.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| formats | full | sales_demo.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 数字格式既有 |
+| chart legacy | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
+| chart Van | full | test_vanchart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #46 |
+| chartDeco | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| chartdata | full | sales_demo_chart.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #26 |
+| webpage | full | test_v41.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 |
+| hyperlink | partial (缺: Commit2DBJavaScript) | sales_demo_link.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #25/#45 |
+| jsEvents | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #?/#45 |
+| freeze | full | db_laser_subtotal.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
+| headerfooter | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
+| template marks | full | test_pagehf.js | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #73 |
+| submit (填报) | partial (缺: ValueVerifier) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| reg 校验族 | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| sort | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 受阻断 |
+| subreport | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| diagonal | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
+| map | partial (缺: AttrMapLabel) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| specialcharts | partial (缺: VanChartHeatMapPlot) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
+| poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| 局部样式(样式肾上) | partial (缺: stylesOf) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts(13) + scan_all_specs + 引擎负门6路 + 字节基线 CBEB42E3/A8EF39AB | #31 |
 
 ## C. feature 标签层三色表（demo 普查 27 tag → 当前状态；tag 经 ALIAS 并到语义族）
 
@@ -138,7 +136,7 @@
 | float | 18 | full |
 | diagonal | 15 | full |
 | watermark | 7 | full |
-| map | 7 | missing 0x3 |
+| map | 7 | partial 0x1 |
 | barcode | 4 | full |
 | image | 2 | full |
 | group | 1 | full |
@@ -150,13 +148,13 @@
 | 既有 | sheet、background、funcgroup、summary、formula、condition、html、richtext、formulaPresent、float、watermark、toolbar、chart legacy、chartdata、diagonal、image、局部样式(样式肾上) | 36/1 | stylesOf | 10+0 | #45、#21/#45、#33、#52 A、#26、待回填、#45 观察、#31 |
 | v4.2 | editor (参数控件族) | 8/0 | — | 0+0 | v4.2/待回填 |
 | 批A | condActionsExt | 4/0 | — | 1+0 | #72 |
-| 批B | chartDeco | 6/0 | — | 5+1 | 待回填 |
+| 批B | chartDeco | 6/0 | — | 6+0 | 待回填 |
 | 批C | headerfooter、template marks | 6/0 | — | 0+0 | #73 |
 | 批D | dict、formats | 9/0 | — | 3+0 | #45、数字格式既有 |
 | 批E | webpage、hyperlink、jsEvents | 9/1 | Commit2DBJavaScript | 0+0 | #45、#25/#45、#?/#45 |
 | 批F | writeButtons、submit (填报)、reg 校验族 | 11/1 | ValueVerifier | 1+8 | 待回填 |
 | 批G | freeze、subreport、barcode、group (自定义分组) | 4/0 | — | 0+0 | #31、待回填 |
 | 批H | sort | 1/0 | — | 0+0 | #45 受阻断 |
-| 批I | chart Van、map、specialcharts | 7/4 | VanChartMapPlot+AttrMapLabel+VanMapMoreNameCDDefinition+VanChartHeatMapPlot | 0+12 | #46、待回填、#79(bubble) |
+| 批I | chart Van、map、specialcharts | 9/2 | AttrMapLabel+VanChartHeatMapPlot | 0+10 | #46、待回填、#79(bubble) |
 | 批J | poly | 0/2 | PolyECBlock+PolyWorkSheet | 0+2 | 待回填 |
 | 其他 | objCondition(定性) | 1/0 | — | 0+9 | #45/#72 |

@@ -112,7 +112,7 @@
 | 语义对齐 SemanticPreflight + 术语归一 | ✓ | plan.js；README #82 | P0 |
 | 能力发现 discover（含 manifest + 名单） | ~ 声明非闸门 | 审计 §4 类别5：全仓无执行消费者 | P1 |
 | IR 规划 plan2spec | ~ I1 仅 table+sum+rows | capability.js:18-19；SQL/chart 走 I5 | P1 |
-| 错误诊断 RunResult 11 段 | ✓ | runresult.js；负门 5 路 | P1 |
+| 错误诊断 RunResult 11 段 | ✓ | runresult.js；负门 6 路（2026-11-07 增 spec-traverse） | P1 |
 | 视觉检查 preview | ~ 仅 PNG 非空/墨量 | e2e preview 步 | P1 |
 | 自动修改复验 modify（diffClean/原件保留） | ✓ | Golden e2e modify 步 | P1 |
 | **ReportSpec 条件高亮（plan 路）** | ~~✗~~ **✓**（B1：presentation.conditions→IR detail.conditions；hl_conditions 载体 PNG） | README #118；manifest spec.rows.conditions | **P1→完成** |
