@@ -1142,3 +1142,17 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 
 ### 边界/未验证
 - Web 交互改参后重查询、plan→create（filter 路径）两项仍未验证；后续若补 e2e 需带交互步骤或引擎参数注入。
+
+## 2026-11-06 收口 C4：多 Sheet E2E 证据口径拆分
+
+### 问题证据
+- application/capability_manifest.js page.multiSheet 原证据把两类证据并成一句「A1+多Sheet spec+e2e…plan→create e2e GREEN」；scripts/run-multisheet-e2e.ps1 与 README #135 同口径——未区分「载体渲染证据」与「e2e 结构链路证据」，读起来像 e2e 证明了渲染真值。
+
+### 实施（只改口径，不改代码/测试）
+- manifest page.multiSheet evidence 拆两段：载体=Object/CPT/渲染（test_multisheet + examples/report-spec/multisheet.json 真引擎 failures=0、部署 cpt 2 <Report>、PNG 汇总/明细两页目检）；e2e=仅结构链路（plan→plan2spec→create 保留 extraSheets/params + cpt 结构断言），明示不证明逐格真值/第二 Sheet 视觉/hideRows/hideCols 生效。
+- scripts/run-multisheet-e2e.ps1 头注释加 SCOPE 段（ASCII-only）。
+- README #135 行同步；本条留账。
+
+### 验证
+- fast_manifest_evidence 真跑 failures=0（scope=rendering 证据含 PNG 字样、carrier test_multisheet 存在、README 引用存在）。
+- run-multisheet-e2e.ps1 本身复跑归 V1。

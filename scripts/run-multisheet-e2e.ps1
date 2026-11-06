@@ -1,6 +1,10 @@
 # scripts/run-multisheet-e2e.ps1 - Agent chain e2e for ReportSpec multi-sheet (rows path)
 #   chain: fr_agent plan -> plan2spec -> create, then artifact assertions:
 #     plan.reportSpec carries extraSheets/params; deployed cpt has >=2 <Report>, ReportParameterAttr, dataset ds2.
+#   SCOPE (C4, 2026-11-06): this script proves the STRUCTURAL agent chain ONLY - plan keeps extraSheets/params
+#     and the deployed cpt carries the multi-sheet structure. It does NOT prove per-cell truth, second-sheet
+#     visual rendering, or hideRows/hideCols taking effect (those live in the carrier PNG evidence of
+#     reports/test_multisheet.js and examples/report-spec/multisheet.json runs).
 #   ASCII-only (PS 5.1 reads UTF-8 as GBK and desyncs the parser - AGENTS sec.5).
 #   Usage: powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-multisheet-e2e.ps1
 param(

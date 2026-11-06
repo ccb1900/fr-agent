@@ -81,7 +81,7 @@ var CapabilityManifest = (function () {
     cap('page.templateMarks', 'verified', 'verified', 'verified', 'verified', 'README #73 TemplateId/Theme 序列化+roundtrip；carrier test_pagehf', 'cpt'),
     cap('page.repeatHeaderRow', 'verified', 'verified', 'verified', 'verified', 'README #31 每页重复标题条带；carrier test_closure_gaps（repeatHeaderRow 键，v2 对账器补实）', 'cpt'),
     cap('page.freezeWeb', 'pending', 'pending', 'pending', 'pending', 'README #77 240 demo 零语料'),
-    cap('page.multiSheet', 'verified', 'verified', 'verified', 'verified', 'A1+多Sheet spec+e2e（2026-11-06）：carrier test_multisheet 与 spec 载体 multisheet.json 均 2 <Report>、PNG 两页；**plan→create e2e GREEN**：scripts/run-multisheet-e2e.ps1（plan→plan2spec→create）保留 extraSheets/params，部署 cpt 2 <Report>+ReportParameterAttr+ds2；planner 透传', 'rendering', true),
+    cap('page.multiSheet', 'verified', 'verified', 'verified', 'verified', 'C4 口径拆分（2026-11-06）。**载体=Object/CPT/渲染证据**：rawIR 载体 test_multisheet 与 spec 载体 examples/report-spec/multisheet.json 均真引擎 failures=0，部署 cpt 2 <Report>，PNG 汇总/明细两页目检。**e2e=仅结构链路**：scripts/run-multisheet-e2e.ps1（plan→plan2spec→create）证明 reportSpec 保留 extraSheets/params + 部署 cpt 2 <Report>/ReportParameterAttr/ds2；**不证明逐格真值、第二 Sheet 视觉渲染、hideRows/hideCols 在 e2e 产物中的效果**（后者由载体 PNG 承担）。planner 透传（README #127/#135）', 'rendering', true),
     cap('cell.sort', 'rejected', 'rejected', 'rejected', 'rejected', 'README #78 墙破缺语料结构化拒'),
     cap('cell.subreport', 'verified', 'verified', 'verified', 'verified', 'README #77 整嵌渲染 PNG；carrier test_g scan', 'rendering'),
     cap('cell.barcode', 'verified', 'verified', 'verified', 'verified', 'README #77 条码 PNG；carrier test_g scan', 'rendering'),
