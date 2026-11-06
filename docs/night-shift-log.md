@@ -1017,3 +1017,25 @@ test_visual_deco 用 `var J = Java.type(...)` 覆盖 make_api 同作用域全局
 
 ### 边界
 - e2e 覆盖 rows 基表 + rows extra + date 参数 + hideRows；SQL 基表 e2e 未跑（SQL 作为 extra 仍拒）。
+
+## 2026-11-06 D2 地图 vmap（area）接线完成
+
+### 证据/结构
+- 官方 doc/Chart/mapfather.cpt：Plot class=VanChartMapPlot + VanChartMapPlotAttr mapType="area" geourl="assets/map/geographic/world/中国.json" zoomlevel="4"；ChartDefinition/VanMapDefinition/areaDefinition class=VanMapMoreNameCDDefinition + attr useAreaName="true"。
+- 反射：MapType{AREA,POINT,LINE,CUSTOM,DRILL_CUSTOM}；ZoomLevel.parseInt；ViewCenter.setAuto/Longitude/Latitude；VanMapDefinition.setAreaDefinition；VanMapMoreNameCDDefinition 10 参 CTOR。
+- 内置地图资源：WEB-INF/assets/map/geographic/world/中国-area.json（省份全名：广东省/北京市/…）。
+
+### 实施
+- object.js：新增 kind=vmap 分支——VanChartMapPlot(setMapType(AREA)/setGeoUrl/zoom/viewCenter) + VanChart/Title + VanMapDefinition.setAreaDefinition(VanMapMoreNameCDDefinition(NameTableData,category,cols,true,'','','','','',null)) + ChartCollection。
+- ir.js：CHART_KINDS + vmap；geoUrl 字符串闸、zoom/longitude/latitude 数值闸。
+- spec_validator/spec_compiler：CHART_KINDS/CHART_KEYS + vmap/geoUrl/zoom/longitude/latitude 透传（sql 路）。
+- 载体：reports/test_vmap.js（广东省/北京市/上海市/黑龙江省/四川省 + 销售额）。
+- 测试：fast_ir_contract +3（vmap 零误报/geoUrl/zoom 负项）；fast_report_spec +2（spec 零误报、stub-deps 编译发射 + Ir.validate 零误报）。
+- manifest chart.vmap：pending → 四层 verified（scope rendering），agentOverride=false（无省份数据源/无 plan→create e2e）。
+
+### 验证
+- 真引擎：test_vmap failures=0；部署 cpt mapType="area"/geourl=中国.json/VanMapDefinition/VanMapMoreNameCDDefinition/useAreaName=true 全命中；PNG 目检中国区域地图着色 + 图例 0..280000。
+- fast 15 套件 rc=0；scan ok=59 bad=0；基线 MD5 精确。
+
+### 边界
+- 仅 AREA；POINT/LINE/CUSTOM/DRILL_CUSTOM 与 MapMatchResult/地图下钻未接。ReportSpec 仅 sql 路（rows 路不出图）。

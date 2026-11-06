@@ -294,6 +294,10 @@ check('P3 legacy bar barInterval 拒（不落 XML）', codeAt(chartIR('bar', { b
 check('P3 legacy pie barInterval 拒', codeAt(chartIR('pie', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
 check('P3 varea barInterval 拒（无 setter）', codeAt(chartIR('varea', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
 check('P3 vbar barInterval 零误报', errsOf(chartIR('vbar', { barInterval: 0.5 })).length === 0);
+// D2 地图（IR 直接形态）
+check('D2 vmap 零误报（geoUrl/zoom/view）', errsOf(chartIR('vmap', { geoUrl: 'assets/map/geographic/world/中国.json', zoom: 4, longitude: 106.25, latitude: 38.47 })).length === 0);
+check('D2 vmap geoUrl 非串拒', codeAt(chartIR('vmap', { geoUrl: 5 }), 'INVALID_TYPE', 'sheets[0].blocks[1].geoUrl'));
+check('D2 vmap zoom 非数拒', codeAt(chartIR('vmap', { zoom: '4' }), 'INVALID_NUMBER', 'sheets[0].blocks[1].zoom'));
 // ===== 2026-11-06 P1：合计行非 sum 聚合（IR aggregate.fn + sumCols.fn） =====
 function totalIR(agg) { return mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, aggregate: agg }; }); }
 check('P1 aggregate avg 零误报', errsOf(totalIR({ fn: 'avg', col: 1 })).length === 0);
