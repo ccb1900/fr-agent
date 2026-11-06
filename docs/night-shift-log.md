@@ -1201,3 +1201,31 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 - spec.params.filter 的 Web 交互改参后重查询、plan→create（filter 路径）仍未验证（C3 已如实标注 agentAvailable=false）。
 - rowSpan 的 plan→create 链路证据仍缺（agentAvailable=false 维持）。
 - seriesBorder/seriesImage/vpie summary 视觉、vmap plan→create、poly/heatmap/D1 组合图：维持既有 pending/blocked，不在本收口范围。
+
+## 2026-11-07 00:35（A段：独立复核上一轮九项验收 + 基线守护修复）
+
+### 工作目标
+独立复核 C1/C2/C6/C3/C4/C5/V1 逐条实测（读文件+跑命令），不符即修。
+
+### 复核结果（逐条，全部本轮实跑）
+- **C1**：lib/spec_validator.js dataset.kind 词表闸 + SQL_DS_KEYS 键白名单 + dims/metrics item REF_KEYS 白名单，代码在（grep 实证）；fast_report_spec 断言随 fast15 GREEN。
+- **C2**：lib/ir.js:556 ds+rowSpan UNSUPPORTED_CAPABILITY 结构化拒 + lib/object.js:1048 二道防线 throw + probes/probe_c2_dsrowspan_guard.js 在库（a0bb41f 实机 GUARD OK 留账）；fast_ir_contract 断言随 fast15 GREEN。
+- **C6**：semantic/planner/planner.js:129-179 blockedMetrics 累计阻断（aggregation verdict!=supported 与术语 deferred 计数，status 不 ready）；fast_planner 断言随 fast15 GREEN。
+- **C3**：manifest spec.params.filter agentOverride=false，evidence 明示已验证=默认参数值过滤/未验证=Web 交互改参与 plan→create；README #140 同口径。
+- **C4**：manifest page.multiSheet evidence 载体/e2e 两段拆分；scripts/run-multisheet-e2e.ps1 头部 SCOPE 注释；README #135 同口径。
+- **C5**：inventory §3 B 类「已清空」+§7 策略表完成态；matrix D1 第4轮 blocked/多Sheet/条件高亮行全改；report_spec.js rows 补 params/sheet 词表+multiSheet C4 注；ir.js CAPABILITIES multiSheetNote+hideRowsCols；manifest cells.rowSpan 口径修正；backlog R3-1..R3-11 划线完成。五处一致，fast_manifest_evidence/fast_contracts 断言随 fast15 GREEN。
+- **V1 全门（本轮全部真跑）**：fast15 rc=0 FAST GATE GREEN；scan `runraw.ps1 -Script probes/scan_all_specs.js` → SCAN END ok=60 bad=0 skipped=1（rebuild_basicA 缺本地产物 skip，历轮同口径）；引擎负门 `scripts/run-engine-negative-tests.ps1` → 5 路逐 exit/JSON/stage 断言 + ENGINE NEG GATE GREEN；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F；Golden E2E PASS（ge20261107002327-d5acdf，10 行逐格+总计 33531:26531+modify diffClean+原件保留）；MULTISHEET E2E GREEN（5 CHECK PASS）。
+
+### 不符项（发现即修，1 项）
+- **基线铁证被踩未恢复**：本会话开工时 demo_api.cpt MD5=d6c74917…（内容=2 `<Report>`+ds2 的 multisheet 结构）≠ 基线 CBEB42E3。根因（代码证据）：make_api.js:284 `localCpt = Paths.root + '/demo_api.cpt'` 无条件把本轮 spec 产物写进基线文件；负门脚本有「末步默认 spec 回补」RESTORE 步，而 run-golden-e2e.ps1 与 run-multisheet-e2e.ps1 的 create 步都经 make_api 跑、结束时却无回补——上一轮 00:00 的 multisheet e2e 收尾后基线就此被踩。复跑 multisheet e2e 实验再次踩踏（00:19 MD5 回落 d6c74917）确证。
+- **修复**：两 e2e 脚本各补「末步 run.ps1 -Script make_api.js 回补 + Get-FileHash MD5=CBEB42E3 断言（失败计入 $fails）」，与负门 RESTORE 同款惯例（AGENTS §1「最后一步必须用默认 spec 收尾」的机械化）；verify/check_ps1_static.ps1 failures=0。补丁后复跑两 e2e：MULTISHEET GREEN+基线 cbeb42e3 自动恢复、GOLDEN E2E PASS+基线保持——守护闭环实证。
+
+### 未验证/边界（如实）
+- C2 探针本轮未重跑（a0bb41f 已实机留账，本轮只验文件在库+IR/object 代码在）；如需可随时 `runraw.ps1 -Script probes/probe_c2_dsrowspan_guard.js` 复跑。
+- C3 的 Web 交互改参与 plan→create（filter 路径）、rowSpan plan→create 证据：维持 agentAvailable=false 口径，未变。
+
+### Commit
+（本条提交，含 scripts/run-golden-e2e.ps1 + scripts/run-multisheet-e2e.ps1 修复。）
+
+### 下一项工作
+B段：全面代码审查（编译链/静默丢弃/组合缺陷/能力差距/安全面）→ P0-P3 清单 → 按最高价值逐项演进。

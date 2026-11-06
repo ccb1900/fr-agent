@@ -129,6 +129,16 @@ if (-not $stop) {
     }
   }
 }
+# default-spec restore + byte baseline (AGENTS sec.1): every create step runs make_api with THIS run's
+#   spec, and make_api exports its artifact to demo_api.cpt (make_api.js localCpt) - so the baseline file
+#   is left as this run's report. The LAST make_api run of the gate must be the default spec (same
+#   convention as scripts/run-engine-negative-tests.ps1 RESTORE step). 2026-11-07: found demo_api.cpt
+#   left as a multi-sheet artifact after the e2e; fixing the scripts instead of relying on manual restore.
+& (Join-Path $Root 'run.ps1') -Script make_api.js | Out-Null
+$rcRestore = $LASTEXITCODE
+$md5 = (Get-FileHash (Join-Path $Root 'demo_api.cpt') -Algorithm MD5).Hash
+if ($rcRestore -ne 0) { Write-Host ("RESTORE FAIL: default spec exit={0}" -f $rcRestore); $fails++ }
+if ($md5 -ne 'CBEB42E3CE48E46E362B9AE80168026F') { Write-Host ("BASELINE FAIL: demo_api.cpt={0}" -f $md5); $fails++ }
 if ($null -ne $prevHeap) { $env:FR_AGENT_HEAP = $prevHeap } else { Remove-Item env:FR_AGENT_HEAP -ErrorAction SilentlyContinue }
 if ($fails -eq 0) { Write-Host ("GOLDEN E2E PASS (create+truth-grid+preview+modify, runId={0})" -f $RunId) }
 else { Write-Host ("GOLDEN E2E FAIL, failures={0}" -f $fails) }

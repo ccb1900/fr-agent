@@ -63,6 +63,15 @@ if (-not $stop) {
     else { Fail 'cpt missing ds2 reference' }
   }
 }
+# default-spec restore + byte baseline (AGENTS sec.1): the create step runs make_api with THIS run's spec
+#   and make_api exports its artifact to demo_api.cpt, so the baseline file is left as the multi-sheet
+#   report. The LAST make_api run of the gate must be the default spec (same convention as
+#   scripts/run-engine-negative-tests.ps1 RESTORE step). 2026-11-07: found and fixed here.
+& (Join-Path $Root 'run.ps1') -Script make_api.js | Out-Null
+$rcRestore = $LASTEXITCODE
+$md5 = (Get-FileHash (Join-Path $Root 'demo_api.cpt') -Algorithm MD5).Hash
+if ($rcRestore -ne 0) { Write-Host ("RESTORE FAIL: default spec exit={0}" -f $rcRestore); $failures++ }
+if ($md5 -ne 'CBEB42E3CE48E46E362B9AE80168026F') { Write-Host ("BASELINE FAIL: demo_api.cpt={0}" -f $md5); $failures++ }
 if ($failures -eq 0) { Write-Host 'MULTISHEET E2E GREEN'; exit 0 }
 Write-Host ("MULTISHEET E2E FAILED failures={0}" -f $failures)
 exit 1
