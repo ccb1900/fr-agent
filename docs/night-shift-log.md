@@ -629,3 +629,30 @@ C1 与已构造的 TemplateId/Theme 同族补 TemplateInfoAttrMark；C2 隐藏�
 
 ### 下一项工作
 C3 cell.sort/verifiers 诚实拒记录 → D1 组合图结构探针。
+
+## 2026-11-06 C3 + D1（A/B/C/D 顺序执行 · C3 裁定 / D1 阻塞）
+
+### 目标
+C3 cell.sort/verifiers 诚实拒落账；D1 组合图 VanChartCustomPlot 打通到渲染。
+
+### 代码证据
+- C3：ir.js 已结构化拒（cell.sort：墙已破但 SortHeader 组合面缺官方语料；write.verifiers：VerifyItem≠Verifier）。240 demo 无 cellSortAttr 非空语料（此前账本）。→ 维持诚实拒，不盲写。
+- D1：官方语料 demo/analytics/柱形图变形.cpt 结构 = Plot class=VanChartCustomPlot + VanChartCustomPlotAttr customStyle + CustomPlotList(子 plot) + ChartDefinition/CustomDefinition/DefinitionMapList/DefinitionMap key=column|line。反射得 API：setCustomStyle/setCustomPlotList/setDefinitionProviderMap；DefinitionMap 键为 CustomPlotType 枚举（String→CCE 一手）；CustomDefinition.setCategoryName 存在。
+
+### 实施（实验后回收）
+- 依次尝试：①共享 MoreName+VanChart → 部署 cpt 落 MoreName；②CustomDefinition 被 applyChartAttrs 覆盖 → 调整顺序；③String 键 CCE → 改 CustomPlotType.COLUMN/LINE；④categoryName 补齐；⑤column 定义含全列（照抄官方）。部署 cpt 最终与官方结构同构（CustomDefinition/DefinitionMap×3 组/OneValue×2/MoreName×2），但渲染恒为单分类（4 行数据被画成 1 类 6 系列），无线；⑥外层 plain Chart → PNG NPE。
+- 按三轮规则暂停并回收生产分支（object.js 留阻塞注释）；载体移至 probes/probe_combo_carrier.js，探针 probe_customplot/2、probe_customtype、probe_customdef/2 留档。
+
+### 验证结果
+- D1：构造/序列化 = 部署 cpt XML 与官方同构（静态证据）；渲染 = 未达成（PNG 单分类，见 logs/d1_combo*.log）。
+- C3：无代码改动（既定结构化拒 + 本段裁定）。
+- 门：fast5 rc=0；scan ok=55 bad=0；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F（回收后复跑）。
+
+### 未验证事项
+- D1 重开需「子图系列分配 ConditionCollection(AttrSeriesStackAndAxis)+分类 Present」的可运行语料；D2 vmap 需地图数据模型整包（MapType/MatchResult/GisLayer），本轮只抓 API 面未接线。
+
+### Commit
+（本条提交。）
+
+### 下一项工作
+D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff → P1/P2 修复 → 门 → 循环。

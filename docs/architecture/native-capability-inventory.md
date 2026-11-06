@@ -78,15 +78,15 @@
 
 | 能力 | E1 | 证据 | 价值 | 建议 |
 |---|---|---|---|---|
-| 地图 vmap | ✓（同类 VanChartMapPlot 在核心 jar；官方 mapfather.cpt 无头渲染已证） | coverage A 表 4 类 missing；probe_r4m19 | 中 | P2 留待（引擎可行、链路未通） |
+| 地图 vmap | ✓（同类 VanChartMapPlot 在核心 jar；官方 mapfather.cpt 无头渲染已证） | API 面已抓：setMapType(MapType)/setMatchResult(MapMatchResult)/setGeoUrl/setViewCenter/setZoomLevel/setGisLayer（probe_r4m19 一手） | 中 → **待独立工单**：需地图数据模型（MapType/MatchResult/地理层）整包，非单键接线 | P2 留待（引擎可行、链路未通） |
 | 热力图 heatmap | ✓ 核心 heatmap 包 | manifest pending | 中低 | P3 |
 | Poly 块面 | ✓ 核心 jar | probe_r4m21 方法面 | 低 | P3（240 demo 仅 4-5 处） |
-| 组合图 VanChartCustomPlot | ✓ | coverage 漏账判定"需批定义" | 中 | P2 |
+| 组合图 VanChartCustomPlot | ✓ | **构造+序列化已证，渲染未达成**（D1，2026-11-06） | 中 → **阻塞** | 已打通：CustomStyle.parse/CustomPlotList/CustomDefinition+DefinitionMap(枚举键) → 部署 cpt 与官方 柱形图变形.cpt 同构；但渲染分类轴恒单类（4 行=1 类 6 系列），缺子图系列分配 ConditionCollection(AttrSeriesStackAndAxis)+分类 Present；plain Chart 外层 NPE。证据 probe_customplot*/probe_customtype/probe_customdef* + logs/d1_combo*。重开条件：先有可运行系列分配语料 |
 | 图表热链 ChartHyperRelateCellLink | ✓ | manifest pending | 低 | P3 |
 | 多 Sheet | ✓ | object 已支持（见 A 类） | 中低 | **A 类优先于 D** |
 | 模板继承/样式复用 | 待核实 | ir 零命中 | 中 | 待核实 |
 
-**D 类结论**：这批是"fr-agent 没接"，但按业务价值与成本，**都不该抢在 B 类之前**。用户"不要冲 vmap/poly"的判断与库存数据一致。
+**D 类结论**：D1 已实施到「构造+序列化与官方同构」，渲染受子图系列分配机制阻塞（三轮规则封存，重开条件已写）；D2 vmap API 面已抓但需地图数据模型整包；D3–D5 维持 pending 不接线。D 类整体仍是 P2–P3，不抢 B 类。
 
 ## 6. 待逐项核实（诚实标注，不臆造）
 

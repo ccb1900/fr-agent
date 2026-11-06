@@ -281,6 +281,7 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #114 R3-0 收尾：rowSpan 游标缺陷修复（合并格曾被覆盖丢失）+ IR 整数闸/块内重叠静态拒 + 7 场景断言 + 真引擎载体；矩阵口径修正（cells 合并 vs header 多层拆行、Agent 可用=待验证、频率 103/240 文件）
 - #115 Native Capability Inventory（docs/architecture/native-capability-inventory.md）：五层差集（Engine/CPT+Object/IR/ReportSpec/Agent）+ A/B/C/D 四份清单；核心结论=最大金矿是 B 类（IR 已有但 ReportSpec 无入口：条件高亮/参数面板/cells 族/页眉页脚），A 类确证仅多 Sheet；确立原则=不做 FR 重实现，只做语义接口层
 - #116 C 类两项裁定/实施：C1 TemplateInfoAttrMark 探针更正为 cloud 插件类（com.fr.plugin.cloud.analytics.attr.*，core 包无此类→noncore 不追）；C2 隐藏行列三层打通（IR sheets[].hideRows/hideCols 整数闸 + object 于 sheet 构建末归零行高/列宽 + ReportSpec sheet.hideRows/hideCols）——rawIR 载体与 spec 载体均真引擎跑通（RowHeight[1]=0/ColumnWidth=0，PNG 表头行与列消失），fast 5 套件/scan 55 ok/基线 MD5 CBEB42E3 不变
+- #117 C3 裁定 + D1 阻塞封存：C3 cell.sort/verifiers 维持结构化拒（引擎墙/缺官方语料，不盲写）；D1 组合图 VanChartCustomPlot 已打通构造+序列化（CustomStyle/CustomPlotList/CustomDefinition+DefinitionMap 枚举键，部署 cpt 与官方 柱形图变形.cpt 同构）但渲染未达成（分类轴恒单类、缺子图系列分配 ConditionCollection），按三轮规则回收实验代码并留阻塞注释/探针/日志；D2 vmap 仅抓 API 面（MapType/MatchResult/GisLayer），待独立工单
 
 ---
 
