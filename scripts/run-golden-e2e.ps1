@@ -13,10 +13,10 @@ param(
   [string]$FrJar = 'D:\software\FineReport_11.0\jre\lib\ext\nashorn.jar',
   [string]$Java = 'D:\software\FineReport_11.0\jre\bin\java.exe'
 )
-# Environment self-adaptation (README #47 existing env override, NOT a lowered assertion):
-# run.ps1 refuses when FreeVirtual < heap+900 (COMMIT_LIMIT_LOW, exit=8). If memory is tight, scale the
-# heap down (floor 400m, verified to run the engine); below that report ENV_BLOCKED instead of a fake step
-# failure. Thresholds themselves are untouched.
+# Environment note (2026-11-06 update): run.ps1's commit preflight was REMOVED by user decision
+# (the #46 native-crash accident was under the unlimited 6G default heap; -Xmx cap is the fix).
+# This script still steps the heap down on tight memory as a resource optimisation and early signal,
+# but it is no longer required to pass any preflight check. ENV_BLOCKED only fires below 400m floor.
 $os = Get-CimInstance Win32_OperatingSystem
 $freeMB = [int]($os.FreeVirtualMemory / 1KB)
 $prevHeap = $env:FR_AGENT_HEAP

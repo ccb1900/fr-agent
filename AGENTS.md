@@ -66,6 +66,7 @@ run.ps1 -Script make_api.js
 - FR 的 `${}` 是文本替换不是绑定变量：参数输入单引号会破坏 SQL（内网自查工具，对外必须接 ? 绑定）
 - 错误被混淆类吞堆栈：`Throwable.printStackTrace(PrintWriter)` 抓
 - 数据勘误必须看**像素**（Result dump 的值层有字就有墨）——黑体 8pt 负号事件就是纯像素实证
+- **提交额度预检已删（2026-11-06 用户拍板，README #111）**：run.ps1 不再查 FreeVirtualMemory/heap+900；#46 原生崩（hs_err×7，不报 Java OOM）的触发条件是**未限堆 6G 默认堆**，限堆 `-Xmx1200m/400m` 是主防线，预检对其只是过度保守的兜底、在小堆场景误拦（实测提交剩余 1776MB 时 -Xmx400m 可正常跑）。**不要再引入固定常数预检**；JVM/原生真失败走非零退出 fail-closed。
 - **cell 级 highlight 条件 `when.column` 实测=对本格值求值（2026-11-04 批A 像素实证，README #71）**：列名不跨格求值——空串格 `'<60'` 恒真（三行全画线）、`'>0'` 恒假（全列空白）；跨列判断一律 `when.formula` 相对公式（`=F3<60` 本格锚+行自动偏移，官方语料同款）。字面换值/公式换值/粗边框/超链/内嵌控件四动作已实证
 - **v2 spec 总分列必须放最右（README #71）**：totalCol 聚合格在中间列时被 `total.label`（span=n−1）合并区吞并 → 引擎丢格 → 幽灵样式 → CPT GATE「style count mismatch」表象；根因是格重叠不是样式本身
 
