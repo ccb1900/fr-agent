@@ -804,3 +804,10 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **vpie 类目标签宿主=PieCategoryLabelContent**（`com.fr.plugin.chart.pie.attr.PieCategoryLabelContent`，AttrTooltipContent 子类，jar 清单定位 fine-report-engine；probe_r4m18 方法面 setRichTextSummaryValueFormat/setSummaryValueFormat）——`label.richText{content,auto}`/`label.summary{format}`（vpie 闸）时 detail.setContent 换 PieCategoryLabelContent 直挂；载体 vpie 臂部署 XML 命中 PieCategoryLabelContent×2+SummaryFormat×6。
 - **NormalDataModel（180 引用头部）诚实归档=引擎内部 DataProcessor 标记**：官方 XML `<DataProcessor class="...NormalDataModel"/>` 与我方产物同款（m15 出口×5、carrier×11——引擎保存即写、每图一个）；类面零方法（AbstractDataModel 直继承）；**无构造面=功能非真缺**，coverage 参考批次记'引擎内部 DataProcessor 标记'（同版本包名差异类的"非真缺"口径）。
 - **门**：fast 13 GREEN / 负门 5 路 GREEN / 双铁证逐字节 / coverage missing 34→33 / ALIGN 批归属 43+漏账9。
+
+
+#105 漏账清零 + 批H 定性 + 批I R0 翻案（2026-11-06，单元7-13 冲刺收口；probe_r4m19/m20 一手；ALIGN 漏账 9→0）：
+- **批I R0 翻案（重大前提修正）**：官方 doc/Chart/mapfather.cpt 经 readTemplateWorkBook+execute+ImageExporter **无头渲染成功实拍**（区域地图+省份染色+图例 0-280000 全出，logs/_r4m19_mapfather.png）——#79 "GIS 底图无轻量通路" 前提**被证伪**：静态导出走内置地图几何即可，无需 GIS 瓦片；vmap 构造词汇（VanChartMapPlot+VanMapMoreNameCDDefinition+AttrMapLabel/Tooltip）下一轮按官方 cpt 路接线，类面已 dump（probe_r4m19，AttrMapTooltip=area/point/line 三槽）。
+- **漏账 9 类判定收编（probe_r4m20 方法面）**：非真缺 3（ChartCommonCondition=chart 条件通道已用 CommonCondition 实证 m7 D_c；ExcelTableData/RecursionTableData=数据集入口边界 SQL/内嵌既定纪律；DataSetDefinition=chartx legacy 已被 chartdata 路覆盖）+ 显式排期 4（VanChartCustomPlot=组合图车道需双轴批定义；MultiFileEditor=参数控件族后继；TreeNodeToggleButton=表单树域；CustomToolBarButton=工具条按钮域）+ 待探针 2（FileAttrErrorMarker 疑引擎内部 IO 标记；VanMapMoreNameCDDefinition 归批I vmap 路未单列）——**ALIGN unattributed 9→0，52 项全数批归属+判定注记**。
+- **批H 定性收尾**：sort=CellSortAttr 已收（B 表 full，#45/#46 语料在）；SortHeader 表头点击排序=web 交互行为（serialize-only 口径同 tooltip，不外宣）——挂账关闭定性。
+- **门**：coverage 重刷幂等；fast/scan/负门/双铁证维持 GREEN（本轮零生产代码改动，纯账本+文档）。

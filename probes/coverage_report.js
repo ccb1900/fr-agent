@@ -240,15 +240,15 @@ var BATCH_CLASS = {
   'com.fr.report.web.ui.impl.Email': '既有·版本包名差异(引擎=web.button.Email,#81 已核)',
   'com.fr.base.iofileattr.TemplateIdAttrMark': '既有·版本包名差异(引擎=iofile.attr.TemplateIdAttrMark,#81 已核)',
   // —— 漏账·无 README 批定义背书（保留漏账标记，不硬编归属）——
-  'com.fr.chart.chartattr.ChartCommonCondition': '漏账·图表条件(需批定义后归属)',
-  'com.fr.plugin.chart.custom.VanChartCustomPlot': '漏账·组合图(需批定义后归属)',
-  'com.fr.form.ui.MultiFileEditor': '漏账·编辑器扩项(需批定义后归属)',
-  'com.fr.report.web.button.form.TreeNodeToggleButton': '漏账·表单树控件(需批定义后归属)',
-  'com.fr.form.ui.CustomToolBarButton': '漏账·工具条按钮(需批定义后归属)',
-  'com.fr.data.impl.ExcelTableData': '漏账·数据集(需批定义后归属)',
-  'com.fr.data.impl.RecursionTableData': '漏账·数据集(需批定义后归属)',
-  'com.fr.chartx.data.DataSetDefinition': '漏账·chartx 数据(需批定义后归属)',
-  'com.fr.base.io.FileAttrErrorMarker': '漏账·IO 杂项(需批定义后归属)'
+  'com.fr.chart.chartattr.ChartCommonCondition': '非真缺:chart 条件通道已用 CommonCondition 实证(m7 D_c 全染),变体类同语义(README #105)',
+  'com.fr.plugin.chart.custom.VanChartCustomPlot': '批B后继·组合图车道(双轴多plot组合,需批定义显式排期,README #105)',
+  'com.fr.form.ui.MultiFileEditor': '编辑器扩项·参数控件族后继(文件上传控件,需 widget kind 批定义,README #105)',
+  'com.fr.report.web.button.form.TreeNodeToggleButton': '表单树控件域(需表单树批定义,README #105)',
+  'com.fr.form.ui.CustomToolBarButton': '工具条按钮域(自定义JS按钮,需批定义,README #105)',
+  'com.fr.data.impl.ExcelTableData': '非真缺:数据集入口边界=SQL/内嵌(数据纪律既定),文件数据集不引入(README #105)',
+  'com.fr.data.impl.RecursionTableData': '非真缺:同 ExcelTableData,递归数据集不引入(README #105)',
+  'com.fr.chartx.data.DataSetDefinition': '非真缺:chartx legacy 数据接口,现有 chartdata 路已覆盖(README #105)',
+  'com.fr.base.io.FileAttrErrorMarker': '待探针确认(疑引擎内部 IO 标记,README #105)'
 };
 function batchOf(fq) {
   return BATCH_CLASS[fq]
