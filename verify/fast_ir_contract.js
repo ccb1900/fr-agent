@@ -357,11 +357,27 @@ check('批G subreport 非串拒', codeAt(mut(function (ir) { ir.sheets[0].blocks
 check('批G groupCustom 全形零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { other: 1, otherDisplay: '其他', more: true, force: true }; })).length === 0);
 check('批G groupCustom 未知键拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { bogus: 1 }; }), 'INVALID_ENUM', 'sheets[0].blocks[2].columns[0].groupCustom.bogus'));
 check('批G groupCustom other 非数拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[0].groupCustom = { other: 'x' }; }), 'INVALID_NUMBER', 'sheets[0].blocks[2].columns[0].groupCustom.other'));
-print('SELFTEST END, failures=' + FAILS);
-J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
 // ===== 批H（2026-11-05）单元格排序（license 墙 env 后已破；setSortFormula v1 通路） =====
 check('批H sort 结构化拒（一处真相：墙破缺语料不盲写）', codeAt(mut(function (ir) { ir.sheets[0].blocks[2].columns[1].sort = { formula: '=-C3' }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[2].columns[1].sort'));
 
 
+// ===== 审查轮2（2026-11-06）P1-A/P1-B 契约负例：ir 放行必须 object 真消费，不许静默丢 =====
+// P1-A：label.summary 无论 true/{format}，非 vpie 一律结构化拒
+check('P1-A 非 vpie label.summary=true 拒', codeAt(chartIR('vbar', { label: { enable: true, summary: true } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].label.summary'));
+check('P1-A 非 vpie label.summary={format} 拒', codeAt(chartIR('vline', { label: { enable: true, summary: { format: '#,##0' } } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].label.summary'));
+check('P1-A vpie label.summary=true 零误报', errsOf(chartIR('vpie', { label: { enable: true, summary: true } })).length === 0);
+check('P1-A vpie label.summary={format} 零误报', errsOf(chartIR('vpie', { label: { enable: true, summary: { format: '#,##0' } } })).length === 0);
+// P1-B：legacy 公共轴键零误报（含既有 #46 min/max）；Van 专属 title/unit/alerts 在 legacy 结构化拒
+check('P1-B legacy bar 无 legend 公共 axisY 零误报', errsOf(chartIR('bar', { axisY: { fontPt: 10, color: 0x333333, showLabel: true, min: 0, max: 1000 } })).length === 0);
+check('P1-B legacy line axisX 公共键零误报', errsOf(chartIR('line', { axisX: { fontPt: 10 } })).length === 0);
+check('P1-B legacy axisY.title 结构化拒（setTitle 实测不序列化）', codeAt(chartIR('bar', { axisY: { title: '销售额' } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY.title'));
+check('P1-B legacy axisY.unit 结构化拒', codeAt(chartIR('bar', { axisY: { unit: 50 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY.unit'));
+check('P1-B legacy axisY.alerts 结构化拒', codeAt(chartIR('bar', { axisY: { alerts: [{ value: 150 }] } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY.alerts'));
+check('P1-B vbar 全轴配置零误报', errsOf(chartIR('vbar', { axisY: { max: 260, unit: 50, title: '产量', alerts: [{ value: 150 }] }, axisX: { title: '机型' } })).length === 0);
+
+
 // ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
 check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);
+
+print('SELFTEST END, failures=' + FAILS);
+J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

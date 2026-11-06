@@ -269,8 +269,9 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #102 批B 词汇+装饰扩容一发
 - #103 批B axis 群收案
 - #104 批B 头部类收案
-- #105 漏账清零 + 批H 定性 + 批I R0 翻案
+- #105 缺口归属清零（unattributed 9→0；≠missing 已实现）+ 批H 定性 + 批I R0 翻案
 - #106 审查修复环轮 1 + 幽灵键勘误 + FineDateFormat 收案
+- #107 审查轮 2 收敛：P1-A/P1-B 契约修复 + Golden 栅格回归 + 文档整理（详见 docs/night-shift-log.md）
 
 ---
 

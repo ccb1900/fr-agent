@@ -89,7 +89,7 @@ run.ps1 -Script make_api.js
 
 > 逐轮叙事不再堆叠在本文件——**事实库=README 编号索引**（全文 docs/history/README-full-2026-11-06.md）、**缺口账=docs/architecture/coverage.md**、**逐轮审查=docs/gpt/r1~r24.md**、**工作日志=docs/night-shift-log.md**、**提交叙事=git log**。本文件只保留行为规则（§N/§0-§5）与以下四条。
 
-- **现状**：批 0/A-J + 批B 车道全结（渲染端四项/词汇扩容/axis 群/头部类）；漏账清零（ALIGN unattributed=0）；coverage missing=32 partial=20 noncore=44；能力声明一处真相=application/capability_manifest.js（四层）。
+- **现状**：批 0/A-J + 批B 车道全结（渲染端四项/词汇扩容/axis 群/头部类）；**缺口归属清零（ALIGN unattributed=0，仅表示每项缺口有批次归属/判定，不表示已实现）**；coverage missing=32 partial=20 noncore=44；能力声明一处真相=application/capability_manifest.js（四层）。
 - **铁证**：demo_api.cpt=CBEB42E3… / 销售明细_api.png=A8EF39AB… / v2=6161F402…（改 lib/object|ir|cpt 必逐字节复核）。
-- **未结（直续步骤见 docs/night-shift-log.md）**：换装后负门干净复跑（前轮与后台跑批重叠，逐案 OK 可见、GREEN 终行未捕获）、vmap 词汇（R0 已证官方地图无头渲染）、poly、批F 写回（DML 隔离写测试）、批D 字典凭据注入、审查环轮 2。
+- **未结（直续步骤见 docs/night-shift-log.md）**：审查轮 2 四项已收敛（P1-A/P1-B 修复+Golden 栅格回归+文档整理，README #107）；剩余=R2-4 视觉分层验证（tooltip/装饰/axisX legacy 逐项 PNG 实拍再升层）、vmap 词汇（R0 已证官方地图无头渲染）、poly、批F 写回（DML 隔离写测试）、批D 字典凭据注入、审查环轮 3。
 - **不变**：Runtime 冻结；§N/§1-§5 全部约束；欠账以 coverage.md 为准；与本文件冲突时以更新日期新者为准。

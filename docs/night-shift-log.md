@@ -60,7 +60,7 @@ SQL intent 中的 ambiguous 术语（如双指词"机台"）此前被硬拒（re
 - 多候选 UI 反问交互（plan 输出 JSON 已含 candidates，展示层未涉及）。
 
 ### Commit
-（见下一条 commit SHA。）
+`6cd0654`（B1 sql intent ambiguous 反问修复；"见下一条"指本条，已回填）
 
 ### 下一项工作
 B2：patch 失败路径的状态可判定性走查（backlog 进行中项）；之后回到任务三链路审查其余主线（C 生成/E 工具链）。
@@ -85,7 +85,7 @@ B2：patch 失败路径的状态可判定性走查（backlog 进行中项）；�
 - 无。
 
 ### Commit
-（见下一条 commit SHA。）
+`e0ef1c4`（patch 失败路径走查结论；双路径对拍候选否决）
 
 ### 下一项工作
 评估结论：双路径对拍不成立（粒度差异设计使然）；backlog 剩余项均有外部依赖（B3/B4=审查方解锁）。**按规范停止条件评估：无可信高价值且不依赖外部决定的工作 → 本轮夜间会话在此干净收尾**，最后留置项=任务三综述（E 主线 verb 契约经多轮走查未发现新缺陷）。
@@ -139,7 +139,7 @@ b298c28（sqlbuilder+断言）；（validate.js 修复见下一条 commit。）
 - PDF 页数/文本抽取（最小验收不涉及；如需可后续接 PDFBox——按规范先不加依赖）。
 
 ### Commit
-（见下一条 commit SHA。）
+`b298c28` + `a857d48`（sqlbuilder 全序 + validate/compare_paths 合计行口径一致化，两条独立 commit 如实并列）
 
 ### 下一项工作
 E 主线走查完成（create_report.js/contracts.js 失败路径干净，无新缺陷）。任务三四条主线（A/B/C/D/E）全部覆盖。**停止条件评估达成（剩余候选均依赖审查方解锁或价值边际）——夜间会话收尾。**
@@ -171,7 +171,7 @@ E 主线走查完成（create_report.js/contracts.js 失败路径干净，无新
 - 条件系列色的按值判别语义（CommonCondition 全染 vs 逐类判别）未深探——engine 行为=系列级染色，词汇语义注记待批B词汇单元核对。
 
 ### Commit
-（见下一条 commit SHA。）
+`f21cf94`（preview verb PDF 最小验收；night-shift 循环#4 收尾）
 
 ### 下一项工作
 单元3：批B 词汇——AttrBorder+tooltip 格式件群（chartDeco 族键补全）。
@@ -197,7 +197,7 @@ chartDeco 族键 AttrBorder 补全 + tooltip 格式件群 + 装饰 7 类（与�
 - effect 渲染=web 动画（serialization-only，不外宣）；seriesImage 渲染视觉未单独目检（XML 在=序列化层实证）；vpie 类目标签富文本+summary（PieCategoryLabelContent）留单元6。
 
 ### Commit
-（见下一条 commit SHA。）
+`8ab7dc1`（批B 渲染端四项收案，README #101）
 
 ### 下一项工作
 单元5：批B axis 群（VanChartAxis/CategoryAxis/ValueAxis/VanChartAlertValue+AttrLabelDetail 位置域）。
@@ -227,7 +227,7 @@ VanChartAxis/CategoryAxis/ValueAxis/VanChartAlertValue+AttrLabelDetail 位置域
 - LabelDisplay/IntervalBackground 等 VanChartAxis 深水 setter 未全接（频次低，未排）。
 
 ### Commit
-（见下一条 commit SHA。）
+`3af6493`（批B 词汇+装饰扩容，README #102）
 
 ### 下一项工作
 单元6：批B 头部类（AttrTooltipRichText label 侧 PieCategoryLabelContent 包名定位+NormalDataModel 180）。
@@ -255,7 +255,7 @@ AttrTooltipRichText label 侧（PieCategoryLabelContent）+ NormalDataModel(180)
 - vpie label richText/summary 的渲染视觉（serialization 层实证；渲染=vpie 标签文字样式，下一轮目检可顺带）。
 
 ### Commit
-（见下一条 commit SHA。）
+`ae4facb`（批B axis 群收案，README #103）
 
 ### 下一项工作
 单元7：批I map 域（VanChartMapPlot/AttrMapLabel/AttrMapTooltip/VanMapMoreNameCDDefinition/AttrCurve/AttrLineEffect+heatmap+ChartHyperRelateCellLink+areaName/mapValue/startEnd 三格式）。
@@ -287,7 +287,40 @@ AttrTooltipRichText label 侧（PieCategoryLabelContent）+ NormalDataModel(180)
 - 审查修复环：首轮外部审查已派出（后台运行中），结果回填后逐条复现修复。
 
 ### Commit
-（见下一条 commit SHA。）
+`a2c158c`（批B 头部类收案，README #104）
 
 ### 下一项工作
 按上列留账顺序直续；审查结果先处理。
+
+## 2026-11-06 09:20（审查轮 2：四项收敛，严格限定范围）
+
+### 工作目标
+外部审查基准 f21cf94→dd27399：2 项 P1（IR/Object 契约静默丢）+ Golden 栅格回归 + 文档整理；用户裁定不扩 vmap/poly 新能力、不做图表后端重构。
+
+### 代码证据
+- P1-A：`label.summary:true` 非 vpie 绕过（ir 只在 isObj 分支查 kind）；P1-B：legacy 无 legend 时 axisY 整块被 `(van||b.legend)` 跳过。
+- probe_legacy_axis：legacy Bar2D/LinePlot.getyAxis()=ValueAxis，setTextAttr/setTitle/setFormat/setMaxValue/setMinValue/showLabel 等 setter 全在；PiePlot 无 yAxis。
+- 真引擎 test_legacy_axis 部署 XML：TextAttr/FRFont size=80/foreground=-13421773/isShowAxisLabel=true 落 legacy ValueAxis；**`销售额` 零命中 → legacy Axis.setTitle 不序列化**，故 title 归 Van 专属。
+- scan 首跑 bad=1：rebuild_first.js（legacy #46 既有用法 axisY.min/max）误伤 → min/max 归公共（setter 面实证），unit/alerts/title 保持 Van 专属。
+
+### 实施内容
+- lib/ir.js：summary 闸提到 `!= null` 外层（true/对象都管）；checkAxisShape 按真实 setter 分层（公共 fontPt/color/reversed/arrow/grid*/showLabel/format/min/max；Van 专属 title/unit/alerts），legacy 用 Van 键结构化拒不静默丢。
+- lib/object.js：axisY 无条件公共应用（去继承闸）+ applyAxisCommon 增 vanAxis 参数（title 仅 Van）；max/min 公共、custom 开关与 unit/alerts 留 van 块。
+- verify/fast_ir_contract.js：9 条 P1 断言（★曾误置于 `print/exit` 之后=假绿，移回后真跑全绿）；reports/test_legacy_axis.js 真引擎回归 spec。
+- application/capability_manifest.js：label/stack/conditionalSeries 四层 verified 的 evidence 追加"范围限定"注（不从单 carrier 推导全组合）。
+- docs/night-shift-backlog.md：B2 从进行中/候选移除→已完成（e0ef1c4 结论）；8 处 Commit SHA 占位全填真实值；R2-1/2/3 销项；新待办=视觉分层验证+vmap/poly 等顺序后延。
+- docs/night-shift-log.md / README / AGENTS / coverage_report.js：措辞统一"**缺口归属清零**（unattributed=0）"≠"能力缺口清零"（missing=32）；coverage.md 头部由生成器补数字含义说明（幂等）。
+
+### 验证结果
+- P2-A Golden 栅格双路：`TRUTH_DAY_MACHINE=1 GRID=logs/agent/runs/g1/grid.txt` 10 行逐格+总计 33531/26531/79.1238 全绿；四列兼容样例 `总计|33531|26531|79.1238` 旧分支零回归。
+- 串行单实例全套门：fast 13 GREEN / scan 49+1skip / legacy 真引擎 failures=0 / 默认铁证 CBEB42E3 逐字节 / **ENGINE NEG GATE GREEN（完整终行捕获，R2-3 关闭）** / coverage missing=32 partial=20 unattributed=0。
+
+### 未验证事项
+- vpie label.summary/richText 视觉渲染、tooltip 格式件群、hotTooltip/seriesBorder/areaFill/seriesImage 视觉、axisX legacy 路径——维持 manifest 分层（serialization-only/pending），逐项 PNG 实拍后再升层（新待办 R2-4）。
+- 审查轮 3 未启动（本轮无新外部审查输入）。
+
+### Commit
+（本条随本轮提交填写。）
+
+### 下一项工作
+R2-4 视觉分层验证（逐项 PNG 实拍），之后才按 docs/night-shift-log 留账顺序进 vmap/poly/批F/批D。
