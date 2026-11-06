@@ -91,5 +91,5 @@ run.ps1 -Script make_api.js
 
 - **现状**：批 0/A-J + 批B 车道全结；**缺口归属清零（ALIGN unattributed=0，≠已实现）**；coverage missing=32 partial=20 noncore=44；能力账本=application/capability_manifest.js **v3**（四层+regressionScope，机器对账器 verify/fast_manifest_evidence.js 已入 fast 14 套件）；闭环审计最终基线=docs/architecture/capability-closure-audit.md（§6 = §5 实施结果）。
 - **铁证**：demo_api.cpt=CBEB42E3… / 销售明细_api.png=A8EF39AB… / v2=6161F402…（改 lib/object|ir|cpt 必逐字节复核）。
-- **未结（直续步骤见 docs/night-shift-log.md）**：**负门复跑**（本轮 FreeVirtual=1796MB<2100MB 预检拒绝，5 路 exit=8 属环境阻塞，逻辑 GREEN 沿用 fa0e04b 终行；待内存释放复跑）；seriesBorder/seriesImage/vpie summary 视觉未现形维持 pending；vmap 词汇（引擎可行性已证、生成链路未接通，仍不接线）、poly/heatmap 保持 pending、批F 写回/批D 凭据、审查环轮 3。
+- **未结（直续步骤见 docs/night-shift-log.md）**：**内存恢复后复跑**完整 e2e（create→truth-grid→preview→modify）与负门（FreeVirtual 1180–1796MB 持续低于 2100MB 预检门槛，400m 下限不满足时报 ENV_BLOCKED exit 8；引擎侧最近有效记录=ge20261106123412 PASS，逐格真值+modify 已由 verify/fast_golden_closure.js 离线核验）；seriesBorder/seriesImage/vpie summary 视觉未现形维持 pending；vmap/poly/heatmap 保持 pending 不接线；批F 写回/批D 凭据、审查环轮 3。
 - **不变**：Runtime 冻结；§N/§1-§5 全部约束；欠账以 coverage.md 为准；与本文件冲突时以更新日期新者为准。

@@ -351,3 +351,33 @@ R2-4 视觉分层验证（逐项 PNG 实拍），之后才按 docs/night-shift-l
 
 ### 下一项工作
 内存释放后复跑负门；之后才按文档重评 vmap。
+
+
+## 2026-11-06 13:55（外部审查 v2：修正验证工具自身）
+
+### 工作目标
+审查裁定"最大风险从缺少能力变成验证工具可能给出过强通过结论"。按限定三件事：补强证据对账器、完善 Golden 自动复证、视觉 fixture 可重复化。不扩图表/不碰 Runtime/不加抽象层。
+
+### 代码证据
+- v1 对账器只查文件存在（chart.pie 自承无独立载体仍 verified）；e2e 只查总计未查逐格；test_visual_deco 依赖 logs/_r4m9_off.png。
+
+### 实施内容
+- 对账器 v2（verify/fast_manifest_evidence.js 重写）：KEY_OF 逐能力键覆盖、fast 文件存在、scope 与字面证据一致、README 引用升 FAIL、四层各自证据、Coverage↔Manifest 交叉（sort full vs cell.sort rejected = 硬性冲突）。
+- 对账器暴露真缺口：condition.list/page.repeatHeaderRow 载体不含键 → 新增 reports/test_closure_gaps.js 补实；30 项 scope=rendering 但 evidence 无渲染字样 → scope 校正为 cpt（四层状态不动）。
+- Golden v2（scripts/run-golden-e2e.ps1 重写 + 新增 verify/fast_golden_closure.js）：validate 后接 verify_sql_data TRUTH_DAY_MACHINE=1 逐格真值（10 行双键闭合+总计三值）；modify 步断言 diffClean/execution/render/.orig.cpt 保留；失败即停；RunId 加 GUID；范围 env 自适应（400m 下限，低于 1300MB 报 ENV_BLOCKED exit 8）。
+- 离线核验器 fast_golden_closure 13 条对既有 golden 产物全绿，挂 fast 套件（15）。
+- fixture 自给：test_visual_deco.js 按需生成 logs/_visual_fixture.png（实测 74B），不静默跳过。
+
+### 验证结果
+- fast 15 GREEN / scan 51+1 / boundaries clean / 默认铁证 CBEB42E3 逐字节（400m heap 实测可跑引擎）。
+- **真引擎 e2e 本轮未跑通**：FreeVirtual 2100→1180MB 持续下探（vmmemWSL），400m 下限不满足时脚本明确 ENV_BLOCKED exit 8；引擎侧最近有效记录=ge20261106123412 PASS，逐格真值+modify 已由离线核验器对真实产物验证。
+
+### 未验证事项
+- 内存恢复后完整 e2e 复跑一次（create→truth-grid→preview→modify 全链）。
+- 负门复跑（同内存阻塞）。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+内存恢复后复跑 e2e + 负门；之后暂停架构改动，整体复审能力账本。

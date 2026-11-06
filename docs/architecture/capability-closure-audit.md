@@ -218,3 +218,40 @@ fast 13 套件共 **595 条断言**（IR 183 / template 77 / semantic 54 / plann
 **诚实纪律**：5 项里只有 1 项升 verified；3 项序列化在但视觉未现形/不可分辨，维持 pending；1 项(legacy axisX)视觉生效但非独立 cap。绝不因"已有 XML 断言"批量升层。
 **环境事故记档**：默认铁证回补时 run.ps1 预检 `COMMIT_LIMIT_LOW free=1610MB need~2100MB`（vmmemWSL 占用），用管线自带 `-Heap 600m` 绕过（need=1500MB）后 `CBEB42E3` 逐字节回补；未擅自关闭用户进程。
 **负门未通过（如实标注）**：同轮 `scripts/run-engine-negative-tests.ps1` 5 路全部 `exit=8`（FreeVirtual=1796MB < 2100MB 预检门槛），判据把 8 记为 FAIL——属**环境内存阻塞**，非逻辑失败；本轮不以"逻辑 GREEN"冒充通过，也不改负门脚本参数迁就环境。上一轮 `fa0e04b` 的 ENGINE NEG GATE GREEN 完整终行是逻辑侧最近一次有效记录；待内存释放后复跑负门。
+
+
+## 7. 外部审查 v2 实施：修正验证工具自身（2026-11-06）
+
+> 审查裁定：本轮最大风险从"缺少能力"变成"验证工具本身可能给出过强通过结论"。按审查限定的三件事实施，不扩图表、不碰 Runtime、不加抽象层。
+
+### 7.1 P1 证据对账器 v2（`verify/fast_manifest_evidence.js` 重写）
+
+v1 只查"文件存在性"（示例：chart.pie 自承无独立载体仍 verified），v2 增加六道机器检查：
+
+| 检查 | v2 实现 | 抓到的真缺口 |
+|---|---|---|
+| ① carrier 键覆盖 | 逐能力点名 `KEY_OF`（cap 名 → 该能力必须出现的 IR 键），carrier spec 必须真含该键 | `condition.list`（test_cellattrs 无 `when.list`）、`page.repeatHeaderRow`（db_laser_subtotal 无 repeatHeader）→ 已新增 `reports/test_closure_gaps.js` 补实并改指向 |
+| ② fast 引用存在 | evidence 里的 `fast_*.js` 必须磁盘存在 | 0（此前未查） |
+| ③ scope 与证据层级一致 | `scope=rendering` 时 evidence 必须含 PNG/实拍/目检/渲染 字样 | 30 项 evidence 仅到序列化/族级 → **scope 校正为 `cpt`**（四层状态不动，仅回归覆盖层如实标注） |
+| ④ README 引用 | v1 NOTE → **v2 FAIL**（#26 历史列表项按已知白名单放行） | 0 |
+| ⑤ 四层各自证据 | construction/serialization/rendering 为 verified 时也必须有具体入口（不再只查 regression） | 0 |
+| ⑥ Coverage↔Manifest 交叉 | 读 coverage.md B 表 full 族，与 manifest 子能力比对；`sort full vs cell.sort rejected` 判硬性冲突 FAIL，chartDeco 已知差异显式登记 | 0 硬性冲突（chartDeco 差异按审计基线登记） |
+
+**v2 不再自称"能力证据验收器"之外的强度**：它能证明"引用真实 + 键真实 + scope 与字面证据一致"，不证明"该键在该 carrier 中被执行过"——后者需要执行结果（见 7.2 的离线核验器思路）。
+
+### 7.2 P1 Golden 自动复证 v2（`scripts/run-golden-e2e.ps1` 重写 + `verify/fast_golden_closure.js`）
+
+- **逐格真值**：e2e 在 validate 后调用 `verify_sql_data.js`（`TRUTH_DAY_MACHINE=1` + `GRID=<runDir>/grid.txt`），断言 10 行 day@machine 逐格 plan/done/rate + 双向键集合 + 双侧重复键 + 总计 33531/26531/79.1238——不再只查总计。**已用最新真引擎 grid（`ge20261106123412`）独立跑绿**。
+- **modify 纳入**：e2e 尾部生成 UTF-8 PatchSpec（中文 cpt 名用 char code 构造保持脚本 ASCII）→ `-Verb modify` → 断言 `ok / diffClean / execution.pass / render.pass` + staging 中 `.orig.cpt` 保留。
+- **离线核验器** `verify/fast_golden_closure.js`（新增，无引擎）：把上述两组断言从"依赖一次引擎运行"变成"可对既有 golden 产物重复执行"，已挂进 fast 15 套件并全绿（13 条断言：逐格真值 10 行 + modify 闭环 4 条）。
+- **失败即停**：任一步失败后后续步 SKIP 并输出 `STEP FAIL: <阶段>`；**RunId** 改时间戳+GUID 后缀防秒级碰撞。
+- **环境自适应**（README #47 既有 env 覆盖，非降门槛）：FreeVirtual 不足 2100MB 时按可用内存逐级下探 heap（下限 400m，已实测 400m 可跑通引擎且铁证不变）；低于 1300MB 明确 `ENV_BLOCKED: ... exit 8`，不伪造步骤失败。
+
+### 7.3 P2 视觉 fixture 自给
+
+`reports/test_visual_deco.js` 不再依赖 `logs/_r4m9_off.png`；spec 头部按需生成 8×8 PNG fixture（`logs/_visual_fixture.png`，已实测 74B 生成），且 object 层 `Files.exists` 缺失即抛错（不静默跳过）。
+
+### 7.4 本轮门与如实状态
+
+- fast **15 套件**（新增 fast_golden_closure）GREEN / scan **51+1** / boundaries R1–R8 clean。
+- **真引擎 e2e 本轮未跑通**：FreeVirtual 从 2100→1180MB 持续下探（vmmemWSL 占用，用户进程不擅动），400m 下限也不满足时脚本报 `ENV_BLOCKED exit 8`。**引擎侧最近一次有效记录=上一轮 `ge20261106123412` PASS**；本轮的逐格真值与 modify 断言已由离线核验器对真实产物验证，待内存恢复后复跑一次完整 e2e 收尾。

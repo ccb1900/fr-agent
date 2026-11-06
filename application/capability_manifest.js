@@ -29,15 +29,15 @@ var CapabilityManifest = (function () {
   // 图表族（README #26/#45/#46/#72/#79/#80；carrier=test_vanchart/sales_demo_chart，scan_all_specs 可重复）
   var chart = [
     cap('chart.bar', 'verified', 'verified', 'verified', 'verified', 'README #26 四柱比例+图例实拍；carrier sales_demo_chart 每轮 scan', 'rendering'),
-    cap('chart.pie', 'verified', 'verified', 'verified', 'verified', 'README #26/#46；carrier sales_demo_chart（legacy chart 族级代表，pie 臂无独立载体，见审计 §3.2）', 'rendering'),
-    cap('chart.line', 'verified', 'verified', 'verified', 'verified', 'README #46 B240/F240 全刻度；carrier sales_demo_chart（legacy chart 族级代表）', 'rendering'),
-    cap('chart.vbar', 'verified', 'verified', 'verified', 'verified', 'README #46 240pt 地板定案；carrier test_vanchart scan 覆盖', 'rendering'),
-    cap('chart.vline', 'verified', 'verified', 'verified', 'verified', 'README #46；carrier test_vanchart vline 臂', 'rendering'),
-    cap('chart.varea', 'verified', 'verified', 'verified', 'verified', 'README #46 G2 参照全绿；carrier test_vanchart varea 臂', 'rendering'),
-    cap('chart.vscatter', 'verified', 'verified', 'verified', 'verified', 'README #79 bubbleSize 修复后散点整齐；carrier test_vanchart vscatter 臂', 'rendering'),
-    cap('chart.vbubble', 'verified', 'verified', 'verified', 'verified', 'README #79 BubbleTableDefinition 同法；carrier test_vanchart 第11块', 'rendering'),
-    cap('chart.vpie', 'verified', 'verified', 'verified', 'verified', 'README #46 OneValueCDDefinition（图例4见3 另记 vpieLegend 挂账）；carrier test_vanchart vpie 臂', 'rendering'),
-    cap('chart.vgauge', 'verified', 'verified', 'verified', 'verified', 'README #46；carrier test_vanchart vgauge 臂', 'rendering'),
+    cap('chart.pie', 'verified', 'verified', 'verified', 'verified', 'README #26/#46；carrier sales_demo_chart（legacy chart 族级代表，pie 臂无独立载体，见审计 §3.2）', 'cpt'),
+    cap('chart.line', 'verified', 'verified', 'verified', 'verified', 'README #46 B240/F240 全刻度；carrier sales_demo_chart（legacy chart 族级代表）', 'cpt'),
+    cap('chart.vbar', 'verified', 'verified', 'verified', 'verified', 'README #46 240pt 地板定案；carrier test_vanchart scan 覆盖', 'cpt'),
+    cap('chart.vline', 'verified', 'verified', 'verified', 'verified', 'README #46；carrier test_vanchart vline 臂', 'cpt'),
+    cap('chart.varea', 'verified', 'verified', 'verified', 'verified', 'README #46 G2 参照全绿；carrier test_vanchart varea 臂', 'cpt'),
+    cap('chart.vscatter', 'verified', 'verified', 'verified', 'verified', 'README #79 bubbleSize 修复后散点整齐；carrier test_vanchart vscatter 臂', 'cpt'),
+    cap('chart.vbubble', 'verified', 'verified', 'verified', 'verified', 'README #79 BubbleTableDefinition 同法；carrier test_vanchart 第11块', 'cpt'),
+    cap('chart.vpie', 'verified', 'verified', 'verified', 'verified', 'README #46 OneValueCDDefinition（图例4见3 另记 vpieLegend 挂账）；carrier test_vanchart vpie 臂', 'cpt'),
+    cap('chart.vgauge', 'verified', 'verified', 'verified', 'verified', 'README #46；carrier test_vanchart vgauge 臂', 'cpt'),
     cap('chart.vmap', 'pending', 'pending', 'pending', 'pending', 'README #79 绑定10参+MapMatchResult+GIS 底图；引擎渲染可行性已证（probe_r4m19 官方 mapfather.cpt 无头实拍），fr-agent 生成链路未接通'),
     cap('chart.heatmap', 'pending', 'pending', 'pending', 'pending', 'README #80 极端图族登记'),
     cap('chart.tooltip', 'verified', 'verified', 'serialization-only', 'verified', 'README #72 AttrTooltip 全家序列化；probe_r4m15 XML 断言；tooltip 为 web 交互行为静态 PNG 不现形（同官方）', 'serialization'),
@@ -56,13 +56,13 @@ var CapabilityManifest = (function () {
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）
   var condition = [
     cap('condition.formula', 'verified', 'verified', 'verified', 'verified', 'README #71 carrier test_hla2 PNG 分片', 'rendering'),
-    cap('condition.column', 'verified', 'verified', 'verified', 'verified', 'README #71 本格值求值语义一手；carrier test_cellattrs', 'rendering'),
-    cap('condition.list', 'verified', 'verified', 'verified', 'verified', 'README #45/#71；carrier test_cellattrs', 'rendering'),
+    cap('condition.column', 'verified', 'verified', 'verified', 'verified', 'README #71 本格值求值语义一手；carrier test_cellattrs', 'cpt'),
+    cap('condition.list', 'verified', 'verified', 'verified', 'verified', 'README #45/#71；carrier test_closure_gaps（when.list 形态，v2 对账器补实）', 'cpt'),
     cap('condition.then.value', 'verified', 'verified', 'verified', 'verified', 'README #71 字面换值+公式换值 PNG；carrier test_hla2', 'rendering'),
     cap('condition.then.border', 'verified', 'verified', 'verified', 'verified', 'README #71 粗底线 PNG 分片；carrier test_hla2', 'rendering'),
     cap('condition.then.link', 'verified', 'verified', 'serialization-only', 'verified', 'README #71 超链为浏览器行为静态 PNG 不现形（官方同）；carrier test_hla2', 'serialization'),
     cap('condition.then.widget', 'verified', 'verified', 'serialization-only', 'verified', 'README #71 PNG 不渲染控件序列化为准（官方同）；carrier test_hla2', 'serialization'),
-    cap('condition.then.style', 'verified', 'verified', 'verified', 'verified', 'README #45/#49 bg/color/font/rowHeight/colWidth/page；carrier test_cellattrs', 'rendering')
+    cap('condition.then.style', 'verified', 'verified', 'verified', 'verified', 'README #45/#49 bg/color/font/rowHeight/colWidth/page；carrier test_cellattrs', 'cpt')
   ];
   // 填报族（README #76/#80）
   var write = [
@@ -74,25 +74,25 @@ var CapabilityManifest = (function () {
   ];
   // 页面/单元格表达力族（README #31/#73/#77/#78/#80）
   var page = [
-    cap('page.headerFooter', 'verified', 'verified', 'verified', 'verified', 'README #73 PDF 文本层逐字命中；carrier test_pagehf scan', 'rendering'),
-    cap('page.templateMarks', 'verified', 'verified', 'verified', 'verified', 'README #73 TemplateId/Theme 序列化+roundtrip；carrier test_pagehf', 'rendering'),
-    cap('page.repeatHeaderRow', 'verified', 'verified', 'verified', 'verified', 'README #31 每页重复标题条带；carrier db_laser_subtotal', 'rendering'),
+    cap('page.headerFooter', 'verified', 'verified', 'verified', 'verified', 'README #73 PDF 文本层逐字命中；carrier test_pagehf scan', 'cpt'),
+    cap('page.templateMarks', 'verified', 'verified', 'verified', 'verified', 'README #73 TemplateId/Theme 序列化+roundtrip；carrier test_pagehf', 'cpt'),
+    cap('page.repeatHeaderRow', 'verified', 'verified', 'verified', 'verified', 'README #31 每页重复标题条带；carrier test_closure_gaps（repeatHeaderRow 键，v2 对账器补实）', 'cpt'),
     cap('page.freezeWeb', 'pending', 'pending', 'pending', 'pending', 'README #77 240 demo 零语料'),
     cap('page.multiSheet', 'rejected', 'rejected', 'rejected', 'rejected', 'README #50 UNSUPPORTED_CAPABILITY:multi_sheet'),
     cap('cell.sort', 'rejected', 'rejected', 'rejected', 'rejected', 'README #78 墙破缺语料结构化拒'),
     cap('cell.subreport', 'verified', 'verified', 'verified', 'verified', 'README #77 整嵌渲染 PNG；carrier test_g scan', 'rendering'),
     cap('cell.barcode', 'verified', 'verified', 'verified', 'verified', 'README #77 条码 PNG；carrier test_g scan', 'rendering'),
-    cap('cell.groupCustom', 'verified', 'verified', 'verified', 'verified', 'README #77 CustomGrouper 简单形态；carrier test_g', 'rendering'),
+    cap('cell.groupCustom', 'verified', 'verified', 'verified', 'verified', 'README #77 CustomGrouper 简单形态；carrier test_g', 'cpt'),
     cap('cell.poly', 'pending', 'pending', 'pending', 'pending', 'README #80 PolyWorkSheet 通路已证，块面 API 未探全')
   ];
   // ReportSpec / 数据集 / 语义 / 模板产品面（README #55/#59/#60/#74/#76/#82）
   var product = [
     cap('spec.rows.sum', 'verified', 'verified', 'verified', 'verified', 'README #55 等价铁证 CBEB42E3；fast_report_spec', 'cpt'),
     cap('spec.sql.model', 'verified', 'verified', 'verified', 'verified', 'README #59 端到端 33531/26531/79.12 逐格真值；fast_sqlbuilder', 'agent'),
-    cap('spec.sql.filters', 'verified', 'verified', 'verified', 'verified', 'README #62 受控字面量引擎 live；fast_sqlbuilder', 'rendering'),
-    cap('spec.sql.sort', 'verified', 'verified', 'verified', 'verified', 'README #62 ORDER BY 别名 live；fast_sqlbuilder', 'rendering'),
-    cap('spec.sql.topN', 'verified', 'verified', 'verified', 'verified', 'README #62 SELECT TOP live；fast_sqlbuilder', 'rendering'),
-    cap('spec.sql.chart', 'verified', 'verified', 'verified', 'verified', 'README #62 presentation.chart bar|pie|line live；fast_planner', 'rendering'),
+    cap('spec.sql.filters', 'verified', 'verified', 'verified', 'verified', 'README #62 受控字面量引擎 live；fast_sqlbuilder', 'cpt'),
+    cap('spec.sql.sort', 'verified', 'verified', 'verified', 'verified', 'README #62 ORDER BY 别名 live；fast_sqlbuilder', 'cpt'),
+    cap('spec.sql.topN', 'verified', 'verified', 'verified', 'verified', 'README #62 SELECT TOP live；fast_sqlbuilder', 'cpt'),
+    cap('spec.sql.chart', 'verified', 'verified', 'verified', 'verified', 'README #62 presentation.chart bar|pie|line live；fast_planner', 'cpt'),
     cap('spec.dataset.databaseDict', 'pending', 'pending', 'pending', 'pending', 'README #74 Database|DynamicSQLDict 需连接面=凭据注入批工单'),
     cap('template.patch.cellValue', 'verified', 'verified', 'verified', 'verified', 'README #60 replace_cell_value 读回 PASS；integration_runtime S6', 'cpt'),
     cap('template.patch.dataset', 'verified', 'verified', 'verified', 'verified', 'README #60 replace_dataset colCount 读回 PASS；integration_runtime', 'cpt'),

@@ -274,6 +274,7 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #107 审查轮 2 收敛：P1-A/P1-B 契约修复 + Golden 栅格回归 + 文档整理（详见 docs/night-shift-log.md）
 - #108 能力闭环专项审计（只读）：三层 Coverage/Manifest/Agent 逐项对账 → `docs/architecture/capability-closure-audit.md`
 - #109 闭环审计实施：证据对账器/manifest v3 regressionScope/Golden E2E 自动复证/视觉验证（详见 docs/architecture/capability-closure-audit.md §6）
+- #110 验证工具自身修正（外部审查 v2）：对账器键覆盖/scope 一致性/Coverage 交叉 + Golden 逐格真值+modify 离线核验器 + fixture 自给（详见同文档 §7）
 
 ---
 

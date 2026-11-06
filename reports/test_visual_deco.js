@@ -1,6 +1,20 @@
 // reports/test_visual_deco.js — §5步4 视觉验证专项：seriesImage(vbar) + legacy axisX(bar)
 //   每项独立 PNG 目检：① seriesImage 图片是否真的画在柱上；② legacy axisX 公共键(fontPt)是否落 ValueAxis/CategoryAxis。
-//   seriesImage.image 用 logs/_r4m9_off.png（管线产物，非空小图，稳定存在）。
+//   fixture 自给：若 logs/_visual_fixture.png 不存在，用本 spec 头部 JS 生成一个最小 PNG（1x1 纯色），
+//   不再依赖管线历史产物 logs/_r4m9_off.png（外部审查 P2：换机器/清 logs 后不可复现）。
+var J = (function () { try { return Java.type('java.nio.file.Files'); } catch (e) { return null; } })();
+if (J) {
+  var P = Java.type('java.nio.file.Paths');
+  var F = new (Java.type('java.io.File'))('D:/fineagent/logs/_visual_fixture.png');
+  if (!F.exists()) {
+    var AWT = Java.type('java.awt.image.BufferedImage');
+    var img = new AWT(8, 8, AWT.TYPE_INT_RGB);
+    var g = img.createGraphics();
+    g.setColor(new (Java.type('java.awt.Color'))(0x77, 0xBB, 0xFF));
+    g.fillRect(0, 0, 8, 8); g.dispose();
+    Java.type('javax.imageio.ImageIO').write(img, 'png', F);
+  }
+}
 var SPEC = {
   outName: '能力自检_视觉装饰',
   allowNoFormula: true,
@@ -10,7 +24,7 @@ var SPEC = {
       blocks: [
         { type: 'cells', heightPt: 30, items: [{ c: 0, span: 1, text: 'P1 visual: seriesImage + legacy axisX' }] },
         { type: 'chart', kind: 'vbar', dataset: 'ds', category: '机型', values: ['产量'], heightPt: 320,
-          seriesImage: { image: 'logs/_r4m9_off.png' } },
+          seriesImage: { image: 'logs/_visual_fixture.png' } },
         { type: 'chart', kind: 'bar', dataset: 'ds', category: '机型', values: ['产量'], heightPt: 320,
           axisX: { fontPt: 14 }, axisY: { fontPt: 14 } }
       ]
