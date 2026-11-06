@@ -50,6 +50,9 @@ preview     → {"ok":true,"result":"logs/agent/runs/R/preview.json"}
 
 ## 6. 复现命令
 
+**§5步3（2026-11-06 闭环审计实施）：以下手动命令已固化为可重跑脚本 `scripts/run-golden-e2e.ps1`**——单 runId 贯穿 plan→plan2spec→create→validate(`-ExpectTotals 33531:26531`，外部真值对拍成为可重复断言)→preview(.NET 直读 PNG，容差判读非空白)，任一失败 exit 1。跑法：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/run-golden-e2e.ps1`（时间戳 runId 自动防撞）。实跑记录：`ge20261106123412` GOLDEN E2E PASS。
+下列逐条命令保留作分步调试用（Agent 侧零人工 JSON 中间产物口径不变）：
+
 ```powershell
 # 单 runId 贯穿（-Verb 命名参数；create/modify 为 compile/patch 的业务别名；r22e 起 plan→plan2spec→create→
 #   validate→preview→modify 全程可共用同一 runId——RunId 判据=引擎产物存在性，零引擎产物同目录是合法接力）
