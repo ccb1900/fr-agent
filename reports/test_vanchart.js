@@ -47,7 +47,8 @@ var SPEC = {
           marker: { type: 'circle', radius: 5, alpha: 0.8 },
           lineStyle: { type: 'solid', style: 'curve', width: 2 },
           trend: { type: 'linear', name: '产量趋势', pre: 2, after: 2 },
-          axisY: { min: 0, max: 260, unit: 50 },
+          axisY: { min: 0, max: 260, unit: 50, title: '产量', fontPt: 10, alerts: [{ value: 150, color: 0xD0392E, content: '预警线150' }] },
+          axisX: { title: '机型', fontPt: 10 },
           effect: { enabled: true, period: 1 },
           hotTooltip: { position: 1, showMutiSeries: false, whiteBackground: true, seriesLabel: '${SERIES}', format: '#,##0', percentFormat: '#0.##%' },
           heightPt: 240
@@ -58,11 +59,8 @@ var SPEC = {
           border: { color: -9721345, style: 1 }, bg: 0xF7FAFF,
           heightPt: 240
         },
-        {
-          type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'],
-          legend: { position: 2 },
-          heightPt: 240
-        }
+        { type: 'chart', kind: 'vbar', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'],
+          legend: { position: 2 }, label: { enable: true, position: 2, fontPt: 10, color: 0x333333 }, heightPt: 240 }
       ]
     }],
     datasets: [{

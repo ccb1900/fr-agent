@@ -176,8 +176,8 @@ var BATCH_CLASS = {
   'com.fr.plugin.chart.base.AttrTooltipRichText': '批B后继(#600 工单头部,未排)',
   'com.fr.base.chart.chartdata.model.NormalDataModel': '批B后继(#600 工单头部,未排)',
   'com.fr.chart.base.AttrBorder': '批B后继(#600 工单头部,未排)',
-  'com.fr.plugin.chart.attr.axis.VanChartAxis': '批B后继(#600 工单头部,未排)',
-  'com.fr.plugin.chart.attr.axis.VanChartValueAxis': '批B后继(#600 工单头部,未排)',
+  'com.fr.plugin.chart.attr.axis.VanChartAxis': '批B axis 实例配置非构造(README #103)',
+  'com.fr.plugin.chart.attr.axis.VanChartValueAxis': '批B axis 实例配置非构造(README #103)',
   // —— 批B后继·tooltip/axis/label 深水区（#600 "tooltip/axis/label 装饰深水区"）——
   'com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat': '批B后继·tooltip 深水区(未排)',
   'com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat': '批B后继·tooltip 深水区(未排)',
@@ -187,8 +187,8 @@ var BATCH_CLASS = {
   'com.fr.plugin.chart.base.format.AttrTooltipSizeFormat': '批B后继·tooltip 深水区(未排)',
   'com.fr.plugin.chart.base.format.AttrTooltipYFormat': '批B后继·tooltip 深水区(未排)',
   'com.fr.plugin.chart.scatter.attr.ScatterAttrTooltip': '批B后继·tooltip 深水区(未排)',
-  'com.fr.chart.chartattr.CategoryAxis': '批B后继·axis 装饰深水区(未排)',
-  'com.fr.chart.chartattr.ValueAxis': '批B后继·axis 装饰深水区(未排)',
+  'com.fr.chart.chartattr.CategoryAxis': '批B axis 实例配置非构造(README #103)',
+  'com.fr.chart.chartattr.ValueAxis': '批B axis 实例配置非构造(README #103)',
   'com.fr.plugin.chart.attr.axis.VanChartAlertValue': '批B后继·axis/标记深水区(未排)',
   'com.fr.plugin.chart.base.AttrLabelDetail': '批B后继·label 装饰深水区(未排)',
   // —— 批B后继·图表 attr 装饰域（批B 同域 Attr 类，构串类）——

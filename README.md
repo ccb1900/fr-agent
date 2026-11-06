@@ -790,3 +790,11 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **物理归属修正（r17 对齐口径）**：AttrTooltipAreaNameFormat/MapValueFormat/StartAndEndNameFormat 消费者全在 map 域（mapfather/mapson.cpt 一手）→ 参考批次改批I；AttrTooltipSummaryValueFormat+AttrTooltipRichText 的 label 侧宿主=PieCategoryLabelContent（vpie 类目标签，包名待 jar 清单定位）→ 归批B头部单元与 NormalDataModel 同批。
 - **序列化实证**：m15 五臂一簿 wb.export→13 项 XML 断言全绿（vanChartPlotType 序列化形态=属性值 "stack"，断言 token 当场纠偏）；carrier 部署 XML 全类命中（RichText 42/XFormat 15/BorderWithAlpha 1/AreaSeriesFill 3/Effect 3/Contents 22 等）。
 - **门**：fast 13 GREEN / scan 48+1skip / 负门 5 路 GREEN / 双铁证 CBEB42E3+A8EF39AB 逐字节 / coverage missing 49→37（AttrTooltipRichText 192、AttrBorder 93、AttrSeriesImageBackground 26 等 12 类转 full）/ ALIGN 批归属 45+漏账9。
+
+
+#103 批B axis 群收案（2026-11-06，单元5；probe_r4m16/b+probe_r4m17 渲染定性一手；coverage missing 37→34）：
+- **词汇**：`axisY` 扩容 {title,fontPt,color,reversed,arrow,gridColor,gridStyle,format,alerts}；新顶层 `axisX`（同公共集+showLabel+rotation，无数值域键）；`label` 扩容 {fontPt,color,bold,backgroundColor,align,autoAdjust,showGuidLine}（AttrLabelDetail 面，probe_r4m16）；ir.js checkAxisShape 形态闸（axisY 专属 max|min|unit|alerts，alerts 子闸 value 必填/content|color|alpha）。
+- **轴配置=实例口径**（applyAxisCommon 单源）：plot.getxAxis()/getyAxis() 直取实例（Van 族=VanChartAxis 子类、legacy=CategoryAxis），**不构造新轴**——VanChartAxis/CategoryAxis/ValueAxis 三类 coverage 记 '实例配置非构造'（missing→partial，诚实口径）；VanChartAlertValue 经 J() 构造转 full。
+- **渲染实证（m17 PNG 实拍）**：① unit=50 主刻度 0..300 全渲染——**chart.axisYUnit 渲染案收**（manifest pending→verified，README #72 挂账关闭）；② 预警线=VanChartAlertValue（setAlertValueFormula+AlertContent+LineColor/AttrLineStyle 双件门槛同 trend）→ 红色横线@150 全宽渲染；③ **轴标题渲染对象=setTitle(new Title)**——仅 setAxisName+setShowAxisTitle 不渲染（占位名 Fine-Engine_Chart_X/Y_Axis 同 chart title 占位族）； setTitle 后引擎自动降刻度密度（50 步→100 步）——交互事实记档非缺陷。
+- **事故记档（装载面必跑引擎回归教案第 N 次）**：label 字扩容首版 `ld.setTextAttr(font(...))` 直塞 FRFont → 真引擎轮 ClassCastException（fast/scan 双绿照跑）——setTextAttr 要 TextAttr，修=ld.getTextAttr() 活引用 setFRFont（同轴口径）。carrier 轮才抓得到 build 期类型错。
+- **门**：fast 13 GREEN / scan 48+1skip / 负门 5 路 GREEN / 双铁证逐字节（carrier 轮后默认 spec 收尾）/ 部署 XML axisName=产量·机型+AlertValue+alertContent 全命中 / coverage missing 37→34、partial 19。

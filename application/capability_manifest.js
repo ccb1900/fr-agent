@@ -40,7 +40,7 @@ var CapabilityManifest = (function () {
     cap('chart.stack', 'verified', 'verified', 'verified', 'verified', 'probe_r4m3 结案：isStackChart 只认 vanChartPlotType==STACK/STACK_BY_PERCENT,补 setter 后 stackCols>0 实拍堆叠；carrier test_vanchart 实跑'),
     cap('chart.conditionalSeries', 'verified', 'verified', 'verified', 'verified', 'probe_r4m7 D_a 实拍：系列条件染色正类=AttrBackground+ColorBackground(AttrColor 引擎不染)；carrier test_vanchart 实跑'),
     cap('chart.trendLine', 'verified', 'verified', 'verified', 'verified', 'README #72 LineStyleInfo 门槛补齐后红趋势线画出 PNG'),
-    cap('chart.axisYUnit', 'verified', 'verified', 'pending', 'pending', 'README #72 序列化 customMainUnit=true 在、刻度密度渲染待达'),
+    cap('chart.axisYUnit', 'verified', 'verified', 'verified', 'verified', 'probe_r4m17 实拍：unit=50 主刻度 0..300 全渲染（无轴标题时）；setTitle 后引擎自动降密度 100 步（交互事实记档）；carrier test_vanchart vline 臂'),
     cap('chart.hyperlinkCell', 'pending', 'pending', 'pending', 'pending', 'README #79 ChartHyperRelateCellLink 挂接面未探完，随地图批')
   ];
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）
