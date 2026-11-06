@@ -1,0 +1,22 @@
+// probe_c3_titleA3.js — 读回 A_noexec.cpt 的 title 值码点：'A' 在值里还是 XML 写出层？
+var J = function (n) { return Java.type(n); };
+var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
+load('D:/fineagent/runtime/paths.js');
+var R = Paths.root;
+load(R + '/template/inspector.js'); load(R + '/template/reader.js');
+load(Paths.runtime('bootstrap.js')); Runtime.initialize();
+var OUT = R + '/logs/_c3_probe';
+var wb = TemplateReader.readCpt('fineagent/生产日报图C_api.cpt');
+var ce = wb.getReport(0).getCellElement(0, 0);
+var nv = J('java.lang.String').valueOf('生产日报图表页（C段 形状三：真库+图表） [REVIEW]');
+ce.setValue(nv);
+print('java value len=' + nv.length() + ' tailCode=' + nv.charAt(nv.length() - 1));
+print('cell value after set: [' + String(ce.getValue()) + '] len=' + String(ce.getValue()).length);
+var os = new (J('java.io.ByteArrayOutputStream'))();
+wb.export(os);
+var xml = String(new (J('java.lang.String'))(os.toByteArray(), 'UTF-8'));
+var m = xml.match(/CDATA\[生产日报图表页[^A-Z]*/);
+print('export match: [' + (m ? m[0].substring(m[0].length - 24) : '(none)') + ']');
+var i = xml.indexOf('REVIEW');
+print('export around REVIEW: [' + xml.substring(i - 4, i + 12) + ']');
+exit(0);

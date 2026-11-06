@@ -35,7 +35,13 @@ var TemplateRegression = (function () {
   function normCell(v) {
     if (v == null) return '';
     var s = String(v), n = canonNum(s);
-    return n == null ? s : n;
+    if (n != null) return n;
+    // C段断点（2026-11-07）：引擎对象（ChartPainter 等）的默认 toString=「类名@十六进制哈希」，两次执行
+    //   实例身份必不同——该形态不含报表内容，按类名归一，否则任何含图表的报表补丁都被「未预期单元格变动」误杀
+    //   （probe_c3_titleA 系列实证：r14 c0 ChartPainter@5a4e… → ChartPainter@17f8…）。
+    var m = /^([a-zA-Z][a-zA-Z0-9_.$]*)@[0-9a-fA-F]+$/.exec(s);
+    if (m) return m[1];
+    return s;
   }
 
   // before/after: {ok:bool, rows:[[text]]|null, error:string|null}

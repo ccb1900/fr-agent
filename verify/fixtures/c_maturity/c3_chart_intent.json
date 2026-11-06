@@ -1,0 +1,13 @@
+{
+  "outName": "生产日报图C",
+  "reportName": "生产日报图表页（C段 形状三：真库+图表）",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true, "chart": { "kind": "bar", "category": "bizDate", "value": "planned", "title": "每日计划数（C段）" } }
+}

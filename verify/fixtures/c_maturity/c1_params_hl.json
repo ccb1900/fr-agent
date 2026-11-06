@@ -1,0 +1,30 @@
+{
+  "specVersion": "1",
+  "report": { "name": "工单参数查询（C段 形状一：参数面板+条件高亮+脚注）" },
+  "outName": "工单参数查询C",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 140 },
+    { "field": "shift", "label": "班次", "widthPt": 100 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划数", "aggregation": "sum", "dataType": "number", "widthPt": 110, "format": "#,##0" },
+    { "field": "done", "label": "完成数", "aggregation": "sum", "dataType": "number", "widthPt": 110, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", "早班", 120, 98], ["A线", "中班", 96, 91], ["B线", "早班", 44, 31], ["B线", "中班", 150, 147], ["C线", "早班", 60, 57]]
+  },
+  "params": [
+    { "kind": "date", "name": "bizDate", "label": "业务日期", "value": "2026-09-13" },
+    { "kind": "combo", "name": "line", "label": "生产线", "value": "全部", "values": ["全部", "A线", "B线", "C线"] },
+    { "kind": "submit", "name": "query", "text": "查询" }
+  ],
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "conditions": [
+      { "name": "完成率低于80%计划标红", "when": { "column": "planned", "op": "<", "value": 60, "valueType": "number" }, "then": { "bg": 16638754 } }
+    ],
+    "footnote": "注：计划数低于 60 的行红底高亮；数据为内嵌样例（C 段形状一）。"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "specVersion": "1",
+  "report": { "name": "车间双页日报（C段 形状二：多 Sheet+页眉页脚+水印）" },
+  "outName": "车间双页日报C",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 150 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 110, "format": "#,##0" },
+    { "field": "done", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 110, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 210, 196], ["B线", 194, 178]]
+  },
+  "sheet": {
+    "headerFooter": { "header": { "center": [{ "text": "车间日报 — 页眉" }] }, "footer": { "right": [{ "pageNumber": true }] } },
+    "watermark": { "text": "内部资料", "fontSize": 20 }
+  },
+  "presentation": { "type": "table", "showTotal": true, "total": { "label": "合计" } },
+  "extraSheets": [
+    {
+      "name": "班次明细",
+      "dimensions": [ { "field": "shift2", "label": "班次", "widthPt": 120 } ],
+      "metrics": [ { "field": "done2", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 110, "format": "#,##0" } ],
+      "dataset": { "rows": [["早班", 155], ["中班", 219]] },
+      "presentation": { "type": "table", "showTotal": false }
+    }
+  ]
+}

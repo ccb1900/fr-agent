@@ -27,8 +27,11 @@ else {
   if (rr) {
     ck('run success=true', rr.success === true, 'exit=' + rr.exit);
     var stages = rr.stages || {};
-    var bad = Object.keys(stages).filter(function (k) { return stages[k] !== 'passed'; });
-    ck('11 阶段全 passed', bad.length === 0, bad.join(','));
+    // C段断点修复（2026-11-07）：datasource_connect=skipped 是 rows 路内嵌数据集的合法终态
+    //   （无 SQL 数据集可连，管线按设计 skip）——此前被当失败，任何非 demo 的 rows 报表 validate 都过不去。
+    //   其余阶段仍必须 passed（skipped 不再被容忍于其它阶段）。
+    var bad = Object.keys(stages).filter(function (k) { return stages[k] !== 'passed' && !(k === 'datasource_connect' && stages[k] === 'skipped'); });
+    ck('11 阶段全 passed（datasource_connect 允许 rows 路 skipped）', bad.length === 0, bad.join(','));
   }
   var cptAbs = absOf(comp.cptPath);
   var pngAbs = absOf(comp.pngPath);

@@ -61,6 +61,10 @@ var TemplateValidator = (function () {
           if (op.value.kind !== 'text' && op.value.kind !== 'formula') E(errs, 'INVALID_ENUM', p + '.value.kind', "value.kind ∈ text|formula");
           if (!isStr(op.value.text) || op.value.text === '') E(errs, 'REQUIRED', p + '.value.text', 'value.text 必填');
           else if (op.value.kind === 'formula' && op.value.text.charAt(0) !== '=') E(errs, 'INVALID_TYPE', p + '.value.text', 'formula 须以 = 开头（ir.js 同规）');
+          // C段断点（2026-11-07，probe_c3_titleA5 一手实证）：FR 的 cpt XML 写出层对含 ']' 的文本注入
+          //   'A'（'ABC]'→'ABC]A'、'A]]>B'→'A]A]A>B'，读回值即损坏）——补丁值含 ']' 无法字节安全往返，
+          //   fail-closed 拒绝（外置 Agent 换不含 ']' 的文案即可）。
+          else if (op.value.text.indexOf(']') >= 0 && op.value.kind === 'text') E(errs, 'INVALID_SHAPE', p + '.value.text', "补丁文本值禁含 ']'（FR cpt XML 写出层会把 ']' 编码为 ']'+'A' 注入损坏，probe_c3_titleA5 实证）——请改用不含方括号的文案");
         }
       } else if (kind === 'replace_dataset') {
         if (!isStr(op.name) || !op.name) E(errs, 'REQUIRED', p + '.name', '数据集 name 必填');
