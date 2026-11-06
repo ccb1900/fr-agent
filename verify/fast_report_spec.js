@@ -138,5 +138,42 @@ check('I1.1 镜像 schema：dataset 为 rows|sql 两形态 oneOf', (function () 
 })());
 check('I1.1 镜像 schema：x-scope 同时列 rows/sql', !!(schemaMirror['x-scope'] && schemaMirror['x-scope'].rows && schemaMirror['x-scope'].sql));
 
+// ===== B1（2026-11-06）：conditions 进 ReportSpec + rows 路静默丢弃拒 =====
+function baseRowsSpec(mut) {
+  var rs = { specVersion: '1', report: { name: 't' }, outName: 't',
+    dimensions: [{ field: 'line', label: '线', widthPt: 120 }],
+    metrics: [{ field: 'n', label: '数', aggregation: 'sum', dataType: 'number', widthPt: 100 }],
+    dataset: { kind: 'rows', rows: [['A', 1]] },
+    presentation: { type: 'table', showTotal: true } };
+  if (mut) mut(rs);
+  return rs;
+}
+check('B1 conditions 零误报', errsOf(baseRowsSpec(function (rs) {
+  rs.presentation.conditions = [{ name: 'c', when: { column: 'n', op: '<', value: 60, valueType: 'number' }, then: { bg: 16638754 } }];
+})).length === 0);
+check('B1 conditions 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.conditions = 'x'; }), 'INVALID_ARRAY', 'presentation.conditions'));
+check('B1 conditions 项缺 when 拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.conditions = [{ then: { bg: 1 } }]; }), 'REQUIRED', 'presentation.conditions[0].when'));
+check('B1 rows 路 dataset.sort 拒（不静默丢）', codeAt(baseRowsSpec(function (rs) { rs.dataset.sort = 'x'; }), 'UNSUPPORTED_CAPABILITY', 'dataset.sort'));
+check('B1 rows 路 dataset.topN 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.topN = 5; }), 'UNSUPPORTED_CAPABILITY', 'dataset.topN'));
+check('B1 rows 路 dataset.dateRange 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.dateRange = {}; }), 'UNSUPPORTED_CAPABILITY', 'dataset.dateRange'));
+check('B1 rows 路 dataset.filters 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.filters = []; }), 'UNSUPPORTED_CAPABILITY', 'dataset.filters'));
+check('B1 rows 路 footnote 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.footnote = '注'; })).length === 0);
+(function () {
+  var c = null;
+  try {
+    c = SpecCompiler.compile(baseRowsSpec(function (rs) {
+      rs.presentation.conditions = [{ name: 'c', when: { column: 'n', op: '<', value: 60, valueType: 'number' }, then: { bg: 1 } }];
+      rs.presentation.footnote = '注';
+    }));
+  } catch (e) { check('B1 compile 不抛: ' + e, false); return; }
+  var det = null, hasCells = false;
+  c.sheets[0].blocks.forEach(function (b) {
+    if (b.type === 'detail') det = b;
+    if (b.type === 'cells' && b.items && b.items[0] && b.items[0].text === '注') hasCells = true;
+  });
+  check('B1 compile: detail.conditions 透传', !!(det && det.conditions && det.conditions.length === 1));
+  check('B1 compile: footnote 发射 cells 块', hasCells);
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

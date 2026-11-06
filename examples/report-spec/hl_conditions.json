@@ -1,0 +1,24 @@
+{
+  "specVersion": "1",
+  "report": { "name": "条件高亮与脚注（rows 路，B1）" },
+  "outName": "能力自检_条件高亮spec",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" },
+    { "field": "done", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80, 70], ["B线", 40, 35], ["C线", 150, 140]]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "conditions": [
+      { "name": "计划低于60标红", "when": { "column": "planned", "op": "<", "value": 60, "valueType": "number" }, "then": { "bg": 16638754, "color": 12582912 } }
+    ],
+    "footnote": "注：计划数低于 60 的行以红底高亮（B1 rows 路条件格式 + 脚注）。"
+  }
+}
