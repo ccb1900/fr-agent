@@ -401,3 +401,24 @@ R2-4 视觉分层验证（逐项 PNG 实拍），之后才按 docs/night-shift-l
 
 ### 下一项工作
 SQL Server 恢复后跑完整 e2e；之后暂停架构改动整体复审。
+
+
+## 2026-11-06 14:20（Golden E2E 全链 PASS）
+
+### 工作目标
+SQL Server 恢复后跑完整 e2e 收尾。
+
+### 验证结果
+- WSL Ubuntu-26.04 内 1433 已在监听（SQL Server 运行），Windows 侧 TCP 127.0.0.1:1433 连通；`drop_caches` 回收 vmmemWSL（5.2→3.6GB）后 FreeVirtual 恢复到 2512MB。
+- **`scripts/run-golden-e2e.ps1` 全链 PASS**（runId=ge20261106141630-ab1f8c）：
+  plan OK → plan2spec OK → create OK → validate OK → truth-grid OK（10 行 day@machine 逐格 + 总计 33531/26531）→ preview OK（1587×2245, 33302B, nonWhite 69/9040）→ modify OK（diffClean + execution.pass + render.pass + orig 生产日报GOLDEN_api.orig.cpt kept）。
+- e2e 踩了 demo_api.cpt 中间件 → 默认 spec 回补 `CBEB42E3` 逐字节 ✓。
+
+### 未验证事项
+- preview.json 不在 e2e 产物内（v2 改 .NET 直读 PNG 绕开 PS GBK 中文路径）；PNG 验收由 e2e 直读断言承担。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+三件 P1/P2 收口完成；暂停架构改动，整体复审能力账本。

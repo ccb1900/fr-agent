@@ -91,5 +91,5 @@ run.ps1 -Script make_api.js
 
 - **现状**：批 0/A-J + 批B 车道全结；**缺口归属清零（ALIGN unattributed=0，≠已实现）**；coverage missing=32 partial=20 noncore=44；能力账本=application/capability_manifest.js **v3**（四层+regressionScope，机器对账器 verify/fast_manifest_evidence.js 已入 fast 14 套件）；闭环审计最终基线=docs/architecture/capability-closure-audit.md（§6 = §5 实施结果）。
 - **铁证**：demo_api.cpt=CBEB42E3… / 销售明细_api.png=A8EF39AB… / v2=6161F402…（改 lib/object|ir|cpt 必逐字节复核）。
-- **未结（直续步骤见 docs/night-shift-log.md）**：**Golden 完整 e2e 待 SQL Server**（ATOM_LIVE=`jdbc:sqlserver://127.0.0.1:1433` 无监听，随 WSL 内存清理停止，属用户环境不代启动；引擎侧最近有效=ge20261106123412 PASS，逐格真值+modify 已由 verify/fast_golden_closure.js 离线核验）；负门已复跑 GREEN；seriesBorder/seriesImage/vpie summary 视觉维持 pending；vmap/poly/heatmap 保持 pending 不接线；批F 写回/批D 凭据、审查环轮 3。
+- **未结（直续步骤见 docs/night-shift-log.md）**：Golden e2e 全链已 PASS（ge20261106141630-ab1f8c：create+逐格真值+preview+modify diffClean/原件保留）、负门 GREEN；剩 seriesBorder/seriesImage/vpie summary 视觉 pending、vmap/poly/heatmap 保持 pending 不接线、批F 写回/批D 凭据、审查环轮 3。
 - **不变**：Runtime 冻结；§N/§1-§5 全部约束；欠账以 coverage.md 为准；与本文件冲突时以更新日期新者为准。

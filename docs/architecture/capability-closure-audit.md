@@ -255,4 +255,5 @@ v1 只查"文件存在性"（示例：chart.pie 自承无独立载体仍 verifie
 
 - fast **15 套件**（新增 fast_golden_closure）GREEN / scan **51+1** / boundaries R1–R8 clean。
 - **内存阻塞已解除 + 负门复跑 GREEN**：内存恢复到 FreeVirtual=4920MB 后，`scripts/run-engine-negative-tests.ps1` 5 路全部按预期失败（ir-bad exit9 / db-conn exit4 / secret-leak exit1 / exec-formula exit1 / json-bad-spec exit2）+ `ENGINE NEG GATE GREEN (no false-green; default baseline intact)`，默认铁证 CBEB42E3 逐字节。
-- **Golden 真引擎 e2e 仍待数据库**：create 真实失败原因=`DB CONNECTION FAIL ATOM_LIVE`（`jdbc:sqlserver://127.0.0.1:1433` 无监听）。该 SQL Server 此前运行在 WSL 中，随内存清理一并停止（Windows 服务里只有 SQLWriter，无 MSSQL 实例；Docker 无容器）——**属用户环境，不代启动**。引擎侧最近一次有效记录=上一轮 `ge20261106123412` PASS；逐格真值与 modify 断言已由 `verify/fast_golden_closure.js` 对真实产物验证。待 SQL Server 恢复后跑一次完整 e2e 收尾。
+- **Golden 真引擎 e2e 全链 PASS**（`ge20261106141630-ab1f8c`，WSL 内 SQL Server 恢复 + 页缓存回收后）：plan → plan2spec → create → validate(`-ExpectTotals 33531:26531`) → **truth-grid（10 行 day@machine 逐格 + 双键闭合 + 总计三值）** → preview(1587×2245, 33302B) → **modify（diffClean + execution.pass + render.pass + `.orig.cpt` 保留）**，7 步全绿。此前失败根因如实记录：先内存预检（FreeVirtual 1180MB）、后 `DB CONNECTION FAIL ATOM_LIVE`（`jdbc:sqlserver://127.0.0.1:1433` 无监听，SQL Server 随 WSL 内存清理停止）；WSL 恢复 + `drop_caches` 回收 vmmemWSL 后复跑通过。
+- **纪律补充**：make_api 每轮会重写本地 `demo_api.cpt` 中间件——e2e 跑完必须用默认 spec 回补（本轮已回补，`CBEB42E3` 逐字节）。
