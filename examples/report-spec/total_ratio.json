@@ -1,0 +1,21 @@
+{
+  "specVersion": "1",
+  "report": { "name": "合计比率（P1）" },
+  "outName": "能力自检_合计比率spec",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" },
+    { "field": "done", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80, 70], ["B线", 40, 35]]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "total": { "label": "计划/完成", "aggregate": { "fn": "ratio", "num": 1, "den": 2, "format": "0.00" } }
+  }
+}

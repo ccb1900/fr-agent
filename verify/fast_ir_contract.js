@@ -297,9 +297,15 @@ check('P1 aggregate count/min/max 零误报', errsOf(totalIR({ fn: 'count', col:
 check('P1 aggregate ratio 零误报', errsOf(totalIR({ fn: 'ratio', num: 1, den: 1 })).length === 0);
 check('P1 aggregate 未知 fn 拒', codeAt(totalIR({ fn: 'magic', col: 1 }), 'INVALID_ENUM', 'sheets[0].blocks[3].aggregate.fn'));
 check('P1 aggregate ratio 缺 den 拒', codeAt(totalIR({ fn: 'ratio', num: 1 }), 'REQUIRED', 'sheets[0].blocks[3].aggregate.den'));
-check('P1 aggregate ratio 列 0 拒', codeAt(totalIR({ fn: 'ratio', num: 0, den: 1 }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].aggregate'));
-check('P1 sumCols fn 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; })).length === 0);
+check('P1 aggregate col 0 拒（label 格）', codeAt(totalIR({ fn: 'sum', col: 0 }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].aggregate.col'));
+check('P1 aggregate col 小数拒', codeAt(totalIR({ fn: 'sum', col: 1.5 }), 'INVALID_NUMBER', 'sheets[0].blocks[3].aggregate.col'));
+check('P1 aggregate col 越界拒（>25）', codeAt(totalIR({ fn: 'sum', col: 26 }), 'INVALID_NUMBER', 'sheets[0].blocks[3].aggregate.col'));
+check('P1 aggregate.format 非串拒', codeAt(totalIR({ fn: 'avg', col: 1, format: 5 }), 'INVALID_TYPE', 'sheets[0].blocks[3].aggregate.format'));
+check('P1 sumCols fn 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }] }; })).length === 0);
 check('P1 sumCols fn 越词表拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'ratio' }] }; }), 'INVALID_ENUM', 'sheets[0].blocks[3].sumCols[0].fn'));
+check('P1 sumCols 重复列拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; }), 'DUPLICATE', 'sheets[0].blocks[3].sumCols[1].col'));
+check('P1 sumCols fn+formula 互斥拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg', formula: '=SUM(B3)' }] }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].sumCols[0]'));
+check('P1 sumCols+aggregate 互斥拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1 }], aggregate: { fn: 'sum', col: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3]'));
 // ===== 批C（2026-11-05）页眉页脚 + 模板级 attrMark =====
 //   探针依据 probe_pagehf/_hf7/9（sheet.setHeader/setFooter(int,ReportHF)；裸 classpath 撞 license 墙、env 后可用）。
 function hfIR(hf, extra) {

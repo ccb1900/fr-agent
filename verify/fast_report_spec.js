@@ -298,14 +298,25 @@ check('审查2 sumCols col0 拒', codeAt(baseRowsSpec(function (rs) { rs.present
 check('C2 sheet.hideRows/hideCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [1, 3] }; })).length === 0);
 check('C2 sheet.hideRows 非整数拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1.5] }; }), 'INVALID_NUMBER', 'sheet.hideRows[0]'));
 check('C2 sheet.hideCols 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideCols: 'x' }; }), 'INVALID_ARRAY', 'sheet.hideCols'));
-// ===== 2026-11-06 P1：合计行非 sum 聚合（presentation.total.sumCols[].fn） =====
-check('P1 sumCols fn 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; })).length === 0);
+// ===== 2026-11-06 P1：合计行非 sum 聚合（presentation.total.sumCols[].fn / total.aggregate） =====
+check('P1 sumCols fn 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }] }; })).length === 0);
 check('P1 sumCols fn 越词表拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'ratio' }] }; }), 'INVALID_ENUM', 'presentation.total.sumCols[0].fn'));
+check('P1 sumCols 重复列拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }, { col: 1 }] }; }), 'DUPLICATE', 'presentation.total.sumCols[1].col'));
+check('P1 sumCols fn+formula 互斥拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg', formula: '=SUM(B3)' }] }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.sumCols[0]'));
+check('P1 total.aggregate ratio 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'ratio', num: 1, den: 1, format: '0.00' } }; })).length === 0);
+check('P1 total.aggregate 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 1, magic: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.aggregate.magic'));
+check('P1 total.aggregate+sumCols 互斥拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }], aggregate: { fn: 'sum', col: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
 (function () {
   var c = null;
-  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'min' }] }; })); } catch (e) { check('P1 sumCols fn compile 不抛: ' + e, false); return; }
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }] }; })); } catch (e) { check('P1 sumCols fn compile 不抛: ' + e, false); return; }
   var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
-  check('P1 compile: sumCols fn 直通 IR', !!(t && t.sumCols && t.sumCols[0].fn === 'avg' && t.sumCols[1].fn === 'min'));
+  check('P1 compile: sumCols fn 直通 IR', !!(t && t.sumCols && t.sumCols[0].fn === 'avg'));
+})();
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { label: '比', aggregate: { fn: 'ratio', num: 1, den: 1, format: '0.00' } }; })); } catch (e) { check('P1 aggregate compile 不抛: ' + e, false); return; }
+  var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
+  check('P1 compile: aggregate 直通且 label 生效', !!(t && t.aggregate && t.aggregate.fn === 'ratio' && t.label === '比' && t.span === 1));
 })();
 (function () {
   var c = null;

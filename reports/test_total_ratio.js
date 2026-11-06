@@ -10,7 +10,7 @@ var SPEC = {
         { type: 'title', text: '合计 ratio 聚合（P1）', span: 3, heightPt: 30 },
         { type: 'header', columns: [
           { label: '生产线', name: 'line', type: 'text' },
-          { label: '计划', name: 'planned', type: 'number', format: '0.00' },
+          { label: '计划', name: 'planned', type: 'number', format: '#,##0' },
           { label: '完成', name: 'done', type: 'number', format: '#,##0' }
         ], heightPt: 24 },
         { type: 'detail', dataset: 'd', columns: [
@@ -18,7 +18,7 @@ var SPEC = {
           { name: 'planned', type: 'number', format: '#,##0' },
           { name: 'done', type: 'number', format: '#,##0' }
         ], heightPt: 24 },
-        { type: 'total', label: '计划/完成', span: 1, aggregate: { fn: 'ratio', num: 1, den: 2 }, heightPt: 24 }
+        { type: 'total', label: '计划/完成', span: 1, aggregate: { fn: 'ratio', num: 1, den: 2, format: '0.00' }, heightPt: 24 }
       ]
     }],
     datasets: [{

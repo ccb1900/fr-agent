@@ -1,0 +1,20 @@
+{
+  "specVersion": "1",
+  "report": { "name": "合计非 sum 聚合（P1）" },
+  "outName": "能力自检_合计聚合spec",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80], ["B线", 40]]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "total": { "label": "平均", "sumCols": [{ "col": 1, "fn": "avg", "format": "#,##0.0" }] }
+  }
+}

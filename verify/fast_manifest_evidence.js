@@ -44,7 +44,7 @@ var KEY_OF = {
   'sheet.hideRowsCols': 'hideRows', 'cells.rowSpan': 'rowSpan',
   'spec.rows.conditions': 'conditions:', 'spec.rows.cells': 'cells:',
   'spec.rows.sumCols': 'sumCols', 'spec.params.panel': 'params',
-  'spec.rows.totalAgg': "type: 'total'"
+  'spec.rows.totalAgg': "fn: '"
 };
 // 允许"族级代表"的例外（无独立载体但同族构造相同，evidence 已自承；v2 仍要求文件含该族任一键）
 var FAMILY_REP = { 'chart.pie': 1, 'chart.line': 1 };

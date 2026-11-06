@@ -804,3 +804,27 @@ matrix §3.1 剩余：chart.seriesBorder/seriesImage/vpie summary 视觉验证�
 
 ### 下一项
 剩余大项：多 Sheet 进 ReportSpec（P2 高成本）、跨数据集关联（P2）、D2 vmap（独立工单）、D1 重开（缺系列分配配方）。
+
+## 2026-11-06 复审修复：合计聚合 6 P2 + spec 通道补齐
+
+### 复审发现（独立代理，0402cfc/4c879b6）
+6 项 P2：列号非整数/0 未统一拒；fn+formula 静默忽略；sumCols 重复列未拒且测试反成反例；ratio 格式依赖分子列头（整数格式吞小数）；total 前无 detail 时公式引用 B0 假绿；manifest 称四层 verified 但只有 rawIR 载体、ratio 无 spec 通道。
+
+### 修复
+- IR：aggregate/sumCols 列号 0→UNSUPPORTED、非整数/越界→INVALID_NUMBER、重复列→DUPLICATE、fn+formula→互斥、sumCols+aggregate→互斥、aggregate.format 字符串闸。
+- object：total 前无 detail 抛错；aggregate.format 优先于表头格式。
+- spec：TOTAL_KEYS 加 aggregate；sumCols item 键白名单 {col,fn,formula,format,align,bold,bg,sizePt}；aggregate 同 IR 词汇（sum|avg|count|min|max|ratio，ratio={num,den,format}）；互斥/重复/列号同闸。
+- compiler：total.aggregate 直通 + span=聚合落点最小列（label 不吞格）。
+- 新 spec 载体：examples total_agg.json（sumCols fn=avg→=AVERAGE(B3)，PNG 平均 60.0）、total_ratio.json（aggregate ratio→=SUM(B3)/SUM(C3)，PNG 1.14）；rawIR ratio 载体改用 aggregate.format 并把表头格式还原 #,##0，证明格式来源。
+- 测试：fast_ir_contract 负项扩到 12（col0/小数/越界/重复/fn+formula/互斥/format 类型）；fast_report_spec +8（aggregate 零误报/未知键/互斥/重复/fn+formula/编译直通）。
+- manifest：spec.rows.totalAgg evidence 补 spec 载体与 PNG；KEY_OF 改 "fn: '"（可检 fn 回归）。
+
+### 验证
+- 四载体真引擎 failures=0（raw agg/ratio、spec agg/ratio）；部署 cpt 公式与 PNG 如上。
+- fast 15 套件 rc=0；scan ok=57 bad=0；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### 未验证
+- ratio 分母为 0 的运行期行为（引擎除零显示）未专项探针；业务侧应保证 den 非零或加条件。
+
+### Commit
+（本条提交。）
