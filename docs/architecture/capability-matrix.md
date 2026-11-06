@@ -32,7 +32,8 @@
 | 能力 | IR | Object | CPT | 引擎渲染 | Agent 可用 | 优先级 | 证据 |
 |---|---|---|---|---|---|---|---|
 | 合并列（colSpan） | ✓ `span` | ✓ setColumnSpan | ✓ | ✓ | ✓ | P0 | ir.js:544；object.js:302；demo `cs>1` **5757 处** |
-| **合并行（rowSpan）/多层表头** | **✓ 已收** `rowSpan` | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | ✓ | **P0** | 本轮实施：ir.js:545 白名单 + object.js cells 分支传 spanR/多行游标/行高；载体 `reports/test_merge_header.js`；部署 cpt `rs="2"`×2 + `cs="2"`×1；PNG 实拍（生产线/良率跨两行、生产情况跨两列）；demo 原频次 `rs>1` 1364/`cs>1` 5757 |
+| **cells 多行合并表头（rowSpan）** | ✓ `rowSpan`（正整数闸） | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | **待验证**（rawIR 载体已证；plan→create 无证据） | **P0** | R3-0：ir.js 整数闸+块内重叠静态拒；object 游标含 rowSpan+重叠兜底；载体 test_merge_header + test_rowspan_cases；部署 cpt `rs="2"`×2/`cs="2"`×1；PNG 实拍。**使用该能力 103/240 demo 文件（42.9%），1364 个单元格** |
+| header block 原生多层表头 | ✗ 单层 columns | — | — | — | ✗ | P1 | ir.js:8 `header{columns[],heightPt}` 仍单层；当前多层表头只能走 cells + r 坐标（上方已收） |
 | 边框/背景/字体/对齐 | ✓ `st` | ✓ | ✓ | ✓ | ✓ | P0 | 全量生产报表；AGENTS §2 排版红线 |
 | 行高/列宽 | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | ir.js heightsPt/widthsPt |
 | 隐藏行列 | **✗ 无键** | 待查 | — | — | ✗ | P2 | ir.js 零命中 hidden |
@@ -120,7 +121,7 @@
 
 | 能力 | 业务价值 | 频率 | 表达缺口 | FR 成熟度 | 闭环成本 | Agent 价值 | 优先级 |
 |---|---|---|---|---|---|---|---|
-| 合并行/多层表头 | 高 | **极高**（rs 1364/cs 5757） | **完全缺失**（IR 无键） | 高（setRowSpan 已备） | **低**（仅 IR 键+传参） | 高 | **P0** |
+| cells 多行合并表头 | 高 | **极高**（103/240 文件 42.9%，1364 单元格） | 已收（R3-0 修复游标） | 高（setRowSpan 原生） | **低**（IR 键+传参+游标） | 高 | **P0** |
 | ReportSpec 参数面板 | 高 | 高（真实报表几乎必有筛选） | 完全缺失（spec 无 param） | 高（IR 13 控件已收） | 中（spec_compiler+载体+渲染） | 高 | **P1** |
 | 合计行非 sum 聚合（avg/ratio/count） | 高 | 高（完成率/合格率/平均） | 完全缺失（fn 仅 sum） | 高（引擎 AVERAGE 等） | 中（fn 白名单+object 构造+真值） | 高 | **P1** |
 | 跨数据集关联 | 中高 | 中（分析报表） | 完全缺失 | 中（SQL 本身可 join） | 高（新语义+校验+执行） | 中 | P2 |
@@ -150,18 +151,26 @@
 
 | 序 | 能力 | 优先级 | 验收标准 |
 |---|---|---|---|
-| **1（本轮已实施）** | **合并行/多层表头（IR cells rowSpan）** | **P0** | ✅ ir.js:545 白名单；object.js cells 分支传 spanR + 多行游标/行高；载体 `reports/test_merge_header.js` scan 过；部署 cpt `rs="2"`×2 + `cs="2"`×1；PNG 合并渲染实拍；fast15/负门5路/铁证 CBEB42E3 |
+| **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=待验证**（无 plan→create 证据） |
 | 2（待办） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | plan 路 detail 可表达 conditions；footnote/sort/topN 不再静默丢（或结构化拒）；载体+PNG 真值；golden 需求"<80% 高亮"可由 plan 直达 |
 | 3（待办） | **ReportSpec 参数面板 + 执行期筛选** | P1 | spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍 |
 | 4（待办） | 合计行非 sum 聚合（avg/ratio/count） | P1 | IR aggregate.fn 白名单扩展；合计行 PNG 真值对拍 |
 
 **明确不做（本轮及下轮）**：vmap / poly / heatmap / 多 Sheet / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。
 
-## 5. 实施记录（第一项：合并行/多层表头）
+## 5. 实施记录（第一项：cells 多行合并表头）
 
-- **改动面**：`lib/ir.js:545`（cells item 白名单加 `rowSpan`，numOpt 类型闸）；`lib/object.js` cells 分支（putCell 第 6 参传 `it.rowSpan`；块内按 `item.r` 计算 maxR，逐行补设行高；块后游标按 maxR+1 推进；单行形态行为不变）。
-- **载体**：`reports/test_merge_header.js`（title → 双层表头 cells：生产线/良率 rowSpan=2、生产情况 span=2 → detail 4 列 → total）。
-- **CPT 序列化实证**：部署件 `能力自检_合并表头_api.cpt` 含 `rs="2"`×2（生产线/良率）+ `cs="2"`×1（生产情况）+ `cs="4"`×1（标题）。
-- **渲染实证**：PNG 目检——生产线/良率纵向跨两行居中、生产情况横向跨"计划/完成"两列、数据行 4 列对齐、合计 3600。
-- **门**：scan 52+1；fast 15 GREEN；负门 5 路 GREEN；默认铁证 `CBEB42E3` 逐字节（载体轮后默认 spec 回补）。
-- **回归面**：既有 cells 块均无 `r` 键（maxR=0 → 游标推进 1），全量 scan 52 张零误伤。
+### 5.1 初版（9cabf84）
+- `lib/ir.js` cells item 加 `rowSpan` 白名单；`lib/object.js` cells 分支传 `it.rowSpan`（putCell spanR）+ 多行游标/逐行行高；载体 `reports/test_merge_header.js`。
+
+### 5.2 R3-0 收尾（外部审查 P1 修复）
+- **P1 复现**：初版游标只按显式 `r` 计算——`rowSpan=2` 且后续 item 无 `r` 时块只推进 1 行，下一 block 落到合并区上。实测载体 cpt：`r1 c0`（rowSpan 合并格）**整格丢失**，`r2 c0` 被副表头占据（覆盖丢失，比重叠更严重）。
+- **修复**：cells 块占用行数 = `max(r 相对偏移 + rowSpan - 1)`；新增块内区域重叠检测（object 绝对行兜底，`r` 倒退/重叠即抛结构化错误）。
+- **IR 收紧**：`rowSpan`/`span` 正整数、`r` 非负整数（拒 0/负/小数）；cells 块内「显式 r 之间」「无 r 同行之间」区域重叠 → `DUPLICATE` 结构化拒；混合形态由 object 兜底。
+- **回归用例**：`verify/fast_ir_contract.js` +10 条（rowSpan=2 无 r 零误报 / rowSpan=3+r 混合零误报 / 0·-1·1.5 拒 / r=-1·2.5 拒 / 显式 r 重叠拒 / 同行同列重复拒 / 单行零回归）；`reports/test_rowspan_cases.js` 真引擎载体（修复后 `r1 c0 rs="2"` + `r3 c0` 副表头 + detail r4 起，PNG 目检无重叠）。
+- **门**：scan 53+1；fast 15 GREEN；负门 5 路 GREEN；默认铁证 `CBEB42E3` 逐字节。
+
+### 5.3 口径修正（外部审查）
+- `cells` 多行合并表头与 `header` block 原生多层表头**拆为两行**（后者仍 ✗ 单层）。
+- rowSpan 的 **Agent 可用改为「待验证」**（rawIR 载体不能证明 plan→create 链路）。
+- 频率口径：从「rs>1 单元格 1364」改为「**103/240 demo 文件（42.9%）使用，1364 个单元格**」——文件数是需求覆盖面，单元格数是使用密度。

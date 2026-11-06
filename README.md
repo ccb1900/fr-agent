@@ -278,6 +278,7 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #111 run.ps1 提交额度预检删除（用户拍板）：#46 原生崩前提=未限堆 6G，限堆 -Xmx 是主防线；预检在小堆误拦（1776MB 提交剩余下 -Xmx400m 可跑）。保留 -Xmx 上限，失败由 JVM/原生非零退出 fail-closed 暴露
 - #112 验证入口可靠性四项收口（外部审查终轮）：Golden 真值缺失必须失败（REQUIRE_TRUTH）/ Fast Golden 入库 fixture（干净 clone 可过）/ Manifest 检查器定位为静态一致性检查 / 视觉 fixture 支持 FR_AGENT_HOME
 - #113 能力矩阵与路线图（docs/architecture/capability-matrix.md）：七源对账+六维评分+P0-P3 排序+前三项；第一项「合并行/多层表头（IR cells rowSpan）」已实施（ir.js:545 + object.js 传 spanR/多行游标 + 载体 test_merge_header + PNG 实拍）
+- #114 R3-0 收尾：rowSpan 游标缺陷修复（合并格曾被覆盖丢失）+ IR 整数闸/块内重叠静态拒 + 7 场景断言 + 真引擎载体；矩阵口径修正（cells 合并 vs header 多层拆行、Agent 可用=待验证、频率 103/240 文件）
 
 ---
 

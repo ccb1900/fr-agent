@@ -375,6 +375,22 @@ check('P1-B legacy axisY.unit 结构化拒', codeAt(chartIR('bar', { axisY: { un
 check('P1-B legacy axisY.alerts 结构化拒', codeAt(chartIR('bar', { axisY: { alerts: [{ value: 150 }] } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY.alerts'));
 check('P1-B vbar 全轴配置零误报', errsOf(chartIR('vbar', { axisY: { max: 260, unit: 50, title: '产量', alerts: [{ value: 150 }] }, axisX: { title: '机型' } })).length === 0);
 
+// ===== R3-0（2026-11-06）cells rowSpan 契约：整数约束 + 块内重叠静态拒 =====
+function cellsIR(items) {
+  return { sheets: [{ name: 's1', widthsPt: [120, 120], blocks: [{ type: 'cells', heightPt: 24, items: items }] }],
+    datasets: [{ name: 'd', columns: [{ name: 'a', type: 'text' }], rows: [['x']] }] };
+}
+check('R3-0 rowSpan=2 无 r 零误报', errsOf(cellsIR([{ c: 0, rowSpan: 2, text: 'a' }, { c: 1, text: 'b' }])).length === 0);
+check('R3-0 rowSpan=3 + 显式 r 混合零误报', errsOf(cellsIR([{ c: 0, r: 0, rowSpan: 3, text: 'a' }, { c: 1, r: 0, text: 'b' }, { c: 1, r: 1, text: 'c' }])).length === 0);
+check('R3-0 rowSpan=0 拒', codeAt(cellsIR([{ c: 0, rowSpan: 0, text: 'a' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].rowSpan'));
+check('R3-0 rowSpan=-1 拒', codeAt(cellsIR([{ c: 0, rowSpan: -1, text: 'a' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].rowSpan'));
+check('R3-0 rowSpan=1.5 拒', codeAt(cellsIR([{ c: 0, rowSpan: 1.5, text: 'a' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].rowSpan'));
+check('R3-0 r=-1 拒', codeAt(cellsIR([{ c: 0, r: -1, text: 'a' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].r'));
+check('R3-0 r=2.5 拒', codeAt(cellsIR([{ c: 0, r: 2.5, text: 'a' }]), 'INVALID_NUMBER', 'sheets[0].blocks[0].items[0].r'));
+check('R3-0 块内显式 r 重叠拒', codeAt(cellsIR([{ c: 0, r: 0, rowSpan: 2, text: 'a' }, { c: 0, r: 1, text: 'b' }]), 'DUPLICATE', 'sheets[0].blocks[0].items[1]'));
+check('R3-0 块内同行同列重复拒', codeAt(cellsIR([{ c: 0, text: 'a' }, { c: 0, text: 'b' }]), 'DUPLICATE', 'sheets[0].blocks[0].items[1]'));
+check('R3-0 单行 cells 零回归', errsOf(cellsIR([{ c: 0, text: 'a' }, { c: 1, text: 'b' }])).length === 0);
+
 
 // ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
 check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);

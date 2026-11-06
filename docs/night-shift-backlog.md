@@ -14,6 +14,10 @@
 - 验收：`TRUTH_DAY_MACHINE=1 GRID=logs/agent/runs/g1/grid.txt` 10 行逐格+总计 33531/26531/79.1238 全绿；旧四列总计样例兼容分支不回归。
 - 状态：**已完成**：`TRUTH_DAY_MACHINE=1 GRID=logs/agent/runs/g1/grid.txt` 10 行逐格+总计 33531/26531/79.1238 全绿；四列总计样例兼容分支零回归。
 
+### ~~R3-0：rowSpan 正确性与能力证据修正~~（2026-11-06 完成）
+- P1 复现属实：初版游标只按显式 r，`rowSpan=2`+无 r 时合并格被下一 block 整格覆盖丢失。修：块占用行数含 rowSpan + 块内重叠兜底；IR 整数闸（rowSpan/span 正整数、r 非负整数）+ 块内重叠 DUPLICATE 静态拒；fast_ir_contract +10 断言；test_rowspan_cases 真引擎载体（rs=2 正确落位、副表头在合并区下方）；矩阵口径修正（cells 合并 vs header 多层拆行、Agent 可用改待验证、频率改 103/240 文件）。
+- 门：scan 53+1 / fast15 / 负门5路 / 铁证 CBEB42E3。
+
 ## 已完成（从待办移除的记录）
 
 ### ~~B1（P2-A）：SQL intent 中 ambiguous 术语应反问而非 rejected~~（2026-11-05 完成）

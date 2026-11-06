@@ -540,3 +540,32 @@ bcdfd13（.gitignore 例外）+ d21fde7（CRLF 正则）+ 本条文档。
 
 ### 下一项工作
 R3-1 ReportSpec 条件高亮 + 静默丢弃修复（P1）。
+
+## 2026-11-06 16:20（R3-0：rowSpan 正确性与能力证据修正）
+
+### 工作目标
+外部审查 P1：初版 rowSpan 游标只按显式 r，未计入 rowSpan；IR 校验过松；Agent 可用证据不足；矩阵两处口径待修正。
+
+### 代码证据
+- 复现（缺陷实测）：`rowSpan=2` + 后续 item 无 r → 下一 block 落 row2 覆盖合并区；实测 cpt 里 `r1 c0`（rs=2 合并格）**整格丢失**，`r2 c0` 被副表头占据。
+- 原游标：`cellsMaxR` 只按 `r - rowCursor`；IR 侧 `numOpt` 只查有限数字。
+
+### 实施内容
+- object.js：块占用 = max(r 相对 + rowSpan - 1)；块内区域重叠/`r` 倒退 → 结构化抛错（绝对行兜底）。
+- ir.js：rowSpan/span 正整数、r 非负整数；块内「显式 r 之间」「无 r 同行之间」重叠 → DUPLICATE 静态拒；`Array.isArray` 守卫（抗炸门抓到 items 非数组崩溃）。
+- fast_ir_contract：+10 条 R3-0 断言（行 Span=2 无 r / 3+r 混合 / 0·-1·1.5 拒 / r 拒 / 重叠拒 / 单行零回归）。
+- 新增 reports/test_rowspan_cases.js（真引擎载体：rowSpan=2 无 r + 紧随 cells 块 + detail + total）。
+- 矩阵修正：cells 多行合并表头 vs header block 多层表头拆行；rowSpan Agent 可用改「待验证」；频率改 **103/240 文件（42.9%）+ 1364 单元格**。
+
+### 验证结果
+- 修复后 cpt：`r1 c0 rs="2"` + `r3 c0`（副表头在合并区下方）+ detail r4 起，无重叠；PNG 目检一致。
+- scan 53+1；fast 15 GREEN；负门 5 路 GREEN；默认铁证 CBEB42E3 逐字节。
+
+### 未验证事项
+- Agent 可用（plan→create 自然语言到带合并表头的 cpt）无证据，矩阵已标待验证。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+R3-1：ReportSpec 条件高亮 + 静默丢弃修复（P1）。
