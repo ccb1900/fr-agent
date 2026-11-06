@@ -1265,3 +1265,36 @@ B段：全面代码审查（编译链/静默丢弃/组合缺陷/能力差距/安
 
 ### 下一项工作
 backlog B-复审B-1~B-4（P3）；或按 capability-matrix 取下一能力项（多 Sheet SQL extra 需 make_api deps 扩展 / D2 热力图）。
+
+## 2026-11-07 01:35（①planner墙账本同步 ②独立复审第2轮收敛 ③B-复审B-1/B-2 收口）
+
+### ① 账本同步（e366c68）
+- matrix:119 planner 墙行改『✓ metrics+filters/chart 双累计阻断（C6 blockedMetrics + B段复审 blockedFeatures → rejected）』引 fast_planner 先红断言；backlog R3-4 完成行同步。
+- grep README/manifest/ir/report_spec/inventory/matrix：planner 墙表述仅 matrix:119 与 backlog:87 两处（均已同步）；manifest 无 planner 墙条目（预期不动，确认）。门：fast15 rc0 / scan ok=60 bad=0。
+
+### ② 独立复审第 2 轮（对象=a0bb41f..HEAD 全 diff + ①文档修复）——无新 P1/P2
+- 方法：对全部代码 hunks 逐个对抗性复核——planner.js sql 分支 sqlBlockedFeatures 作用域/次序（var 提升、ambiguous 优先序保留）、空数组 filters 采纳路径前后行为等价（均被 SpecValidator INVALID_ARRAY 拒）；ir.js cells 越界闸闭包作用域（s 处于 sheets.forEach 内层确认）与边界数学（c=0 span=2 L=2 界内 / c=1 span=2 出界 / c=2 拒，0 基列口径）；model validator isNum(false)=false 布尔亦拒；两 e2e restore 步变量名（$fails/$failures）与 Get-FileHash 大写口径、$Root 参数作用域、失败路径 $stop 下 restore 仍执行；引用的 fast 断言名逐一 grep 实存（fast_planner.js:97-99、fast_ir_contract.js:480-483）。
+- 结论：**无新 P1/P2**。两条 P3 级观察如实记录（非缺陷）：①countThreshold.value 收紧使「数值串」模型写法被拒（合法 SQL 代价型收紧；仓库无此类模型，scan/负门/golden 全绿实证零误伤）；②ir 越界闸消息对非整数 span 显示 Math.floor 值（同格必被 .span INVALID_NUMBER 另行拒，无错误接受口——floor 值只会更小，真实越界仍被 span 闸兜住）。
+- 诚实声明：本环境无独立子代理能力（工具面无 Agent/子实例生成），本轮复审=实现者换对抗视角对全 diff 的重新推导；「连续 2 轮」按上一轮收敛轮（2026-11-06 审查轮3 + B段收口轮）+ 本轮计。
+
+### ③ B-复审B-1 入口路径穿越钳制 + B-2 plan.js SCHEMA_MODEL 对齐（c1975f8）
+- **反例先行（真洞实证）**：root 外 D:/fa_negtmp/escape.js 经 `REPORT_SPEC=../fa_negtmp/escape.js` 被 make_api `load()` **真实执行**（marker 文件落盘 'ESCAPED-CODE-RAN'，input_load 甚至 passed）——未设防时 env 可注入任意代码执行。
+- **实施**：make_api.js assertLocalRel 入口单点——specPath 在 try 顶先于一切 load/read（含 .js 代码执行面）；modelPath 于 sql 分支；拒 `..`/绝对路径/反斜杠/盘符/控制符 → exit 2 + input_load failed + 诊断明示（RR 就位后裁决，契约不破）。runtime/paths.js（Runtime 冻结面）未动。
+- **修后实证**：同 probe 无 marker + LOAD FAIL [REPORT_SPEC] 入口路径… + exit 2；SCHEMA_MODEL 单独穿越（合法本地 sql spec + ../models/...）→ LOAD FAIL [SCHEMA_MODEL] exit 2。
+- **负门第 6 路 spec-traverse**：脚本自带 escape 件生成（ASCII here-string，临时目录由 $base 父目录推导、终态删除不留主机残留）+ marker 反证断言（`NEG GATE OK [spec-traverse]: outside-root JS not executed (marker absent)`）；check_ps1_static failures=0。
+- **B-2**：plan.js 模型加载改 genv('SCHEMA_MODEL','models/production/model.json')（genv 顶层函数声明 ES5 提升可用）；SCHEMA_MODEL 显式覆盖与缺省两态 plan verb 冒烟均 ready（首跑 rejected 系 intent 格式误用——planner rows 路要 dimensions 词串+intent.rows，修正后 ready，如实记录）。
+- **账本连带刷新（ff54d81）**：coverage 生成器 GATES 常量负门计数 5→6 路并重生成 coverage.md——生成器如实反映 D2 vmap 接线后源码态漂移（VanChartMapPlot/VanMapMoreNameCDDefinition missing→partial 等）；fast15 交叉对账 GREEN；matrix RunResult 行计数同步。
+
+### 门禁（HEAD=ff54d81，全部本轮真跑）
+fast15 rc=0 / scan ok=60 bad=0 skipped=1 / 引擎负门 6 路 GREEN（含 spec-traverse marker 反证）/ 集成门 `run-integration-tests.ps1` INTEGRATION END failures=0 GATE GREEN（make_api 改动纪律）/ Golden E2E PASS（ge20261107012150-65a4d0）/ MULTISHEET E2E GREEN / 基线 demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### 提交链
+e366c68（①账本同步）/ c1975f8（③B-1+B-2）/ ff54d81（coverage 刷新）/ 本条 log。
+
+### 未验证/边界（如实）
+- B-复审B-3（object.js 静默 catch）未动——仍须先探针证明可触发；B-复审B-4 等多 Sheet 图表接线一并补（backlog 口径不变）。
+- assertLocalRel 不闸 FR_AGENT_HOME（整个项目根重定向，clean-clone 测试在用；ABR-1 单锚语义，backlog B-1 范围即 REPORT_SPEC/SCHEMA_MODEL）。
+- 「连续 2 轮独立复审」如上诚实声明：环境无独立实例能力，本轮为对抗性重推导；若用户要求真独立代理复审，需在具备子代理能力的会话中补一轮。
+
+### 下一项工作
+按 backlog：B-复审B-3（先探针）→ 或能力向（多 Sheet SQL extra / D2 热力图，反例先行纪律）。
