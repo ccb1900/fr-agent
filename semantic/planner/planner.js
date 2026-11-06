@@ -124,15 +124,17 @@ var ReportPlanner = (function () {
     });
 
     // metrics（v1 sum-only；非 sum 或解析到聚合指标 → deferred，不入 spec）
+    // C6（2026-11-06 收口）：被能力墙丢掉的指标要累计——部分指标可解析时不得"成功"产出悄悄少指标的报表。
     var mets = [];
+    var blockedMetrics = 0;   // C6：aggregation/术语解析 verdict=deferred|rejected 的指标计数（未知术语≠能力墙，不在此计）
     (intent.metrics || []).forEach(function (mm) {
       var term = mm && mm.term, agg = (mm && mm.aggregation) || 'sum';
       var a = ctx.capability.aggregation(agg, ctx.caps);
-      if (a.verdict !== 'supported') { validationWarnings.push({ term: term, reason: a.reason, owner: a.owner }); return; }
+      if (a.verdict !== 'supported') { validationWarnings.push({ term: term, reason: a.reason, owner: a.owner }); blockedMetrics++; return; }
       var m = mapTerm(ctx, term, true);
       if (m.kind === 'ok') mets.push({ field: m.field, label: m.label || m.field, aggregation: 'sum', dataType: 'number' });
       else if (m.kind === 'ambiguous') unresolvedQuestions.push({ kind: 'metric', term: m.term, candidates: m.candidates, requiresConfirmation: true });
-      else if (m.kind === 'deferred') validationWarnings.push({ term: m.term, reason: m.reason, owner: m.owner });
+      else if (m.kind === 'deferred') { validationWarnings.push({ term: m.term, reason: m.reason, owner: m.owner }); blockedMetrics++; }
       else validationWarnings.push({ term: m.term, reason: '未知业务术语，未编造指标', owner: '模型缺口（I3 补映射）' });
     });
 
@@ -164,13 +166,17 @@ var ReportPlanner = (function () {
     if (intent.sheet != null) spec.sheet = intent.sheet;
     if (intent.extraSheets != null) spec.extraSheets = intent.extraSheets;
 
-    // 状态裁决：有未决歧义→ambiguous；否则组 spec 复验，合法→ready，非法/越权→rejected
+    // 状态裁决：有未决歧义→ambiguous；否则组 spec 复验，合法且无被丢指标→ready，非法/越权/能力墙丢指标→rejected
     var status;
     if (unresolvedQuestions.length) status = 'ambiguous';
     else {
       var errs = ctx.validateSpec(spec);
       if (errs && errs.length) {
         errs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
+        status = 'rejected';
+      } else if (blockedMetrics > 0) {
+        // C6：deferred/rejected 聚合指标累计阻断——不静默少指标（报表口径悄悄变窄比失败更危险）
+        validationWarnings.push({ feature: 'metrics', reason: blockedMetrics + ' 个指标聚合超出 I1 能力（deferred/rejected 被丢），整体不 ready；请改用可列求和物理列或走 sql 路预聚合', owner: 'I4 能力墙（C6）' });
         status = 'rejected';
       } else status = 'ready';
     }

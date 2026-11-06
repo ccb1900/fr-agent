@@ -80,6 +80,14 @@ check('度量模糊也不自动选', ram.status === 'ambiguous' && ram.unresolve
 });
 var ravg = plan({ outName: 'avg2', dimensions: ['bizTime'], metrics: [{ term: 'rowNo', aggregation: 'avg' }], rows: mkRows(1) });
 check('显式 avg 聚合→deferred(I3/I5) 不降级', ravg.status === 'rejected' && hasWarn(ravg, /I3|I5/));
+// —— C6（2026-11-06 收口）：deferred/rejected 聚合指标累计阻断——不允许"成功"产出悄悄少指标的报表
+//    （此前部分指标可解析时整体仍 ready：被拒指标静默蒸发，报表口径悄悄变窄）
+var rC6mix = plan({ outName: 'c6mix', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }, { term: 'avgScore' }], rows: mkRows(1) });
+check('C6 部分指标 deferred（聚合指标）→ 不得 ready', rC6mix.status !== 'ready' && rC6mix.reportSpec === null && hasWarn(rC6mix, /I5/));
+var rC6agg = plan({ outName: 'c6agg', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }, { term: 'rowNo', aggregation: 'avg' }], rows: mkRows(1) });
+check('C6 部分指标 deferred（显式 avg）→ 不得 ready', rC6agg.status !== 'ready' && rC6agg.reportSpec === null && hasWarn(rC6agg, /I3|I5/));
+var rC6unk = plan({ outName: 'c6unk', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }, { term: '___幽灵指标___' }], rows: mkRows(1) });
+check('C6 对照：未知术语仅记 warning（既有行为不回归）', hasWarn(rC6unk, /模型缺口/) && rC6unk.reportSpec !== null);
 var rfil = plan({ outName: 'fl', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), filters: [{ column: 'stage' }] });
 check('filters 越权→deferred(I2/I3) 记录', hasWarn(rfil, /I2/));
 var rcht = plan({ outName: 'ch', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'bar' } });
