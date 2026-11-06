@@ -324,3 +324,30 @@ AttrTooltipRichText label 侧（PieCategoryLabelContent）+ NormalDataModel(180)
 
 ### 下一项工作
 R2-4 视觉分层验证（逐项 PNG 实拍），之后才按 docs/night-shift-log 留账顺序进 vmap/poly/批F/批D。
+
+
+## 2026-11-06 12:45（闭环审计 §5 实施：步2/步3/步4）
+
+### 工作目标
+用户要求"实施啊"——把审计报告落地为代码，按 §5 顺序：最小证据对账 → Golden E2E 自动复证 → 视觉验证。
+
+### 代码证据
+- 审计基线 docs/architecture/capability-closure-audit.md（定稿 dd4bf3a）：regression 四层独立、需标注覆盖层；vmap 拆引擎/产品链路；discover=能力说明非闸门。
+
+### 实施内容
+- 步2（6018ad6）：新增 verify/fast_manifest_evidence.js 对账器（硬红线：regression=verified 禁一句 README、引用 probe/carrier 路径磁盘可查、regressionScope 合法）+ 挂 run-fast-tests（14 套件）；manifest 升 v3 加第7参 regressionScope，27 项 README-only 逐项补真实引用（test_vanchart/test_cellattrs/test_hla2/test_write/test_pagehf/test_g/sales_demo_chart/db_laser_subtotal/fast_sqlbuilder/integration_runtime），legacy pie/line 标族级代表不造假。
+- 步3（796972e）：scripts/run-golden-e2e.ps1 固化 plan→plan2spec→create→validate(-ExpectTotals 33531:26531)→preview；preview 改 .NET 直读 PNG 绕开 PS5.1 GBK 中文路径果酱 + 容差判读（稀疏报表墨量≥0.2%，非无容差全图 diff）；ASCII-only；真引擎 ge20261106123412 GOLDEN E2E PASS，validate "合计对拍外部真值"=True。
+- 步4（9989b4f）：真引擎 PNG 目检 5 项——areaFill 升 verified；seriesBorder/seriesImage/vpie summary 视觉未现形维持 pending；legacy axisX(fontPt:14) 放大生效记入 evidence；新增 reports/test_visual_deco.js。
+
+### 验证结果
+- fast14 GREEN / scan 50+1 / 默认铁证 CBEB42E3 逐字节（-Heap 600m 绕开 COMMIT_LIMIT_LOW 预检，未擅关用户进程）。
+- **负门未通过（如实）**：FreeVirtual=1796MB<2100MB，5 路 exit=8 预检拒绝；属环境内存阻塞非逻辑失败，不改脚本迁就，逻辑 GREEN 沿用 fa0e04b 终行，待内存释放复跑。
+
+### 未验证事项
+- coverage full ↔ manifest verified 交叉对账（§5步2d 增强项，未做）；seriesBorder/seriesImage/vpie summary 视觉维持 pending；vmap/poly/heatmap 保持 pending 不接线。
+
+### Commit
+6018ad6 / 796972e / 9989b4f。
+
+### 下一项工作
+内存释放后复跑负门；之后才按文档重评 vmap。
