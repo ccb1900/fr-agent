@@ -1126,3 +1126,19 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 - 当前 HEAD 门：fast 15 rc=0 / scan 60 ok 0 bad / 基线 CBEB42E3CE48E46E362B9AE80168026F。
 - 本轮大干连续交付：多 Sheet e2e、合计非 sum 聚合、D2 地图 area+point、参数执行期筛选、D1 第4轮结论（不接线）、以及各轮复审修复。
 - 下一轮候选：D3 热力/图片地图（官方 网页热力图 结构待探）、D4 ChartHyperRelateCellLink、page.freezeWeb、write.submit（外部 DML 风险）、多 Sheet SQL extra（需 make_api deps 扩展）。
+
+## 2026-11-06 收口 C3：spec.params.filter 证据口径（选 B：agentOverride=false）
+
+### 问题证据
+- application/capability_manifest.js `spec.params.filter` 原为四层 verified 且 agentAvailable=true（缺省四层推导）——但证据只有「默认参数值过滤」载体（examples/report-spec/param_filter.json 默认 A线 → PNG 只渲染 A线 行）。Web 交互改参数后重查询（静态 PNG 无法证明）与 plan→create 链路均无证据，agentAvailable=true 属夸大。
+
+### 实施
+- manifest：spec.params.filter 加 agentOverride=false；evidence 拆明「已验证=默认参数值过滤 / 未验证=Web 交互改参后重查询、plan→create」。
+- README #140 行同步口径；本条留账。不改 validator/compiler/object 任何代码（纯证据口径）。
+
+### 验证
+- fast_manifest_evidence 真跑 failures=0（README #140 引用存在、fast_report_spec 存在、rendering scope 有 PNG 字样）。
+- 未跑：引擎级交互验证（属 Web 行为，静态管线不可达）——如实标注。
+
+### 边界/未验证
+- Web 交互改参后重查询、plan→create（filter 路径）两项仍未验证；后续若补 e2e 需带交互步骤或引擎参数注入。
