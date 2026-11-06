@@ -11,6 +11,9 @@ replay_pid*.log
 #   纪律不变：进该目录前必须过凭据扫描（whmeiko|password|jdbc: 零命中，AGENTS 数据纪律）。
 *.cpt
 !docs/cpt-samples/*.cpt
+# 2026-11-06（外部审查 P1）：Golden 离线核验器的入库 fixture 需 .orig.cpt 原件快照，
+#   让干净 clone 也能跑 fast 15（logs/ 整体排除，fixture 是唯一受版本控制的副本）。
+!verify/fixtures/golden/**/*.cpt
 *.png
 *.jpg
 *.jpeg
