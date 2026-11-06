@@ -988,3 +988,14 @@ test_visual_deco 用 `var J = Java.type(...)` 覆盖 make_api 同作用域全局
 
 ### 验证
 - fast 15 套件 rc=0；基线 MD5 精确；scan 不受影响（58 ok）。
+
+## 2026-11-06 集成门 + backlog 卫生收尾
+
+### 集成门（make_api 改动后按纪律补跑）
+- scripts/run-integration-tests.ps1：INTEGRATION END failures=0 / GATE GREEN（S23/S24a-c/S25/S26/S28/S27/S27b/S27e 全 PASS，含同 RunId 并发恰好一次引擎、pidfile 故障 fail-closed）。
+
+### backlog B-审查3-3（测试卫生）
+- fast_report_spec B6 3 列 span 测试：mutator 内 dataset 改 { rows: [['A','X',1]] }，与维度+度量 3 列一致。
+
+### 验证
+- fast 15 套件 rc=0；集成门 GREEN。

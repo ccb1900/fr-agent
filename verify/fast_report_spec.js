@@ -236,6 +236,7 @@ check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params =
   // 审查轮2：用 3 列（2 维+1 度）证明 span 取最小求和列（旧 n-1=2，新=1；2 列时会误判为通过）
   var rs3 = baseRowsSpec(function (rs) {
     rs.dimensions = [{ field: 'line', label: '线', widthPt: 120 }, { field: 'cat', label: '类', widthPt: 100 }];
+    rs.dataset = { rows: [['A', 'X', 1]] };   // 审查3-3：3 列宽与维度+度量一致
     rs.presentation.total = { sumCols: [{ col: 1 }, { col: 2 }] };
   });
   var c = null;

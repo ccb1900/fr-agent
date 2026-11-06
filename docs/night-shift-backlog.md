@@ -98,6 +98,5 @@
 ## ~~B-审查3-2 legacy pie/line + legend + barInterval 仍被 object 丢~~（完成 2026-11-06）
 - 已完成：反射+部署 cpt 一手定案——真正落 XML 的宿主只有 vbar（legacy Bar2DPlot 有 setter 但 writer 不序列化）；IR 限 vbar，其余 kind 结构化拒；object 改为 setter 存在性守卫；载体 test_barinterval（vbar，categoryIntervalPercent=25.0 入 XML）；rebuild_first 移除从未生效的 legacy barInterval 伪键。
 
-## B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列（P3，2026-11-06）
-- 证据：编译期不校验 rows 宽度，IR validate 未跑该产物；断言本身有效。
-- 方向：fixture 补齐 3 列 rows（纯测试卫生）。
+## ~~B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列~~（完成 2026-11-06）
+- 已完成：rs3 mutator 内 dataset 改 { rows: [['A','X',1]] } 与 3 列一致；fast 15 rc=0。
