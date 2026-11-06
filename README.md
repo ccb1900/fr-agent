@@ -280,6 +280,7 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #113 能力矩阵与路线图（docs/architecture/capability-matrix.md）：七源对账+六维评分+P0-P3 排序+前三项；第一项「合并行/多层表头（IR cells rowSpan）」已实施（ir.js:545 + object.js 传 spanR/多行游标 + 载体 test_merge_header + PNG 实拍）
 - #114 R3-0 收尾：rowSpan 游标缺陷修复（合并格曾被覆盖丢失）+ IR 整数闸/块内重叠静态拒 + 7 场景断言 + 真引擎载体；矩阵口径修正（cells 合并 vs header 多层拆行、Agent 可用=待验证、频率 103/240 文件）
 - #115 Native Capability Inventory（docs/architecture/native-capability-inventory.md）：五层差集（Engine/CPT+Object/IR/ReportSpec/Agent）+ A/B/C/D 四份清单；核心结论=最大金矿是 B 类（IR 已有但 ReportSpec 无入口：条件高亮/参数面板/cells 族/页眉页脚），A 类确证仅多 Sheet；确立原则=不做 FR 重实现，只做语义接口层
+- #116 C 类两项裁定/实施：C1 TemplateInfoAttrMark 探针更正为 cloud 插件类（com.fr.plugin.cloud.analytics.attr.*，core 包无此类→noncore 不追）；C2 隐藏行列三层打通（IR sheets[].hideRows/hideCols 整数闸 + object 于 sheet 构建末归零行高/列宽 + ReportSpec sheet.hideRows/hideCols）——rawIR 载体与 spec 载体均真引擎跑通（RowHeight[1]=0/ColumnWidth=0，PNG 表头行与列消失），fast 5 套件/scan 55 ok/基线 MD5 CBEB42E3 不变
 
 ---
 

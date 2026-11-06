@@ -65,14 +65,14 @@
 | 单元格排序 cell.sort/SortHeader | ✓ FR 类可加载 | ✗ 未调用 setCellSortAttr（仅注释） | 缺语料（240 demo 无非空 cellSortAttr） | ir.js:522 rejected |
 | 写回 Verifier 族 | ✓ ValueVerifier 类在 | ✗ VerifyItem≠Verifier | 挂点未通 | ir.js:727 rejected |
 | 多 sheet（A 类同项） | ✓ | ✓ | 见 §2 | — |
-| 隐藏行列 | ✓（待核实 API 面） | ✗ | 未研究 | object 零命中 |
+| 隐藏行列 | ✓ | ✓ 已接（C2，2026-11-06） | **完成**：IR `sheets[].hideRows/hideCols` + object 在 sheet 构建末 setRowHeight/setColumnWidth 归零 + ReportSpec `sheet.hideRows/hideCols` | 载体 test_hidden（rawIR）+ hidden.json（spec）：引擎 RowHeight[1]=0 / ColumnWidth[2]=0，PNG 表头行与「计划」列消失；基线 MD5 不变 |
 | 绝对布局（WAbsoluteLayout） | ✓ | ✓ BoundsWidget 已构造（浮动元素） | 部分（仅浮动，非整表布局） | 3D翘曲 5 处 |
-| TemplateInfoAttrMark | ✓ | ✗（同族 Id/Theme 已构造） | 未接 | 生产参考 1 处 |
+| TemplateInfoAttrMark | ✓（**cloud 插件包** `com.fr.plugin.cloud.analytics.attr.*`） | ✗ | **非缺口（noncore）**：core 包 `com.fr.base.iofile.attr.*` 无此类（ClassNotFoundException 探针实证），生产参考用的是云分析插件类，按范围圈定（`com.fr.plugin.cloud.*`=插件配置类）不追 | probe_ti.js + 3D翘曲 cpt class= 证据 |
 | WidgetDisplayEnhanceMarkAttr | ✓ | ✗ | 未接 | 生产参考 1 处 |
 | StrategyConfigsAttr | ✓ | ✗ | 未接（配置类，价值低） | 生产参考 1 处 |
 | coverage missing 32 / partial 20 | 部分 ✓ | 部分 ✗ | 明细见 coverage.md A 表 | — |
 
-**C 类结论**：cell.sort/verifiers 是"引擎有墙、项目明确拒"（诚实留账）；TemplateInfoAttrMark 与已构造的 Id/Theme 同族，**最低成本可补**；隐藏行列需先研究 FR API。
+**C 类结论**：cell.sort/verifiers 是"引擎有墙、项目明确拒"（诚实留账）；TemplateInfoAttrMark 经探针更正为 **cloud 插件类（noncore）**，不属于本项目范围、非缺口；隐藏行列已按 C2 完成（IR+object+ReportSpec 三层 + 引擎/PNG 实证）。
 
 ## 5. D 类清单：Engine 原生支持，项目完全没接入（按业务价值排序）
 
@@ -91,7 +91,7 @@
 ## 6. 待逐项核实（诚实标注，不臆造）
 
 1. object.js 消费键（~100 个）与 ir.js 白名单的逐项可达性——ir 校验宽松（多数键不枚举），"可达"置信度高但未逐项跑通。
-2. FR 隐藏行列 API（setHidden/setRowHidden 面）与真实样本——未研究。
+2. ~~FR 隐藏行列 API 与真实样本~~——已核实（C2）：语义即行高/列宽归零（sheet.setRowHeight/setColumnWidth(FU 0)），在 sheet 构建末应用才不被块行高覆盖；载体与 PNG 实证见 §4。
 3. 3D翘曲 `NoneReg` 在 object 的对应（REGF 族已覆盖 none/phone/idcard/mobile/postcard/custom，生产用的是 NoneReg=默认无校验，属"零触碰"，不需构造）——已核，非缺口。
 4. 官方 API 文档面（help.fanruan.com）逐条对照——本轮未联网抓取，以 demo 类账本 + 生产 CPT + jar 类面为证据源。
 
@@ -101,7 +101,7 @@
 |---|---|---|---|
 | **B：IR 已有、Agent 无入口** | 补 ReportSpec/Planner 字段 + 校验 + 载体 | **最高** | **R3-1 条件高亮 → R3-2 参数面板**（原路线不变，且现在有库存证据支撑） |
 | A：Object 已有、IR 缺 | 放开 IR + 载体验证 | 高（single item） | 多 Sheet 列为 P2 低成本项 |
-| C：Object 部分/原生类未接 | 复用已有构造/研究 API | 按价值 | TemplateInfoAttrMark（低成本）、隐藏行列（先研究） |
+| C：Object 部分/原生类未接 | 复用已有构造/研究 API | 按价值 | 隐藏行列已完成（C2）；TemplateInfoAttrMark 裁定 noncore 不追；cell.sort/verifiers 诚实拒留账 |
 | D：Engine 支持未接 | 研究成熟 API + 真实样本 | 低（P2–P3） | vmap/poly/heatmap 继续 pending |
 
 **架构原则（本轮确立）**：**fr-agent 不做 FineReport 的重新实现，只做"让 Agent 安全完整调用 FR 已有能力"的语义接口层。** 新增能力的默认动作顺序 = 查原生 → 查 Object/CPT → 查 IR → 补 spec/planner，而不是从 IR 往下推。

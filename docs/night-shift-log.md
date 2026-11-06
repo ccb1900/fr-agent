@@ -598,3 +598,34 @@ R3-1：ReportSpec 条件高亮 + 静默丢弃修复（P1）。
 
 ### 下一项工作
 B 类优先：R3-1 ReportSpec 条件高亮 + 静默丢弃修复。
+
+## 2026-11-06 C1/C2（A/B/C/D 顺序执行 · C 类）
+
+### 目标
+C1 与已构造的 TemplateId/Theme 同族补 TemplateInfoAttrMark；C2 隐藏行列研究 API+实现+验证。
+
+### 代码证据
+- C1：probes/probe_ti.js 反射 `com.fr.base.iofile.attr.TemplateInfoAttrMark` → ClassNotFoundException；生产参考 3D翘曲 cpt 实际 class=`com.fr.plugin.cloud.analytics.attr.TemplateInfoAttrMark`（cloud 插件包）。按范围圈定（com.fr.plugin.cloud.*=插件配置类，noncore）→ **非缺口，不实现**。
+- C2：初版将 hide 应用在块构建前 → 引擎 DIAG RowHeight[1]=304800（被 header 块 setRowHeight 覆盖）；改为 sheet 构建末应用后 RowHeight[1]=0。
+
+### 实施
+- lib/object.js：每 sheet 块循环结束后，对 sIR.hideRows/hideCols 执行 setRowHeight/setColumnWidth(FU.getInstance(0))。
+- lib/ir.js：sheets[].hideRows/hideCols 非负整数数组闸。
+- lib/spec_validator.js + spec_compiler.js：SHEET_KEYS 加 hideRows/hideCols + makeSheet 直通。
+- 载体：reports/test_hidden.js（rawIR）、examples/report-spec/hidden.json（spec）。
+- verify/fast_report_spec.js：+4 断言（零误报/非整数拒/非数组拒/compile 直通）。
+
+### 验证结果
+- rawIR 载体：failures=0，全阶段 passed，RowHeight[1]=0、ColumnWidth[1]=0；PNG 目检表头行与「计划」列消失。
+- spec 载体：failures=0，全阶段 passed，RowHeight[1]=0、ColumnWidth[2]=0；PNG 目检一致。
+- 门：fast 5 套件 rc=0；scan_all_specs ok=55 bad=0 skipped=1；默认 spec 基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### 未验证事项
+- 列表按行号（0 基）语义，与 cells item r 一致；Excel 式"隐藏后仍参与打印边界"未专项验证（PNG 已证视觉消失）。
+- C1 的 cloud 插件类未做运行时构造（范围外，无实现意图）。
+
+### Commit
+（本条提交。）
+
+### 下一项工作
+C3 cell.sort/verifiers 诚实拒记录 → D1 组合图结构探针。

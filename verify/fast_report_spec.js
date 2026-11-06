@@ -233,5 +233,15 @@ check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params =
   check('B6 compile: total 走 sumCols 通道（无 aggregate）', !!(t && t.sumCols && t.sumCols.length === 1 && !t.aggregate));
 })();
 
+// ===== C2（2026-11-06）：隐藏行列（sheet.hideRows/hideCols → object 行高/列宽归零） =====
+check('C2 sheet.hideRows/hideCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [1, 3] }; })).length === 0);
+check('C2 sheet.hideRows 非整数拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1.5] }; }), 'INVALID_NUMBER', 'sheet.hideRows[0]'));
+check('C2 sheet.hideCols 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideCols: 'x' }; }), 'INVALID_ARRAY', 'sheet.hideCols'));
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [2] }; })); } catch (e) { check('C2 compile 不抛: ' + e, false); return; }
+  check('C2 compile: hideRows/hideCols 直通 sheet', !!(c.sheets[0].hideRows && c.sheets[0].hideRows[0] === 1 && c.sheets[0].hideCols && c.sheets[0].hideCols[0] === 2));
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
