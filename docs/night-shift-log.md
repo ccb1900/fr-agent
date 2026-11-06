@@ -714,3 +714,16 @@ D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff �
 
 ### 下一项
 审查轮3：复审本轮 5 项修复是否引入新问题；若无 P1/P2 则审查循环收敛。
+
+## 2026-11-06 审查轮3（收敛轮）
+
+### 结论
+复审 084985d：轮2 的 5 项 P2 全部关闭（含空断言已可失败、sumCols col0 双闸无重复报错、barInterval 与 object 真值一致、schema if/then/else 方向正确、stub-deps 散点编译真正走 isScatter 分支）；**未发现新 P1/P2，审查循环收敛**。残留 3 项为宽松/测试卫生级别，记 backlog（B-审查3-1/2/3），不属缺陷。
+
+### 验证
+- fast 15 套件 rc=0；scan ok=55 bad=0；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F（084985d 时点）。
+- 补跑 B1/B3 载体：hl_conditions / cells_extras 真引擎 failures=0。
+
+### 状态
+- 工作区干净；最后提交 084985d（本轮仅文档 backlog/log 追加后再提交一次）。
+- 下一轮可直接续：manifest 补 7 行（B-审查1-1）→ D1 重开需子图系列分配语料；D2 独立工单。

@@ -92,3 +92,17 @@
 - 影响：能力权威表对 B/C 新能力沉默（不撒谎，但也不声明）。
 - 验收：6-7 行按四层状态 + regressionScope + agentAvailable 如实填写；KEY_OF 覆盖；fast_manifest_evidence 零 FAIL。
 - 依赖：无（纯声明层）。
+
+## B-审查3-1 schema 宽松镜像（P3，2026-11-06）
+- 证据：schemas/report-spec.schema.json 的 if/then/else 只按 kind 分流，散点仍允许同时写 category/value、bar 仍允许 x/y（spec_validator 会拒）。
+- 方向：schema 自declare spec_validator 为权威，宽松方向不产生假绿；若外部工具依赖 schema 严格性再收紧（additionalProperties/not）。
+- 验收：schema 与 validator 双向一致性测试（可选）。
+
+## B-审查3-2 legacy pie/line + legend + barInterval 仍被 object 丢（P3，2026-11-06）
+- 证据：IR 放行（(van||legend) 真），object.js:511 只在 plot.setCategoryIntervalPercent 存在时应用；legacy Line/Pie 无此 setter。
+- 影响：写了不生效（非数据错误，视觉静默）。
+- 验收：IR 按 kind 精确限定 barInterval 宿主（vbar/varea 或 legacy Bar2D）+ 负项断言。
+
+## B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列（P3，2026-11-06）
+- 证据：编译期不校验 rows 宽度，IR validate 未跑该产物；断言本身有效。
+- 方向：fixture 补齐 3 列 rows（纯测试卫生）。
