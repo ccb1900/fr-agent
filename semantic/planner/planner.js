@@ -74,9 +74,12 @@ var ReportPlanner = (function () {
       ['filters', 'sort', 'topN'].forEach(function (k) {
         if (dsn[k] != null) dsOut[k] = dsn[k];
       });
+      // C6 同口径（2026-11-07 B段复审）：顶层 filters 未被采用（非数组形态/与 dataset.filters 冲突）=
+      //   数据范围悄悄变窄 → 计入阻断，不得 ready（数组形态且 dataset.filters 未给时正常采纳，不受影响）。
+      var sqlBlockedFeatures = 0;
       if (intent.filters != null) {
         if (dsOut.filters == null && Object.prototype.toString.call(intent.filters) === '[object Array]') dsOut.filters = intent.filters;
-        else validationWarnings.push({ feature: 'filters', reason: 'sql 路的筛选须放 dataset.filters（顶层 filters 未采用）', owner: 'I5 spec 形态' });
+        else { validationWarnings.push({ feature: 'filters', reason: 'sql 路的筛选须放 dataset.filters（顶层 filters 未采用）', owner: 'I5 spec 形态' }); sqlBlockedFeatures++; }
       }
       var presIn = (intent.presentation && typeof intent.presentation === 'object' && !(intent.presentation instanceof Array)) ? intent.presentation : {};
       // 原样透传用户写的 presentation 键（未知键交 SpecValidator 明确拒，planner 不静默吞）
@@ -100,16 +103,19 @@ var ReportPlanner = (function () {
       var sqlErrs = ctx.validateSpec(sqlSpec);
       // I5.1 P2：成员缺失（幽灵维度/指标）→ 绝不 ready；B1：ambiguous（双指）→ 反问优先（status=ambiguous，
       //   reportSpec 置 null 与内嵌路径一致）；纯 unknown/形状错 → rejected。
-      var sqlStatus = ambiguousTerms ? 'ambiguous' : (memberMissing ? 'rejected' : ((sqlErrs && sqlErrs.length) ? 'rejected' : 'ready'));
+      var sqlStatus = ambiguousTerms ? 'ambiguous' : (memberMissing ? 'rejected' : ((sqlErrs && sqlErrs.length) ? 'rejected' : (sqlBlockedFeatures > 0 ? 'rejected' : 'ready')));
       if (sqlErrs && sqlErrs.length) sqlErrs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
       return { status: sqlStatus, reportSpec: sqlStatus === 'ready' ? sqlSpec : null, assumptions: assumptions, unresolvedQuestions: unresolvedQuestions, validationWarnings: validationWarnings };
     }
 
-    // 能力越权键（filters/chart/semantic 源）→ deferred + owner，不降级
+    // 能力越权键（filters/chart/semantic 源）→ deferred + owner，不降级。
+    // C6 同口径（2026-11-07 B段复审）：被能力墙丢掉的 filters/chart 同样累计阻断——
+    //   数据范围/报表结构悄悄变窄比失败更危险（与 blockedMetrics 同一立论），不得 ready。
+    var blockedFeatures = 0;
     (['filters', 'chart']).forEach(function (feat) {
       if (hasOwn(intent, feat) && intent[feat] != null) {
         var c = ctx.capability.intentFeature(feat, ctx.caps);
-        if (c.verdict !== 'supported') validationWarnings.push({ feature: feat, reason: c.reason, owner: c.owner });
+        if (c.verdict !== 'supported') { validationWarnings.push({ feature: feat, reason: c.reason, owner: c.owner }); blockedFeatures++; }
       }
     });
 
@@ -174,9 +180,11 @@ var ReportPlanner = (function () {
       if (errs && errs.length) {
         errs.forEach(function (e) { validationWarnings.push({ term: e.path, reason: e.code + ': ' + e.message, owner: 'spec 校验' }); });
         status = 'rejected';
-      } else if (blockedMetrics > 0) {
+      } else if (blockedMetrics > 0 || blockedFeatures > 0) {
         // C6：deferred/rejected 聚合指标累计阻断——不静默少指标（报表口径悄悄变窄比失败更危险）
-        validationWarnings.push({ feature: 'metrics', reason: blockedMetrics + ' 个指标聚合超出 I1 能力（deferred/rejected 被丢），整体不 ready；请改用可列求和物理列或走 sql 路预聚合', owner: 'I4 能力墙（C6）' });
+        if (blockedMetrics > 0) validationWarnings.push({ feature: 'metrics', reason: blockedMetrics + ' 个指标聚合超出 I1 能力（deferred/rejected 被丢），整体不 ready；请改用可列求和物理列或走 sql 路预聚合', owner: 'I4 能力墙（C6）' });
+        // C6 同口径：filters/chart 意图片段被能力墙丢掉同样阻断（数据范围/报表结构不能悄悄蒸发）
+        if (blockedFeatures > 0) validationWarnings.push({ feature: 'filters/chart', reason: blockedFeatures + ' 个意图片段（filters/chart）超出 I1 能力（deferred 被丢），整体不 ready；筛选请预筛数据后内嵌或走 sql 路 dataset.filters', owner: 'I4 能力墙（C6 同口径）' });
         status = 'rejected';
       } else status = 'ready';
     }

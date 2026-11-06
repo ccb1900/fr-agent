@@ -68,6 +68,9 @@ var ModelValidator = (function () {
     else if (isStr(exp.table) && !hasOwn(idx, exp.table)) E(errs, 'UNKNOWN_REF', path + '.table', 'count 的表不在 schema: ' + exp.table);
     if (exp.op != null && !hasOwn(ModelVocab.OPS, exp.op)) E(errs, 'INVALID_ENUM', path + '.op', kind + ' 未知 op: ' + exp.op);
     if (kind === 'countThreshold' && exp.value == null) E(errs, 'REQUIRED', path + '.value', 'countThreshold 需要判定阈值 value');
+    // 2026-11-07 B段复审：value 原样拼进 SQL 数值比较位（sqlbuilder metricSelect：TRY_CAST(col) op value），
+    //   非有限数值在这里拒——字符串会产出坏 SQL 晚失败，且这是模型文件的唯一值安全闸（与 sqlbuilder 数值 filter 同纪律）。
+    if (kind === 'countThreshold' && exp.value != null && !isNum(exp.value)) E(errs, 'INVALID_NUMBER', path + '.value', 'countThreshold.value 须有限数值（SQL 数值比较位，禁自由文本）: ' + exp.value);
   }
 
   // options.uniqueKeyEvidence: { 'table.column': true } —— 外部读数据侧唯一性探针结果注入（本件零 IO/零 java，R7）

@@ -163,6 +163,9 @@ check('I5.1-T5 ratio scale 非数→INVALID_NUMBER', codeAt(ModelValidator.valid
 check('裸 formula 串→INVALID_TYPE（禁不可验证黑箱）', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[0].expression = { formula: 'COUNT(*)' }; }), schema), 'INVALID_TYPE', 'expression'));
 check('naming-derived 缺 requiresConfirmation→REQUIRED', codeAt(ModelValidator.validate(mut(function (m) { delete m.relationships[2].requiresConfirmation; }), schema), 'REQUIRED', 'requiresConfirmation'));
 check('未知 metric kind→INVALID_ENUM', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[0].expression = { kind: 'median', table: 'laser_aaa', column: 'score' }; }), schema), 'INVALID_ENUM', 'kind'));
+// 2026-11-07 B段复审：countThreshold.value 原样拼进 SQL 数值比较位（sqlbuilder metricSelect），
+//   非数值串会产出坏 SQL 晚失败（且模型文件是唯一信任边界，闸收紧到 preflight 更早更清晰）
+check('countThreshold value 非数值→INVALID_NUMBER', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[1].expression.value = '0.9 THEN 1 ELSE 0 END)--'; }), schema), 'INVALID_NUMBER', 'value'));
 check('validator 抗炸：垃圾输入不抛只产诊断', (function () { try { return Array.isArray(ModelValidator.validate(null, null)) && Array.isArray(ModelValidator.validate(42, {})); } catch (e) { return false; } })());
 check('validator 确定序（同输入两次全等）', JSON.stringify(ModelValidator.validate(model, schema)) === JSON.stringify(ModelValidator.validate(model, schema)));
 check('validator 不改输入模型', (function () { var s = JSON.stringify(model); ModelValidator.validate(model, schema); return JSON.stringify(model) === s; })());
