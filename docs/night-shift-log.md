@@ -496,7 +496,8 @@ SQL Server 恢复后跑完整 e2e 收尾。
 
 ### 实施内容
 - `.gitignore` 加 `!verify/fixtures/golden/**/*.cpt` 例外（fixture 是 logs/ 被排除后唯一受版本控制的 golden 证据副本）。
-- verify_sql_data.js 两处 section 正则、fast_golden_closure.js 一处 → `?
+- verify_sql_data.js 两处 section 正则、fast_golden_closure.js 一处 → `
+?
 ` 兼容 CRLF。
 
 ### 验证结果
@@ -511,3 +512,31 @@ bcdfd13（.gitignore 例外）+ d21fde7（CRLF 正则）+ 本条文档。
 
 ### 下一项工作
 按审查建议：暂停架构改动，重新做一次全局审查（生产代码/能力账本/Golden 产物/测试入口一致性）。
+
+## 2026-11-06 16:00（能力矩阵路线图 + 第一项实施：合并行/多层表头）
+
+### 工作目标
+用户纠正"用两个讨论过的技术点绑架路线图"，要求六维评分+七源对账的能力矩阵，选前三项：第一实施、后两待办。
+
+### 代码证据
+- IR：`lib/ir.js` CAPABILITIES 词表 + cells item 仅 `span`（列合并）；`object.js:303` 已支持 setRowSpan（缺口只在 IR 键）。
+- 真实频次：240 demo `rs>1` **1364 处**、`cs>1` **5757 处**（年度财务分析报告单张 rs36+cs331）；3D翘曲 `rs=2/cs=4`。
+- Agent 墙（独立取证）：spec_compiler 零 param；detail 硬写 conditions:null；footnote 过校验不发射；rows 只取 rows；planner deferred 仅 warning 不阻断；patch 仅 2 op。
+
+### 实施内容
+- 新增 `docs/architecture/capability-matrix.md`：七源对账（coverage/manifest/IR/object/cpt/引擎样本/Agent 链路）、六领域矩阵、六维评分、两项排序、前三项（1 合并行已实施；2 ReportSpec 条件高亮+静默丢弃；3 ReportSpec 参数面板；4 非 sum 聚合）。
+- 第一项实施：`lib/ir.js:545` cells item 加 `rowSpan` 白名单；`lib/object.js` cells 分支传 `it.rowSpan`（putCell spanR）+ 按 item.r 计算多行游标/逐行行高；新增载体 `reports/test_merge_header.js`。
+- backlog 新增 R3-1~R3-4。
+
+### 验证结果
+- scan 52+1（merge_header 过 validate）；部署 cpt `rs="2"`×2 + `cs="2"`×1 + `cs="4"`×1；PNG 目检：生产线/良率跨两行、生产情况跨两列、数据行对齐。
+- fast 15 GREEN；负门 5 路 GREEN；默认铁证 CBEB42E3 逐字节（载体轮后默认 spec 回补）。
+
+### 未验证事项
+- 第二/三项（ReportSpec 条件高亮/参数面板/非 sum 聚合）仅入待办，未实施。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+R3-1 ReportSpec 条件高亮 + 静默丢弃修复（P1）。

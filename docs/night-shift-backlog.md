@@ -44,3 +44,21 @@
 
 ### R2-5：vmap/poly/批F 写回/批D 凭据（原留账，顺序后延）
 - 外部依赖：R2-1~R2-4 收敛后再启动；直续步骤见 docs/night-shift-log.md。
+
+## 能力矩阵路线图（2026-11-06，docs/architecture/capability-matrix.md）
+
+### R3-1（P1，下一项候选）：ReportSpec 条件高亮通路 + 静默丢弃修复
+- 证据：`lib/spec_compiler.js:149` detail 硬写 `conditions:null/highlight:null` → plan/create 路无法交付"<80% 高亮"（golden 需求原句就有）；`spec_validator:33-35` footnote 过校验但 rows 编译器从不发射（`spec_compiler:146-161`）；rows 路 sort/topN/dateRange/filters 不检查不消费。
+- 验收：plan 路可表达 conditions；footnote/sort/topN 不再静默丢（实现或结构化拒）；载体+PNG 真值；golden 同需求可由 plan 直达。
+
+### R3-2（P1）：ReportSpec 参数面板 + 执行期筛选
+- 证据：`spec_compiler.js` 零 param（IR 有 13 控件族，rawIR 可用；JSON 路无通路）；golden 用编译期 dateRange 字面量。
+- 验收：spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍。
+
+### R3-3（P1）：合计行非 sum 聚合（avg/ratio/count）
+- 证据：`lib/ir.js:454` aggregate.fn 仅 sum（object 硬编码 =SUM）；planner `capability.js:9-12` avg/count/ratio deferred（且仅 warning 不阻断）。
+- 验收：IR aggregate.fn 白名单扩展；Object 构造对应 FR 聚合；合计行 PNG 真值对拍。
+
+### R3-4（P1）：planner deferred 阻断性
+- 证据：`capability.js:10-12` deferred 只写 warning 不阻断，spec 仍 ready（`planner.js:127`）→ Agent 可能"成功"产出少东西的报表。
+- 验收：deferred 进入 unresolvedQuestions 或明确降级告知；fast_planner 断言。
