@@ -783,3 +783,24 @@ D 类：D1 重开需子图系列分配 ConditionCollection 语料；D2 vmap 需�
 
 ### 下一项
 matrix §3.1 剩余：chart.seriesBorder/seriesImage/vpie summary 视觉验证（P3）；或 D2 vmap 独立工单。
+
+## 2026-11-06 Planner 链路收尾：params/sheet 透传
+
+### 目标（P2 Agent 真实链路）
+检查新 spec 字段能否从 plan 动词到达 reportSpec。证据：semantic/planner/planner.js 两分支只透传 presentation，`intent.params`/`intent.sheet` 被静默丢——Agent 走 plan 时 B2 参数面板与 C2 隐藏行列不可达。
+
+### 实施
+- planner.js rows/sql 两分支：`intent.params`/`intent.sheet` 原样透传进 spec（形状仍交 SpecValidator；非法键→rejected，不静默）。
+- verify/fast_planner.js +6：rows params/sheet 透传且 ready、非法 params/sheet→rejected、sql params 透传且 ready。
+
+### 验证
+- fast_planner failures=0；fast 15 套件 rc=0。
+
+### 未验证
+- plan→create 端到端产物（golden e2e intent 未含 params/sheet）未跑；契约层已证。
+
+### Commit
+（本条提交。）
+
+### 下一项
+剩余大项：多 Sheet 进 ReportSpec（P2 高成本）、跨数据集关联（P2）、D2 vmap（独立工单）、D1 重开（缺系列分配配方）。

@@ -92,6 +92,9 @@ var ReportPlanner = (function () {
         dataset: dsOut,
         presentation: pres
       };
+      // 2026-11-06（B2/B4/C2 收尾）：params/sheet 原样透传（形状交 SpecValidator；未知/非法键→rejected，不静默丢）
+      if (intent.params != null) sqlSpec.params = intent.params;
+      if (intent.sheet != null) sqlSpec.sheet = intent.sheet;
       assumptions.push({ key: 'dataset.kind', value: 'sql', why: '模型驱动 SQL 由 sqlbuilder 生成（非自由文本）' });
       var sqlErrs = ctx.validateSpec(sqlSpec);
       // I5.1 P2：成员缺失（幽灵维度/指标）→ 绝不 ready；B1：ambiguous（双指）→ 反问优先（status=ambiguous，
@@ -155,6 +158,9 @@ var ReportPlanner = (function () {
       dataset: { rows: Array.isArray(rows) ? rows : [] },
       presentation: presRows
     };
+    // 2026-11-06（B2/B4/C2 收尾）：params/sheet 原样透传（形状交 SpecValidator；未知/非法键→rejected，不静默丢）
+    if (intent.params != null) spec.params = intent.params;
+    if (intent.sheet != null) spec.sheet = intent.sheet;
 
     // 状态裁决：有未决歧义→ambiguous；否则组 spec 复验，合法→ready，非法/越权→rejected
     var status;

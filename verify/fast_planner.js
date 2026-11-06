@@ -139,6 +139,16 @@ var sqlTopFilters = plan({ outName: 'tf', dataset: { kind: 'sql', connection: 'A
 check('I1.1 顶层 filters(数组) 转入 dataset.filters', sqlTopFilters.status === 'ready' && sqlTopFilters.reportSpec.dataset.filters.length === 1);
 check('I1.1 sql 路非法 presentation 键→rejected（不再静默放过）', plan({ outName: 'bp', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, presentation: { foo: 1 } }).status === 'rejected');
 
+// —— 2026-11-06（B2/B4/C2 收尾）：params/sheet 从意图到 reportSpec 必须透传（此前 planner 只带 presentation）
+var rParams = plan({ outName: 'pp', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), params: [{ kind: 'date', name: 'd', value: '2026-01-01' }] });
+check('params 透传到 rows reportSpec 且 ready', rParams.status === 'ready' && rParams.reportSpec.params && rParams.reportSpec.params[0].kind === 'date');
+var rSheet = plan({ outName: 'ps', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), sheet: { hideRows: [1] } });
+check('sheet.hideRows 透传到 rows reportSpec 且 ready', rSheet.status === 'ready' && rSheet.reportSpec.sheet && rSheet.reportSpec.sheet.hideRows[0] === 1);
+check('非法 params→rejected（透传后由 SpecValidator 拒）', plan({ outName: 'pi', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), params: [{ kind: 'magic', name: 'x' }] }).status === 'rejected');
+check('非法 sheet 键→rejected（透传后由 SpecValidator 拒）', plan({ outName: 'si', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), sheet: { magic: 1 } }).status === 'rejected');
+var sqlParams = plan({ outName: 'sp', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, params: [{ kind: 'combo', name: 'line', values: ['A', 'B'] }] });
+check('params 透传到 sql reportSpec 且 ready', sqlParams.status === 'ready' && sqlParams.reportSpec.params && sqlParams.reportSpec.params[0].kind === 'combo');
+
 // ===== r14 P2: TermNorm 术语归一（候选契约 target/ref/column；中文 label→规范成员；歧义/非成员透传不臆造） =====
 load(ROOT + '/semantic/planner/termnorm.js');
 var resolveFn = function (t) { return ModelResolver.resolve(idx, String(t)); };
