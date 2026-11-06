@@ -116,7 +116,7 @@
 | 视觉检查 preview | ~ 仅 PNG 非空/墨量 | e2e preview 步 | P1 |
 | 自动修改复验 modify（diffClean/原件保留） | ✓ | Golden e2e modify 步 | P1 |
 | **ReportSpec 条件高亮（plan 路）** | ~~✗~~ **✓**（B1：presentation.conditions→IR detail.conditions；hl_conditions 载体 PNG） | README #118；manifest spec.rows.conditions | **P1→完成** |
-| planner 能力墙阻断性 | ~~仅 warning 不阻断~~ **✓ deferred/rejected 聚合指标累计阻断**（C6：blockedMetrics>0 → rejected，不静默少指标） | planner.js rows 分支；fast_planner C6 断言（先红后绿） | **P1→完成（C6，2026-11-06）** |
+| planner 能力墙阻断性 | ~~仅 warning 不阻断~~ **✓ metrics+filters/chart 双累计阻断**（C6 blockedMetrics + B段复审 blockedFeatures → rejected，不静默少指标/少筛选/少图） | planner.js rows 分支（blockedMetrics+blockedFeatures）+ sql 分支（顶层 filters 未采纳同阻断）；fast_planner C6 断言（先红后绿：a7be9f7 +3 先红 3 后绿） | **P1→完成（C6 + B段复审，2026-11-06/07）** |
 
 ## 2. 六维评分与优先级（关键项）
 

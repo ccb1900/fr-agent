@@ -83,8 +83,8 @@
 ### ~~R3-3（P1）：合计行非 sum 聚合（avg/ratio/count）~~（完成 #122/#124，2026-11-06）
 - 已完成：IR aggregate.fn 全词表+sumCols[].fn；test_total_agg/test_total_ratio 载体 PNG 真值。
 
-### ~~R3-4（P1）：planner deferred 阻断性~~（完成 C6，2026-11-06 收口）
-- 已完成：rows 分支 blockedMetrics 累计阻断（deferred/rejected 聚合指标→rejected，不静默少指标）；fast_planner C6 断言先红后绿。
+### ~~R3-4（P1）：planner deferred 阻断性~~（完成 C6 + B段复审扩展，2026-11-06/07 收口）
+- 已完成：rows 分支 blockedMetrics + blockedFeatures 双累计阻断（deferred/rejected 聚合指标与被能力墙丢掉的 filters/chart → rejected，不静默少指标/少筛选/少图，a7be9f7）；sql 分支顶层 filters 未采纳同阻断；fast_planner 断言先红后绿。
 
 ## ~~B-审查1-1 manifest 补新能力行~~（完成 2026-11-06）
 - 已完成：6 行入 manifest（sheet.hideRowsCols / cells.rowSpan / spec.rows.conditions / spec.rows.cells / spec.rows.sumCols / spec.params.panel），KEY_OF 同步；四层状态按证据如实（cells rendering=pending、params=serialization-only、rowSpan agentOverride=false）；fast_manifest_evidence 零 FAIL。
