@@ -1,5 +1,6 @@
 # fr-agent 能力矩阵与建设路线图（2026-11-06）
 
+> **五层模型与原生能力库存**：`docs/architecture/native-capability-inventory.md`（Engine / CPT+Object / IR / ReportSpec+Planner / Agent 五层差集；A=Object已有IR缺、B=IR已有Agent无入口、C=Object部分、D=Engine未接 四份清单）。**本矩阵只回答"已接入能力的成熟度与优先级"，不回答"FR 还有多少能力没开放"。**
 > 目的：回答"优先补齐哪些能力，才能最大程度提升 Agent 独立创建真实报表的成功率"，而不是"补哪个功能看起来高级"。
 > 方法：六维评分 → 四优先级 → 全项目七源对账 → 两项排序（补齐现有 / 新增）→ 前三项（第一实施，后两待办）。
 > **证据规则**：每行状态必须有可查证据（IR 键+行号 / Object 代码 / CPT 断言 / 引擎 PNG / Agent runId）；**不从文件存在或 README 声明推断**。

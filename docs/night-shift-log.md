@@ -569,3 +569,32 @@ R3-1 ReportSpec 条件高亮 + 静默丢弃修复（P1）。
 
 ### 下一项工作
 R3-1：ReportSpec 条件高亮 + 静默丢弃修复（P1）。
+
+## 2026-11-06 16:40（Native Capability Inventory：五层差集与 A/B/C/D 清单）
+
+### 工作目标
+用户指出：不能因为 IR 没字段就认为 FR 不支持；需要盘点"FR 已有、fr-agent 未开放"的能力，并调整开发策略（先盘点原生/底层，再补 IR/Agent）。
+
+### 代码证据（一手）
+- object.js 构造 FR 类 **127 个**；ir.js 显式结构化拒 **3 条**（multi_sheet/cell.sort/write.verifiers）。
+- **A 类确证**：多 Sheet——object.js:786 `wb.addReport(sIR.name, sheet)` 在 sheets 循环内已支持，ir.js:469 硬闸拒（注释"object.js v3.2 预留 throw"已过时）。
+- **B 类确证**：spec_compiler 字段面仅 dataset{kind,connection,entity,dimensions,metrics,rows,dateRange,filters,sort,topN}+presentation{chart,footnote,heightsPt,showTotal}；IR 已有的 param 13 控件/condition 8 族/cells 族/页眉页脚/水印/浮动/纸型/装饰族/rowSpan 全部无通路。
+- 生产参考 3D翘曲 14 类中 object 未构造 3 个：TemplateInfoAttrMark（与已构造 Id/Theme 同族）/WidgetDisplayEnhanceMarkAttr/StrategyConfigsAttr；NoneReg 属 REGF 族"零触碰默认"，非缺口。
+
+### 实施内容（只审计，不加功能）
+- 新增 `docs/architecture/native-capability-inventory.md`：五层模型（Engine/CPT+Object/IR/ReportSpec/Agent）+ 五层总览统计 + **A/B/C/D 四份清单**（含证据与置信度）+ 待逐项核实 4 项 + 下一阶段策略。
+- 能力矩阵加五层指针（明确矩阵只答"已接入能力的成熟度"，不答"还有多少没开放"）。
+- backlog 增 B 类清单（R3-5~R3-8）+ A 类 R3-9 多 Sheet + C 类 R3-10/11。
+- AGENTS 增架构原则（不做 FR 重实现，只做语义接口层；新增能力默认顺序=查原生→Object/CPT→IR→spec/planner）。
+
+### 验证结果
+- 纯文档轮，零生产代码改动；不涉门禁。
+
+### 未验证事项
+- object.js 消费键与 ir.js 白名单逐项可达性（宽松校验，置信高未逐项跑）；FR 隐藏行列 API 未研究；官方 API 文档未联网抓取（以 demo 账本+生产 CPT+jar 类面为证据源）。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+B 类优先：R3-1 ReportSpec 条件高亮 + 静默丢弃修复。

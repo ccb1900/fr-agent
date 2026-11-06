@@ -49,6 +49,26 @@
 ### R2-5：vmap/poly/批F 写回/批D 凭据（原留账，顺序后延）
 - 外部依赖：R2-1~R2-4 收敛后再启动；直续步骤见 docs/night-shift-log.md。
 
+## 原生能力库存（2026-11-06，docs/architecture/native-capability-inventory.md）
+
+### B 类（IR 已有、Agent 无入口）——**最高优先，不新增构造**
+- **R3-1 条件高亮 + 静默丢弃修复**（见下）
+- **R3-2 参数面板 + 执行期筛选**（见下）
+- R3-5：cells 族（rich/dict/subreport/barcode/corner/expand/linkTo/web/groupCustom）进 ReportSpec
+- R3-6：页眉页脚/水印/浮动/工具栏/纸型进 ReportSpec
+- R3-7：图表装饰族进 ReportSpec（tooltip/label/stack/条件色/轴/预警）
+- R3-8：合计行 sumCols/groupCustom、编辑器 reg 进 ReportSpec
+
+### A 类（Object/CPT 已有、IR 缺/拒）
+- R3-9（P2 低成本）：多 Sheet——object.js:786 `wb.addReport` 已支持多 sheet，ir.js:469 一条硬闸拒；放开 + 多 sheet 载体 + 真引擎验证。
+
+### C 类（Object 部分/原生类未接）
+- R3-10：TemplateInfoAttrMark（与已构造 Id/Theme 同族，低成本）
+- R3-11：隐藏行列（先研究 FR API 面再做）
+
+### D 类（Engine 支持未接）
+- vmap/poly/heatmap/组合图/热链：保持 pending 不接线（P2–P3）
+
 ## 能力矩阵路线图（2026-11-06，docs/architecture/capability-matrix.md）
 
 ### R3-1（P1，下一项候选）：ReportSpec 条件高亮通路 + 静默丢弃修复
