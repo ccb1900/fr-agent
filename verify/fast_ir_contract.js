@@ -63,7 +63,7 @@ function shapeOk(ir) {
 var scErrs = errsOf({ datasets: [] });
 check('short-circuit no sheets = 单条结构化 REQUIRED',
   JSON.stringify(scErrs) === '[{"code":"REQUIRED","path":"sheets","message":"no sheets"}]');
-check('multi-sheet 即报（UNSUPPORTED_CAPABILITY token）', has({ sheets: [{ blocks: [{ type: 'cells', items: [{ c: 0, text: 'a' }] }] }, { blocks: [] }], datasets: [{ name: 'd', columns: [{ name: 'c', type: 'text' }], rows: [['x']] }] }, 'multi_sheet'));
+check('多 sheet 零误报（A1：object 每 sheet 独立游标）', errsOf({ sheets: [{ name: 's1', blocks: [{ type: 'cells', items: [{ c: 0, text: 'a' }] }] }, { name: 's2', blocks: [{ type: 'cells', items: [{ c: 0, text: 'b' }] }] }], datasets: [{ name: 'd', columns: [{ name: 'c', type: 'text' }], rows: [['x']] }] }).length === 0);
 
 // ③ 迭代 1 新断言逐项命中（同一份最小 IR 上翻来覆去地坏）
 var DS = [{ name: 'ds1', columns: [{ name: '机型', type: 'text' }, { name: 'score', type: 'number' }], rows: [['A', 1]] }];
@@ -136,7 +136,7 @@ check('默认 compile 不改输入 spec', trad.irVersion == null);
 var cap = Ir.capabilities();
 check('能力清单 irVersion 一致', cap.irVersion === Ir.IR_VERSION);
 check('能力清单 singleSheet=supported', cap.sheet.singleSheet === 'supported');
-check('能力清单 multiSheet=unsupported', cap.sheet.multiSheet === 'unsupported');
+check('能力清单 multiSheet=supported（A1）', String(cap.sheet.multiSheet).indexOf('supported') === 0);
 check('能力清单 reverseFromCpt=unsupported', cap.dataset.reverseFromCpt === 'unsupported');
 check('能力清单列 type 词表=I0-05 定案（迭代 3 标注兑现）', (function () {
   var ct = Ir.capabilities().columnType;

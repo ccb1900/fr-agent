@@ -12,8 +12,11 @@ var CapabilityManifest = (function () {
   //               pending=登记未做 | rejected=结构化拒（不硬凑）
   // agentAvailable = construction/serialization/rendering/regression 四层全 verified 才 true
   // regressionScope ∈ {ir,object,cpt,serialization,rendering,agent}：regression=verified 时必填，标明回归覆盖的最高层；pending/rejected 传 null
-  function cap(name, construction, serialization, rendering, regression, evidence, regressionScope) {
-    var agentAvailable = (construction === 'verified' && serialization === 'verified' && rendering === 'verified' && regression === 'verified');
+  // agentOverride（可选，2026-11-06）：显式声明 agentAvailable。用于"四层 rawIR 全 verified、但 ReportSpec/Planner 无入口"的能力
+  //   ——按 R3-0 口径，Agent 可用必须有 plan→create 证据，不能因 rawIR 载体自动广告。
+  function cap(name, construction, serialization, rendering, regression, evidence, regressionScope, agentOverride) {
+    var four = (construction === 'verified' && serialization === 'verified' && rendering === 'verified' && regression === 'verified');
+    var agentAvailable = (agentOverride !== undefined) ? agentOverride : four;
     return {
       name: name,
       construction: construction,
@@ -78,7 +81,7 @@ var CapabilityManifest = (function () {
     cap('page.templateMarks', 'verified', 'verified', 'verified', 'verified', 'README #73 TemplateId/Theme 序列化+roundtrip；carrier test_pagehf', 'cpt'),
     cap('page.repeatHeaderRow', 'verified', 'verified', 'verified', 'verified', 'README #31 每页重复标题条带；carrier test_closure_gaps（repeatHeaderRow 键，v2 对账器补实）', 'cpt'),
     cap('page.freezeWeb', 'pending', 'pending', 'pending', 'pending', 'README #77 240 demo 零语料'),
-    cap('page.multiSheet', 'rejected', 'rejected', 'rejected', 'rejected', 'README #50 UNSUPPORTED_CAPABILITY:multi_sheet'),
+    cap('page.multiSheet', 'verified', 'verified', 'verified', 'verified', 'A1（2026-11-06）：object 每 sheet 状态隔离（旧 si>0 throw 已拆），IR 接受多 sheet；carrier test_multisheet 部署 cpt 两个 <Report>（汇总/明细，均 WorkSheet），引擎渲染 failures=0。**ReportSpec/Planner 入口仍无 → Agent 不可用**', 'rendering', false),
     cap('cell.sort', 'rejected', 'rejected', 'rejected', 'rejected', 'README #78 墙破缺语料结构化拒'),
     cap('cell.subreport', 'verified', 'verified', 'verified', 'verified', 'README #77 整嵌渲染 PNG；carrier test_g scan', 'rendering'),
     cap('cell.barcode', 'verified', 'verified', 'verified', 'verified', 'README #77 条码 PNG；carrier test_g scan', 'rendering'),
