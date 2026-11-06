@@ -225,7 +225,7 @@
           "metrics": { "type": "array" },
           "dataset": { "type": "object", "description": "rows 形态（同顶层）；kind=sql 被拒" },
           "presentation": { "type": "object", "description": "同顶层 presentation（conditions/cells/total 可用）" },
-          "sheet": { "type": "object", "description": "同顶层 sheet 扩展" }
+          "sheet": { "type": "object", "description": "同顶层 sheet 扩展；watermark/toolbar 为 workbook 级仅基表可用（extra 写→UNSUPPORTED_CAPABILITY）" }
         }
       }
     },
@@ -241,7 +241,7 @@
       "supported": ["Semantic Model 维度/指标（不受自由文本 SQL）", "dateRange", "dataset.filters", "sort", "topN", "presentation.chart bar|pie|line|Van 族(vbar/vline/varea/vscatter/vbubble/vpie/vgauge)+装饰键", "params 参数面板", "sheet 扩展（同 rows）", "confirmed 安全关系(N:1/1:1，目标键机器验证唯一) INNER JOIN"],
       "unsupported": ["自由文本 dataset.query（§5.2）", "跨表度量（JOIN 不改 grain）", "非安全基数 join（1:N/N:M）", "presentation.conditions/cells/total（sql 路不发射）"]
     },
-    "multiSheet": "后端 IR 支持多 sheet；ReportSpec/Planner 尚无入口（unsupported）",
+    "multiSheet": "后端 IR 支持多 sheet；ReportSpec rows 路 extraSheets[] 已支持（planner 已透传）；SQL 作为 extra 待后续批",
     "entrypoint": "REPORT_SPEC=<path>.json run.ps1 make_api.js — make_api.js §0 后缀分支：JSON.parse→SpecValidator→SpecCompiler→SPEC={outName,IR} 复用 rawIR 直通路；旧 .js spec 走原 load() 路径不变"
   }
 }

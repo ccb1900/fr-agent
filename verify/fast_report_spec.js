@@ -359,6 +359,20 @@ check('多Sheet extra sheet 未知键拒', codeAt(msSpec(function (rs) { rs.extr
   if (ie.length) print('MS IR ERRS: ' + JSON.stringify(ie));
   check('多Sheet 编译产物过 Ir.validate 零误报', ie.length === 0);
 })();
+// —— 复审（2026-11-06 多 Sheet P1/P2）：sql 基表 extras 必须校验；workbook 级键/ dsName / 原型键
+var extraOk = { name: '明细', dimensions: [{ field: 'l2', label: '线2', widthPt: 120 }], metrics: [{ field: 'n2', label: '数2', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['X', 1]] }, presentation: { type: 'table', showTotal: false } };
+check('多Sheet sql 基表 + 合法 extra 零误报', errsOf(baseSqlSpec(function (rs) { rs.extraSheets = [JSON.parse(JSON.stringify(extraOk))]; })).length === 0);
+check('多Sheet sql 基表 + 非法 extra 路径带前缀', codeAt(baseSqlSpec(function (rs) { rs.extraSheets = [JSON.parse(JSON.stringify(extraOk))]; rs.extraSheets[0].presentation.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].presentation.magic'));
+check('多Sheet extra sheet.watermark 拒（workbook 级）', codeAt(msSpec(function (rs) { rs.extraSheets[0].sheet = { watermark: { text: 'W' } }; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].sheet.watermark'));
+check('多Sheet extra sheet.toolbar 拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].sheet = { toolbar: { buttons: ['export'] } }; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].sheet.toolbar'));
+check('多Sheet 手写 dsName 拒（与 ds2 冲突）', codeAt(msSpec(function (rs) { rs.dsName = 'ds2'; }), 'UNSUPPORTED_CAPABILITY', 'dsName'));
+check('多Sheet 名 constructor 不误判为重复', errsOf(msSpec(function (rs) { rs.extraSheets[0].name = 'constructor'; })).length === 0);
+(function () {
+  var rs = msSpec(function (r) { r.extraSheets[0].name = 'constructor'; });
+  var c = null;
+  try { c = SpecCompiler.compile(rs); } catch (e) { check('多Sheet 原型名 compile 不抛: ' + e, false); return; }
+  check('多Sheet 原型名编译产物过 Ir.validate', Ir.validate(c).length === 0);
+})();
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

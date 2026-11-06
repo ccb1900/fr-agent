@@ -885,3 +885,20 @@ A1 后端多 sheet 已通，但 ReportSpec/Planner 无入口（manifest page.mul
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 多 Sheet spec 复审修复（1 P1 + 4 P2）
+
+### 发现
+P1：SQL 基表 extraSheets 被 validator 提前 return 绕过（planner 透传后 ready→create 才炸/语义丢失）；P2：extra sheet.watermark/toolbar 过校验但被丢；base dsName 与 ds2 冲突；seenSheet 原型链键误判；schema/report_spec 文案与代码矛盾。
+
+### 修复
+- spec_validator：extras 校验抽成 validateExtraSheets，rows/sql 两分支都调用（P1）；extras 拒 watermark/toolbar（workbook 级仅基表）；extraSheets 存在时拒手写 dsName；seenSheet 用 hasOwn。
+- ir.js：sheetNames 重复判定改 hasOwn（同类原型链隐患）。
+- schema：x-scope.multiSheet 与 extraSheets.sheet 描述更新；report_spec multiSheet 文案改为 rows 支持 + planner 已透传。
+- 测试：fast_report_spec +7（sql 基表合法/非法 extra 前缀、watermark/toolbar 拒、dsName 拒、constructor 名不误判 + 编译过 Ir.validate）。
+
+### 验证
+- fast 15 套件 rc=0；multisheet 载体重跑 failures=0；baseline MD5 精确；scan ok=57 bad=0。
+
+### Commit
+（本条提交。）
