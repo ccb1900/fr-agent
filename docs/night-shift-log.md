@@ -828,3 +828,21 @@ matrix §3.1 剩余：chart.seriesBorder/seriesImage/vpie summary 视觉验证�
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 复审轮2 修复：spec aggregate 通道 2 P2
+
+### 发现（独立复审 1f69589）
+A. compileRows 的 span/落点未受表宽约束：2 列表格写 aggregate col=2 会 ready 并产出表外合计格。
+B. 形态互斥键被静默忽略：fn:'ratio' 带 col、非 ratio 带 num/den、raw IR 的拼写错键（fromat）都绿着不生效。
+
+### 修复
+- lib/ir.js：aggregate 键白名单 {fn,col,num,den,format}；ratio 禁 col；非 ratio 禁 num/den。
+- lib/spec_validator.js：同形态互斥闸（AGK 白名单已在）。
+- lib/spec_compiler.js：sumCols.col / aggregate 落点 >= n（表宽）编译期抛错；aggregate span = max(1, min(落点, n-1)) 不越界。
+- 测试：fast_ir_contract +3（未知键/ratio+col/非ratio+num）；fast_report_spec +4（同比 + 两条编译期超宽拒）。
+
+### 验证
+- fast 15 套件 rc=0；spec 两载体重跑 failures=0；scan ok=57 bad=0；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### Commit
+（本条提交。）

@@ -301,6 +301,9 @@ check('P1 aggregate col 0 拒（label 格）', codeAt(totalIR({ fn: 'sum', col: 
 check('P1 aggregate col 小数拒', codeAt(totalIR({ fn: 'sum', col: 1.5 }), 'INVALID_NUMBER', 'sheets[0].blocks[3].aggregate.col'));
 check('P1 aggregate col 越界拒（>25）', codeAt(totalIR({ fn: 'sum', col: 26 }), 'INVALID_NUMBER', 'sheets[0].blocks[3].aggregate.col'));
 check('P1 aggregate.format 非串拒', codeAt(totalIR({ fn: 'avg', col: 1, format: 5 }), 'INVALID_TYPE', 'sheets[0].blocks[3].aggregate.format'));
+check('审2 aggregate 未知键拒', codeAt(totalIR({ fn: 'sum', col: 1, fromat: '0.0' }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].aggregate.fromat'));
+check('审2 ratio 不用 col', codeAt(totalIR({ fn: 'ratio', num: 1, den: 1, col: 1 }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].aggregate.col'));
+check('审2 非 ratio 不用 num', codeAt(totalIR({ fn: 'sum', col: 1, num: 1 }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].aggregate.num'));
 check('P1 sumCols fn 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }] }; })).length === 0);
 check('P1 sumCols fn 越词表拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'ratio' }] }; }), 'INVALID_ENUM', 'sheets[0].blocks[3].sumCols[0].fn'));
 check('P1 sumCols 重复列拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; }), 'DUPLICATE', 'sheets[0].blocks[3].sumCols[1].col'));

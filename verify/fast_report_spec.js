@@ -305,6 +305,14 @@ check('P1 sumCols 重复列拒', codeAt(baseRowsSpec(function (rs) { rs.presenta
 check('P1 sumCols fn+formula 互斥拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg', formula: '=SUM(B3)' }] }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.sumCols[0]'));
 check('P1 total.aggregate ratio 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'ratio', num: 1, den: 1, format: '0.00' } }; })).length === 0);
 check('P1 total.aggregate 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 1, magic: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.aggregate.magic'));
+check('审2 ratio 不用 col', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'ratio', num: 1, den: 1, col: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.aggregate.col'));
+check('审2 非 ratio 不用 num', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 1, num: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.aggregate.num'));
+check('审2 aggregate 落点超表宽：编译期拒', (function () {
+  try { SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 2 } }; })); return false; } catch (e) { return String(e).indexOf('超出表宽') >= 0; }
+})());
+check('审2 sumCols 落点超表宽：编译期拒', (function () {
+  try { SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 2 }] }; })); return false; } catch (e) { return String(e).indexOf('超出表宽') >= 0; }
+})());
 check('P1 total.aggregate+sumCols 互斥拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }], aggregate: { fn: 'sum', col: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
 (function () {
   var c = null;
