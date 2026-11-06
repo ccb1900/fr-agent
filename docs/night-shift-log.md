@@ -1298,3 +1298,34 @@ e366c68（①账本同步）/ c1975f8（③B-1+B-2）/ ff54d81（coverage 刷新
 
 ### 下一项工作
 按 backlog：B-复审B-3（先探针）→ 或能力向（多 Sheet SQL extra / D2 热力图，反例先行纪律）。
+
+## 2026-11-07 02:25（B-复审B-3 探针收口 + D2 热力图接线）
+
+### 工作目标
+按上轮指令：①不为凑轮次造复审任务；②B-复审B-3（先探针证明可触发，不可触发则证据收口）；③能力向（D2 热力图 probes/ 先行）。
+
+### B-复审B-3：探针证据收口·关闭不 action（d679a71）
+- probes/probe_b3_catches.js（run.ps1 真跑 exit0）：六处静默守卫的可抛调用 17 边界用例**全部无抛出**——TableDataColumn.createColumn(null/''/123) 全返回（null→null、''→''、123→'#123'）；DSColumn.setColumn(null)/setColumn(createColumn(null))/'')/setColumnName(null) 全 OK；ZoomLevel.parseInt(null/-1→Automatic、2.5→2、0/99→Automatic）全域不抛；MapMarkerType.COMMON/AttrLineStyle.setLineStyle(2)/ViewCenter.setLongitude(null) 类面全在。
+- 结论：守卫面=引擎类缺失（版本演进）与防御性边界，本引擎版本**不可触达**（VERDICT: ALL-UNTRIGGERABLE）。IR 侧 strOpt 放行空串（ir.js:92 只查 isStr）曾是最可疑触达路径（ds:{column:''}），但 createColumn('')/setColumn 均不抛——无静默丢绑定风险。按 backlog 纪律不盲改；基线未动（探针不产字节）。
+
+### D2 热力图接线（344157b，反例先行全纪律）
+- **R0 探针（probes/probe_heatmap.js）**：①官方 doc/Chart/HeatMap/网页热力图.cpt XML 一手——Plot class=com.fr.plugin.chart.heatmap.VanChartHeatMapPlot + VanChartHeatMapPlotAttr(radius/blur/maxopacity/minopacity，**序列化别名**，真类面=javap：四 setter 直接在 plot 上) + VanChartMapPlotAttr(point/heatmap.json/markertype=0) + VanMapDefinition/pointDefinition（**与 vmap point 完全同构**，我们已构造）；②VanChartHeatMapPlot extends VanChartMapPlot（继承链一手）；③**官方模板无头渲染 RENDER-OK**（logs/_heatmap_official.png 529712B——D1 检查点通过，区别于 D1 组合图"渲染不可见"）。
+- **实现**：ir.js CHART_KINDS+=vheatmap、geo 键闸族化（vmap|vheatmap）、heat 形态闸（对象/键白名单 radius|blur|minOpacity|maxOpacity、radius/blur 正数、min/maxOpacity 非负）；object.js map 族分支（vheatmap 换 Plot+heat 缺省官方 35/45/0/70+point 不设 marker 照官方 markertype=0）；spec_validator CHART_KINDS/CHART_KEYS+heat；spec_compiler 透传+heat；report_spec.js capabilities vanChart 列表+注。
+- **TDD**：fast_ir_contract +8 先红 8 后绿；fast_report_spec +2（compile 发射 heat/缺省零误报）+vanChart 固定列表断言同步。
+- **真引擎载体（reports/test_vheatmap.js）**：管线 failures=0；部署 cpt `class=com.fr.plugin.chart.heatmap.VanChartHeatMapPlot`/`radius="35.0" blur="45.0" maxopacity="70.0" minopacity="0.0"`/`mapType="point" geourl=中国.json zoomlevel="0"`/pointDefinition×2——**与官方逐字段同构**；PNG 69599B 目检：中国底图+5 省热力光晕（广东95 亮黄绿/四川62 橙红/黑龙江40 淡蓝紫）+渐变色例 96..40 与数值对应——**渲染达成**。
+- **账本五处**：manifest `chart.heatmap` pending 占位→`chart.vheatmap` 四层 verified（evidence 引 R0/carrier/PNG 目检，agentAvailable=false——无热度数据源/无 plan→create）；matrix 六维表+明确不做行；inventory D 类表+结论；coverage 重生成（specialcharts partial→**full**，VanChartHeatMapPlot 出 missing 账）；ir CAPABILITIES.vheatmap 注。
+
+### 门禁（全部本轮真跑）
+fast15 rc=0（含 manifest/coverage 刷新后复跑）/ scan ok=61 bad=0 skipped=1（新载体入扫）/ 引擎负门 6 路 GREEN（含 spec-traverse）/ Golden E2E PASS（ge20261107021611-20f997）/ MULTISHEET E2E GREEN / 基线 MD5=CBEB42E3CE48E46E362B9AE80168026F（负门末步+双 e2e 回补均实证）。
+
+### 提交链
+d679a71（B-3 探针收口）/ 344157b（vheatmap 接线）/ 本条 log。
+
+### 未验证/边界（如实）
+- vheatmap 仅 area|point mapType（官方两语料均 point）；area 热力（官方无语料）未探——mapType 闸放行 area，行为未单独目检。
+- vheatmap 装饰件（tooltip/label 等在热力图上的表现）未单独探——applyChartDeco 对 map 族 plot 的挂接面与 vmap 共享，未逐件 PNG。
+- plan→create e2e、热度数据源：agentAvailable=false 口径（同 vmap）。
+- probe_heatmap 首跑曾挂起（module.start 后未 System.exit，FineDB 非守护线程滞留 JVM）——已补 exit 并重跑收口，如实记录。
+
+### 下一项工作
+backlog 剩余：B-复审B-4（等多 Sheet 图表接线一并补）；多 Sheet SQL extra（需 make_api deps 扩展，先出设计证据）；poly/热链保持 pending。

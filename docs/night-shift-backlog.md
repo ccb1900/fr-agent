@@ -69,7 +69,8 @@
 
 ### D 类（Engine 支持未接）
 - vmap：~~pending~~ 已接（D2 area+point，README #136/#138，agentAvailable=false）
-- poly/heatmap/热链：保持 pending 不接线（P2–P3）
+- 热力图：~~pending~~ 已接（D2 vheatmap，2026-11-07，probe_heatmap R0+test_vheatmap 载体 PNG；agentAvailable=false）
+- poly/热链：保持 pending 不接线（P2–P3）
 - 组合图 D1：blocked（第4轮结论：构造/序列化同构、线系列无头不可见；重开条件=可运行系列分配语料）
 
 ## 能力矩阵路线图（2026-11-06，docs/architecture/capability-matrix.md）
@@ -106,11 +107,8 @@
 ## ~~B-复审B-2 plan.js 模型路径与 make_api 分叉~~（完成 2026-11-07）
 - 已完成：plan.js 模型加载改 `genv('SCHEMA_MODEL', 'models/production/model.json')`（genv 顶层函数声明 ES5 提升可用）；SCHEMA_MODEL 显式覆盖与缺省两态 plan verb 冒烟均 ready——plan/create 同源模型。
 
-## B-复审B-3 object.js 引擎互操作静默 catch（P3，2026-11-07 B段审查）
-- 证据：lib/object.js:345 `catch (eCol) { }`（DSColumn setColumn）、:397/400/410/537/688 等同类守卫——反射 setter 失败即静默跳过，产物可能少绑定/少样式。
-- 用户影响：未实证有真实触发路径（历轮真引擎轮 failures=0 未遇）；盲改=可能把可渲染路径变失败，违反零误伤。
-- 修改范围：先探针证明某 catch 可触发，再决定升级为 RR.diag 留痕（不动控制流）。
-- 验收：触发场景探针 + 产物 diff 无损 + scan 零误伤。
+## ~~B-复审B-3 object.js 引擎互操作静默 catch~~（探针证据收口·关闭不 action，2026-11-07）
+- 已完成：probes/probe_b3_catches.js 对六处守卫的可抛调用 17 个边界用例（createColumn null/''/123、setColumn(null)、setColumnName(null)、ZoomLevel.parseInt null/-1/2.5/99、MapMarkerType.COMMON、AttrLineStyle.setLineStyle(2)、ViewCenter.setLongitude(null/106.2)）**全部无抛出**——VERDICT: ALL-UNTRIGGERABLE（守卫面=类缺失/防御性边界，本引擎版本不可触达）。按纪律不盲改；探针入库可复跑（run.ps1 -Script probes/probe_b3_catches.js）。
 
 ## B-复审B-4 make_api 图表/超链断言只看 sheets[0]（P3，2026-11-07 B段审查）
 - 证据：make_api.js:309/320 `(IR.sheets[0].blocks || [])` 找 link/chart 块——多 sheet 报表第二 sheet 的图表/超链不做序列化断言（test_multisheet 无图无链，未覆盖）。
