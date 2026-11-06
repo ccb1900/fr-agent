@@ -1177,3 +1177,27 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 - fast 15 套件 rc=0（含 fast_report_spec capabilities 断言、fast_ir_contract capabilities 断言、fast_contracts 引证规约、fast_manifest_evidence 静态一致）。
 - scan：ok=60 bad=0 skipped=1（rebuild_basicA 缺本地产物 skip，与历轮口径同）。
 - 未跑：引擎门归 V1 统一复跑。
+
+## 2026-11-06 收口 V1：全门复跑（475722d 后全局收口收尾）
+
+### 复跑结果（本轮真实执行记录）
+- fast 15 套件：FAST GATE GREEN（C1/C5/C4 后各复跑一轮；最终 HEAD 一致）。
+- 零误伤扫描：`nashorn Shell probes/scan_all_specs.js` → SCAN END: ok=60 bad=0 skipped=1（rebuild_basicA 缺本地产物 skip，历轮同口径）。
+- 引擎负门：`scripts/run-engine-negative-tests.ps1` → 5 路 NEG GATE OK（ir-bad exit9 / db-conn exit4 / secret-leak exit1 / exec-formula exit1 / json-bad-spec exit2）+ ENGINE NEG GATE GREEN（末步默认 spec 回补）。
+- 默认基线：demo_api.cpt MD5 = CBEB42E3CE48E46E362B9AE80168026F（逐字节精确）。
+- Golden E2E：`scripts/run-golden-e2e.ps1` → plan/plan2spec/create/validate/truth-grid/preview/modify 全 OK，无 SKIP；GOLDEN E2E PASS（runId=ge20261106233909-f88a9a；10 行逐格+总计 33531:26531；modify diffClean+原件保留）。
+- 多 Sheet E2E：`scripts/run-multisheet-e2e.ps1` → plan/plan2spec/create OK + 5 项 CHECK PASS，无 SKIP；MULTISHEET E2E GREEN（口径=C4：结构链路）。
+- C2 object 二道防线实机验证：新增 probes/probe_c2_dsrowspan_guard.js（绕过 Ir.validate 直调 Obj.build）→ 真引擎 C2 GUARD OK（throw 消息含 ds+rowSpan/putDSCell 不合并），exit 0。快测无法覆盖 object 运行时（需 FR 类），故以此探针补证。
+
+### 本轮（475722d 后全局收口）提交链
+- dce619d C1 dataset 契约严格化（kind 词表/键白名单/dims+metrics 白名单；先红8后绿）
+- 2ac0125 C2 DSColumn+rowSpan 拒绝（IR 结构化拒+object 二道防线；先红3后绿；探针实机证守卫）
+- 5f19086 C6 planner deferred 聚合累计阻断（先红2后绿；ready 用例零回归）
+- 65ba4c7 C3 spec.params.filter agentOverride=false 证据口径
+- d35941a C4 多 Sheet 证据拆分（载体渲染 vs e2e 结构）
+- c57362e C5 五处账本同步 + backlog 清账（含 rowSpan「spec 可表达」口径修正，probe 实证）
+
+### 未验证/边界（如实）
+- spec.params.filter 的 Web 交互改参后重查询、plan→create（filter 路径）仍未验证（C3 已如实标注 agentAvailable=false）。
+- rowSpan 的 plan→create 链路证据仍缺（agentAvailable=false 维持）。
+- seriesBorder/seriesImage/vpie summary 视觉、vmap plan→create、poly/heatmap/D1 组合图：维持既有 pending/blocked，不在本收口范围。
