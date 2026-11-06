@@ -10,12 +10,26 @@ $base = 'D:\fineagent'
 $fail = 0
 
 # rows: label, spec, env hashtable, expect-exit, expect-failed-stage (or '' if none)
+# spec-traverse (B-review-B1, 2026-11-07): REPORT_SPEC pointing OUTSIDE the project root. The escape file
+#   is written next to the repo parent (real loadable JS that drops a marker) - an unguarded make_api would
+#   EXECUTE it (load() = code execution, probe-verified 2026-11-07); the guarded runner must refuse BEFORE
+#   any load (exit 2, input_load failed) and the marker must NOT exist. Temp dir is derived from $base's
+#   parent (no new hardcoded path) and removed at the end.
+$negTmp = (Split-Path $base -Parent) + '\fa_negtmp'
+New-Item -ItemType Directory -Force -Path $negTmp | Out-Null
+@'
+var F = Java.type('java.nio.file.Files');
+var P = Java.type('java.nio.file.Paths');
+F.write(P.get('D:/fa_negtmp/marker.txt'), Java.type('java.lang.String').valueOf('ESCAPED').getBytes('UTF-8'));
+SPEC = { outName: 'escaped', columns: [{ label: 'a', name: 'a', type: 'text', widthPt: 100 }], data: [['x']] };
+'@ | Set-Content -Path "$negTmp\escape.js" -Encoding ASCII
 $rows = @(
   @{ n='ir-bad';            spec='verify/neg_ir_full.js';    env=@{};                                            code=9; bad='ir_validate' },
   @{ n='db-conn';           spec='verify/neg_db_conn.js';    env=@{};                                            code=4; bad='datasource_connect' },
   @{ n='secret-leak';       spec='verify/neg_secret_leak.js'; env=@{};                                           code=1; bad='deploy' },
   @{ n='exec-formula';      spec='verify/neg_exec_formula.js'; env=@{};                                          code=1; bad='execute' },
-  @{ n='json-bad-spec';     spec='verify/neg_bad_spec.json';  env=@{};                                          code=2; bad='input_load' }
+  @{ n='json-bad-spec';     spec='verify/neg_bad_spec.json';  env=@{};                                          code=2; bad='input_load' },
+  @{ n='spec-traverse';     spec='../fa_negtmp/escape.js';   env=@{};                                            code=2; bad='input_load'; noMarker="$negTmp\marker.txt" }
 )
 
 $script:badrow = 0
@@ -34,6 +48,7 @@ function Assert-R($name, $expCode, $badStage, $rc, $json) {
 foreach ($r in $rows) {
   $rf = "$base\logs\_engneg_$($r.n).json"
   if (Test-Path $rf) { Remove-Item $rf -Force }
+  if ($r.noMarker -and (Test-Path $r.noMarker)) { Remove-Item $r.noMarker -Force }
   Write-Output ">>> running $($r.n) ..."
   $env:REPORT_SPEC = $r.spec
   $env:FR_AGENT_RESULT = $rf
@@ -42,11 +57,16 @@ foreach ($r in $rows) {
   # read the result file AS UTF-8 (PS 5.1 defaults to ANSI/GBK => Chinese diagnostics garble => ConvertFrom-Json chokes; runner itself is fine)
   $json = if (Test-Path $rf) { [System.IO.File]::ReadAllText($rf, [System.Text.Encoding]::UTF8) } else { $null }
   Assert-R $r.n $r.code $r.bad $rc $json
+  if ($r.noMarker) {
+    if (Test-Path $r.noMarker) { Write-Output "NEG GATE FAIL [$($r.n)]: outside-root marker exists -> unguarded load EXECUTED foreign code"; $script:badrow = 1 }
+    else { Write-Output "NEG GATE OK [$($r.n)]: outside-root JS not executed (marker absent)" }
+  }
   if ($script:badrow) { $fail = 1 }
   Remove-Item env:REPORT_SPEC -ErrorAction SilentlyContinue
   Remove-Item env:FR_AGENT_RESULT -ErrorAction SilentlyContinue
   if (Test-Path $rf) { Remove-Item $rf -Force }
 }
+if (Test-Path $negTmp) { Remove-Item $negTmp -Recurse -Force -ErrorAction SilentlyContinue }   # leave no host residue
 
 # default-spec restore + byte baseline (AGENTS 1: make_api writes only current spec; last step must be default)
 & "$base\run.ps1" -Script make_api.js | Out-Null

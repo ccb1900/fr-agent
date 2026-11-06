@@ -100,17 +100,11 @@
 ## ~~B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列~~（完成 2026-11-06）
 - 已完成：rs3 mutator 内 dataset 改 { rows: [['A','X',1]] } 与 3 列一致；fast 15 rc=0。
 
-## B-复审B-1 REPORT_SPEC/SCHEMA_MODEL 路径无穿越钳制（P3，2026-11-07 B段审查）
-- 证据：runtime/paths.js `spec: function (rel) { return join(root, rel); }`（root 相对拼接，`..` 段不剥）；make_api.js:51/104 直接以 env 值走 Paths.spec。JSON 模式 spec 内容本身被 SpecValidator 全闸（outName 禁路径符），缺口只在「入口路径」这层 env（本机操作员控制）。
-- 用户影响：无（env 属本机信任边界；Agent 链路 spec 路径固定为 logs/agent/runs/{runId}/）。
-- 修改范围：make_api.js 入口处对 REPORT_SPEC/SCHEMA_MODEL 归一化并拒 `..`/盘符（runtime/paths.js 属 Runtime 冻结面不擅改）。
-- 验收：负例 REPORT_SPEC=../x.json → 明确报错非零退出；正例零回归（fast15/scan/负门）。
+## ~~B-复审B-1 REPORT_SPEC/SCHEMA_MODEL 路径无穿越钳制~~（完成 2026-11-07）
+- 已完成：make_api.js assertLocalRel 入口单点（specPath 于 try 顶先于一切 load；modelPath 于 sql 分支），拒 `..`/绝对/反斜杠/盘符/控制符 → exit 2 + input_load failed + 诊断明示。**反例先行**：root 外 escape.js 经 `REPORT_SPEC=../fa_negtmp/escape.js` 被 load 并真实执行（marker 落盘实证）→ 修后同 probe 无 marker。负门新增第 6 路 spec-traverse（自带 escape 件+marker 反证+清理，`NEG GATE OK: outside-root JS not executed`）。runtime/paths.js（Runtime 冻结面）未动。
 
-## B-复审B-2 plan.js 模型路径与 make_api 分叉（P3，2026-11-07 B段审查）
-- 证据：agent/tools/plan.js:32 硬编码 `readUtf('models/production/model.json')`；make_api.js:103 走 `SCHEMA_MODEL` env（缺省同文件）。env 覆盖时 plan 与 create 可能用不同模型（plan ready 的指标集 create 期另一模型可能拒）。
-- 用户影响：仅 SCHEMA_MODEL 覆盖场景；当前仓库单一模型不受影响。
-- 修改范围：plan.js 同款 genv('SCHEMA_MODEL', ...) 一行。
-- 验收：SCHEMA_MODEL 覆盖下 plan/preflight 与 create 用同一模型文件；fast_planner/真通道冒烟。
+## ~~B-复审B-2 plan.js 模型路径与 make_api 分叉~~（完成 2026-11-07）
+- 已完成：plan.js 模型加载改 `genv('SCHEMA_MODEL', 'models/production/model.json')`（genv 顶层函数声明 ES5 提升可用）；SCHEMA_MODEL 显式覆盖与缺省两态 plan verb 冒烟均 ready——plan/create 同源模型。
 
 ## B-复审B-3 object.js 引擎互操作静默 catch（P3，2026-11-07 B段审查）
 - 证据：lib/object.js:345 `catch (eCol) { }`（DSColumn setColumn）、:397/400/410/537/688 等同类守卫——反射 setter 失败即静默跳过，产物可能少绑定/少样式。

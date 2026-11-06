@@ -70,9 +70,20 @@ function finishRun(code) { writeRunResult(code); J('java.lang.System').exit(code
 function irErrText(e) {
   return (e && typeof e === 'object') ? (e.code + ' @ ' + e.path + ': ' + e.message) : String(e);
 }
+// 2026-11-07（B-复审B-1）：入口路径信任边界——REPORT_SPEC/SCHEMA_MODEL 是本机操作员 env，但 Paths.spec()
+//   是 root 相对拼接、不剥 '..' 段（runtime/paths.js 属 Runtime 冻结面不擅改）。反例实证（2026-11-07）：
+//   REPORT_SPEC=../fa_negtmp/escape.js 时 load() 真执行了 root 外 JS（marker 文件落盘）。在入口单点拒
+//   穿越/盘符/反斜杠/绝对路径/控制符；FR_AGENT_HOME（整个项目根重定向，clean-clone 测试在用）不在本闸范围。
+function assertLocalRel(p, name) {
+  var s = String(p == null ? '' : p);
+  if (!s || /[\\]/.test(s) || s.charAt(0) === '/' || /^[A-Za-z]:/.test(s) || /(^|\/)\.\.(\/|$)/.test(s) || /[\u0000-\u001f]/.test(s))
+    throw new Error('[' + name + '] 入口路径必须是项目内相对路径（禁 .. / 绝对路径 / 反斜杠 / 盘符 / 控制符）: ' + s);
+  return s;
+}
 // I0-02 陈旧假绿堵洞：RR 就位即写初始快照（success=null）——此后无论怎么崩，last_run.json 不可能留着上一轮的 success:true
 writeRunResult(null);
 try {
+  specPath = assertLocalRel(specPath, 'REPORT_SPEC');   // B-复审B-1：先于一切 load/read（含 .js load 代码执行面）
   load(Paths.lib('object.js'));
   load(Paths.lib('ir.js'));        // v3.1: spec → IR
   load(Paths.lib('cpt.js'));       // v2 校验器当回归门
@@ -100,7 +111,7 @@ try {
       load(Paths.semantic('model/vocab.js'));   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY，前置加载
       load(Paths.semantic('query/sqlbuilder.js'));
       function genv(k, d) { var v = J('java.lang.System').getenv(k); return (v == null || String(v) === '') ? d : String(v); }
-      var modelPath = genv('SCHEMA_MODEL', 'models/production/model.json');
+      var modelPath = assertLocalRel(genv('SCHEMA_MODEL', 'models/production/model.json'), 'SCHEMA_MODEL');   // B-复审B-1
       var modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
       // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
       load(Paths.semantic('model/vocab.js'));

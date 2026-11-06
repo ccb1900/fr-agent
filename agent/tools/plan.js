@@ -29,7 +29,10 @@ load(ROOT + '/lib/isodate.js');
 load(ROOT + '/lib/spec_validator.js');
 load(ROOT + '/lib/spec_compiler.js');
 
-var model = JSON.parse(readUtf('models/production/model.json'));
+// B-复审B-2（2026-11-07）：与 make_api.js 同源——SCHEMA_MODEL env 覆盖时 plan/create 必须用同一模型文件
+//   （此前 plan.js 硬编码缺省路径，env 覆盖场景下 plan ready 的指标集 create 期可能被另一模型拒）。
+//   genv 为顶层函数声明（ES5 提升），先于本行定义位置亦可调用。
+var model = JSON.parse(readUtf(genv('SCHEMA_MODEL', 'models/production/model.json')));
 var schemaName = 'schema_' + (model.source || 'atom_live_demo') + '.json';
 var schema = JSON.parse(readUtf('data/' + schemaName));
 
