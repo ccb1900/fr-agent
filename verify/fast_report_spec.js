@@ -310,6 +310,8 @@ check('审2 非 ratio 不用 num', codeAt(baseRowsSpec(function (rs) { rs.presen
 check('审2 aggregate 落点超表宽：编译期拒', (function () {
   try { SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 2 } }; })); return false; } catch (e) { return String(e).indexOf('超出表宽') >= 0; }
 })());
+check('审3 aggregate 落点超表宽：spec 前置拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { aggregate: { fn: 'sum', col: 2 } }; }), 'INVALID_NUMBER', 'presentation.total.aggregate'));
+check('审3 sumCols 落点超表宽：spec 前置拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 2 }] }; }), 'INVALID_NUMBER', 'presentation.total.sumCols[0].col'));
 check('审2 sumCols 落点超表宽：编译期拒', (function () {
   try { SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 2 }] }; })); return false; } catch (e) { return String(e).indexOf('超出表宽') >= 0; }
 })());

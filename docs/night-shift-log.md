@@ -846,3 +846,18 @@ B. 形态互斥键被静默忽略：fn:'ratio' 带 col、非 ratio 带 num/den�
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 复审轮3 收敛 + 前置宽度校验
+
+### 结论
+独立复审 db8510a：无新 P1/P2，合计聚合审查循环**收敛**。唯一非阻塞观察：落点超表宽在 SpecValidator 通过、create 期才抛（与 chart 列检查同型，fail-closed）。
+
+### 顺手闭环
+- lib/spec_validator.js：rows 路表宽 = 维度+度量数；sumCols/aggregate 落点 >= 表宽 → INVALID_NUMBER（plan 期即拒，不再 ready→create 才炸）。compile 期 throw 保留为二道防线。
+- fast_report_spec +2（spec 前置拒）。
+
+### 验证
+- fast 15 套件 rc=0；三个 spec 载体重跑 failures=0（total_agg/total_ratio/sumcols_reg）。
+
+### Commit
+（本条提交。）
