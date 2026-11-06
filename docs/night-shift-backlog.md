@@ -99,3 +99,27 @@
 
 ## ~~B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列~~（完成 2026-11-06）
 - 已完成：rs3 mutator 内 dataset 改 { rows: [['A','X',1]] } 与 3 列一致；fast 15 rc=0。
+
+## B-复审B-1 REPORT_SPEC/SCHEMA_MODEL 路径无穿越钳制（P3，2026-11-07 B段审查）
+- 证据：runtime/paths.js `spec: function (rel) { return join(root, rel); }`（root 相对拼接，`..` 段不剥）；make_api.js:51/104 直接以 env 值走 Paths.spec。JSON 模式 spec 内容本身被 SpecValidator 全闸（outName 禁路径符），缺口只在「入口路径」这层 env（本机操作员控制）。
+- 用户影响：无（env 属本机信任边界；Agent 链路 spec 路径固定为 logs/agent/runs/{runId}/）。
+- 修改范围：make_api.js 入口处对 REPORT_SPEC/SCHEMA_MODEL 归一化并拒 `..`/盘符（runtime/paths.js 属 Runtime 冻结面不擅改）。
+- 验收：负例 REPORT_SPEC=../x.json → 明确报错非零退出；正例零回归（fast15/scan/负门）。
+
+## B-复审B-2 plan.js 模型路径与 make_api 分叉（P3，2026-11-07 B段审查）
+- 证据：agent/tools/plan.js:32 硬编码 `readUtf('models/production/model.json')`；make_api.js:103 走 `SCHEMA_MODEL` env（缺省同文件）。env 覆盖时 plan 与 create 可能用不同模型（plan ready 的指标集 create 期另一模型可能拒）。
+- 用户影响：仅 SCHEMA_MODEL 覆盖场景；当前仓库单一模型不受影响。
+- 修改范围：plan.js 同款 genv('SCHEMA_MODEL', ...) 一行。
+- 验收：SCHEMA_MODEL 覆盖下 plan/preflight 与 create 用同一模型文件；fast_planner/真通道冒烟。
+
+## B-复审B-3 object.js 引擎互操作静默 catch（P3，2026-11-07 B段审查）
+- 证据：lib/object.js:345 `catch (eCol) { }`（DSColumn setColumn）、:397/400/410/537/688 等同类守卫——反射 setter 失败即静默跳过，产物可能少绑定/少样式。
+- 用户影响：未实证有真实触发路径（历轮真引擎轮 failures=0 未遇）；盲改=可能把可渲染路径变失败，违反零误伤。
+- 修改范围：先探针证明某 catch 可触发，再决定升级为 RR.diag 留痕（不动控制流）。
+- 验收：触发场景探针 + 产物 diff 无损 + scan 零误伤。
+
+## B-复审B-4 make_api 图表/超链断言只看 sheets[0]（P3，2026-11-07 B段审查）
+- 证据：make_api.js:309/320 `(IR.sheets[0].blocks || [])` 找 link/chart 块——多 sheet 报表第二 sheet 的图表/超链不做序列化断言（test_multisheet 无图无链，未覆盖）。
+- 用户影响：低（断言缺口非功能缺陷；多 sheet 图表能力本身未接 SQL extra）。
+- 修改范围：断言循环改全 sheets；或等多 sheet 图表能力接线时一并补。
+- 验收：多 sheet+图表载体真引擎轮断言命中第二 sheet 图表 XML。

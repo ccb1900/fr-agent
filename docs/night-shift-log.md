@@ -1229,3 +1229,39 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 
 ### 下一项工作
 B段：全面代码审查（编译链/静默丢弃/组合缺陷/能力差距/安全面）→ P0-P3 清单 → 按最高价值逐项演进。
+
+## 2026-11-07 01:00（B段：全面代码审查 P0-P3 清单 + 三项演进收口）
+
+### 审查范围与方法
+真实代码调用链逐文件读（非架构图）：make_api.js 全文 / lib/{spec_validator,spec_compiler,ir(关键段),object(关键段),cpt,browser 垫片} / semantic/{planner 全文,query/sqlbuilder 全文,model/validator(关键段)} / agent/tools/{plan,plan2spec,validate,fr_agent(compile/patch/preview 段)} / application/{contracts,create_report,modify_report} / template/{patch_main,reader} / runtime/paths.js / features/data_browser(标识符闸)。
+
+### 发现清单（P0-P3，全部有 file:line 或命令证据）
+- **P0：无**（无数据丢失/损坏/误覆盖级缺陷）。
+- **P1：无新发现**（基线守护缺口已在 A段修复=2c475c5）。
+- **P2-1（已修，a7be9f7）**：planner rows 路 intent.filters/intent.chart 被 capability 墙丢掉时仅 warning 不阻断（semantic/planner/planner.js 旧 109-114 vs 177-181）——status 仍 ready=数据范围/报表结构悄悄变窄，与 C6 对 metrics 的阻断立论直接矛盾。
+- **P3-2（已修，a7be9f7）**：model validator 对 countThreshold.value 只查非空不查数值（semantic/model/validator.js 旧 :70），sqlbuilder metricSelect:23 原样拼进 SQL 数值比较位——非数值串=坏 SQL 晚失败；模型文件是唯一值安全闸。
+- **P3-3（已修，9c9827b）**：ir.js cells item 无列位越界闸（旧 :549 只查 c 是数字）——rawIR 载体 c/c+span 越表宽 → putCell 画表外默认宽怪列；spec 路列宽由 columns 推导不可达。
+- **P3-1（记 backlog B-复审B-1）**：runtime/paths.js `spec()` 无穿越钳制 + make_api REPORT_SPEC/SCHEMA_MODEL env 直用——本机信任边界；paths.js 属 Runtime 冻结面不擅改，修复点在 make_api 入口。
+- **P3-4（记 backlog B-复审B-2）**：plan.js:32 硬编码模型路径 vs make_api SCHEMA_MODEL env 分叉。
+- **P3-5（记 backlog B-复审B-3）**：object.js 引擎互操作静默 catch（:345 等）——无实证触发路径，盲改违反零误伤，先探针后升级。
+- **P3-6（记 backlog B-复审B-4）**：make_api.js:309/320 图表/超链序列化断言只扫 sheets[0]——多 sheet 第二 sheet 断言缺口。
+- **安全面核查（无新缺陷）**：sqlbuilder 受控 SQL——ISO 日期先验（sqlbuilder.js:123-125 dr.ok 才拼）、文本值 token 白名单（:131-132,153,159 禁引号）、op 白名单、数值 filter 须有限数（:148）；patch 源件穿越守卫（template/reader.js:5）；outName 路径安全（spec_validator.js:15 OUTNAME_BAD）；凭据自动门（make_api.js:487-515）；browser 族标识符白名单（features/data_browser/browser.js:298）；Runtime 未触碰（git 状态干净）。
+
+### 三项演进实施（反例先行→实现→门禁）
+1. **P2-1 planner filters/chart 阻断（a7be9f7）**：fast_planner +3 断言先红 3（rows 路 filters/chart → 仍 ready）；实现 blockedFeatures 计数（rows 路能力墙丢段 + sql 路顶层 filters 未采纳均阻断，status=rejected + owner 归属 warning；数组形态采纳/歧义优先级不变）；后绿。真通道冒烟：fr_agent plan verb 真 intent（rows+顶层 filters）→ status=rejected、reportSpec=null、warnings 含 I2/I3 deferred + 能力墙阻断。
+2. **P3-2 countThreshold.value 数值闸（a7be9f7）**：fast_semantic +1 先红后绿；validator 报 INVALID_NUMBER（SQL 数值比较位禁自由文本）。
+3. **P3-3 cells 列位越界闸（9c9827b）**：fast_ir_contract +4 先红 3 后绿（首版边界差一 `c+span-1>L` → 修正 `>=L`，0 基列口径）；widthsPt 缺省的 sheet 不查；spec 路不可达。
+
+### 门禁（HEAD=9c9827b 全绿，本轮真跑）
+- fast15 rc=0（FAST GATE GREEN）；scan `runraw.ps1 -Script probes/scan_all_specs.js` → ok=60 bad=0 skipped=1（新闸零误伤）；引擎负门 5 路 exit/JSON/stage 逐断言 GREEN；基线 demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F（负门末步回补+双 e2e 各自回补均实证）；Golden E2E PASS（ge20261107004527-deacd5，10 行逐格+总计 33531:26531+modify diffClean+原件保留）；MULTISHEET E2E GREEN（5 CHECK PASS）。
+
+### 未验证/边界（如实）
+- P3-1/4/5/6 记 backlog 未实施（各有前置条件：Runtime 冻结面/触发探针/能力接线时机）。
+- 审查未逐行读完 object.js 全部 1699 行（关键段：游标/putCell/chartDeco/param/hide 段已读；剩余段落由历轮 probe 实证与 scan 载体覆盖背书）。
+- 独立复审：本批 diff 自查一轮（见上），连续 2 轮外部独立复审无新发现的成熟度判据尚未满足（本轮只有一轮自查+一轮实现者复审；如需真独立代理复审属下轮开工项）。
+
+### Commit
+2c475c5（A段）/ a7be9f7（P2-1+P3-2）/ 9c9827b（P3-3）/ 本条文档。
+
+### 下一项工作
+backlog B-复审B-1~B-4（P3）；或按 capability-matrix 取下一能力项（多 Sheet SQL extra 需 make_api deps 扩展 / D2 热力图）。
