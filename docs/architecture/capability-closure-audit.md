@@ -200,3 +200,21 @@ fast 13 套件共 **595 条断言**（IR 183 / template 77 / semantic 54 / plann
 5. **最后重新评估 vmap**：引擎可行性已证（第 2 步风险已降低），待对账机制可靠后再按官方 `mapfather.cpt` 路接线。**poly、heatmap 继续保持 pending**。
 
 **纪律**：任何能力不因"投入过开发"默认完成；本报告不授权 coding agent 直接据此改生产代码，实施按 1→5 顺序逐项立项。
+
+
+## 6. §5步4 视觉验证实施结果（2026-11-06，真引擎 PNG 目检）
+
+> 按最终基线 §5 顺序第 4 步实施；只改 manifest evidence + 新增 reports/test_visual_deco.js + 本文档，不动生产装配逻辑。
+> 判读方式：真引擎导出 PNG 目检（区域裁片），非无容差全图 diff；稀疏墨量用容差采样。
+
+| 能力 | 真引擎载体 | PNG 目检结论 | manifest 处理 |
+|---|---|---|---|
+| areaFill | `reports/test_vanchart.js` varea 臂（0x77BBFF alpha0.45） | `logs/_visual_top.png` 第3面板浅蓝面积带可见 | rendering pending→**verified**，agentAvailable=true |
+| seriesBorder | `test_vanchart.js` 堆叠臂（0x3355AA alpha0.9） | `logs/_visual_mid.png` 柱缘无可分辨蓝框（抗锯齿吃掉或未渲染） | **维持 pending**，evidence 写明目检结论，不升层 |
+| seriesImage | `reports/test_visual_deco.js` vbar 臂 | `能力自检_视觉装饰_api.png` 上图柱体仍纯色，图片未可见渲染（XML 有 AttrSeriesImageBackground×2） | **维持 pending**，evidence 写明"序列化在但视觉未现形" |
+| vpie label.summary | `test_vanchart.js` vpie 340pt 臂 | `logs/_visual_vpie.png` 饼四瓣+图例四条全出，但总结文字/数值未可见渲染 | 维持"仅序列化"，chart.label evidence 记录不升层 |
+| legacy axisX | `reports/test_visual_deco.js` bar 臂（fontPt:14） | `能力自检_视觉装饰_api.png` 下图 X 轴类目标签字号明显放大 | axisYUnit evidence 补"legacy 路径视觉验证通过" |
+
+**诚实纪律**：5 项里只有 1 项升 verified；3 项序列化在但视觉未现形/不可分辨，维持 pending；1 项(legacy axisX)视觉生效但非独立 cap。绝不因"已有 XML 断言"批量升层。
+**环境事故记档**：默认铁证回补时 run.ps1 预检 `COMMIT_LIMIT_LOW free=1610MB need~2100MB`（vmmemWSL 占用），用管线自带 `-Heap 600m` 绕过（need=1500MB）后 `CBEB42E3` 逐字节回补；未擅自关闭用户进程。
+**负门未通过（如实标注）**：同轮 `scripts/run-engine-negative-tests.ps1` 5 路全部 `exit=8`（FreeVirtual=1796MB < 2100MB 预检门槛），判据把 8 记为 FAIL——属**环境内存阻塞**，非逻辑失败；本轮不以"逻辑 GREEN"冒充通过，也不改负门脚本参数迁就环境。上一轮 `fa0e04b` 的 ENGINE NEG GATE GREEN 完整终行是逻辑侧最近一次有效记录；待内存释放后复跑负门。

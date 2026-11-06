@@ -32,7 +32,7 @@ function refsOf(ev) {
   var r = { probe: [], carrier: [], readme: [], fast: [], scan: false, integration: false };
   var pm = s.match(/probe_[a-z0-9]+/g); if (pm) r.probe = pm;
   // carrier 基名（允许 evidence 不带 .js 后缀，如 "carrier sales_demo_chart 每轮 scan"）
-  var cm = s.match(/(test_[a-z0-9]+|sales_demo[a-z0-9_]*|db_laser_[a-z0-9_]+|rebuild_[a-z0-9_]+|br_[a-z0-9_]+)/g); if (cm) r.carrier = cm;
+  var cm = s.match(/(test_[a-z0-9_]+|sales_demo[a-z0-9_]*|db_laser_[a-z0-9_]+|rebuild_[a-z0-9_]+|br_[a-z0-9_]+)/g); if (cm) r.carrier = cm;
   var rm = s.match(/README #\d+/g); if (rm) r.readme = rm;
   var fm = s.match(/fast_[a-z0-9_]+/g); if (fm) r.fast = fm;
   r.scan = /\bscan\b|scan_all_specs/.test(s);

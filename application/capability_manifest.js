@@ -41,16 +41,16 @@ var CapabilityManifest = (function () {
     cap('chart.vmap', 'pending', 'pending', 'pending', 'pending', 'README #79 绑定10参+MapMatchResult+GIS 底图；引擎渲染可行性已证（probe_r4m19 官方 mapfather.cpt 无头实拍），fr-agent 生成链路未接通'),
     cap('chart.heatmap', 'pending', 'pending', 'pending', 'pending', 'README #80 极端图族登记'),
     cap('chart.tooltip', 'verified', 'verified', 'serialization-only', 'verified', 'README #72 AttrTooltip 全家序列化；probe_r4m15 XML 断言；tooltip 为 web 交互行为静态 PNG 不现形（同官方）', 'serialization'),
-    cap('chart.label', 'verified', 'verified', 'verified', 'verified', 'probe_r4m9 定案：label 必挂命名 ConditionAttr+恒真 ListCondition 才渲染；官方 Demo.cpt 条件属性4 同构；carrier test_vanchart 实跑柱顶数值。**范围限定=已验证形态（命名条件+恒真/单图三件组合 m10）；不推导所有条件组合/复合嵌套**', 'rendering'),
+    cap('chart.label', 'verified', 'verified', 'verified', 'verified', 'probe_r4m9 定案：label 必挂命名 ConditionAttr+恒真 ListCondition 才渲染；官方 Demo.cpt 条件属性4 同构；carrier test_vanchart 实跑柱顶数值（§5步4 真引擎 PNG：logs/_visual_mid.png 堆叠段白字数值可见）。**范围限定=已验证形态（命名条件+恒真/单图三件组合 m10）；vpie label.summary 经 test_vanchart 真引擎 PNG 目检仅序列化、总结文字未可见渲染，不升层；不推导所有条件组合/复合嵌套**', 'rendering'),
     cap('chart.stack', 'verified', 'verified', 'verified', 'verified', 'probe_r4m3 结案：isStackChart 只认 vanChartPlotType==STACK/STACK_BY_PERCENT,补 setter 后实拍堆叠；carrier test_vanchart 实跑。**范围限定=vbar/varea 的 STACK/STACK_BY_PERCENT 单图，不推导自定义组合图**', 'rendering'),
     cap('chart.conditionalSeries', 'verified', 'verified', 'verified', 'verified', 'probe_r4m7 D_a 实拍：系列条件染色正类=AttrBackground+ColorBackground；carrier test_vanchart 实跑。**范围限定=系列级染色（恒真/CommonCondition 两臂），不等于任意复杂条件语义已验证**', 'rendering'),
     cap('chart.trendLine', 'verified', 'verified', 'verified', 'verified', 'README #72 LineStyleInfo 门槛补齐后红趋势线画出 PNG；carrier test_vanchart vline trend 臂', 'rendering'),
-    cap('chart.axisYUnit', 'verified', 'verified', 'verified', 'verified', 'probe_r4m17 实拍：unit=50 主刻度全渲染（无轴标题分支）；setTitle 后引擎自动降密度（交互事实记档）；carrier test_vanchart vline 臂。★审计 §2：0..300 无标题全刻度形态待补独立载体（§5步4）', 'rendering'),
+    cap('chart.axisYUnit', 'verified', 'verified', 'verified', 'verified', 'probe_r4m17 实拍：unit=50 主刻度全渲染（无轴标题分支）；setTitle 后引擎自动降密度（交互事实记档）；carrier test_vanchart vline 臂。★审计 §2：0..300 无标题全刻度形态待补独立载体。§5步4 legacy axisX：reports/test_visual_deco.js 真引擎 PNG 目检 X 轴类目标签字号明显放大(fontPt:14 生效)，公共键 legacy 路径视觉验证通过', 'rendering'),
     cap('chart.hotTooltip', 'verified', 'verified', 'serialization-only', 'verified', 'probe_r4m14b Plot.setHotTooltipStyle(AttrContents) 方法面+probe_r4m15 XML 断言；官方 newHotTooltipStyle 节点同构；渲染=web 交互不外宣', 'serialization'),
-    cap('chart.seriesBorder', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrBorder(Color,int)/AttrBorderWithAlpha(Color,int,double) CTOR+probe_r4m15 XML 断言；边框渲染视觉未单独目检（§5步4 待补）', 'serialization'),
+    cap('chart.seriesBorder', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrBorder(Color,int)/AttrBorderWithAlpha(Color,int,double) CTOR+probe_r4m15 XML 断言；§5步4 真引擎 PNG 目检：reports/test_vanchart.js 堆叠臂柱缘无可分辨蓝框（0x3355AA alpha0.9 可能被抗锯齿吃掉或未渲染），维持 pending', 'serialization'),
     cap('chart.effect', 'verified', 'verified', 'serialization-only', 'verified', 'probe_r4m14 AttrEffect(period) 方法面+probe_r4m15 XML 断言；web 动画渲染不外宣', 'serialization'),
-    cap('chart.areaFill', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrAreaSeriesFillColorBackground 方法面+probe_r4m15 XML 断言；面积填充视觉未单独目检（§5步4 待补）', 'serialization'),
-    cap('chart.seriesImage', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14b ImageBackground(ImageWithSuffix.build(byte[])) 方法面+probe_r4m15 XML 断言；图片显示效果未单独目检（§5步4 待补）', 'serialization'),
+    cap('chart.areaFill', 'verified', 'verified', 'verified', 'verified', 'probe_r4m14 AttrAreaSeriesFillColorBackground 方法面+probe_r4m15 XML 断言；§5步4 真引擎 PNG 目检：reports/test_vanchart.js varea 臂浅蓝面积带(0x77BBFF alpha0.45)可见（logs/_visual_top.png 第3面板）', 'rendering'),
+    cap('chart.seriesImage', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14b ImageBackground(ImageWithSuffix.build(byte[])) 方法面+probe_r4m15 XML 断言；§5步4 真引擎 reports/test_visual_deco.js PNG 目检：柱体仍纯色，图片未可见渲染（AttrSeriesImageBackground 序列化在但视觉未现形，不升层）', 'serialization'),
     cap('chart.hyperlinkCell', 'pending', 'pending', 'pending', 'pending', 'README #79 ChartHyperRelateCellLink 挂接面未探完，随地图批')
   ];
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）
