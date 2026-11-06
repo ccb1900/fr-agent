@@ -284,6 +284,14 @@ check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentati
   var ie = Ir.validate(c);
   if (ie.length) print('VMAP IR ERRS: ' + JSON.stringify(ie));
   check('D2 vmap compile 发射 geoUrl/zoom/mapType 且 IR 零误报', !!(cb && cb.kind === 'vmap' && cb.geoUrl && cb.zoom === 0 && cb.mapType === 'point' && ie.length === 0));
+  // 区域图缺省（mapType 省略）仍可编译且 IR 零误报（area 默认路径）
+  var rs2 = JSON.parse(JSON.stringify(rs));
+  delete rs2.presentation.chart.mapType; rs2.presentation.chart.zoom = 4;
+  try {
+    var c2 = SpecCompiler.compile(rs2, deps);
+    var cb2 = null; c2.sheets[0].blocks.forEach(function (b) { if (b.type === 'chart') cb2 = b; });
+    check('D2 vmap area 缺省编译零误报', !!(cb2 && cb2.mapType == null && cb2.zoom === 4 && Ir.validate(c2).length === 0));
+  } catch (e2) { check('D2 vmap area 缺省编译不抛: ' + e2, false); }
 })();
 // 审查轮2：非散点 kind 的 x/y 会被编译器丢 → 拒
 check('审查2 bar 带 x/y 拒', (function () {

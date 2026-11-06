@@ -1071,3 +1071,16 @@ P1：geoUrl 自由字符串直入引擎资源流（SimpleWorkResource 无归一�
 ### 验证
 - 真引擎：test_vmap_point failures=0，PNG 目检中国底图 + 散点标记 + 图例 0..280000。
 - fast 15 套件 rc=0；scan ok=60 bad=0；基线 MD5 精确。
+
+## 2026-11-06 D2 point 复审修复（2 P2 + 注释）
+
+### 发现
+P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point）；object 对非 area/point 的 mapType（line/1/拼写错）静默回落 AREA（IR 拒但 raw Obj.build 调用会丢意图）。P3：object 注释误写 official markerKey=scatter（实际 mapmarkertype=1=COMMON）。
+
+### 修复
+- report_spec.js：vmap(area|point) + "line/custom 未接"；inventory D 结论/表格同步 area+point。
+- object.js：mapType 非 area/point 直接 throw（fail-closed）；注释订正。
+- 测试：fast_report_spec 增 area 缺省（mapType 省略/zoom 4）编译 + Ir.validate 零误报。
+
+### 验证
+- fast 15 套件 rc=0；scan 60 ok；基线 MD5 精确。
