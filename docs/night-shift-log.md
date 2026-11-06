@@ -755,3 +755,31 @@ D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff �
 
 ### 下一项
 D 类：D1 重开需子图系列分配 ConditionCollection 语料；D2 vmap 需地图数据模型整包（独立工单）。或按 coverage/backlog 取证下一项。
+
+## 2026-11-06 路线图第 4 项（P1）：合计行非 sum 聚合
+
+### 目标
+按 capability-matrix §4 第 4 项：IR aggregate.fn 白名单扩展 + object 构造 + 合计行 PNG 真值对拍。
+
+### 实施
+- lib/ir.js：AGG_FNS = sum|avg|count|min|max|ratio；ratio 形态用 {num,den}（禁列 0，label 占 c0）；sumCols 逐格 fn 白名单 sum|avg|count|min|max（ratio 走 formula）。
+- lib/object.js：total 分支函数映射 SUM/AVERAGE/COUNT/MIN/MAX；aggregate ratio 生 =SUM(num)/SUM(den)；sumCols 按 sc.fn 选公式（sc.formula 优先）。
+- lib/spec_validator.js：presentation.total.sumCols[].fn 白名单。
+- 载体：reports/test_total_agg.js（avg/count/min 三列）、reports/test_total_ratio.js（ratio 两列）。
+- 测试：fast_ir_contract +9（正/负/ratio 形态）、fast_report_spec +3（fn 零误报/越词表拒/编译直通）。
+- manifest 新增 spec.rows.totalAgg 行（四层 verified，scope rendering）+ KEY_OF "type: 'total'"。
+
+### 验证结果
+- 真引擎：两载体 failures=0；部署 cpt 公式 =AVERAGE(B3)/=COUNT(C3)/=MIN(D3) 与 =SUM(B3)/SUM(C3)。
+- PNG 像素：合计聚合行 60.0 / 2 / 35；比率行 1.14（120/105）。
+- fast 15 套件 rc=0；scan ok=57 bad=0 skipped=1；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### 未验证/边界
+- 仅覆盖合计行聚合；ReportSpec metrics.aggregation 词表仍 sum（明细列聚合语义未扩，非本项验收面）。
+- ratio 合计用 num 列 format（比率列格式需业务侧在 num 列或 sumCols formula 上控制）。
+
+### Commit
+（本条提交。）
+
+### 下一项
+matrix §3.1 剩余：chart.seriesBorder/seriesImage/vpie summary 视觉验证（P3）；或 D2 vmap 独立工单。

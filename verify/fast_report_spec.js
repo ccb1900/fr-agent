@@ -298,6 +298,15 @@ check('审查2 sumCols col0 拒', codeAt(baseRowsSpec(function (rs) { rs.present
 check('C2 sheet.hideRows/hideCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [1, 3] }; })).length === 0);
 check('C2 sheet.hideRows 非整数拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1.5] }; }), 'INVALID_NUMBER', 'sheet.hideRows[0]'));
 check('C2 sheet.hideCols 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { hideCols: 'x' }; }), 'INVALID_ARRAY', 'sheet.hideCols'));
+// ===== 2026-11-06 P1：合计行非 sum 聚合（presentation.total.sumCols[].fn） =====
+check('P1 sumCols fn 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; })).length === 0);
+check('P1 sumCols fn 越词表拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'ratio' }] }; }), 'INVALID_ENUM', 'presentation.total.sumCols[0].fn'));
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'min' }] }; })); } catch (e) { check('P1 sumCols fn compile 不抛: ' + e, false); return; }
+  var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
+  check('P1 compile: sumCols fn 直通 IR', !!(t && t.sumCols && t.sumCols[0].fn === 'avg' && t.sumCols[1].fn === 'min'));
+})();
 (function () {
   var c = null;
   try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [2] }; })); } catch (e) { check('C2 compile 不抛: ' + e, false); return; }

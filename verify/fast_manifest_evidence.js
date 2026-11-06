@@ -43,7 +43,8 @@ var KEY_OF = {
   // 2026-11-06 B/C 新能力行（spec 入口 + 隐藏行列 + rowSpan）
   'sheet.hideRowsCols': 'hideRows', 'cells.rowSpan': 'rowSpan',
   'spec.rows.conditions': 'conditions:', 'spec.rows.cells': 'cells:',
-  'spec.rows.sumCols': 'sumCols', 'spec.params.panel': 'params'
+  'spec.rows.sumCols': 'sumCols', 'spec.params.panel': 'params',
+  'spec.rows.totalAgg': "type: 'total'"
 };
 // 允许"族级代表"的例外（无独立载体但同族构造相同，evidence 已自承；v2 仍要求文件含该族任一键）
 var FAMILY_REP = { 'chart.pie': 1, 'chart.line': 1 };

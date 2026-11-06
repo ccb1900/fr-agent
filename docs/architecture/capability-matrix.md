@@ -124,7 +124,7 @@
 |---|---|---|---|---|---|---|---|
 | cells 多行合并表头 | 高 | **极高**（103/240 文件 42.9%，1364 单元格） | 已收（R3-0 修复游标） | 高（setRowSpan 原生） | **低**（IR 键+传参+游标） | 高 | **P0** |
 | ReportSpec 参数面板 | 高 | 高（真实报表几乎必有筛选） | 完全缺失（spec 无 param） | 高（IR 13 控件已收） | 中（spec_compiler+载体+渲染） | 高 | **P1** |
-| 合计行非 sum 聚合（avg/ratio/count） | 高 | 高（完成率/合格率/平均） | 完全缺失（fn 仅 sum） | 高（引擎 AVERAGE 等） | 中（fn 白名单+object 构造+真值） | 高 | **P1** |
+| 合计行非 sum 聚合（avg/ratio/count） | 高 | 高（完成率/合格率/平均） | **已收（2026-11-06）**：IR aggregate.fn=sum|avg|count|min|max|ratio + sumCols[].fn | 高（公式 AVERAGE/COUNT/MIN/MAX；ratio=SUM/SUM） | 中（object 公式映射+2 载体） | 高 | **P1→完成** |
 | 跨数据集关联 | 中高 | 中（分析报表） | 完全缺失 | 中（SQL 本身可 join） | 高（新语义+校验+执行） | 中 | P2 |
 | 组合图/双轴 | 中 | 中 | 完全缺失 | 中高 | 中高 | 中 | P2 |
 | 地图 vmap | 中 | 低中 | 完全缺失 | 已证（m19） | 中高 | 低中 | P2 |
@@ -135,7 +135,7 @@
 ## 3. 两项排序
 
 ### 3.1 补齐现有（部分实现但闭环不完整）
-1. **合计行非 sum 聚合**（fn 仅 sum，引擎支持 avg/ratio/count）——P1，最高该项
+1. ~~**合计行非 sum 聚合**（fn 仅 sum，引擎支持 avg/ratio/count）——P1~~ 已完成（2026-11-06）
 2. **ReportSpec 参数面板**（IR 有 13 控件，spec 编译层零 param）——P1
 3. chart.seriesBorder / seriesImage / vpie summary 视觉验证（manifest pending）——P3，价值低
 4. write.submit（DML 真提交）、page.freezeWeb、spec.dataset.databaseDict——P3
@@ -155,7 +155,7 @@
 | **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=待验证**（无 plan→create 证据） |
 | 2（待办） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | plan 路 detail 可表达 conditions；footnote/sort/topN 不再静默丢（或结构化拒）；载体+PNG 真值；golden 需求"<80% 高亮"可由 plan 直达 |
 | 3（待办） | **ReportSpec 参数面板 + 执行期筛选** | P1 | spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍 |
-| 4（待办） | 合计行非 sum 聚合（avg/ratio/count） | P1 | IR aggregate.fn 白名单扩展；合计行 PNG 真值对拍 |
+| 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
 
 **明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 后端已完成（A1），仅 ReportSpec/Planner 入口待开。
 
