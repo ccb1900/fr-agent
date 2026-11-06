@@ -466,6 +466,15 @@ check('R3-0 块内显式 r 重叠拒', codeAt(cellsIR([{ c: 0, r: 0, rowSpan: 2,
 check('R3-0 块内同行同列重复拒', codeAt(cellsIR([{ c: 0, text: 'a' }, { c: 0, text: 'b' }]), 'DUPLICATE', 'sheets[0].blocks[0].items[1]'));
 check('R3-0 单行 cells 零回归', errsOf(cellsIR([{ c: 0, text: 'a' }, { c: 1, text: 'b' }])).length === 0);
 
+// ===== C2（2026-11-06 收口）DSColumn+rowSpan 一致性（选 B：拒绝）=====
+//   object putDSCell 不产生合并区（DSColumn 无 rowSpan 出口），但 cells 游标按 rowSpan 推进——
+//   游标与最终对象不一致（下游 block 落位/行高被拉出空带）。IR 层结构化拒 + object DSColumn 分支二道防线 throw。
+check('C2 ds+rowSpan 结构化拒（items[k].rowSpan）', codeAt(cellsIR([{ c: 0, ds: { column: 'a' }, rowSpan: 2 }]), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[0].items[0].rowSpan'));
+check('C2 ds 对象形态+rowSpan 同拒', codeAt(cellsIR([{ c: 0, ds: { ds: 'd', column: 'a', summary: 'SUM' }, rowSpan: 3 }]), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[0].items[0].rowSpan'));
+check('C2 消息明示 putDSCell 不合并', errsOf(cellsIR([{ c: 0, ds: { column: 'a' }, rowSpan: 2 }])).some(function (e) { return e.path === 'sheets[0].blocks[0].items[0].rowSpan' && String(e.message).indexOf('putDSCell') >= 0; }));
+check('C2 ds 无 rowSpan 正例零误报（DSColumn 明细格合法）', errsOf(cellsIR([{ c: 0, ds: { column: 'a' } }, { c: 1, text: 'b' }])).length === 0);
+check('C2 span+ds 不在本次范围（现状不动）', errsOf(cellsIR([{ c: 0, ds: { column: 'a' }, span: 2 }])).length === 0);
+
 
 // ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
 check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);
