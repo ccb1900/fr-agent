@@ -327,6 +327,19 @@ check('P1 sumCols fn 越词表拒', codeAt(mut(function (ir) { ir.sheets[0].bloc
 check('P1 sumCols 重复列拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg' }, { col: 1, fn: 'count' }] }; }), 'DUPLICATE', 'sheets[0].blocks[3].sumCols[1].col'));
 check('P1 sumCols fn+formula 互斥拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1, fn: 'avg', formula: '=SUM(B3)' }] }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].sumCols[0]'));
 check('P1 sumCols+aggregate 互斥拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 1 }], aggregate: { fn: 'sum', col: 1 } }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3]'));
+check('P1 filter 列 __proto__ 不当存在（UNKNOWN_REF）', (function () {
+  var es = errsOf(mut(function (ir) {
+    ir.param = { widgets: [{ kind: 'editor', name: 'p1', x: 0, y: 0, w: 1, h: 1 }], filters: [{ column: '__proto__', parameter: 'p1' }] };
+  }));
+  return es.some(function (e) { return e && e.code === 'UNKNOWN_REF' && e.path === 'param.filters[0].column'; });
+})());
+check('P1 多 filter 拒（暂限 1 条）', codeAt(mut(function (ir) {
+  ir.param = { widgets: [{ kind: 'editor', name: 'p1', x: 0, y: 0, w: 1, h: 1 }], filters: [{ column: '机型', parameter: 'p1' }, { column: '机型', parameter: 'p1' }] };
+}), 'UNSUPPORTED_CAPABILITY', 'param.filters'));
+check('P1 无 detail 块 + filter 拒', codeAt(mut(function (ir) {
+  ir.sheets[0].blocks = [{ type: 'cells', heightPt: 20, items: [{ c: 0, text: 'x' }] }];
+  ir.param = { widgets: [{ kind: 'editor', name: 'p1', x: 0, y: 0, w: 1, h: 1 }], filters: [{ column: '机型', parameter: 'p1' }] };
+}), 'UNSUPPORTED_CAPABILITY', 'param.filters[0]'));
 check('P1 参数名 __proto__ 可被 filters 引用', (function () {
   var es = errsOf(mut(function (ir) {
     ir.param = { widgets: [{ kind: 'editor', name: '__proto__', x: 0, y: 0, w: 1, h: 1 }], filters: [{ column: '机型', parameter: '__proto__' }] };

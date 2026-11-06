@@ -1104,3 +1104,18 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 
 ### 边界
 - 仅 rows 内嵌路（sql 路由 validator 拒）；op 语义由引擎 CommonCondition（= $参数）承担；多参数多 filter 逐格叠加未专项 PNG（可后续）。
+
+## 2026-11-06 参数筛选复审修复（5 P2）
+
+### 发现
+①filter 与 detail 绑定不严：sql/cells-only 无 detail 时 IR 仍放行（object 不生效）；extraSheets 下只查"任一内嵌数据集"含列，缺列 sheet 会挂空条件。②多 filter last-win（DSColumn 单条件）。③未具名 editor+filter 重复报 REQUIRED name。④manifest 文案 presentation.params[].filter 应为 params[].filter；PARAM_KEYS 注释过时。⑤测试缺口：op 缺省、filter 列 UNKNOWN_REF、__proto__ 列。
+
+### 修复
+- IR：filter 仅在有 detail 块时放行（否则 UNSUPPORTED）；列校验改为逐 detail 块数据集（sql 明细列不可静态校验→拒）；多 filter 拒；dsCols 改 Object.create(null)。
+- compiler：sql 基表不挂 filters（二道防线）。
+- spec：多 filter 拒；filter 名必填只对 label/submit（消除重复诊断）；注释澄清 filter 由 compiler 消费。
+- manifest 文案修正。
+- 测试：fast_report_spec +1（多 filter）+op 缺省断言；fast_ir_contract +3（__proto__ 列 UNKNOWN_REF/多 filter/无 detail 拒）。
+
+### 验证
+- 真引擎 param_filter failures=0（默认 A线 过滤仍生效）；fast 15 rc=0；scan 60 ok；基线 MD5 精确。

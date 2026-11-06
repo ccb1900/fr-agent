@@ -268,10 +268,11 @@ check('参数 filter.column 缺拒', codeAt(baseRowsSpec(function (rs) { rs.para
 check('参数 filter 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { column: 'line', magic: 1 } }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].filter.magic'));
 check('参数 filter 需具名（label 拒）', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'label', text: 'x', filter: { column: 'line' } }]; }), 'REQUIRED', 'params[0].name'));
 check('sql 路参数 filter 拒', codeAt(baseSqlSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', filter: { column: 'line' } }]; }), 'UNSUPPORTED_CAPABILITY', 'params[0].filter'));
+check('多参数 filter 拒（暂限 1 条）', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'a1', filter: { column: 'line' } }, { kind: 'editor', name: 'a2', filter: { column: 'n' } }]; }), 'UNSUPPORTED_CAPABILITY', 'params'));
 (function () {
   var c = null;
-  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', value: 'A', filter: { column: 'line', op: '=' } }]; })); } catch (e) { check('参数 filter compile 不抛: ' + e, false); return; }
-  check('参数 filter compile: IR.param.filters 发射', !!(c.param && c.param.filters && c.param.filters.length === 1 && c.param.filters[0].column === 'line' && c.param.filters[0].parameter === 'line'));
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'line', value: 'A', filter: { column: 'line' } }]; })); } catch (e) { check('参数 filter compile 不抛: ' + e, false); return; }
+  check('参数 filter compile: IR.param.filters 发射（op 缺省 =）', !!(c.param && c.param.filters && c.param.filters.length === 1 && c.param.filters[0].column === 'line' && c.param.filters[0].parameter === 'line' && c.param.filters[0].op === '='));
 })();
 // P2：散点/气泡 spec 用 x/y（不再过校验后必挂 IR）
 check('审查1 vscatter 需 x/y', (function () {
