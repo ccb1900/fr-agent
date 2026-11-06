@@ -175,5 +175,18 @@ check('B1 rows 路 footnote 零误报', errsOf(baseRowsSpec(function (rs) { rs.p
   check('B1 compile: footnote 发射 cells 块', hasCells);
 })();
 
+// ===== B2（2026-11-06）：params 参数面板进 ReportSpec =====
+check('B2 params 零误报', errsOf(baseRowsSpec(function (rs) {
+  rs.params = [{ kind: 'date', name: 'd', value: '2026-09-13' }, { kind: 'submit', name: 'go', text: '查询' }];
+})).length === 0);
+check('B2 params kind 越词表拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'magic', name: 'x' }]; }), 'INVALID_ENUM', 'params[0].kind'));
+check('B2 params name 重复拒', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'x' }, { kind: 'editor', name: 'x' }]; }), 'DUPLICATE', 'params[1].name'));
+check('B2 params 缺 name 拒（editor）', codeAt(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor' }]; }), 'REQUIRED', 'params[0].name'));
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.params = [{ kind: 'number', name: 'n', value: 5 }]; })); } catch (e) { check('B2 compile 不抛: ' + e, false); return; }
+  check('B2 compile: IR.param 注入 widgets', !!(c.param && c.param.widgets && c.param.widgets.length === 1 && c.param.widgets[0].kind === 'number'));
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
