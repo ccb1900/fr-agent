@@ -336,7 +336,15 @@ check('P1 total.aggregate+sumCols 互斥拒', codeAt(baseRowsSpec(function (rs) 
   check('C2 compile: hideRows/hideCols 直通 sheet', !!(c.sheets[0].hideRows && c.sheets[0].hideRows[0] === 1 && c.sheets[0].hideCols && c.sheets[0].hideCols[0] === 2));
 })();
 
-// ===== 2026-11-06 多 Sheet（ReportSpec extraSheets，rows-only） =====
+// 2026-11-06（plan→create e2e P1）：planner rows 路列不带 widthPt，编译器必须补默认值（否则 IR widthsPt undefined 拒）
+check('编译：缺省 widthPt 补 110 且 IR 零误报', (function () {
+  var rs = baseRowsSpec(function (r) { delete r.dimensions[0].widthPt; delete r.metrics[0].widthPt; });
+  var c = null;
+  try { c = SpecCompiler.compile(rs); } catch (e) { print('WIDTH COMPILE FAIL ' + e); return false; }
+  return c.sheets[0].widthsPt[0] === 110 && c.sheets[0].widthsPt[1] === 110 && Ir.validate(c).length === 0;
+})());
+
+// ===== 多 Sheet（ReportSpec extraSheets，rows-only） =====
 function msSpec(mut) {
   var rs = baseRowsSpec(function (r) {
     r.extraSheets = [{ name: '明细', dimensions: [{ field: 'l2', label: '线2', widthPt: 120 }], metrics: [{ field: 'n2', label: '数2', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['X', 1]] }, presentation: { type: 'table', showTotal: false } }];

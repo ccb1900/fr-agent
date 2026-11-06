@@ -1,0 +1,19 @@
+{
+  "outName": "ms_agent_e2e",
+  "reportName": "ms_agent_e2e",
+  "dimensions": ["bizTime"],
+  "metrics": [{ "term": "rowNo" }],
+  "rows": [["2026-01-01", 120], ["2026-01-02", 150]],
+  "presentation": { "showTotal": true },
+  "params": [{ "kind": "date", "name": "d1", "value": "2026-01-01" }],
+  "sheet": { "hideRows": [1] },
+  "extraSheets": [
+    {
+      "name": "Detail",
+      "dimensions": [{ "field": "bizTime", "label": "Line", "widthPt": 120 }],
+      "metrics": [{ "field": "rowNo", "label": "No", "aggregation": "sum", "dataType": "number", "widthPt": 100 }],
+      "dataset": { "rows": [["2026-01-01", 70], ["2026-01-02", 35]] },
+      "presentation": { "showTotal": false }
+    }
+  ]
+}

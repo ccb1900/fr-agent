@@ -999,3 +999,21 @@ test_visual_deco 用 `var J = Java.type(...)` 覆盖 make_api 同作用域全局
 
 ### 验证
 - fast 15 套件 rc=0；集成门 GREEN。
+
+## 2026-11-06 多 Sheet plan→create e2e（Agent 链闭环）
+
+### 目标
+把 page.multiSheet 从"spec 可写"推到"Agent 全链可用"（R3-0 要求 plan→create 证据）。
+
+### 实施
+- 新增 scripts/run-multisheet-e2e.ps1（ASCII-only）+ verify/fixtures/multisheet/intent.json（rows intent：1 基表 + Detail extra + date 参数 + hideRows）。
+- 链路：fr_agent plan → plan2spec → create，断言：reportSpec 保留 extraSheets/params；部署 cpt ≥2 `<Report>`、ReportParameterAttr、ds2 引用。
+- 首跑暴露真 P1：planner rows 路映射列不带 widthPt → compiler 产出 undefined → IR INVALID_NUMBER。修复：buildColumns widthPt 缺省 110；fast_report_spec +1（缺省补 110 且 IR 零误报）。
+- manifest page.multiSheet agentAvailable → true（evidence 写明 e2e GREEN 与 cpt 断言）。
+
+### 验证
+- e2e：STEP plan/plan2spec/create OK；5 项 CHECK PASS；MULTISHEET E2E GREEN。
+- fast 15 套件 rc=0；baseline MD5 精确；scan ok=58 bad=0。
+
+### 边界
+- e2e 覆盖 rows 基表 + rows extra + date 参数 + hideRows；SQL 基表 e2e 未跑（SQL 作为 extra 仍拒）。
