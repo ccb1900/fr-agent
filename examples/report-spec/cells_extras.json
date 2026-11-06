@@ -1,0 +1,26 @@
+{
+  "specVersion": "1",
+  "report": { "name": "cells 族 + sheet 扩展（B3/B4）" },
+  "outName": "能力自检_cells扩展",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80], ["B线", 40]]
+  },
+  "sheet": {
+    "headerFooter": { "header": { "center": [{ "text": "B3/B4 载体 — 页眉（页眉页脚直通）" }] }, "footer": { "right": [{ "pageNumber": true }] } },
+    "watermark": { "text": "内部资料", "fontSize": 24 }
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "cells": [
+      { "c": 0, "span": 2, "rich": [{ "text": "【结论】", "bold": true }, { "text": "B3 cells 族：富文本经 ReportSpec 直通 IR cells 块。" }] }
+    ]
+  }
+}

@@ -188,5 +188,24 @@ check('B2 params 缺 name 拒（editor）', codeAt(baseRowsSpec(function (rs) { 
   check('B2 compile: IR.param 注入 widgets', !!(c.param && c.param.widgets && c.param.widgets.length === 1 && c.param.widgets[0].kind === 'number'));
 })();
 
+// ===== B3/B4（2026-11-06）：presentation.cells + sheet 级扩展 =====
+check('B3 presentation.cells 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.cells = [{ c: 0, text: 'x' }]; })).length === 0);
+check('B3 presentation.cells 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.cells = {}; }), 'INVALID_ARRAY', 'presentation.cells'));
+check('B4 sheet 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.sheet = { magic: 1 }; }), 'UNSUPPORTED_CAPABILITY', 'sheet.magic'));
+check('B4 sheet 合法键零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { watermark: { text: 'W' }, headerFooter: { header: { center: [{ text: 'h' }] } } }; })).length === 0);
+(function () {
+  var c = null;
+  try {
+    c = SpecCompiler.compile(baseRowsSpec(function (rs) {
+      rs.presentation.cells = [{ c: 0, text: 'x' }];
+      rs.sheet = { watermark: { text: 'W' } };
+    }));
+  } catch (e) { check('B3/B4 compile 不抛: ' + e, false); return; }
+  var hasCells = false;
+  (c.sheets[0].blocks || []).forEach(function (b) { if (b.type === 'cells' && b.items && b.items[0] && b.items[0].text === 'x') hasCells = true; });
+  check('B3 compile: cells 块发射', hasCells);
+  check('B4 compile: watermark 注入 workbook 级', !!(c.watermark && c.watermark.text === 'W'));
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
