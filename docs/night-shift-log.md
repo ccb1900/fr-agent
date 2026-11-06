@@ -689,3 +689,28 @@ D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff �
 
 ### 下一项工作
 审查轮2：复审本轮修复 diff（重点 spec_validator SQL 拒与 compiler labelSpan、IR 新闸），确认无新 P1/P2。
+
+## 2026-11-06 审查轮2（复审 2cf7fce，新独立代理）
+
+### 审查结论
+5 项 P2（1 项残留），无 P1。空断言 1 项、新静默丢面 2 项、schema 契约不精确 1 项、散点编译无 fast 覆盖 1 项。
+
+### 修复
+- sumCols col=0 与合计 label 同格：IR + spec_validator 前置拒（UNSUPPORTED_CAPABILITY）。
+- 空断言：B6 span 断言改用 3 列（2 维+1 度）spec，断言 span===1 且 ≠n-1（2 列下新旧同值，无法区分）。
+- 非散点 kind 的 x/y/bubbleSize：spec_validator 结构化拒（编译器只在散点分支发射）。
+- schema chart：anyOf → if(kind in vscatter|vbubble)/then(require x,y)/else(require category,value)。
+- 散点编译链：fast_report_spec 用 stub deps{model,SqlBuilder} 编译并断言 x/y 发射、无 category/value、产物过 Ir.validate 零误报。
+- 残留：legacy barInterval 无 legend 时 object 会丢 → IR INVALID_SHAPE 拒；带 legend 零误报断言。
+
+### 验证结果
+- fast 15 套件 rc=0；默认基线 MD5=CBEB42E3CE48E46E362B9AE80168026F；scan ok=55 bad=0。
+
+### 未验证
+- 散点 spec 的真实 SQL 引擎链（stub deps 只覆盖编译形状；IR validate 已零误报）。
+
+### Commit
+（本条提交。）
+
+### 下一项
+审查轮3：复审本轮 5 项修复是否引入新问题；若无 P1/P2 则审查循环收敛。

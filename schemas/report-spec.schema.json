@@ -147,10 +147,9 @@
           "type": "object",
           "additionalProperties": false,
           "description": "仅 kind=sql 数据集支持（rows 路写→UNSUPPORTED_CAPABILITY，不静默丢图）；散点/气泡用 x/y，其余用 category/value",
-          "anyOf": [
-            { "required": ["category", "value"] },
-            { "required": ["x", "y"] }
-          ],
+          "if": { "properties": { "kind": { "enum": ["vscatter", "vbubble"] } }, "required": ["kind"] },
+          "then": { "required": ["x", "y"] },
+          "else": { "required": ["category", "value"] },
           "properties": {
             "kind": { "type": "string", "enum": ["bar", "pie", "line", "vbar", "vline", "varea", "vscatter", "vbubble", "vpie", "vgauge"], "default": "bar" },
             "category": { "type": "string", "description": "已选维度列别名" },

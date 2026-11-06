@@ -233,12 +233,16 @@ check('B6 total.sumCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.prese
 check('B6 total.sumCols 非数组拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: 'x' }; }), 'INVALID_ARRAY', 'presentation.total.sumCols'));
 check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params = [{ kind: 'editor', name: 'e', reg: { custom: '^x$' } }]; })).length === 0);
 (function () {
+  // 审查轮2：用 3 列（2 维+1 度）证明 span 取最小求和列（旧 n-1=2，新=1；2 列时会误判为通过）
+  var rs3 = baseRowsSpec(function (rs) {
+    rs.dimensions = [{ field: 'line', label: '线', widthPt: 120 }, { field: 'cat', label: '类', widthPt: 100 }];
+    rs.presentation.total = { sumCols: [{ col: 1 }, { col: 2 }] };
+  });
   var c = null;
-  try { c = SpecCompiler.compile(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 1 }] }; })); } catch (e) { check('B6 compile 不抛: ' + e, false); return; }
+  try { c = SpecCompiler.compile(rs3); } catch (e) { check('B6 compile 不抛: ' + e, false); return; }
   var t = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'total') t = b; });
-  check('B6 compile: total 走 sumCols 通道（无 aggregate）', !!(t && t.sumCols && t.sumCols.length === 1 && !t.aggregate));
-  // 审查轮1 P1-B：label 合并区不得吞掉被求和列（span = 最小求和列号）
-  check('审查1 B6: sumCols total span = 最小求和列号', !!(t && t.span === 1));
+  check('B6 compile: total 走 sumCols 通道（无 aggregate）', !!(t && t.sumCols && t.sumCols.length === 2 && !t.aggregate));
+  check('审查1/2 B6: sumCols total span = 最小求和列号（3 列下 1≠n-1）', !!(t && t.span === 1 && t.span !== 2));
 })();
 
 // ===== 审查轮1（2026-11-06）：P1/P2 负项 =====
@@ -262,6 +266,33 @@ check('审查1 vscatter 需 x/y', (function () {
     es.some(function (e) { return e.code === 'UNSUPPORTED_CAPABILITY' && e.path === 'presentation.chart.category'; });
 })());
 check('审查1 vscatter x/y 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vscatter', x: 'planned', y: 'planned' }; })).length === 0);
+// 审查轮2：非散点 kind 的 x/y 会被编译器丢 → 拒
+check('审查2 bar 带 x/y 拒', (function () {
+  var es = errsOf(baseSqlSpec(function (rs) { rs.presentation.chart.x = 'planned'; }));
+  return es.some(function (e) { return e.code === 'UNSUPPORTED_CAPABILITY' && e.path === 'presentation.chart.x'; });
+})());
+// 审查轮2：sumCols 列 0 与合计 label 同格 → spec 前置拒
+check('审查2 sumCols col0 拒', codeAt(baseRowsSpec(function (rs) { rs.presentation.total = { sumCols: [{ col: 0 }] }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total.sumCols[0].col'));
+// 审查轮2：散点编译链（stub deps）必须发射 x/y 且不带 category/value
+(function () {
+  var deps = {
+    model: { dimensions: [{ name: 'd', label: 'D' }], metrics: [{ name: 'm1', label: 'M1' }, { name: 'm2', label: 'M2' }] },
+    SqlBuilder: { build: function () {
+      return { sql: 'SELECT 1', baseAliases: [
+        { alias: 'd', role: 'dimension' }, { alias: 'm1', role: 'metric' }, { alias: 'm2', role: 'metric' }
+      ] };
+    } }
+  };
+  var rs = { specVersion: '1', report: { name: 't' }, outName: 't',
+    dataset: { kind: 'sql', connection: 'C', entity: 'E', dimensions: ['d'], metrics: ['m1', 'm2'], dateRange: { from: '2026-01-01', to: '2026-01-02' } },
+    presentation: { type: 'table', chart: { kind: 'vscatter', x: 'm1', y: 'm2' } } };
+  var c = null;
+  try { c = SpecCompiler.compile(rs, deps); } catch (e) { check('审查2 scatter compile 不抛: ' + e, false); return; }
+  var cb = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'chart') cb = b; });
+  check('审查2 scatter compile 发射 x/y 且无 category/value', !!(cb && cb.x === 'm1' && cb.y === 'm2' && cb.category == null && cb.value == null));
+  var ie = Ir.validate(c);
+  check('审查2 scatter 编译产物过 Ir.validate 零误报', ie.length === 0);
+})();
 
 // ===== C2（2026-11-06）：隐藏行列（sheet.hideRows/hideCols → object 行高/列宽归零） =====
 check('C2 sheet.hideRows/hideCols 零误报', errsOf(baseRowsSpec(function (rs) { rs.sheet = { hideRows: [1], hideCols: [1, 3] }; })).length === 0);

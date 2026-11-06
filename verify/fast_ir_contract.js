@@ -286,6 +286,10 @@ check('审查1 多 sheet + write 拒', codeAt(mut(function (ir) {
   ir.write = { table: { name: 't' }, columns: [{ name: 'c', cell: [0, 0] }] };
 }), 'UNSUPPORTED_CAPABILITY', 'write'));
 check('审查1 vscatter 缺 x/y 拒', codeAt(chartIR('vscatter', {}), 'REQUIRED', 'sheets[0].blocks[1]'));
+// 审查轮2：sumCols col0（与合计 label 同格）与 legacy barInterval（无 legend 会被 object 丢）都要拒
+check('审查2 sumCols col0 拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 0 }] }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].sumCols[0].col'));
+check('审查2 legacy barInterval 无 legend 拒', codeAt(chartIR('bar', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
+check('审查2 legacy barInterval 带 legend 零误报', errsOf(chartIR('bar', { barInterval: 0.5, legend: { position: 1 } })).length === 0);
 // ===== 批C（2026-11-05）页眉页脚 + 模板级 attrMark =====
 //   探针依据 probe_pagehf/_hf7/9（sheet.setHeader/setFooter(int,ReportHF)；裸 classpath 撞 license 墙、env 后可用）。
 function hfIR(hf, extra) {
