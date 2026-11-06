@@ -148,6 +148,9 @@ check('非法 params→rejected（透传后由 SpecValidator 拒）', plan({ out
 check('非法 sheet 键→rejected（透传后由 SpecValidator 拒）', plan({ outName: 'si', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), sheet: { magic: 1 } }).status === 'rejected');
 var sqlParams = plan({ outName: 'sp', dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'] }, params: [{ kind: 'combo', name: 'line', values: ['A', 'B'] }] });
 check('params 透传到 sql reportSpec 且 ready', sqlParams.status === 'ready' && sqlParams.reportSpec.params && sqlParams.reportSpec.params[0].kind === 'combo');
+var rExtra = plan({ outName: 'px', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), extraSheets: [{ name: '明细', dimensions: [{ field: 'bizTime', label: '日期', widthPt: 120 }], metrics: [{ field: 'n', label: '数', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['2026-01-01', 1]] }, presentation: { showTotal: false } }] });
+check('extraSheets 透传到 rows reportSpec 且 ready', rExtra.status === 'ready' && rExtra.reportSpec.extraSheets && rExtra.reportSpec.extraSheets[0].name === '明细');
+check('非法 extraSheets（重名 sheet1）→rejected', plan({ outName: 'py', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), extraSheets: [{ name: 'sheet1', dimensions: [{ field: 'bizTime', label: '日期', widthPt: 120 }], metrics: [{ field: 'n', label: '数', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['2026-01-01', 1]] } }] }).status === 'rejected');
 
 // ===== r14 P2: TermNorm 术语归一（候选契约 target/ref/column；中文 label→规范成员；歧义/非成员透传不臆造） =====
 load(ROOT + '/semantic/planner/termnorm.js');

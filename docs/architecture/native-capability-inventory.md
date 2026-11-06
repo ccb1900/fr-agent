@@ -30,12 +30,12 @@
 
 | 能力 | E1 Engine | E2 Object | E3 IR | 判断 | 证据 |
 |---|---|---|---|---|---|
-| **多 Sheet** | ✓（FR WorkBook 多 WorkSheet） | **✓** `wb.addReport(sIR.name, sheet)` 在 sheets 循环内 | **✗ 拒** | **补 IR（放开 + 验证）** | object.js:786；ir.js:469 `UNSUPPORTED_CAPABILITY multi_sheet`（注释"object.js v3.2 预留 throw"已过时——实际已支持） |
+| **多 Sheet** | ✓（FR WorkBook 多 WorkSheet） | ✓ `wb.addReport(sIR.name, sheet)` 在 sheets 循环内 | ✓ 已放开（A1） | **已接**：IR 多 sheet + ReportSpec `extraSheets[]`（rows-only）+ Planner 透传；载体 test_multisheet 与 examples/report-spec/multisheet.json 均 2 `<Report>`，PNG 两页 | object.js:786；ir.js CAPABILITIES.sheet |
 | 编辑器校验 reg | ✓ NoneReg/PhoneReg/IDCardReg/CustomReg | ✓ `REGF + 'CustomReg'` 等 6 种映射 | ✓ `reg` 键 | 已通（无需补） | object.js:1557-1567 |
 | 隐藏行列 | 待核实（FR 支持，场景需区分） | **待核实**（object 零命中 hidden） | ✗ | 归 C 类（需研究 setHidden） | object.js 无 hidden 构造 |
 | 其余 object 消费键 vs ir 键 | — | — | — | 待逐项核实（object 消费键 ~100 个，ir 校验宽松，多数可达） | 见 §6 待核实 |
 
-**A 类结论**：当前**唯一确证**的 A 类是**多 Sheet**——object 已有构造能力、ir 一条硬闸拒之。成本极低（放开 + 多 sheet 载体 + 真引擎验证），但业务频率低（240 demo 里多 sheet 少）。**建议列为 P2 低成本项，不抢跑 B 类**。
+**A 类结论**：当时唯一确证的 A 类是**多 Sheet**，已于 2026-11-06 完成（IR 放开 + rawIR 载体 + ReportSpec extraSheets + planner 透传 + PNG 两页实证）。业务频率低，故未抢跑 B 类。
 
 ## 3. B 类清单：IR 已有，ReportSpec/Planner 无入口（Agent 用不到）——**本轮最大发现**
 

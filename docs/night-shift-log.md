@@ -861,3 +861,27 @@ B. 形态互斥键被静默忽略：fn:'ratio' 带 col、非 ratio 带 num/den�
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 多 Sheet 进 ReportSpec（A1 产品化）
+
+### 目标
+A1 后端多 sheet 已通，但 ReportSpec/Planner 无入口（manifest page.multiSheet agentAvailable=false）。补 rows 路 spec 入口。
+
+### 实施
+- ReportSpec 新键 `extraSheets[]`（rows-only）：每项 {name, dimensions, metrics, dataset:{rows}, presentation, sheet}。
+- spec_validator：extraSheets 数组/对象/未知键/name 必填唯一（保留 sheet1 给基表）；sql extra 结构化拒；内部复用主校验（合成 spec 递归 + 错误路径前缀 extraSheets[i].）。
+- spec_compiler：compileRows 支持 opts{dsName,sheetName}；compile 合并 extraSheets → 追加 sheet + 独立数据集 ds2..，块 dataset 引用随 dsN；extra 标题缺省用 sheet name（否则 IR title text 空被拒——首跑实测）。
+- planner：rows/sql 两分支透传 intent.extraSheets（非法形态仍由 SpecValidator rejected）。
+- schema：extraSheets 镜像；report_spec capabilities 更新；ir.js CAPABILITIES.multiSheetNote 更新。
+- 载体：examples/report-spec/multisheet.json（汇总+明细）。
+- 测试：fast_report_spec +8（零误报/重名×2/sql 拒/内部未知键前缀/extra 未知键/编译两 sheet 两数据集+Ir.validate）；fast_planner +2（透传 ready / 重名 rejected）。
+
+### 验证
+- 真引擎：multisheet.json failures=0；部署 cpt `<Report>`×2、WorkSheet×2、ds2 引用；PNG 目检「汇总」「明细」两页。
+- fast 15 套件 rc=0；scan ok=57 bad=0；基线 MD5=CBEB42E3CE48E46E362B9AE80168026F。
+
+### 未验证/边界
+- SQL 基表 + extraSheets 不受理（extra sql 拒），SQL 基表 + rows extra 组合未单测（编译器支持，基表 sql 的 deps 链未跑）；plan→create e2e 未跑，manifest page.multiSheet 仍 agentAvailable=false（R3-0 口径）。
+
+### Commit
+（本条提交。）

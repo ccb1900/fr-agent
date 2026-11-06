@@ -334,5 +334,31 @@ check('P1 total.aggregate+sumCols 互斥拒', codeAt(baseRowsSpec(function (rs) 
   check('C2 compile: hideRows/hideCols 直通 sheet', !!(c.sheets[0].hideRows && c.sheets[0].hideRows[0] === 1 && c.sheets[0].hideCols && c.sheets[0].hideCols[0] === 2));
 })();
 
+// ===== 2026-11-06 多 Sheet（ReportSpec extraSheets，rows-only） =====
+function msSpec(mut) {
+  var rs = baseRowsSpec(function (r) {
+    r.extraSheets = [{ name: '明细', dimensions: [{ field: 'l2', label: '线2', widthPt: 120 }], metrics: [{ field: 'n2', label: '数2', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['X', 1]] }, presentation: { type: 'table', showTotal: false } }];
+  });
+  if (mut) mut(rs);
+  return rs;
+}
+check('多Sheet extraSheets 零误报', errsOf(msSpec()).length === 0);
+check('多Sheet 重名拒（占 sheet1）', codeAt(msSpec(function (rs) { rs.extraSheets[0].name = 'sheet1'; }), 'DUPLICATE', 'extraSheets[0].name'));
+check('多Sheet 重名拒（两项同名）', codeAt(msSpec(function (rs) { rs.extraSheets.push(JSON.parse(JSON.stringify(rs.extraSheets[0]))); }), 'DUPLICATE', 'extraSheets[1].name'));
+check('多Sheet sql 数据集拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].dataset = { kind: 'sql', entity: 'E', connection: 'C', dimensions: ['d'] }; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].dataset.kind'));
+check('多Sheet 内部未知键拒（路径带前缀）', codeAt(msSpec(function (rs) { rs.extraSheets[0].presentation.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].presentation.magic'));
+check('多Sheet extra sheet 未知键拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].magic'));
+(function () {
+  var c = null;
+  try { c = SpecCompiler.compile(msSpec()); } catch (e) { check('多Sheet compile 不抛: ' + e, false); return; }
+  var d2 = null;
+  (c.sheets[1].blocks || []).forEach(function (b) { if (b.type === 'detail') d2 = b.dataset; });
+  check('多Sheet compile: 两 sheet 两数据集且第二张绑定 ds2',
+    c.sheets.length === 2 && c.datasets.length === 2 && c.sheets[1].name === '明细' && c.datasets[1].name === 'ds2' && d2 === 'ds2');
+  var ie = Ir.validate(c);
+  if (ie.length) print('MS IR ERRS: ' + JSON.stringify(ie));
+  check('多Sheet 编译产物过 Ir.validate 零误报', ie.length === 0);
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

@@ -212,6 +212,23 @@
         "hideCols": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
       }
     },
+    "extraSheets": {
+      "type": "array",
+      "description": "额外 sheet（rows 内嵌路）：每项 {name, dimensions, metrics, dataset:{rows}, presentation, sheet}；name 必填唯一且不得为 sheet1；SQL 路暂不支持（UNSUPPORTED_CAPABILITY）",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "dataset"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "dimensions": { "type": "array" },
+          "metrics": { "type": "array" },
+          "dataset": { "type": "object", "description": "rows 形态（同顶层）；kind=sql 被拒" },
+          "presentation": { "type": "object", "description": "同顶层 presentation（conditions/cells/total 可用）" },
+          "sheet": { "type": "object", "description": "同顶层 sheet 扩展" }
+        }
+      }
+    },
     "filters": { "x-unsupported": "顶层 filters 仍拒；sql 路放 dataset.filters", "type": "array" },
     "chart": { "x-unsupported": "顶层 chart 仍拒；sql 路放 presentation.chart", "type": "object" }
   },

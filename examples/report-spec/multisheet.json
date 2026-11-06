@@ -1,0 +1,25 @@
+{
+  "specVersion": "1",
+  "report": { "name": "多 Sheet 汇总（A1）" },
+  "outName": "能力自检_多sheet",
+  "dimensions": [
+    { "field": "line", "label": "生产线", "widthPt": 160 }
+  ],
+  "metrics": [
+    { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }
+  ],
+  "dataset": {
+    "kind": "rows",
+    "rows": [["A线", 80], ["B线", 40]]
+  },
+  "presentation": { "type": "table", "showTotal": true, "total": { "label": "合计" } },
+  "extraSheets": [
+    {
+      "name": "明细",
+      "dimensions": [ { "field": "line2", "label": "生产线", "widthPt": 160 } ],
+      "metrics": [ { "field": "done2", "label": "完成", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" } ],
+      "dataset": { "rows": [["A线", 70], ["B线", 35]] },
+      "presentation": { "type": "table", "showTotal": false }
+    }
+  ]
+}

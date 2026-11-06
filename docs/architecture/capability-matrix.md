@@ -97,7 +97,7 @@
 | CPT 创建（create） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | Golden e2e `ge20261106150630-a8693e` |
 | 局部修改（patch 2 op） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | template/patch.js:34/43；modify diffClean |
 | patch 其余 op（样式/行列增删） | rejected | — | — | — | ✗ | P2 | README #60 R0 探针不过，明确不做 |
-| 多 Sheet | ✓ 多 sheet IR | ✓ 每 sheet 独立游标 | ✓ 两个 `<Report>` | ✓ | ✗（spec 无入口） | 后端完成 | A1（2026-11-06）：旧 si>0 throw 已拆；载体 test_multisheet 引擎 failures=0。manifest page.multiSheet agentAvailable=false |
+| 多 Sheet | ✓ 多 sheet IR | ✓ 每 sheet 独立游标 | ✓ 两个 `<Report>` | ✓ PNG 两页 | ✓ `extraSheets[]`（rows）+ planner | 完成（rows） | A1+多Sheet spec（2026-11-06）：rawIR test_multisheet 与 spec multisheet.json 均 failures=0，PNG 汇总/明细两页；SQL extra 待后续批。manifest page.multiSheet agentAvailable=false（plan→create e2e 未跑） |
 | 模板继承 / 样式复用 | ✗ 无键 | — | — | 引擎支持 | ✗ | P3 | ir.js 零命中 |
 | 页眉页脚 | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest page.headerFooter verified |
 | 模板级 marks（theme/id） | ✓ | ✓ | ✓ | ✓ | ✓ | P2 | manifest page.templateMarks |
@@ -157,7 +157,7 @@
 | 3（待办） | **ReportSpec 参数面板 + 执行期筛选** | P1 | spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍 |
 | 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
 
-**明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 后端已完成（A1），仅 ReportSpec/Planner 入口待开。
+**明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 已完成 rows 路 spec/planner 入口（SQL extra 待后续批）。
 
 ## 5. 实施记录（第一项：cells 多行合并表头）
 
