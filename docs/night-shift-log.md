@@ -727,3 +727,31 @@ D 类封存后进入「审查-修复循环」：独立审查 A/B/C 全量 diff �
 ### 状态
 - 工作区干净；最后提交 084985d（本轮仅文档 backlog/log 追加后再提交一次）。
 - 下一轮可直接续：manifest 补 7 行（B-审查1-1）→ D1 重开需子图系列分配语料；D2 独立工单。
+
+## 2026-11-06 backlog B-审查1-1：manifest 补 B/C 新能力行
+
+### 目标
+消除能力权威表对 B/C 新能力的沉默（审查轮1 P2 的收尾项）。
+
+### 实施
+- application/capability_manifest.js 新增 6 行：
+  - sheet.hideRowsCols（四层 verified/scope rendering；evidence test_hidden + PNG 目检 + hidden.json + fast C2）
+  - cells.rowSpan（四层 verified/scope rendering；agentOverride=false——ReportSpec 无入口）
+  - spec.rows.conditions（四层 verified/scope rendering；hl_conditions PNG）
+  - spec.rows.cells（construction/serialization/regression verified，rendering=pending——未专项目检）
+  - spec.rows.sumCols（四层 verified/scope rendering；部署 cpt 无合并重叠 + PNG 合计 120/105 目检）
+  - spec.params.panel（rendering=serialization-only——面板为 web 交互；scope serialization）
+- verify/fast_manifest_evidence.js KEY_OF 同步 6 键。
+- backlog 移除该项（标记完成）。
+
+### 验证结果
+- fast 15 套件 rc=0；首跑暴露 scope=rendering 缺渲染证据（sumCols evidence 无 PNG 字样）→ 补真 PNG 目检后转绿（非改断言迁就）。
+
+### 未验证/边界
+- spec.rows.cells 的渲染层仍 pending（本轮未看 cells_extras PNG）；spec.params.panel 静态 PNG 不现形（官方同口径）。
+
+### Commit
+（本条提交。）
+
+### 下一项
+D 类：D1 重开需子图系列分配 ConditionCollection 语料；D2 vmap 需地图数据模型整包（独立工单）。或按 coverage/backlog 取证下一项。

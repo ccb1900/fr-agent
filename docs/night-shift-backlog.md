@@ -87,11 +87,8 @@
 - 证据：`capability.js:10-12` deferred 只写 warning 不阻断，spec 仍 ready（`planner.js:127`）→ Agent 可能"成功"产出少东西的报表。
 - 验收：deferred 进入 unresolvedQuestions 或明确降级告知；fast_planner 断言。
 
-## B-审查1-1 manifest 补新能力行（P2，2026-11-06）
-- 证据：application/capability_manifest.js 无 hideRows/hideCols/conditions/params/cells/sumCols/rowSpan 行；verify/fast_manifest_evidence.js KEY_OF 需同步。
-- 影响：能力权威表对 B/C 新能力沉默（不撒谎，但也不声明）。
-- 验收：6-7 行按四层状态 + regressionScope + agentAvailable 如实填写；KEY_OF 覆盖；fast_manifest_evidence 零 FAIL。
-- 依赖：无（纯声明层）。
+## ~~B-审查1-1 manifest 补新能力行~~（完成 2026-11-06）
+- 已完成：6 行入 manifest（sheet.hideRowsCols / cells.rowSpan / spec.rows.conditions / spec.rows.cells / spec.rows.sumCols / spec.params.panel），KEY_OF 同步；四层状态按证据如实（cells rendering=pending、params=serialization-only、rowSpan agentOverride=false）；fast_manifest_evidence 零 FAIL。
 
 ## B-审查3-1 schema 宽松镜像（P3，2026-11-06）
 - 证据：schemas/report-spec.schema.json 的 if/then/else 只按 kind 分流，散点仍允许同时写 category/value、bar 仍允许 x/y（spec_validator 会拒）。

@@ -86,11 +86,20 @@ var CapabilityManifest = (function () {
     cap('cell.subreport', 'verified', 'verified', 'verified', 'verified', 'README #77 整嵌渲染 PNG；carrier test_g scan', 'rendering'),
     cap('cell.barcode', 'verified', 'verified', 'verified', 'verified', 'README #77 条码 PNG；carrier test_g scan', 'rendering'),
     cap('cell.groupCustom', 'verified', 'verified', 'verified', 'verified', 'README #77 CustomGrouper 简单形态；carrier test_g', 'cpt'),
-    cap('cell.poly', 'pending', 'pending', 'pending', 'pending', 'README #80 PolyWorkSheet 通路已证，块面 API 未探全')
+    cap('cell.poly', 'pending', 'pending', 'pending', 'pending', 'README #80 PolyWorkSheet 通路已证，块面 API 未探全'),
+    // 2026-11-06 C2：隐藏行列（行高/列宽归零）；ReportSpec sheet.hideRows/hideCols 有入口
+    cap('sheet.hideRowsCols', 'verified', 'verified', 'verified', 'verified', 'C2（2026-11-06）：IR hideRows/hideCols→object sheet 构建末 setRowHeight/setColumnWidth(FU 0)；carrier test_hidden 真引擎 failures=0（RowHeight[1]=0/ColumnWidth[1]=0），PNG 目检表头行与「完成」列消失；spec 载体 examples/report-spec/hidden.json 同证；fast_report_spec C2 断言', 'rendering'),
+    // 2026-11-06 R3-0：cells 多行/多列合并（rowSpan）；ReportSpec 无入口（presentation.cells 拒绝对 r）
+    cap('cells.rowSpan', 'verified', 'verified', 'verified', 'verified', 'README #113/#114 R3-0：IR rowSpan 整数闸+块内重叠静态拒；carrier test_merge_header 部署 cpt rs="2"×2/cs="2"×1，PNG 目检合并表头；fast_ir_contract R3-0 断言。**ReportSpec/Planner 无入口 → Agent 不可用**', 'rendering', false)
   ];
   // ReportSpec / 数据集 / 语义 / 模板产品面（README #55/#59/#60/#74/#76/#82）
   var product = [
     cap('spec.rows.sum', 'verified', 'verified', 'verified', 'verified', 'README #55 等价铁证 CBEB42E3；fast_report_spec', 'cpt'),
+    // 2026-11-06 B1-B6：ReportSpec 新入口（四条独立；渲染未证者不升层）
+    cap('spec.rows.conditions', 'verified', 'verified', 'verified', 'verified', 'B1（2026-11-06）：presentation.conditions→IR detail.conditions→HighlightGroup×3；spec 载体 hl_conditions 真引擎 failures=0 且 PNG 高亮行可见；fast_report_spec B1 断言（README #118）', 'rendering'),
+    cap('spec.rows.cells', 'verified', 'verified', 'pending', 'verified', 'B3（2026-11-06）：presentation.cells→IR cells 块；spec 载体 cells_extras 真引擎 failures=0（部署 cpt RichText×3/RichChar×4/TextHFElement/WatermarkAttr）；PNG 未专项目检 → rendering 不升层；fast_report_spec B3 断言（README #118）', 'serialization'),
+    cap('spec.rows.sumCols', 'verified', 'verified', 'verified', 'verified', 'B6（2026-11-06）：presentation.total.sumCols→IR total.sumCols；spec 载体 sumcols_reg 真引擎 failures=0，部署 cpt 合计 c0 无 cs、c1=SUM(B3)、c2=SUM(C3)（审查轮1 P1-B 后）；PNG 目检合计 120/105 两列求和可见；fast_report_spec B6/span 断言（README #118/#119）', 'rendering'),
+    cap('spec.params.panel', 'verified', 'verified', 'serialization-only', 'verified', 'B2（2026-11-06）：ReportSpec params→IR.param widgets（DateEditor/ComboBox/NumberEditor/FormSubmitButton/WParameterLayout）；spec 载体 params.json 真引擎 failures=0；参数面板属 web 交互，静态 PNG 不现形（官方同口径）→ rendering 不升层；fast_report_spec B2 断言（README #118）', 'serialization'),
     cap('spec.sql.model', 'verified', 'verified', 'verified', 'verified', 'README #59 端到端 33531/26531/79.12 逐格真值；fast_sqlbuilder', 'agent'),
     cap('spec.sql.filters', 'verified', 'verified', 'verified', 'verified', 'README #62 受控字面量引擎 live；fast_sqlbuilder', 'cpt'),
     cap('spec.sql.sort', 'verified', 'verified', 'verified', 'verified', 'README #62 ORDER BY 别名 live；fast_sqlbuilder', 'cpt'),

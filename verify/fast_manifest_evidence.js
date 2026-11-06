@@ -39,7 +39,11 @@ var KEY_OF = {
   'spec.rows.sum': 'rows', 'spec.sql.model': 'sql', 'spec.sql.filters': 'filters',
   'spec.sql.sort': 'sort', 'spec.sql.topN': 'topN', 'spec.sql.chart': 'chart',
   'template.patch.cellValue': 'replace_cell_value', 'template.patch.dataset': 'replace_dataset',
-  'agent.plan': 'plan', 'agent.artifact.isolation': 'runId', 'agent.runtime.serial': 'runtime'
+  'agent.plan': 'plan', 'agent.artifact.isolation': 'runId', 'agent.runtime.serial': 'runtime',
+  // 2026-11-06 B/C 新能力行（spec 入口 + 隐藏行列 + rowSpan）
+  'sheet.hideRowsCols': 'hideRows', 'cells.rowSpan': 'rowSpan',
+  'spec.rows.conditions': 'conditions:', 'spec.rows.cells': 'cells:',
+  'spec.rows.sumCols': 'sumCols', 'spec.params.panel': 'params'
 };
 // 允许"族级代表"的例外（无独立载体但同族构造相同，evidence 已自承；v2 仍要求文件含该族任一键）
 var FAMILY_REP = { 'chart.pie': 1, 'chart.line': 1 };
