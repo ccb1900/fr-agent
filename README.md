@@ -798,3 +798,9 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - **渲染实证（m17 PNG 实拍）**：① unit=50 主刻度 0..300 全渲染——**chart.axisYUnit 渲染案收**（manifest pending→verified，README #72 挂账关闭）；② 预警线=VanChartAlertValue（setAlertValueFormula+AlertContent+LineColor/AttrLineStyle 双件门槛同 trend）→ 红色横线@150 全宽渲染；③ **轴标题渲染对象=setTitle(new Title)**——仅 setAxisName+setShowAxisTitle 不渲染（占位名 Fine-Engine_Chart_X/Y_Axis 同 chart title 占位族）； setTitle 后引擎自动降刻度密度（50 步→100 步）——交互事实记档非缺陷。
 - **事故记档（装载面必跑引擎回归教案第 N 次）**：label 字扩容首版 `ld.setTextAttr(font(...))` 直塞 FRFont → 真引擎轮 ClassCastException（fast/scan 双绿照跑）——setTextAttr 要 TextAttr，修=ld.getTextAttr() 活引用 setFRFont（同轴口径）。carrier 轮才抓得到 build 期类型错。
 - **门**：fast 13 GREEN / scan 48+1skip / 负门 5 路 GREEN / 双铁证逐字节（carrier 轮后默认 spec 收尾）/ 部署 XML axisName=产量·机型+AlertValue+alertContent 全命中 / coverage missing 37→34、partial 19。
+
+
+#104 批B 头部类收案（2026-11-06，单元6；probe_r4m18 一手；coverage missing 34→33）：
+- **vpie 类目标签宿主=PieCategoryLabelContent**（`com.fr.plugin.chart.pie.attr.PieCategoryLabelContent`，AttrTooltipContent 子类，jar 清单定位 fine-report-engine；probe_r4m18 方法面 setRichTextSummaryValueFormat/setSummaryValueFormat）——`label.richText{content,auto}`/`label.summary{format}`（vpie 闸）时 detail.setContent 换 PieCategoryLabelContent 直挂；载体 vpie 臂部署 XML 命中 PieCategoryLabelContent×2+SummaryFormat×6。
+- **NormalDataModel（180 引用头部）诚实归档=引擎内部 DataProcessor 标记**：官方 XML `<DataProcessor class="...NormalDataModel"/>` 与我方产物同款（m15 出口×5、carrier×11——引擎保存即写、每图一个）；类面零方法（AbstractDataModel 直继承）；**无构造面=功能非真缺**，coverage 参考批次记'引擎内部 DataProcessor 标记'（同版本包名差异类的"非真缺"口径）。
+- **门**：fast 13 GREEN / 负门 5 路 GREEN / 双铁证逐字节 / coverage missing 34→33 / ALIGN 批归属 43+漏账9。

@@ -173,9 +173,9 @@ FAMILIES.forEach(function (f) { f.keys.forEach(function (k) { IDX[String(k).spli
 //   demo 记 web.ui.impl.* / iofileattr = 旧包名，功能非真缺（#81 "其中 10 个是版本包名差异非缺类"）。
 var BATCH_CLASS = {
   // —— 批B后继·装饰深水区（#600 工单头部点名 4 类）——
-  'com.fr.plugin.chart.base.AttrTooltipRichText': '批B后继(#600 工单头部,未排)',
-  'com.fr.base.chart.chartdata.model.NormalDataModel': '批B后继(#600 工单头部,未排)',
-  'com.fr.chart.base.AttrBorder': '批B后继(#600 工单头部,未排)',
+  'com.fr.plugin.chart.base.AttrTooltipRichText': '批B 已收(tooltip+vpie label 双路,README #102/#104)',
+  'com.fr.base.chart.chartdata.model.NormalDataModel': '引擎内部 DataProcessor 标记(官方 XML 同款已在产物流,无构造面,README #104)',
+  'com.fr.chart.base.AttrBorder': '批B 已收(seriesBorder 通道,README #102)',
   'com.fr.plugin.chart.attr.axis.VanChartAxis': '批B axis 实例配置非构造(README #103)',
   'com.fr.plugin.chart.attr.axis.VanChartValueAxis': '批B axis 实例配置非构造(README #103)',
   // —— 批B后继·tooltip/axis/label 深水区（#600 "tooltip/axis/label 装饰深水区"）——
