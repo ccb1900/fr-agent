@@ -448,3 +448,37 @@ SQL Server 恢复后跑完整 e2e 收尾。
 
 ### 下一项工作
 集成门结果；之后暂停架构改动整体复审。
+
+
+## 2026-11-06 15:10（验证入口可靠性四项收口，外部审查终轮）
+
+### 工作目标
+按审查限定的四项：① Golden 真值缺失必须失败；② Fast Golden 用入库 fixture；③ Manifest 检查器定位修正；④ 视觉 fixture 根路径。
+
+### 代码证据
+- verify_sql_data.js 缺 grid/真值时 SKIP exit 0（第 21/27 行）；e2e 只查 grid 存在/rc/CHECK FAIL 不查 SKIP → 缺真值可能假 PASS。
+- .gitignore 排除 logs/ 整体；fast_golden_closure 硬编码 logs/agent/runs/** → 干净 clone 不能过。
+- fast_manifest_evidence 四层共用 concrete、Coverage 交叉硬编码、键覆盖是字符串检查。
+- test_visual_deco fixture 路径硬编码 D:/fineagent。
+
+### 实施内容
+- verify_sql_data.js：加 REQUIRE_TRUTH=1（缺 grid/真值 → CHECK FAIL exit 1）+ TRUTH_FILE env 覆盖（fixture/负向测试）。
+- run-golden-e2e.ps1：truth-grid 步前置查 grid + truth 存在且非空；REQUIRE_TRUTH=1；输出含 SKIP 亦 FAIL。
+- 新增 verify/fixtures/golden/：grid.txt（干净 UTF-8，10 行 day@machine + 总计）、patch.json（真实 g1 产物）、staging/生产日报GOLDEN_api.orig.cpt。
+- fast_golden_closure.js：改读 fixture；新增负向测试（spawn java：REQUIRE_TRUTH=1 + TRUTH_FILE 不存在 → 期望非零，实测 rc=1）。
+- fast_manifest_evidence.js：头部+输出改名"静态证据引用与声明一致性检查器"，三条已知限制明示。
+- test_visual_deco.js：fixture 根路径支持 FR_AGENT_HOME。
+
+### 验证结果
+- fast 15 GREEN（fast_golden_closure 14 断言含负向 rc=1）/ scan 51+1。
+- **干净 clone 模拟**：仅 fixtures + data/truth + 两个 js，FR_AGENT_HOME 指临时目录 → failures=0。
+- **真引擎 e2e 复跑 PASS**（ge20261106150630-a8693e，fail-closed 真值检查生效后正常路径不受影响）；默认铁证 CBEB42E3 逐字节。
+
+### 未验证事项
+- 无（四项均有对应断言/实跑）。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+按审查建议：暂停架构改动，重新做一次全局审查（生产代码/能力账本/Golden 产物/测试入口一致性）。

@@ -238,6 +238,11 @@ v1 只查"文件存在性"（示例：chart.pie 自承无独立载体仍 verifie
 | ⑥ Coverage↔Manifest 交叉 | 读 coverage.md B 表 full 族，与 manifest 子能力比对；`sort full vs cell.sort rejected` 判硬性冲突 FAIL，chartDeco 已知差异显式登记 | 0 硬性冲突（chartDeco 差异按审计基线登记） |
 
 **v2 不再自称"能力证据验收器"之外的强度**：它能证明"引用真实 + 键真实 + scope 与字面证据一致"，不证明"该键在该 carrier 中被执行过"——后者需要执行结果（见 7.2 的离线核验器思路）。
+**定位（2026-11-06 外部审查 P2 定稿，勿再夸大为"逐层能力验收器"）**：`fast_manifest_evidence.js` = **静态证据引用与声明一致性检查器**。三条已知限制明示于文件头：
+① construction/serialization/rendering 三层共用同一 concrete 判断（有 carrier/probe 即满足入口），不是逐层执行核验；
+② Coverage↔Manifest 交叉只覆盖已知硬冲突（sort full vs cell.sort rejected）与 chartDeco 登记差异，不是全族通用映射；
+③ carrier 键覆盖是源码字符串检查（含 pie/line 族级例外），不能证明执行结果。
+**真实能力是否完成，由对应测试执行结果与引擎产物证明（e2e / 负门 / PNG 实拍），不由本检查器证明。**
 
 ### 7.2 P1 Golden 自动复证 v2（`scripts/run-golden-e2e.ps1` 重写 + `verify/fast_golden_closure.js`）
 

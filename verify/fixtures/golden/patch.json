@@ -1,0 +1,46 @@
+{
+    "tool":  "patch",
+    "runId":  "g1",
+    "ok":  true,
+    "exit":  0,
+    "patch":  "logs/agent/runs/g1/patch1.json",
+    "log":  "D:\\fineagent\\logs\\agent\\runs\\g1\\patch.log",
+    "manifestPath":  "D:\\fineagent\\logs\\agent\\runs\\g1\\staging\\manifest.json",
+    "stagingDir":  "D:\\fineagent\\logs\\agent\\runs\\g1\\staging",
+    "manifest":  {
+                     "sourceCpt":  "fineagent/生产日报GOLDEN_api.cpt",
+                     "out":  "D:\\fineagent\\logs\\agent\\runs\\g1\\staging/生产日报GOLDEN_复核.cpt",
+                     "ops":  1,
+                     "namedStyles":  0,
+                     "diffClean":  true,
+                     "added":  [
+                                   "生产日报（复核）"
+                               ],
+                     "removed":  [
+                                     "生产日报"
+                                 ],
+                     "structDelta":  {
+
+                                     },
+                     "execution":  {
+                                       "pass":  true,
+                                       "reason":  "除 PatchSpec 指定坐标外，执行栅格逐格不变；关键单元格内容与预期一致"
+                                   },
+                     "render":  {
+                                    "pass":  true,
+                                    "reason":  "像素差异 0.06% ≤ 5%（bbox=213,55 - 426,81）"
+                                },
+                     "pixelStats":  {
+                                        "width":  1587,
+                                        "height":  2245,
+                                        "widthAfter":  1587,
+                                        "heightAfter":  2245,
+                                        "diffPixels":  2203,
+                                        "ratio":  0.0006183312914086193,
+                                        "bbox":  "213,55 - 426,81"
+                                    },
+                     "datasetChecks":  [
+
+                                       ]
+                 }
+}

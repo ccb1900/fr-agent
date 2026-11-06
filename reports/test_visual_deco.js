@@ -4,8 +4,10 @@
 //   不再依赖管线历史产物 logs/_r4m9_off.png（外部审查 P2：换机器/清 logs 后不可复现）。
 var J = (function () { try { return Java.type('java.nio.file.Files'); } catch (e) { return null; } })();
 if (J) {
-  var P = Java.type('java.nio.file.Paths');
-  var F = new (Java.type('java.io.File'))('D:/fineagent/logs/_visual_fixture.png');
+  // root honors FR_AGENT_HOME (portability; external review P2), default preserved
+  var SYSV = Java.type('java.lang.System');
+  var ROOTV = SYSV.getenv('FR_AGENT_HOME') || 'D:/fineagent';
+  var F = new (Java.type('java.io.File'))(ROOTV + '/logs/_visual_fixture.png');
   if (!F.exists()) {
     var AWT = Java.type('java.awt.image.BufferedImage');
     var img = new AWT(8, 8, AWT.TYPE_INT_RGB);

@@ -14,17 +14,27 @@ var System = J('java.lang.System');
 var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
 var GRID = System.getenv('GRID') || (ROOT + '/logs/i5_auto_grid.txt');
 var MACH = System.getenv('TRUTH_DAY_MACHINE') === '1';
+// 2026-11-06（外部审查 P1）：REQUIRE_TRUTH=1 时缺 grid/真值一律 CHECK FAIL + exit 1（不容 SKIP）；
+//   默认不设保持原 SKIP 语义（向后兼容）。TRUTH_FILE 可覆盖真值路径（fixture/负向测试用）。
+var REQUIRE = System.getenv('REQUIRE_TRUTH') === '1';
+var TRUTH_FILE = System.getenv('TRUTH_FILE');
 var FAILS = 0;
 function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAILS++; print('CHECK FAIL: ' + name); } }
 function readUtf(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(p)), 'UTF-8')); }
 
-if (!Files.exists(Pth.get(GRID))) { print('SQL DATA REGRESSION: SKIP（无 ' + GRID + '，先跑 I5 端到端 + RESULT_DUMP 再对拍）'); J('java.lang.System').exit(0); }
+if (!Files.exists(Pth.get(GRID))) {
+  if (REQUIRE) { print('CHECK FAIL: grid 缺失（REQUIRE_TRUTH=1 不容跳过）-> ' + GRID); J('java.lang.System').exit(1); }
+  print('SQL DATA REGRESSION: SKIP（无 ' + GRID + '，先跑 I5 端到端 + RESULT_DUMP 再对拍）'); J('java.lang.System').exit(0);
+}
 var grid = readUtf(GRID), rows = grid.split(/\r?\n/);
 
 if (MACH) {
   // ===== 复合键模式（day@machine，r22b/r22c-golden-readiness.md：双向键集合 + 双侧重复键 + 行数一致 =====
-  var truthPath = ROOT + '/data/db_laser_machine_daily_truth.txt';
-  if (!Files.exists(Pth.get(truthPath))) { print('SQL DATA REGRESSION: SKIP（无 ' + truthPath + '）'); J('java.lang.System').exit(0); }
+  var truthPath = TRUTH_FILE || (ROOT + '/data/db_laser_machine_daily_truth.txt');
+  if (!Files.exists(Pth.get(truthPath))) {
+    if (REQUIRE) { print('CHECK FAIL: 真值文件缺失（REQUIRE_TRUTH=1 不容跳过）-> ' + truthPath); J('java.lang.System').exit(1); }
+    print('SQL DATA REGRESSION: SKIP（无 ' + truthPath + '）'); J('java.lang.System').exit(0);
+  }
   var truth2 = readUtf(truthPath);
   function section2(name) { var m = new RegExp('## ' + name + '\\n([^]*?)(\\n## |$)').exec(truth2); return m ? m[1].trim().split(/\r?\n/) : []; }
   var dupT = 0, det = {};   // key day@machine -> {plan, done, rate}; 重复键绝不静默覆盖（r22c P1）

@@ -1,9 +1,15 @@
-// verify/fast_manifest_evidence.js — Manifest 证据验收器（无引擎；§5步2 v2，按外部审查补强）
-//   v1 只查"文件存在性"，会制造假 GREEN（如 chart.pie 承认无独立载体却仍 verified）。v2 增加：
-//   ① carrier spec 必须真含该能力对应的 IR 键（键覆盖表，逐能力点名，不再只看文件名）；
-//   ② fast_/integration_runtime 引用的测试文件必须存在；③ regressionScope 与 evidence 实际层级一致；
-//   ④ README 引用号不存在直接 FAIL（v1 只 NOTE）；⑤ construction/serialization/rendering 各自也查证据；
-//   ⑥ Coverage B 表标 full 的族 ↔ Manifest 子能力状态交叉对账（全仓此前零交叉引用）。
+// verify/fast_manifest_evidence.js — Manifest 静态证据引用与声明一致性检查器（无引擎；positioning per external review）
+//   定位（2026-11-06 外部审查 P2，勿夸大为"逐层能力验收器"）：它检查 evidence 字面引用的文件/键/scope 是否
+//   真实存在且与声明层一致，不执行任何测试、不证明该能力被运行过、更不证明结果正确。
+//   ★已知限制（明示，不堆规则）：
+//     ① construction/serialization/rendering 三层共用同一 concrete 判断（有 carrier/probe 即满足入口检查），
+//        不是逐层执行核验；
+//     ② Coverage↔Manifest 交叉只覆盖已知硬冲突（sort full vs cell.sort rejected）与 chartDeco 登记差异，
+//        不是全族通用映射；
+//     ③ carrier 键覆盖是源码字符串检查（含 FAMILY_REP 的 pie/line 族级例外），不能证明执行结果。
+//   真实能力是否完成，由对应测试执行结果与引擎产物证明（e2e、负门、PNG 实拍）。
+//   v2 六道检查：键覆盖 / fast 引用存在 / scope 与字面证据一致 / README 引用 FAIL / 四层各自入口 /
+//   Coverage↔Manifest 硬冲突。
 var J = function (n) { return Java.type(n); };
 var File = J('java.io.File'), Files = J('java.nio.file.Files'), Paths = J('java.nio.file.Paths');
 var ROOT = J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent';
@@ -139,5 +145,5 @@ if (exists(cv)) {
 }
 if (cross.length) cross.forEach(function (x) { print('   CROSS: ' + x); });
 check('Coverage full ↔ Manifest 交叉对账（硬性冲突=0）', !cross.some(function (x) { return x.indexOf('硬性冲突') >= 0; }));
-print('MANIFEST EVIDENCE AUDIT v2 END, failures=' + FAILS);
+print('MANIFEST EVIDENCE CONSISTENCY END (static references; not execution proof), failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

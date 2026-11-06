@@ -51,18 +51,28 @@ Invoke-Step 'plan2spec' @('-Verb', 'plan2spec', '-RunId', $RunId) | Out-Null
 Invoke-Step 'create' @('-Verb', 'create', '-Spec', ("logs/agent/runs/$RunId/reportSpec.json"), '-RunId', $RunId) | Out-Null
 Invoke-Step 'validate' @('-Verb', 'validate', '-RunId', $RunId, '-ExpectTotals', $Totals) | Out-Null
 # 5: day@machine full-grid truth (independent verifier, double-key closure + per-row plan/done/rate + totals)
+#   FAIL-CLOSED (external review P1): grid AND truth file must pre-exist and be non-empty; the verifier runs
+#   with REQUIRE_TRUTH=1 so a missing truth can never SKIP-to-pass; any SKIP token in its output is a FAIL too.
 if (-not $stop) {
   $grid = Join-Path $Root "logs\agent\runs\$RunId\grid.txt"
-  if (-not (Test-Path $grid)) { Fail ("truth-grid: missing {0}" -f $grid) }
+  $truth = Join-Path $Root 'data\db_laser_machine_daily_truth.txt'
+  if (-not (Test-Path $grid)) { Fail ("truth-grid: missing grid {0}" -f $grid) }
+  elseif (-not (Test-Path $truth) -or (Get-Item $truth).Length -lt 100) { Fail ("truth-grid: truth file missing/empty -> {0}" -f $truth) }
   else {
     $prev = $env:TRUTH_DAY_MACHINE; $env:TRUTH_DAY_MACHINE = '1'
     $prevGrid = $env:GRID; $env:GRID = $grid
+    $prevReq = $env:REQUIRE_TRUTH; $env:REQUIRE_TRUTH = '1'
+    $prevTf = $env:TRUTH_FILE; Remove-Item env:TRUTH_FILE -ErrorAction SilentlyContinue
     $raw = & $Java '-cp' $FrJar 'jdk.nashorn.tools.Shell' (Join-Path $Root 'verify\verify_sql_data.js') 2>&1
     $rc = $LASTEXITCODE
     if ($null -ne $prev) { $env:TRUTH_DAY_MACHINE = $prev } else { Remove-Item env:TRUTH_DAY_MACHINE -ErrorAction SilentlyContinue }
     if ($null -ne $prevGrid) { $env:GRID = $prevGrid } else { Remove-Item env:GRID -ErrorAction SilentlyContinue }
+    if ($null -ne $prevReq) { $env:REQUIRE_TRUTH = $prevReq } else { Remove-Item env:REQUIRE_TRUTH -ErrorAction SilentlyContinue }
+    if ($null -ne $prevTf) { $env:TRUTH_FILE = $prevTf }
+    $joined = ($raw -join ' ')
     $tail = ($raw | Select-Object -Last 1)
-    if ($rc -ne 0 -or ($raw -join ' ') -match 'CHECK FAIL') { Fail ("truth-grid: rc={0} -> {1}" -f $rc, $tail) }
+    if ($rc -ne 0 -or $joined -match 'CHECK FAIL') { Fail ("truth-grid: rc={0} -> {1}" -f $rc, $tail) }
+    elseif ($joined -match 'SKIP') { Fail ("truth-grid: verifier SKIPPED (not a pass) -> {0}" -f $tail) }
     else { Write-Host ("STEP truth-grid OK (10 day@machine rows + totals {0})" -f $Totals) }
   }
 }
