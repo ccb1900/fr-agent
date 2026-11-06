@@ -254,4 +254,5 @@ v1 只查"文件存在性"（示例：chart.pie 自承无独立载体仍 verifie
 ### 7.4 本轮门与如实状态
 
 - fast **15 套件**（新增 fast_golden_closure）GREEN / scan **51+1** / boundaries R1–R8 clean。
-- **真引擎 e2e 本轮未跑通**：FreeVirtual 从 2100→1180MB 持续下探（vmmemWSL 占用，用户进程不擅动），400m 下限也不满足时脚本报 `ENV_BLOCKED exit 8`。**引擎侧最近一次有效记录=上一轮 `ge20261106123412` PASS**；本轮的逐格真值与 modify 断言已由离线核验器对真实产物验证，待内存恢复后复跑一次完整 e2e 收尾。
+- **内存阻塞已解除 + 负门复跑 GREEN**：内存恢复到 FreeVirtual=4920MB 后，`scripts/run-engine-negative-tests.ps1` 5 路全部按预期失败（ir-bad exit9 / db-conn exit4 / secret-leak exit1 / exec-formula exit1 / json-bad-spec exit2）+ `ENGINE NEG GATE GREEN (no false-green; default baseline intact)`，默认铁证 CBEB42E3 逐字节。
+- **Golden 真引擎 e2e 仍待数据库**：create 真实失败原因=`DB CONNECTION FAIL ATOM_LIVE`（`jdbc:sqlserver://127.0.0.1:1433` 无监听）。该 SQL Server 此前运行在 WSL 中，随内存清理一并停止（Windows 服务里只有 SQLWriter，无 MSSQL 实例；Docker 无容器）——**属用户环境，不代启动**。引擎侧最近一次有效记录=上一轮 `ge20261106123412` PASS；逐格真值与 modify 断言已由 `verify/fast_golden_closure.js` 对真实产物验证。待 SQL Server 恢复后跑一次完整 e2e 收尾。

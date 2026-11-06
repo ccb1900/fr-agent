@@ -381,3 +381,23 @@ R2-4 视觉分层验证（逐项 PNG 实拍），之后才按 docs/night-shift-l
 
 ### 下一项工作
 内存恢复后复跑 e2e + 负门；之后暂停架构改动，整体复审能力账本。
+
+
+## 2026-11-06 14:15（内存恢复：负门复跑 GREEN，Golden 待数据库）
+
+### 工作目标
+用户释放内存后补跑负门与 Golden e2e。
+
+### 验证结果
+- 内存 FreeVirtual 1180→4920MB。
+- **负门 5 路全 GREEN**：ir-bad exit9 / db-conn exit4 / secret-leak exit1 / exec-formula exit1 / json-bad-spec exit2，`ENGINE NEG GATE GREEN (no false-green; default baseline intact)`，默认铁证 CBEB42E3 逐字节。
+- **Golden e2e create 失败根因更新**：不再是内存，而是 `DB CONNECTION FAIL ATOM_LIVE`（jdbc:sqlserver://127.0.0.1:1433 无监听）。该 SQL Server 在 WSL 中随内存清理停止（Windows 服务仅 SQLWriter，Docker 无容器）——用户环境，不代启动。
+
+### 未验证事项
+- Golden 全链（create→truth-grid→preview→modify）待 SQL Server 恢复后复跑；逐格真值+modify 已由离线核验器对既有 golden 产物验证。
+
+### Commit
+（见本条提交。）
+
+### 下一项工作
+SQL Server 恢复后跑完整 e2e；之后暂停架构改动整体复审。
