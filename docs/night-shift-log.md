@@ -902,3 +902,23 @@ P1：SQL 基表 extraSheets 被 validator 提前 return 绕过（planner 透传�
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 多 Sheet 复审轮2：__proto__ 键假阴修复
+
+### 发现（独立复审 c3b925f）
+P2：hasOwn 修复把 '__proto__' 的假阳翻成假阴——`seenSheet['__proto__']=1` 走原型 setter 不建自有属性，第二个 '__proto__' 同名 sheet 不被拒，IR 同样漏判，wb.addReport 静默覆盖（正是该闸要防的）。
+
+### 修复
+- spec_validator.validateExtraSheets：seenSheet 改 Object.create(null)（预置 sheet1）。
+- ir.js：sheetNames / seenDs 同改 Object.create(null)（数据集名同风险）。
+- 测试：fast_report_spec +1（两个 '__proto__' extra → DUPLICATE）；fast_ir_contract +1（两个 '__proto__' sheet → DUPLICATE）。
+- 另补 SQL 基表 + rows extra 的 stub-deps 编译覆盖（2 sheet/2 数据集 + Ir.validate 零误报）。
+
+### 验证
+- fast 15 套件 rc=0；multisheet 载体重跑 failures=0；baseline MD5 精确；scan ok=57 bad=0。
+
+### 未验证
+- 其余以对象字面量为 map 的键（params name 等）未见同名风险模式；若后续新增名称类 map，统一用无原型表。
+
+### Commit
+（本条提交。）

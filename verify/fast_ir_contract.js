@@ -278,6 +278,7 @@ check('审查1 legend 合法零误报', errsOf(chartIR('vbar', { legend: { fontP
 check('审查1 barInterval 非数拒', codeAt(chartIR('vbar', { barInterval: '0.5' }), 'INVALID_NUMBER', 'sheets[0].blocks[1].barInterval'));
 check('审查1 sheet 缺名拒', codeAt(mut(function (ir) { delete ir.sheets[0].name; }), 'REQUIRED', 'sheets[0].name'));
 check('审查1 sheet 重名拒', codeAt(mut(function (ir) { ir.sheets.push(JSON.parse(JSON.stringify(ir.sheets[0]))); }), 'DUPLICATE', 'sheets[1].name'));
+check('审查2 sheet 名 __proto__ 重复拒', codeAt(mut(function (ir) { ir.sheets[0].name = '__proto__'; ir.sheets.push(JSON.parse(JSON.stringify(ir.sheets[0]))); }), 'DUPLICATE', 'sheets[1].name'));
 check('审查1 paper 非数拒', codeAt(mut(function (ir) { ir.sheets[0].paper = { width: 'x', height: 100, top: 0, left: 0, bottom: 0, right: 0 }; }), 'INVALID_NUMBER', 'sheets[0].paper.width'));
 check('审查1 hideRows 非整数拒', codeAt(mut(function (ir) { ir.sheets[0].hideRows = [1.5]; }), 'INVALID_NUMBER', 'sheets[0].hideRows[0]'));
 check('审查1 hideRows/hideCols 合法零误报', errsOf(mut(function (ir) { ir.sheets[0].hideRows = [1]; ir.sheets[0].hideCols = [0]; })).length === 0);

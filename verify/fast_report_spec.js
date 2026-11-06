@@ -367,6 +367,24 @@ check('多Sheet extra sheet.watermark 拒（workbook 级）', codeAt(msSpec(func
 check('多Sheet extra sheet.toolbar 拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].sheet = { toolbar: { buttons: ['export'] } }; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].sheet.toolbar'));
 check('多Sheet 手写 dsName 拒（与 ds2 冲突）', codeAt(msSpec(function (rs) { rs.dsName = 'ds2'; }), 'UNSUPPORTED_CAPABILITY', 'dsName'));
 check('多Sheet 名 constructor 不误判为重复', errsOf(msSpec(function (rs) { rs.extraSheets[0].name = 'constructor'; })).length === 0);
+// 复审2：'__proto__' 也必须按普通键计（hasOwn 在原型链键上会假阴）
+check('多Sheet 名 __proto__ 重复仍拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].name = '__proto__'; rs.extraSheets.push({ name: '__proto__', dimensions: [{ field: 'l3', label: '线3', widthPt: 120 }], metrics: [{ field: 'n3', label: '数3', aggregation: 'sum', dataType: 'number', widthPt: 100 }], dataset: { rows: [['Y', 2]] }, presentation: { showTotal: false } }); }), 'DUPLICATE', 'extraSheets[1].name'));
+// 复审：SQL 基表 + rows extra 的编译链（stub deps）——2 sheet/2 数据集且 IR 零误报
+(function () {
+  var deps = {
+    model: { dimensions: [{ name: 'd', label: 'D' }], metrics: [{ name: 'm', label: 'M' }] },
+    SqlBuilder: { build: function () { return { sql: 'SELECT 1', baseAliases: [{ alias: 'd', role: 'dimension' }, { alias: 'm', role: 'metric' }] }; } }
+  };
+  var rs = { specVersion: '1', report: { name: 'base' }, outName: 'msSql',
+    dataset: { kind: 'sql', connection: 'C', entity: 'E', dimensions: ['d'], metrics: ['m'], dateRange: { from: '2026-01-01', to: '2026-01-02' } },
+    presentation: { type: 'table' },
+    extraSheets: [JSON.parse(JSON.stringify(extraOk))] };
+  var c = null;
+  try { c = SpecCompiler.compile(rs, deps); } catch (e) { check('多Sheet sql 基表 compile 不抛: ' + e, false); return; }
+  var ie = Ir.validate(c);
+  if (ie.length) print('MS SQL IR ERRS: ' + JSON.stringify(ie));
+  check('多Sheet sql 基表 + rows extra: 2 sheet/2 数据集且 IR 零误报', c.sheets.length === 2 && c.datasets.length === 2 && c.datasets[1].name === 'ds2' && ie.length === 0);
+})();
 (function () {
   var rs = msSpec(function (r) { r.extraSheets[0].name = 'constructor'; });
   var c = null;
