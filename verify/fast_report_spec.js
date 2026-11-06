@@ -163,6 +163,28 @@ check('B1 rows 路 dataset.sort 拒（不静默丢）', codeAt(baseRowsSpec(func
 check('B1 rows 路 dataset.topN 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.topN = 5; }), 'UNSUPPORTED_CAPABILITY', 'dataset.topN'));
 check('B1 rows 路 dataset.dateRange 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.dateRange = {}; }), 'UNSUPPORTED_CAPABILITY', 'dataset.dateRange'));
 check('B1 rows 路 dataset.filters 拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.filters = []; }), 'UNSUPPORTED_CAPABILITY', 'dataset.filters'));
+
+// ===== C1（2026-11-06 收口）：dataset 契约严格化 =====
+//   kind 词表（rows 缺省兼容）；rows/sql 数据集键白名单；dimensions/metrics item 键白名单。
+check('C1 dataset.kind=csv → INVALID_ENUM', codeAt(baseRowsSpec(function (rs) { rs.dataset.kind = 'csv'; }), 'INVALID_ENUM', 'dataset.kind'));
+check('C1 dataset.kind=数字 → INVALID_ENUM', codeAt(baseRowsSpec(function (rs) { rs.dataset.kind = 1; }), 'INVALID_ENUM', 'dataset.kind'));
+check('C1 dataset.kind=sql 正例零误报', errsOf(baseSqlSpec()).length === 0);
+check('C1 dataset.kind 缺省=rows 兼容（零误报）', errsOf(baseRowsSpec(function (rs) { delete rs.dataset.kind; })).length === 0);
+check('C1 rows 数据集未知键拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'dataset.magic'));
+check('C1 rows 数据集 source2 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.dataset.source2 = 'x'; }), 'UNSUPPORTED_CAPABILITY', 'dataset.source2'));
+check('C1 rows 数据集 query 仍明确拒（既有）', codeAt(baseRowsSpec(function (rs) { rs.dataset.query = 'SELECT 1'; }), 'UNSUPPORTED_CAPABILITY', 'dataset'));
+check('C1 sql 数据集未知键拒', codeAt(baseSqlSpec(function (rs) { rs.dataset.odbc = 'x'; }), 'UNSUPPORTED_CAPABILITY', 'dataset.odbc'));
+check('C1 sql 数据集 schema 键放行（make_api 消费）', errsOf(baseSqlSpec(function (rs) { rs.dataset.schema = 'atom_live'; })).length === 0);
+check('C1 sql 数据集 query 仍明确拒（自由文本 SQL）', codeAt(baseSqlSpec(function (rs) { rs.dataset.query = 'SELECT 1'; }), 'UNSUPPORTED_CAPABILITY', 'dataset.query'));
+check('C1 dimension 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.dimensions[0].type = 'text'; }), 'UNSUPPORTED_CAPABILITY', 'dimensions[0].type'));
+check('C1 metric 未知键拒', codeAt(baseRowsSpec(function (rs) { rs.metrics[0].mystery = 1; }), 'UNSUPPORTED_CAPABILITY', 'metrics[0].mystery'));
+check('C1 dimension aggregation 仍单 INVALID_ENUM（不双报）', (function () {
+  var es = errsOf(baseRowsSpec(function (rs) { rs.dimensions[0].aggregation = 'sum'; }));
+  var bad = es.filter(function (e) { return e.path === 'dimensions[0].aggregation'; });
+  return bad.length === 1 && bad[0].code === 'INVALID_ENUM';
+})());
+check('C1 dims/metrics 白名单正例零回归', errsOf(baseRowsSpec()).length === 0);
+check('C1 多Sheet extra 数据集未知键拒（路径带前缀）', codeAt(msSpec(function (rs) { rs.extraSheets[0].dataset.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].dataset.magic'));
 check('B1 rows 路 footnote 零误报', errsOf(baseRowsSpec(function (rs) { rs.presentation.footnote = '注'; })).length === 0);
 (function () {
   var c = null;
