@@ -438,10 +438,10 @@ SQL Server 恢复后跑完整 e2e 收尾。
 ### 验证结果
 - run.ps1 冒烟（默认 spec，-Heap 400m）：PIPELINE END failures=0，铁证 CBEB42E3 逐字节。
 - fast 15 套件 GREEN。
-- 集成门 S1–S28 后台运行中（改 run.ps1 必跑）。
+- **集成门 S1–S28 全 PASS**（`INTEGRATION END, failures=0` + `INTEGRATION GATE GREEN`）：含 S5b/S14/S6/S16/S8/S15/S17/S20(真宿主崩溃)/S21(x10)/S22/S23/S24a·b·c/S25/S26/S27/S27b/S27e/S28。
 
 ### 未验证事项
-- 集成门结果待回填（若失败按故障注入逐条定位）。
+
 
 ### Commit
 （见本条提交。）
