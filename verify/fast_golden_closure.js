@@ -26,7 +26,8 @@ if (!exists(gridPath) || !exists(truthPath)) {
   check('fixture grid + truth present (grid=' + exists(gridPath) + ' truth=' + exists(truthPath) + ')', false);
 } else {
   var truth = read(truthPath);
-  function sec(name) { var m = new RegExp('## ' + name + '\\n([^]*?)(\\n## |$)').exec(truth); return m ? m[1].trim().split(/\r?\n/) : []; }
+  // \r?\n 兼容 CRLF（git clone/core.autocrlf=true 转 CRLF，旧正则只认 \n → 0 行假失败）
+  function sec(name) { var m = new RegExp('## ' + name + '\\r?\\n([^]*?)(\\r?\\n## |$)').exec(truth); return m ? m[1].trim().split(/\r?\n/) : []; }
   var det = {}, dupT = 0;
   sec('detail_day_machine').forEach(function (ln) { var p = ln.split('|'); if (p.length >= 5) {
     var k = p[0] + '@' + p[1]; if (det[k]) dupT++; else det[k] = { plan: +p[2], done: +p[3], rate: +p[4] };

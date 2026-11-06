@@ -36,7 +36,8 @@ if (MACH) {
     print('SQL DATA REGRESSION: SKIP（无 ' + truthPath + '）'); J('java.lang.System').exit(0);
   }
   var truth2 = readUtf(truthPath);
-  function section2(name) { var m = new RegExp('## ' + name + '\\n([^]*?)(\\n## |$)').exec(truth2); return m ? m[1].trim().split(/\r?\n/) : []; }
+  // 2026-11-06: \r?\n 兼容 CRLF（git clone/core.autocrlf=true 会把 truth 转 CRLF，旧正则只认 \n → 0 行假失败）
+  function section2(name) { var m = new RegExp('## ' + name + '\\r?\\n([^]*?)(\\r?\\n## |$)').exec(truth2); return m ? m[1].trim().split(/\r?\n/) : []; }
   var dupT = 0, det = {};   // key day@machine -> {plan, done, rate}; 重复键绝不静默覆盖（r22c P1）
   section2('detail_day_machine').forEach(function (ln) {
     var p = ln.split('|'); if (p.length >= 5) {
@@ -84,7 +85,7 @@ if (MACH) {
 }
 
 var truth = readUtf(ROOT + '/data/db_laser_sub_truth.txt');
-function section(name) { var m = new RegExp('## ' + name + '\\n([^]*?)(\\n## |$)').exec(truth); return m ? m[1].trim().split(/\r?\n/) : []; }
+function section(name) { var m = new RegExp('## ' + name + '\\r?\\n([^]*?)(\\r?\\n## |$)').exec(truth); return m ? m[1].trim().split(/\r?\n/) : []; }
 var sub = {}; section('subtotal_by_day').forEach(function (ln) { var p = ln.split('|'); if (p.length >= 3) sub[p[0]] = { plan: +p[1], done: +p[2] }; });
 var gt = (section('grand_total')[0] || '').split('|');
 var grandPlan = +gt[0], grandDone = +gt[1];
