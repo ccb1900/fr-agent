@@ -87,7 +87,9 @@ check('C6 部分指标 deferred（聚合指标）→ 不得 ready', rC6mix.statu
 var rC6agg = plan({ outName: 'c6agg', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }, { term: 'rowNo', aggregation: 'avg' }], rows: mkRows(1) });
 check('C6 部分指标 deferred（显式 avg）→ 不得 ready', rC6agg.status !== 'ready' && rC6agg.reportSpec === null && hasWarn(rC6agg, /I3|I5/));
 var rC6unk = plan({ outName: 'c6unk', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }, { term: '___幽灵指标___' }], rows: mkRows(1) });
-check('C6 对照：未知术语仅记 warning（既有行为不回归）', hasWarn(rC6unk, /模型缺口/) && rC6unk.reportSpec !== null);
+// 阶段2 A段 P1c（2026-11-07）：未知术语同样阻断——旧断言「仅记 warning 仍 ready」钉的是被审查点名的静默丢缺陷
+//   （已知+未知混合指标时报表悄悄少指标，与 sql 路成员缺失 memberMissing→rejected 不一致），按修复更新。
+check('P1c 未知术语 → 阻断不 ready + 保留模型缺口 warning', hasWarn(rC6unk, /模型缺口/) && rC6unk.status !== 'ready' && rC6unk.reportSpec === null);
 var rfil = plan({ outName: 'fl', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), filters: [{ column: 'stage' }] });
 check('filters 越权→deferred(I2/I3) 记录', hasWarn(rfil, /I2/));
 var rcht = plan({ outName: 'ch', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'bar' } });

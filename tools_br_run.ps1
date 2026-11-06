@@ -1,4 +1,4 @@
-# tools_br_run.ps1 — 数据浏览器六次渲染（3 张正式 + 3 组探针参数），一次跑完
+# tools_br_run.ps1 - data-browser six renders (3 formal + 3 probe param sets), one pass
 $ErrorActionPreference = 'Continue'
 $base = 'D:\fineagent'
 

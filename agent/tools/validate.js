@@ -37,35 +37,53 @@ else {
   ck('PNG 产物非空(>1KB)', pngOk, exists(pngAbs) ? Files.size(Pth.get(pngAbs)) : 'missing');
 
   // ---- 栅格数据自洽 ----
+  // A段 P1b（2026-11-07）：合计自洽从"假设列序（第一二数值列=计划/完成，合计行末三数值列）"改为
+  //   "表头签名识别"——只当表头行点名 计划/完成/完成率 时才跑逐列自洽；其他形状（多 Sheet 合并表头、
+  //   图表页、任意业务列序）不再误算误报（此前会把任意报表的第一二数值列硬当 planned/done）。
+  //   外部真值对拍（AGENT_EXPECT_TOTALS）仍可用：签名命中时用识别列；未命中时直接拒（明示没有可对拍口径）。
   var gridPath = comp.gridPath ? absOf(comp.gridPath) : null;
   if (gridPath && exists(gridPath)) {
     var lines = readUtf(gridPath).split('\n').filter(function (l) { return l.indexOf('|') >= 0 && l.indexOf('## REPORT') !== 0 && l.indexOf('RB_CLASS=') !== 0; });
     var rows = lines.map(function (l) { return l.split('|'); });
     ck('栅格行数>0', rows.length > 0, rows.length);
     if (rows.length >= 2) {
-      function numsOf(r) { return r.map(num); }
       // night-shift：总计行按"合计|总计"判定（与 compare_paths totalsOf 一致化），不再假设最后一行——
       //   报表带脚注行（presentation.footnote）时"最后一行"会取到脚注导致合计自洽误报。
       function isTotalRow(r) { return /合计|总计/.test(String(r && r[0])); }
-      var total = null, sumPlan = 0, sumDone = 0;
-      for (var i = 0; i < rows.length; i++) {
-        if (isTotalRow(rows[i])) { total = rows[i]; continue; }
-        var dn = numsOf(rows[i]).filter(function (x) { return x != null; });
-        if (dn.length >= 2) { sumPlan += dn[0]; sumDone += dn[1]; }
+      var header = rows[0];
+      var idxPlan = -1, idxDone = -1, idxRate = -1;
+      for (var hi = 0; hi < header.length; hi++) {
+        var h = String(header[hi]);
+        if (idxPlan < 0 && h.indexOf('计划') >= 0 && h.indexOf('率') < 0) { idxPlan = hi; continue; }
+        if (idxRate < 0 && h.indexOf('完成率') >= 0) { idxRate = hi; continue; }
+        if (idxDone < 0 && h.indexOf('完成') >= 0) { idxDone = hi; }
       }
-      var tn = total ? numsOf(total).filter(function (x) { return x != null; }) : [];
-      var t3 = tn.slice(-3);
-      var tPlan = t3[0], tDone = t3[1], tRate = t3[2];
-      ck('合计行存在且含 [计划,完成,完成率]', t3.length >= 3, JSON.stringify(tn));
-      if (t3.length >= 3) {
-        ck('计划合计 = 明细之和', Math.abs(tPlan - sumPlan) < 0.5, 'total=' + tPlan + ' sum=' + sumPlan);
-        ck('完成合计 = 明细之和', Math.abs(tDone - sumDone) < 0.5, 'total=' + tDone + ' sum=' + sumDone);
-        ck('完成率 = done/planned*100（±0.01）', tPlan > 0 && Math.abs(tRate - tDone * 100 / tPlan) <= 0.01, 'rate=' + tRate + ' calc=' + (tPlan ? (tDone * 100 / tPlan).toFixed(2) : 'n/a'));
-      }
-      var expect = System.getenv('AGENT_EXPECT_TOTALS');
-      if (expect) {
-        var ep = String(expect).split(':');
-        ck('合计对拍外部真值(' + expect + ')', Math.abs(tPlan - parseFloat(ep[0])) < 0.5 && Math.abs(tDone - parseFloat(ep[1])) < 0.5, 'total=' + tPlan + '/' + tDone);
+      if (idxPlan >= 0 && idxDone >= 0 && idxRate >= 0) {
+        var total = null, sumPlan = 0, sumDone = 0;
+        for (var i = 0; i < rows.length; i++) {
+          if (isTotalRow(rows[i])) { total = rows[i]; continue; }
+          var pv = num(rows[i][idxPlan]), dv = num(rows[i][idxDone]);
+          if (pv != null) sumPlan += pv;
+          if (dv != null) sumDone += dv;
+        }
+        var tPlan = total ? num(total[idxPlan]) : null;
+        var tDone = total ? num(total[idxDone]) : null;
+        var tRate = total ? num(total[idxRate]) : null;
+        ck('合计行存在且含 [计划,完成,完成率]（表头列 ' + idxPlan + '/' + idxDone + '/' + idxRate + '）', tPlan != null && tDone != null && tRate != null, total ? JSON.stringify(total) : 'no total row');
+        if (tPlan != null && tDone != null && tRate != null) {
+          ck('计划合计 = 明细之和', Math.abs(tPlan - sumPlan) < 0.5, 'total=' + tPlan + ' sum=' + sumPlan);
+          ck('完成合计 = 明细之和', Math.abs(tDone - sumDone) < 0.5, 'total=' + tDone + ' sum=' + sumDone);
+          ck('完成率 = done/planned*100（±0.01）', tPlan > 0 && Math.abs(tRate - tDone * 100 / tPlan) <= 0.01, 'rate=' + tRate + ' calc=' + (tPlan ? (tDone * 100 / tPlan).toFixed(2) : 'n/a'));
+        }
+        var expect = System.getenv('AGENT_EXPECT_TOTALS');
+        if (expect) {
+          var ep = String(expect).split(':');
+          ck('合计对拍外部真值(' + expect + ')', tPlan != null && tDone != null && Math.abs(tPlan - parseFloat(ep[0])) < 0.5 && Math.abs(tDone - parseFloat(ep[1])) < 0.5, 'total=' + tPlan + '/' + tDone);
+        }
+      } else {
+        var expect2 = System.getenv('AGENT_EXPECT_TOTALS');
+        if (expect2) ck('合计对拍外部真值(' + expect2 + ')', false, '栅格表头无 计划/完成/完成率 签名，无对拍口径: ' + header.join('|'));
+        else ck('合计自洽（非 demo 表头签名，按形状跳过，不假绿不误报）', true, 'header=' + header.join('|').slice(0, 120));
       }
     }
   } else ck('栅格可用（缺省跳过，不假绿）', true, 'no grid (RESULT_DUMP 未开启)');

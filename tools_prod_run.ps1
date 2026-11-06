@@ -1,8 +1,10 @@
-﻿# tools_prod_run.ps1 — prod staging 批量构建（报告 spec = reports_prod\br_*.js）
-# 语义：BR_MODULESET=prod + BR_TPFX=t_collector_ + BR_DEPLOYDIR=<mkwh staging（动态取名避中文编码坑）>
-#       计划内不设 BR_SKIP_EXEC（本机可连 127.0.0.1 atom_live_demo 镜像库，全量执行验证更强）
-# 用法：tools_prod_run.ps1 [-SkipExec]  ; 每张一参一行落 logs\prod_<name>_out.txt，EXIT 码汇总
-# 注：PS5.1 下 param([switch]) 在本会话绑定不稳（IsPresent 一直空），改用 $args 判定，行为等价。
+# tools_prod_run.ps1 - prod staging batch build (report specs = reports_prod\br_*.js)
+# Semantics: BR_MODULESET=prod + BR_TPFX=t_collector_ + BR_DEPLOYDIR=<mkwh staging (dynamic name, dodges
+#   non-ASCII path pitfalls)>; BR_SKIP_EXEC deliberately NOT set here (local 127.0.0.1 atom_live_demo mirror
+#   DB reachable -> full execution gives stronger verification).
+# Usage: tools_prod_run.ps1 [-SkipExec]  ; one line per spec into logs\prod_<name>_out.txt, EXIT codes summed.
+# Note: under PS5.1 param([switch]) binding was unstable in this session (IsPresent stayed empty) - use $args
+#   detection instead, behaviorally equivalent.
 $ErrorActionPreference = 'Continue'
 $SkipExec = ($args -contains '-SkipExec')
 Write-Host "PARAMBIND SKIP=[$SkipExec] BR=[$env:BR_SKIP_EXEC]"

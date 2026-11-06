@@ -1,11 +1,12 @@
-﻿# check-boundaries.ps1 — ABR-1 依赖方向检查（轻量静态扫描，不加载任何 JS）
-# 用法：powershell -File scripts\check-boundaries.ps1   ; 违例输出 + EXIT=1
-# 规则（docs/architecture/dependency-rules.md）：
-#   R1 lib/ 不得引用 features/ —— 唯一豁免 lib/browser.js（ABR-1 兼容垫片）
-#   R2 lib/ir.js 必须保持零运行时依赖 —— 不得出现 Java.type / com.fr.
-#   R3 runtime/ 不得持有业务报表知识 —— 不得引用 reports/ 或 BROWSER 或 laser 业务字样
-#   R4 reports*/ 不得直接加载后端 —— 不得 load lib/object.js|cpt.js|ir.js（dbpass 凭据外围件不属后端）
-#   R5 make_api.js 不得直接加载已迁移 Feature —— 不得出现 features/data_browser
+# check-boundaries.ps1 - ABR-1 dependency-direction check (lightweight static scan, loads no JS)
+# Usage: powershell -File scripts\check-boundaries.ps1   ; violations printed + EXIT=1
+# Rules (docs/architecture/dependency-rules.md):
+#   R1 lib/ must not reference features/ - sole waiver lib/browser.js (ABR-1 compat shim)
+#   R2 lib/ir.js must stay zero-runtime-dependency - no Java.type / com.fr.
+#   R3 runtime/ must not hold business-report knowledge - no reports/ or BROWSER or laser terms
+#   R4 reports*/ must not load backends directly - no load lib/object.js|cpt.js|ir.js
+#     (dbpass credential peripheral is NOT a backend)
+#   R5 make_api.js must not load migrated Features directly - no features/data_browser
 $ErrorActionPreference = 'Stop'
 $root = if ($env:FR_AGENT_HOME) { $env:FR_AGENT_HOME } else { 'D:\fineagent' }
 $viol = @()
@@ -13,76 +14,84 @@ $viol = @()
 # R1
 Get-ChildItem "$root\lib" -Filter '*.js' | Where-Object { $_.Name -ne 'browser.js' } | ForEach-Object {
   if (Select-String -Path $_.FullName -Pattern 'features/|features\\' -Quiet) {
-    $viol += "R1 lib/$($_.Name) 引用了 features/"
+    $viol += "R1 lib/$($_.Name) references features/"
   }
 }
 # R2
 if (Select-String -Path "$root\lib\ir.js" -Pattern 'Java\.type|com\.fr\.' -Quiet) {
-  $viol += "R2 lib/ir.js 出现运行时依赖（Java.type/com.fr.）"
+  $viol += "R2 lib/ir.js has runtime dependency (Java.type/com.fr.)"
 }
 # R3
 Get-ChildItem "$root\runtime" -Filter '*.js' | ForEach-Object {
   if (Select-String -Path $_.FullName -Pattern 'reports/|BROWSER|laser' -Quiet) {
-    $viol += "R3 runtime/$($_.Name) 含业务报表知识"
+    $viol += "R3 runtime/$($_.Name) contains business-report knowledge"
   }
 }
 # R4
 Get-ChildItem "$root\reports","$root\reports_prod" -Filter 'br_*.js' | ForEach-Object {
   if (Select-String -Path $_.FullName -Pattern "load\('D:/fineagent/lib/(object|cpt|ir)\.js'\)") {
-    $viol += "R4 $($_.Name) 直接加载后端"
+    $viol += "R4 $($_.Name) loads backend directly"
   }
 }
 # R5
 if (Select-String -Path "$root\make_api.js" -Pattern 'features/data_browser' -Quiet) {
-  $viol += "R5 make_api.js 直接加载已迁移 Feature"
+  $viol += "R5 make_api.js loads migrated Feature directly"
 }
-# R6 Runner 接线断言（2026-11-04 审计后增补，docs/architecture/dependency-rules.md）
-# R6a make_api.js 必含 Runtime/Paths 接线（文档声明的调用链可被机器验证）
+# R6 runner wiring assertions (added after 2026-11-04 audit, docs/architecture/dependency-rules.md)
+# R6a make_api.js must contain Runtime/Paths wiring (the documented call chain is machine-checkable)
 foreach ($pat in @("Paths\.runtime\('bootstrap\.js'\)", "Paths\.runtime\('datasource\.js'\)", 'Runtime\.initialize\(\)', 'Paths\.lib\(', 'runtime/paths\.js')) {
   if (-not (Select-String -Path "$root\make_api.js" -Pattern $pat -Quiet)) {
-    $viol += "R6a make_api.js 缺少接线断言: $pat"
+    $viol += "R6a make_api.js missing wiring assertion: $pat"
   }
 }
-# R6b make_api.js 不得内联 FR 激活链/连接注册（只属 runtime/*）
+# R6b make_api.js must not inline FR activation chain/connection registration (belongs to runtime/* only)
 if (Select-String -Path "$root\make_api.js" -Pattern 'ActivatorToolBox|SimpleWork|DatasourceManager' -Quiet) {
-  $viol += "R6b make_api.js 内联了本应归属 runtime 的激活链/连接注册（ActivatorToolBox/SimpleWork/DatasourceManager）"
+  $viol += "R6b make_api.js inlines activation chain/connection registration that belongs to runtime (ActivatorToolBox/SimpleWork/DatasourceManager)"
 }
-# R6c make_api.js 不得出现 load('D:... 硬编码绝对路径（路径单点在 runtime/paths.js）
+# R6c make_api.js must not contain load('D:... hardcoded absolute paths (path single-point is runtime/paths.js)
 if (Select-String -Path "$root\make_api.js" -Pattern "load\('D:" -Quiet) {
-  $viol += "R6c make_api.js 出现硬编码绝对 load 路径（应走 Paths / FR_AGENT_HOME 单点）"
+  $viol += "R6c make_api.js has hardcoded absolute load path (use Paths / FR_AGENT_HOME single point)"
 }
 
-# R7 语义层边界（I2，docs/architecture/dependency-rules.md R7）：semantic/ 独立于 Core/Feature/Runtime
-#   R7a semantic/** 禁 com.fr. 与 FR 激活链三词、禁真·load 后端三件(lib/object|ir|cpt)——语义层只依赖 java.sql+dbpass+纯 JS，
-#        未来换报表引擎可整体复用（r2 I3 初衷）。runtime/paths.js(纯路径助手)与 dbpass(凭据外围件)属允许面，不判。
-#        注意：R7a 词表刻意【不含裸 Java.type】——inspector 必然 Java.type('java.sql.DriverManager')，
-#        与 R2(禁 Java.type) 词表不同是有意为之，别"统一词表"误杀合法实现。反向依赖要求真 load( 调用，避免命中注释里的路径名。
-#   R7b semantic core 零运行时依赖红线（与 R2 同词 Java.type）：semantic/** 中除触库薄壳(inspector.js/inspect_main.js)外
-#        一律不得出现 Java.type——I2 schema core(metadata/relation/serializer) 与 I3 model core(vocab/registry/validator/resolver)
-#        同律：java.sql 只许在薄壳，核心只吃传入的纯 JS 数据（离线可单测 + 换引擎可复用）。
+# R7 semantic-layer boundary (I2, docs/architecture/dependency-rules.md R7): semantic/ independent of Core/Feature/Runtime
+#   R7a semantic/** bans com.fr. + the three FR activation-chain terms, and real load( of the three backends
+#        (lib/object|ir|cpt) - the semantic layer only depends on java.sql + dbpass + pure JS, so a future report
+#        engine swap reuses it whole (r2 I3 intent). runtime/paths.js (pure path helper) and dbpass (credential
+#        peripheral) are allowed, not judged.
+#        NOTE: the R7a term list deliberately EXCLUDES bare Java.type - the inspector must call
+#        Java.type('java.sql.DriverManager'); differing from R2 (which bans Java.type) is intentional, do NOT
+#        "unify the term lists" and kill legal code. Reverse deps require a real load( call to avoid matching
+#        path names inside comments.
+#   R7b semantic core zero-runtime-dependency red line (same term as R2, Java.type): semantic/** except the
+#        thin DB shells (inspector.js/inspect_main.js) must not contain Java.type - applies to I2 schema core
+#        (metadata/relation/serializer) and I3 model core (vocab/registry/validator/resolver) alike: java.sql
+#        only in thin shells, cores only consume pure-JS data passed in (offline-testable + engine-swappable).
 $shellFiles = @('inspector.js', 'inspect_main.js')
 Get-ChildItem "$root\semantic" -Recurse -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
   if (Select-String -Path $_.FullName -Pattern 'com\.fr\.|ActivatorToolBox|SimpleWork|DatasourceManager' -Quiet) {
-    $viol += "R7a semantic/$($_.Name) 含 FR 依赖（com.fr./激活链）"
+    $viol += "R7a semantic/$($_.Name) has FR dependency (com.fr./activation chain)"
   }
   if (Select-String -Path $_.FullName -Pattern "load\([^)]*lib/(object|cpt|ir)\.js" -Quiet) {
-    $viol += "R7a semantic/$($_.Name) 真 load 了后端三件"
+    $viol += "R7a semantic/$($_.Name) really loads one of the three backends"
   }
   if (($shellFiles -notcontains $_.Name) -and (Select-String -Path $_.FullName -Pattern 'Java\.type' -Quiet)) {
-    $viol += "R7b semantic/$($_.Name) 出现 Java.type（core 零运行时依赖红线；薄壳仅 inspector/inspect_main）"
+    $viol += "R7b semantic/$($_.Name) has Java.type (core zero-runtime-dep red line; thin shells are inspector/inspect_main only)"
   }
 }
 
-# R8 已有 CPT 受控修改层边界（I6，docs/architecture/dependency-rules.md R8）：template/ 是 FR-facing 旁路，独立于生成主链
-#   R8a make_api.js（generate 主 runner）不得 load template/*——I6 走自己的 patch_main（runraw），不混进报表生成链
-#   R8b template core 四件（ops/validator/locator/diff）零 Java.type/零 com.fr（纯函数离线可测，同 R7b）；reader/inspector/patch/patch_main 薄壳才许触 com.fr
+# R8 controlled-modification layer boundary for existing CPTs (I6, docs/architecture/dependency-rules.md R8):
+#   template/ is the FR-facing side path, independent of the generation main chain.
+#   R8a make_api.js (the generate runner) must not load template/* - I6 has its own patch_main (runraw); keep
+#       the two chains unmixed.
+#   R8b template core four (ops/validator/locator/diff) zero Java.type/zero com.fr (pure functions, offline
+#       testable, same as R7b); only reader/inspector/patch/patch_main thin shells may touch com.fr
 $coreFiles = @('ops.js', 'validator.js', 'locator.js', 'diff.js')
 if (Select-String -Path "$root\make_api.js" -Pattern "template/" -Quiet) {
-  $viol += "R8a make_api.js 引用了 template/（I6 应独立于 generate 主链，走 patch_main）"
+  $viol += "R8a make_api.js references template/ (I6 must stay independent of the generate main chain; use patch_main)"
 }
 Get-ChildItem "$root\template" -Recurse -Filter '*.js' -ErrorAction SilentlyContinue | ForEach-Object {
   if (($coreFiles -contains $_.Name) -and (Select-String -Path $_.FullName -Pattern 'Java\.type|com\.fr\.' -Quiet)) {
-    $viol += "R8b template core/$($_.Name) 出现 Java.type/com.fr.（core 纯函数零依赖红线）"
+    $viol += "R8b template core/$($_.Name) has Java.type/com.fr. (core pure-function zero-dep red line)"
   }
 }
 

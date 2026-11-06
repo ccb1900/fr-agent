@@ -23,10 +23,12 @@ $runs = "$ROOT\logs\agent\runs"
 $itRel = 'logs/agent/it'
 $itAbs = "$ROOT\logs\agent\it"
 $fail = 0
+$skips = 0
 . (Join-Path "$ROOT\agent\tools" 'config.ps1'); $cfg = Get-AgentConfig
 $cfgJava = $cfg.Java; $cfgJar = $cfg.NashornJar
 function Pass($n) { Write-Output "IT PASS: $n" }
 function Fail($n) { Write-Output "IT FAIL: $n"; $script:fail++ }
+function Skip($n) { Write-Output "IT SKIP (precondition absent, NOT counted as PASS): $n"; $script:skips++ }   # A-sect P2f: skip must be visible, never folded into green
 function Reset-Rt() {
   if (Test-Path $rt) { Remove-Item $rt -Recurse -Force }
   New-Item -ItemType Directory -Force -Path $rt | Out-Null
@@ -107,7 +109,7 @@ if ($src) {
   [System.IO.File]::WriteAllText("$itAbs\p5b.json", $patch, (New-Object System.Text.UTF8Encoding($false)))
   $null = & "$ROOT\agent\tools\fr_agent.ps1" -Verb modify -Patch "$itRel/p5b.json" -RunId "it_s5b" 2>&1
   if ((-not (Alive $decoy.Id)) -and (ArtExecOk "it_s5b") -eq $true) { Pass "S5b patch path records java.pid + orphan killed + modify completed (P1#1 fixed)" } else { Fail "S5b broken orphanDead=$(-not (Alive $decoy.Id)) s5b=$(ArtExecOk 'it_s5b')" }
-} else { Pass "S5b skipped (no deployed cpt to patch)" }
+} else { Skip "S5b (no deployed cpt to patch - recovery path untested this run)" }
 
 # ================= P2 recovery safety: identity mismatch spares an unrelated java =================
 Write-Output "== S14 identity mismatch -> spare the reused-pid java, still proceed"
@@ -461,5 +463,5 @@ icacls $f27u /remove:d '*S-1-1-0' | Out-Null   # owner has implicit WRITE_DAC ->
 Remove-Item $f27u -Force -ErrorAction SilentlyContinue
 if ($cls27u -eq 'unreadable') { Pass "S27e unreadable branch proven (Everyone-deny Read; not folded into absent)" } else { Fail "S27e broken: cls=$cls27u (expected unreadable)" }
 
-Write-Output ("INTEGRATION END, failures=" + $fail)
+Write-Output ("INTEGRATION END, failures=" + $fail + ", skips=" + $skips)
 exit $(if ($fail -eq 0) { 0 } else { 1 })

@@ -131,8 +131,11 @@ var ReportPlanner = (function () {
 
     // metrics（v1 sum-only；非 sum 或解析到聚合指标 → deferred，不入 spec）
     // C6（2026-11-06 收口）：被能力墙丢掉的指标要累计——部分指标可解析时不得"成功"产出悄悄少指标的报表。
+    // A段 P1c（2026-11-07）：未知术语同样计入阻断——此前只 warning 不计数，已知+未知混合指标时仍 ready=静默
+    //   少指标（与 sql 路成员缺失 memberMissing→rejected 同一纪律）。未知维度不另计数：空 dims 由 spec 校验
+    //   REQUIRED dimensions 结构性拒（探针固化该现状）。
     var mets = [];
-    var blockedMetrics = 0;   // C6：aggregation/术语解析 verdict=deferred|rejected 的指标计数（未知术语≠能力墙，不在此计）
+    var blockedMetrics = 0;   // C6：aggregation/术语解析 verdict=deferred|rejected + A段 P1c 未知术语 的指标计数
     (intent.metrics || []).forEach(function (mm) {
       var term = mm && mm.term, agg = (mm && mm.aggregation) || 'sum';
       var a = ctx.capability.aggregation(agg, ctx.caps);
@@ -141,7 +144,7 @@ var ReportPlanner = (function () {
       if (m.kind === 'ok') mets.push({ field: m.field, label: m.label || m.field, aggregation: 'sum', dataType: 'number' });
       else if (m.kind === 'ambiguous') unresolvedQuestions.push({ kind: 'metric', term: m.term, candidates: m.candidates, requiresConfirmation: true });
       else if (m.kind === 'deferred') { validationWarnings.push({ term: m.term, reason: m.reason, owner: m.owner }); blockedMetrics++; }
-      else validationWarnings.push({ term: m.term, reason: '未知业务术语，未编造指标', owner: '模型缺口（I3 补映射）' });
+      else { validationWarnings.push({ term: m.term, reason: '未知业务术语，未编造指标（阻断 ready——不得静默少指标）', owner: '模型缺口（I3 补映射）' }); blockedMetrics++; }
     });
 
     // 非正确性默认（自决不追问，r2 §4.3）
