@@ -1156,3 +1156,24 @@ P2：capabilities 文案仍写 vmap(area)/"仅区域图"（discover 少报 point
 ### 验证
 - fast_manifest_evidence 真跑 failures=0（scope=rendering 证据含 PNG 字样、carrier test_multisheet 存在、README 引用存在）。
 - run-multisheet-e2e.ps1 本身复跑归 V1。
+
+## 2026-11-06 收口 C5：五处能力账本同步 + backlog 清账
+
+### 问题证据（对账发现的不一致）
+- inventory §3 B 类表 8+ 行仍标 ✗（条件高亮/参数面板/cells/页眉页脚/rowSpan/sumCols/图表装饰/reg），实际 B1–B6 已接；§7 建议仍写「R3-1→R3-2 原路线不变」。
+- matrix：#58 合计聚合 ✗、#62 参数面板 ✗、#63 静默丢 ✗、#77 vmap ✗、#100 多Sheet agentAvailable=false（e2e 未跑）、#118 条件高亮 ✗、#119 planner 墙 ~、#131 多Sheet rejected、#156 条件高亮待办、#160 「明确不做 vmap」——全部过期。
+- **实质口径修正（probe 实证）**：manifest cells.rowSpan 写「ReportSpec 无入口」不实——presentation.cells 无绝对 r 的 rowSpan item 可表达 rowSpan（SpecValidator 零误报→compile IR rowSpan=2→Ir.validate 零误报，/tmp 探针实跑）；正确拒因=plan→create 无 rowSpan 证据。agentAvailable=false 维持，理由改写。
+- backlog：R3-1/2/3/4/5/6/7/8/9/11 全部已完成仍挂在「最高优先/进行中」。
+
+### 实施
+- inventory：§3 B 类表逐行改现状态+证据；结论改「已清空，剩 rowSpan plan→create 证据/多 filter AND/SQL extra 三处显式边界」；§2 多Sheet 行加 C4 口径；§7 策略表改已完成态。
+- matrix：1.1 rowSpan 行、1.2 合计聚合/参数面板/静默丢行、1.3 vmap/组合图（D1 blocked 第4轮）行、1.5 多Sheet 行、1.6 条件高亮/planner 墙行、§2 多Sheet 行、§3.1/3.2、§4 前三行、§5.3 口径注——全部同步（Python 显式 UTF-8 逐字替换，写后读回验证无果酱）。
+- report_spec.js capabilities：rows 加 params/sheet 字段、presentation 补 total.aggregate 词表；multiSheet 注加 C4 口径。
+- ir.js CAPABILITIES：sheet.multiSheetNote+hideRowsCols；block.total/cells 注（aggregate 词表、rowSpan+ds+rowSpan 拒）；param.filter（C3 口径）；chart.vmap（area|point/line 拒/agentAvailable=false）。
+- manifest：cells.rowSpan evidence 改口径（spec 可表达+plan→create 缺证据）。
+- backlog：B 类清空+剩余边界；A/C/D 类完成项划线留档；矩阵路线图 R3-1..R3-4 划线注完成（R3-4=本轮 C6）。
+
+### 验证
+- fast 15 套件 rc=0（含 fast_report_spec capabilities 断言、fast_ir_contract capabilities 断言、fast_contracts 引证规约、fast_manifest_evidence 静态一致）。
+- scan：ok=60 bad=0 skipped=1（rebuild_basicA 缺本地产物 skip，与历轮口径同）。
+- 未跑：引擎门归 V1 统一复跑。

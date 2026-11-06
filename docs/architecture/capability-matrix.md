@@ -33,7 +33,7 @@
 | 能力 | IR | Object | CPT | 引擎渲染 | Agent 可用 | 优先级 | 证据 |
 |---|---|---|---|---|---|---|---|
 | 合并列（colSpan） | ✓ `span` | ✓ setColumnSpan | ✓ | ✓ | ✓ | P0 | ir.js:544；object.js:302；demo `cs>1` **5757 处** |
-| **cells 多行合并表头（rowSpan）** | ✓ `rowSpan`（正整数闸） | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | **待验证**（rawIR 载体已证；plan→create 无证据） | **P0** | R3-0：ir.js 整数闸+块内重叠静态拒；object 游标含 rowSpan+重叠兜底；载体 test_merge_header + test_rowspan_cases；部署 cpt `rs="2"`×2/`cs="2"`×1；PNG 实拍。**使用该能力 103/240 demo 文件（42.9%），1364 个单元格** |
+| **cells 多行合并表头（rowSpan）** | ✓ `rowSpan`（正整数闸） | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | **部分**（spec 可表达=presentation.cells 无绝对 r 的 rowSpan item；plan→create 无 rowSpan 证据 → manifest agentAvailable=false） | **P0** | R3-0：ir.js 整数闸+块内重叠静态拒+ds+rowSpan 拒（C2）；object 游标含 rowSpan+重叠兜底；载体 test_merge_header + test_rowspan_cases；部署 cpt `rs="2"`×2/`cs="2"`×1；PNG 实拍。**使用该能力 103/240 demo 文件（42.9%），1364 个单元格** |
 | header block 原生多层表头 | ✗ 单层 columns | — | — | — | ✗ | P1 | ir.js:8 `header{columns[],heightPt}` 仍单层；当前多层表头只能走 cells + r 坐标（上方已收） |
 | 边框/背景/字体/对齐 | ✓ `st` | ✓ | ✓ | ✓ | ✓ | P0 | 全量生产报表；AGENTS §2 排版红线 |
 | 行高/列宽 | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | ir.js heightsPt/widthsPt |
@@ -55,12 +55,12 @@
 | SQL 数据集 | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | manifest spec.sql.* verified；golden 33531/26531 |
 | filters / sort / topN | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | README #62 live |
 | 分组小计（funcgroup + total sum） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | manifest；README #33 |
-| **合计行 avg/ratio/count（非 sum 聚合）** | **✗ aggregate.fn 仅 sum** | 硬编码 =SUM | — | 引擎支持 | planner deferred | **P1** | ir.js:454 注释；capability.js:9-12 |
+| **合计行 avg/ratio/count（非 sum 聚合）** | ~~✗~~ **✓ aggregate.fn=sum\|avg\|count\|min\|max\|ratio**（#122） | ✓ 公式映射 | ✓ | ✓ PNG（total_agg 60.0/2/35、total_ratio 1.14） | ✓（spec total.aggregate/sumCols[].fn） | **P1→完成** | README #122/#124；manifest spec.rows.totalAgg |
 | 跨数据集关联（join/映射） | ✗ | ✗ | ✗ | — | UNSUPPORTED_CROSS_TABLE | P2 | capability.js（跨表拒） |
 | SQL 层计算字段/派生列 | ✗ | — | — | 引擎支持 | — | P2 | 无 IR 键 |
 | 参数面板（rawIR 路） | ✓ 13 控件 | ✓ | ✓ | ✓（面板） | 部分 | P1 | ir.js param 全 supported；v4.2 载体 |
-| **参数面板（ReportSpec/plan 路）** | **✗ spec_compiler 零 param** | — | — | — | ✗ | **P1** | spec_compiler.js 无 param；golden 用编译期 dateRange |
-| ReportSpec 静默丢弃（footnote/sort/topN/dateRange） | ✗ rows 路不检查不消费 | — | — | — | ✗ | **P1** | 独立取证：footnote 过校验（spec_validator:33-35）但 rows 编译器从不发射（spec_compiler:146-161）；rows 只取 rows（:160）→ **假成功风险** |
+| **参数面板（ReportSpec/plan 路）** | ~~✗~~ **✓ params[]→IR.param widgets**（B2） | ✓ | ✓ 序列化 | 面板属 web 静态 PNG 不现形（serialization-only 口径） | ✓（结构链路） | **P1→完成** | README #118；manifest spec.params.panel |
+| ReportSpec 静默丢弃（footnote/sort/topN/dateRange） | ~~✗~~ **已消**（B1：footnote rows 路发射；sort/topN/dateRange/filters rows 路结构化拒，C1 dataset 键白名单兜底） | — | — | — | ✓ | **P1→完成** | README #118；spec_validator C1 白名单 |
 | 运行期日期/机台筛选闭环 | ✗（v1 明确不做，编译期字面量） | — | — | — | ✗ | P2 | README #62；golden-e2e-case §6.2 |
 | 字典（custom/tableData/formula） | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest dict 族 |
 | 字典（Database/DynamicSQL） | pending | — | — | — | ✗ | P3 | manifest spec.dataset.databaseDict |
@@ -73,8 +73,8 @@
 | legacy bar/pie/line | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest chart.bar/pie/line |
 | Van 7 图（vbar/vline/varea/vscatter/vbubble/vpie/vgauge） | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | test_vanchart 11 块 PNG |
 | 装饰（tooltip/label/stack/条件色/趋势线/轴） | ✓ 多数 | ✓ | ✓ | ✓/`~` 分层 | ✓/✗ | P1 | manifest（3 项 pending：seriesBorder/areaFill/seriesImage） |
-| 组合图（多 plot/双轴） | ✗ | ✗ | ✗ | 引擎支持 | ✗ | P2 | coverage 漏账判定"显式排期" |
-| 地图 vmap | ✗ | ✗ | ✗ | **✓ 引擎已证** | ✗ | P2 | probe_r4m19 官方 mapfather.cpt 无头实拍 |
+| 组合图（多 plot/双轴） | ✗ | ✗ | ✗ | **构造/序列化已证、渲染未达成（D1 第4轮，2026-11-06）** | ✗ | P2（D1 blocked） | 官方 柱形图变形.cpt 同构；线系列无头不可见（官方 demo 同）；重开条件=可运行系列分配语料；probes/probe_combo_sql_carrier.js + logs/d1_combo* |
+| 地图 vmap | ✓ mapType=area\|point（line/custom 拒） | ✓ | ✓ | ✓ PNG（区域着色/散点标记） | ✗（无省份数据源/无 plan→create e2e → agentAvailable=false） | P2→完成（area/point） | D2：test_vmap/test_vmap_point 载体；manifest chart.vmap |
 | 热力图 heatmap | ✗ | ✗ | ✗ | 引擎支持 | ✗ | P3 | manifest pending |
 | 雷达/漏斗/词云 | ✗ | ✗ | ✗ | 部分原生 | ✗ | P3 | 无 IR 键 |
 | 图表单元格热链（ChartHyperRelateCellLink） | ✗ | ✗ | ✗ | — | ✗ | P3 | manifest chart.hyperlinkCell pending |
@@ -97,7 +97,7 @@
 | CPT 创建（create） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | Golden e2e `ge20261106150630-a8693e` |
 | 局部修改（patch 2 op） | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | template/patch.js:34/43；modify diffClean |
 | patch 其余 op（样式/行列增删） | rejected | — | — | — | ✗ | P2 | README #60 R0 探针不过，明确不做 |
-| 多 Sheet | ✓ 多 sheet IR | ✓ 每 sheet 独立游标 | ✓ 两个 `<Report>` | ✓ PNG 两页 | ✓ `extraSheets[]`（rows）+ planner | 完成（rows） | A1+多Sheet spec（2026-11-06）：rawIR test_multisheet 与 spec multisheet.json 均 failures=0，PNG 汇总/明细两页；SQL extra 待后续批。manifest page.multiSheet agentAvailable=false（plan→create e2e 未跑） |
+| 多 Sheet | ✓ 多 sheet IR | ✓ 每 sheet 独立游标 | ✓ 两个 `<Report>` | ✓ PNG 两页 | ✓ `extraSheets[]`（rows）+ planner | 完成（rows） | A1+多Sheet spec+e2e（2026-11-06，C4 口径拆分）：载体 test_multisheet 与 multisheet.json 真引擎 failures=0、PNG 汇总/明细两页；e2e=结构链路（plan→plan2spec→create 保留 extraSheets/params+cpt 结构），不证明逐格/第二 Sheet 视觉/隐藏行列；SQL extra 待后续批。manifest page.multiSheet agentAvailable=true |
 | 模板继承 / 样式复用 | ✗ 无键 | — | — | 引擎支持 | ✗ | P3 | ir.js 零命中 |
 | 页眉页脚 | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | manifest page.headerFooter verified |
 | 模板级 marks（theme/id） | ✓ | ✓ | ✓ | ✓ | ✓ | P2 | manifest page.templateMarks |
@@ -115,8 +115,8 @@
 | 错误诊断 RunResult 11 段 | ✓ | runresult.js；负门 5 路 | P1 |
 | 视觉检查 preview | ~ 仅 PNG 非空/墨量 | e2e preview 步 | P1 |
 | 自动修改复验 modify（diffClean/原件保留） | ✓ | Golden e2e modify 步 | P1 |
-| **ReportSpec 条件高亮（plan 路）** | ✗ detail 硬写 `conditions:null` | spec_compiler.js:149；golden 需求"<80% 高亮"只能 rawIR 手写 | **P1** |
-| planner 能力墙阻断性 | ~ deferred 仅 warning 不阻断（spec 仍 ready） | capability.js:10-12 + planner.js:127 → 可能"成功"产出少东西的报表 | P1 |
+| **ReportSpec 条件高亮（plan 路）** | ~~✗~~ **✓**（B1：presentation.conditions→IR detail.conditions；hl_conditions 载体 PNG） | README #118；manifest spec.rows.conditions | **P1→完成** |
+| planner 能力墙阻断性 | ~~仅 warning 不阻断~~ **✓ deferred/rejected 聚合指标累计阻断**（C6：blockedMetrics>0 → rejected，不静默少指标） | planner.js rows 分支；fast_planner C6 断言（先红后绿） | **P1→完成（C6，2026-11-06）** |
 
 ## 2. 六维评分与优先级（关键项）
 
@@ -128,7 +128,7 @@
 | 跨数据集关联 | 中高 | 中（分析报表） | 完全缺失 | 中（SQL 本身可 join） | 高（新语义+校验+执行） | 中 | P2 |
 | 组合图/双轴 | 中 | 中 | 完全缺失 | 中高 | 中高 | 中 | P2 |
 | 地图 vmap | 中 | 低中 | **已接 area+point（D2）** | ✓ VanChartMapPlot+VanMapDefinition | 中（10 参绑定+geo 参数） | 低中 | **P2→完成（area/point）** |
-| 多 Sheet | 中 | 低 | rejected | 高 | 高 | 低 | P2 |
+| 多 Sheet | 中 | 低 | ~~rejected~~ 已收（rows 路 extraSheets） | 高 | 高 | 低 | P2→完成（rows；SQL extra 待后续批） |
 | VLOOKUP/SUMPRODUCT | 中 | 中 | 引擎不支持 | **无**（实测 InterpreterError） | 极高（需自定义函数注册） | 中 | P3 |
 | Poly/块面、填报 DML、Verifier | 低 | 极低 | 缺失 | 部分 | 高 | 低 | P3 |
 
@@ -136,13 +136,13 @@
 
 ### 3.1 补齐现有（部分实现但闭环不完整）
 1. ~~**合计行非 sum 聚合**（fn 仅 sum，引擎支持 avg/ratio/count）——P1~~ 已完成（2026-11-06）
-2. **ReportSpec 参数面板**（IR 有 13 控件，spec 编译层零 param）——P1
+2. ~~**ReportSpec 参数面板**~~——P1→完成（B2+#140，2026-11-06）
 3. chart.seriesBorder / seriesImage / vpie summary 视觉验证（manifest pending）——P3，价值低
 4. write.submit（DML 真提交）、page.freezeWeb、spec.dataset.databaseDict——P3
 5. chartDeco 深水区剩余（tooltip 格式件视觉）——P3
 
 ### 3.2 新增（当前完全无法表达且业务价值高）
-1. **合并行/多层表头（cells rowSpan）**——P0，成本最低、频率最高
+1. ~~**合并行/多层表头（cells rowSpan）**~~——P0→IR/渲染已收（R3-0）；plan→create 证据缺（agentAvailable=false）
 2. **跨数据集关联**——P2，成本高
 3. 组合图/双轴——P2
 4. 地图/热力——P2/P3
@@ -152,12 +152,12 @@
 
 | 序 | 能力 | 优先级 | 验收标准 |
 |---|---|---|---|
-| **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=待验证**（无 plan→create 证据） |
-| 2（待办） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | plan 路 detail 可表达 conditions；footnote/sort/topN 不再静默丢（或结构化拒）；载体+PNG 真值；golden 需求"<80% 高亮"可由 plan 直达 |
+| **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=部分**（spec 可表达=presentation.cells rowSpan item；plan→create 证据缺 → agentAvailable=false，C5 口径） |
+| 2（~~待办~~ **已实施 B1**） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | ✅ presentation.conditions→IR detail.conditions；footnote 发射、sort/topN/dateRange/filters 结构化拒（C1 白名单兜底）；hl_conditions 载体 PNG；README #118 |
 | 3（**已实施 2026-11-06**） | **ReportSpec 参数面板 + 执行期筛选** | P1 | ✅ param 控件族（B2）+ `params[].filter` → IR.param.filters；param_filter 载体默认值 A线 → PNG 只渲染 A线 行；部署 cpt 参数面板 + 条件；fast 断言 |
 | 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
 
-**明确不做（本轮及下轮）**：vmap / poly / heatmap / VLOOKUP / 跨表关联 / 绝对布局——它们要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三。多 Sheet 已完成 rows 路 spec/planner 入口（SQL extra 待后续批）。
+**明确不做（本轮及下轮）**：vmap 已接（area+point，D2）~~/ poly / heatmap~~ / VLOOKUP / 跨表关联 / 绝对布局——poly/heatmap/VLOOKUP/跨表/绝对布局要么成本高、要么频率低、要么引擎墙，排序在 P2/P3，不进入前三；D1 组合图 blocked（第4轮结论）。多 Sheet 已完成 rows 路 spec/planner 入口+结构链路 e2e（SQL extra 待后续批）。
 
 ## 5. 实施记录（第一项：cells 多行合并表头）
 
@@ -173,5 +173,5 @@
 
 ### 5.3 口径修正（外部审查）
 - `cells` 多行合并表头与 `header` block 原生多层表头**拆为两行**（后者仍 ✗ 单层）。
-- rowSpan 的 **Agent 可用改为「待验证」**（rawIR 载体不能证明 plan→create 链路）。
+- rowSpan 的 **Agent 可用改为「部分」**（2026-11-06 C5 口径：spec 经 presentation.cells 可表达 rowSpan item——probe 实证编译+Ir.validate 零误报；rawIR 载体不能证明 plan→create 链路 → manifest agentAvailable=false）。
 - 频率口径：从「rs>1 单元格 1364」改为「**103/240 demo 文件（42.9%）使用，1364 个单元格**」——文件数是需求覆盖面，单元格数是使用密度。

@@ -30,33 +30,35 @@
 
 | 能力 | E1 Engine | E2 Object | E3 IR | 判断 | 证据 |
 |---|---|---|---|---|---|
-| **多 Sheet** | ✓（FR WorkBook 多 WorkSheet） | ✓ `wb.addReport(sIR.name, sheet)` 在 sheets 循环内 | ✓ 已放开（A1） | **已接**：IR 多 sheet + ReportSpec `extraSheets[]`（rows-only）+ Planner 透传；载体 test_multisheet 与 examples/report-spec/multisheet.json 均 2 `<Report>`，PNG 两页 | object.js:786；ir.js CAPABILITIES.sheet |
+| **多 Sheet** | ✓（FR WorkBook 多 WorkSheet） | ✓ `wb.addReport(sIR.name, sheet)` 在 sheets 循环内 | ✓ 已放开（A1） | **已接**：IR 多 sheet + ReportSpec `extraSheets[]`（rows-only）+ Planner 透传；载体 test_multisheet 与 examples/report-spec/multisheet.json 均 2 `<Report>`，PNG 两页；plan→create e2e=结构链路（scripts/run-multisheet-e2e.ps1，C4 口径：不证明逐格/第二 Sheet 视觉/隐藏行列） | object.js:786；ir.js CAPABILITIES.sheet；README #127/#135 |
 | 编辑器校验 reg | ✓ NoneReg/PhoneReg/IDCardReg/CustomReg | ✓ `REGF + 'CustomReg'` 等 6 种映射 | ✓ `reg` 键 | 已通（无需补） | object.js:1557-1567 |
 | 隐藏行列 | 待核实（FR 支持，场景需区分） | **待核实**（object 零命中 hidden） | ✗ | 归 C 类（需研究 setHidden） | object.js 无 hidden 构造 |
 | 其余 object 消费键 vs ir 键 | — | — | — | 待逐项核实（object 消费键 ~100 个，ir 校验宽松，多数可达） | 见 §6 待核实 |
 
 **A 类结论**：当时唯一确证的 A 类是**多 Sheet**，已于 2026-11-06 完成（IR 放开 + rawIR 载体 + ReportSpec extraSheets + planner 透传 + PNG 两页实证）。业务频率低，故未抢跑 B 类。
 
-## 3. B 类清单：IR 已有，ReportSpec/Planner 无入口（Agent 用不到）——**本轮最大发现**
+## 3. B 类清单：IR 已有，ReportSpec/Planner 无入口（Agent 用不到）——**2026-11-06 收口后已清空**
 
 > 判据：`lib/ir.js` 有键/消费；`spec_compiler.js` 无字段 → plan/create 路不可达（rawIR 手写 spec 才可用）。
+> **本表为历史发现存档 + 现状**：原 ≥8 族缺口已于 2026-11-06 由 B1–B6 批 + R3-0/C2 全部接入（证据列=现状态）。
 
 | 能力族 | E3 IR | E4 ReportSpec | E5 Agent | 业务频率 | 证据 |
 |---|---|---|---|---|---|
-| **条件格式/高亮（8 族）** | ✓ 全 verified | **✗** detail 硬写 `conditions:null/highlight:null` | ✗ | **极高**（golden 需求"<80% 高亮"） | spec_compiler.js:149；ir.js condition 族 |
-| **参数面板（13 控件）** | ✓ 全 supported | **✗** 零 param | ✗ | **极高**（真实报表必有筛选） | spec_compiler.js 零 param；ir.js param |
-| 富文本 / 字典 / 子报表 / 条码 / 斜线表头 | ✓ cells item 全有 | ✗ 无 cells 块概念 | ✗ | 中 | spec_compiler 无 cells |
-| 展开属性（expand 方向/左父格） | ✓ | ✗ | ✗ | 中 | object.js putCell expand |
-| 超链/钻取（linkTo/parameter js/reportlet） | ✓ | ✗ | ✗ | 中高 | spec 无 link 字段 |
-| 页眉页脚 / 水印 / 浮动元素 / 工具栏 | ✓ 全 verified | ✗ | ✗ | 中（档案式报表高频） | spec 无 headerFooter/floats |
-| 纸型（ReportSettings/PaperSetting） | ✓ | ✗ | ✗ | 中 | object.js:788-801 |
-| cells 多行合并表头（rowSpan） | ✓（R3-0 刚收） | ✗ | 待验证 | 高（103/240 文件） | 见 capability-matrix §5 |
-| 合计行 sumCols（多列求和）/ groupCustom | ✓ | ✗（仅 aggregate sum） | ✗ | 中 | ir.js total.sumCols |
-| 图表装饰全族（tooltip/label/stack/条件色/轴/预警） | ✓ 多数 | ✗（chart 仅 kind/category/value） | ✗ | 中 | spec_compiler presentation.chart |
-| 编辑器校验 reg | ✓ | ✗ | ✗ | 低 | spec 无 widgets |
-| 运行期筛选语义 | IR param 在，但 SQL 编译期字面量 | ✗ | ✗ | 高 | sqlbuilder.js:117-121 |
+| **条件格式/高亮（8 族）** | ✓ 全 verified | **✓ 已接**（B1：presentation.conditions→IR detail.conditions） | ✓（hl_conditions 载体 PNG 高亮行可见） | **极高** | fast_report_spec B1；README #118 |
+| **参数面板（13 控件）** | ✓ 全 supported | **✓ 已接**（B2：params[]→IR.param widgets） | ✓（结构链路；面板渲染属 web 静态 PNG 不现形，serialization-only 口径） | **极高** | fast_report_spec B2；manifest spec.params.panel |
+| 参数执行期筛选 params[].filter | ✓ param.filters | **✓ 已接**（rows 路；多 filter 暂限 1） | **部分**：默认参数值过滤已验证（param_filter PNG 只渲染 A线）；Web 交互改参重查询/plan→create 未验证 → agentAvailable=false（C3 口径） | 高 | README #140/#141；manifest spec.params.filter |
+| 富文本 / 字典 / 子报表 / 条码 / 斜线表头 | ✓ cells item 全有 | **✓ 已接**（B3：presentation.cells 直通 IR cells item 族） | 部分（spec.rows.cells rendering=pending） | 中 | spec_compiler.js:261-268；README #118 |
+| 展开属性（expand 方向/左父格） | ✓ | ✓（同上直通 item.expand） | 同上 | 中 | 同上 |
+| 超链/钻取（linkTo/parameter js/reportlet） | ✓ | ✓（cells 级 linkTo/web 直通；detail 列级仍无 spec 入口） | 部分 | 中高 | 同上 |
+| 页眉页脚 / 水印 / 浮动元素 / 工具栏 | ✓ 全 verified | **✓ 已接**（B4：sheet.headerFooter/floats/paper/watermark/toolbar） | 部分（cells_extras 载体 cpt 断言） | 中（档案式报表高频） | README #118 |
+| 纸型（ReportSettings/PaperSetting） | ✓ | ✓（B4 paper） | 同上 | 中 | 同上 |
+| cells 多行合并表头（rowSpan） | ✓（R3-0 收） | **✓ 可表达**（presentation.cells 无绝对 r 的 rowSpan item 直通；绝对 r 拒；ds+rowSpan 结构化拒） | 部分：rawIR 载体渲染已证（test_merge_header/test_rowspan_cases）；plan→create 未验 → agentAvailable=false | 高（103/240 文件） | fast_ir_contract R3-0/C2；probe 实证 rowSpan=2 经 spec 编译+Ir.validate 零误报（2026-11-06 收口） |
+| 合计行 sumCols（多列求和）/ groupCustom | ✓ | **✓ 已接**（B6 total.sumCols + total.aggregate fn 全词表 sum|avg|count|min|max|ratio） | ✓（sumcols_reg/total_agg/total_ratio 载体 PNG 真值） | 中 | README #118/#122/#124 |
+| 图表装饰全族（tooltip/label/stack/条件色/轴/预警） | ✓ 多数 | **✓ 已接**（B5：CHART_KEYS 直通 IR chart 块） | 分层以 manifest 为准（tooltip/hotTooltip/effect=serialization-only；seriesBorder/seriesImage rendering pending） | 中 | spec_compiler.js:126-136；README #101/#102 |
+| 编辑器校验 reg | ✓ | ✓（params[].reg 直通） | 部分（editorReg serialization-only） | 低 | manifest write.editorReg |
+| 运行期筛选语义 | IR param 在，但 SQL 编译期字面量 | ✓（rows 路 params[].filter 默认值）| 同 params.filter 行（交互改参未验证） | 高 | README #140 |
 
-**B 类结论**：ReportSpec 是**窄腰**——IR 已开放的 ≥8 族能力 Agent 完全用不到，只能 rawIR 手写。**这是"Agent 独立创建真实报表成功率"的最大瓶颈**，也是成本/价值比最高的方向：不需要新构造、不需要研究 FR API，只需在 spec_compiler/planner 开字段 + 校验 + 载体。
+**B 类结论（2026-11-06 收口更新）**：原「ReportSpec 窄腰」≥8 族缺口已全部接入（B1 条件高亮 / B2 参数面板+执行期筛选 / B3 cells 族 / B4 页面族 / B5 图表装饰 / B6 合计族 + R3-0 rowSpan）。当前 B 类仅剩两处显式边界：①rowSpan 的 plan→create 证据与绝对 r 入口；②多 filter AND 组合（暂限 1，DSColumn 单条件）与多 Sheet SQL extra（显式拒）。
 
 ## 4. C 类清单：Object/CPT 部分实现或有原生类未接（需补齐）
 
@@ -99,9 +101,9 @@
 
 | 类型 | 工作方式 | 优先级 | 本轮后建议 |
 |---|---|---|---|
-| **B：IR 已有、Agent 无入口** | 补 ReportSpec/Planner 字段 + 校验 + 载体 | **最高** | **R3-1 条件高亮 → R3-2 参数面板**（原路线不变，且现在有库存证据支撑） |
-| A：Object 已有、IR 缺 | 放开 IR + 载体验证 | 高（single item） | 多 Sheet 列为 P2 低成本项 |
+| **B：IR 已有、Agent 无入口** | 补 ReportSpec/Planner 字段 + 校验 + 载体 | ~~最高~~ → **已清空**（B1–B6 批 + R3-0/C2，2026-11-06） | 剩余 B 类边界：rowSpan plan→create 证据、多 filter AND、多 Sheet SQL extra（显式拒） |
+| A：Object 已有、IR 缺 | 放开 IR + 载体验证 | ~~高~~ → 多 Sheet 已完成（A1+#127/#135） | 无剩余 A 类确证项 |
 | C：Object 部分/原生类未接 | 复用已有构造/研究 API | 按价值 | 隐藏行列已完成（C2）；TemplateInfoAttrMark 裁定 noncore 不追；cell.sort/verifiers 诚实拒留账 |
-| D：Engine 支持未接 | 研究成熟 API + 真实样本 | 低（P2–P3） | vmap/poly/heatmap 继续 pending |
+| D：Engine 支持未接 | 研究成熟 API + 真实样本 | 低（P2–P3） | vmap 已接（area+point，D2）；poly/heatmap/组合图（D1 blocked）继续 pending |
 
 **架构原则（本轮确立）**：**fr-agent 不做 FineReport 的重新实现，只做"让 Agent 安全完整调用 FR 已有能力"的语义接口层。** 新增能力的默认动作顺序 = 查原生 → 查 Object/CPT → 查 IR → 补 spec/planner，而不是从 IR 往下推。

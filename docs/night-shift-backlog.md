@@ -51,41 +51,40 @@
 
 ## 原生能力库存（2026-11-06，docs/architecture/native-capability-inventory.md）
 
-### B 类（IR 已有、Agent 无入口）——**最高优先，不新增构造**
-- **R3-1 条件高亮 + 静默丢弃修复**（见下）
-- **R3-2 参数面板 + 执行期筛选**（见下）
-- R3-5：cells 族（rich/dict/subreport/barcode/corner/expand/linkTo/web/groupCustom）进 ReportSpec
-- R3-6：页眉页脚/水印/浮动/工具栏/纸型进 ReportSpec
-- R3-7：图表装饰族进 ReportSpec（tooltip/label/stack/条件色/轴/预警）
-- R3-8：合计行 sumCols/groupCustom、编辑器 reg 进 ReportSpec
+### B 类（IR 已有、Agent 无入口）——**2026-11-06 收口：已清空（B1–B6 批 + R3-0/C2/C6 全部接入）**
+- ~~R3-1 条件高亮 + 静默丢弃修复~~（完成 B1，README #118；hl_conditions 载体 PNG）
+- ~~R3-2 参数面板 + 执行期筛选~~（完成 B2+#140；C3 口径：filter agentAvailable=false）
+- ~~R3-5：cells 族进 ReportSpec~~（完成 B3：presentation.cells 直通 IR cells item 族，README #118）
+- ~~R3-6：页眉页脚/水印/浮动/工具栏/纸型进 ReportSpec~~（完成 B4：sheet.headerFooter/floats/paper/watermark/toolbar）
+- ~~R3-7：图表装饰族进 ReportSpec~~（完成 B5：CHART_KEYS 直通 IR chart 块）
+- ~~R3-8：合计行 sumCols/groupCustom、编辑器 reg 进 ReportSpec~~（完成 B6 total.sumCols/aggregate 全词表；params[].reg；groupCustom 走 cells）
+- 剩余 B 类边界：rowSpan 的 plan→create 证据（spec 可表达=presentation.cells item，agentAvailable=false）、多 filter AND（暂限 1）、多 Sheet SQL extra（显式拒）
 
 ### A 类（Object/CPT 已有、IR 缺/拒）
-- R3-9（P2 低成本）：多 Sheet——object.js:786 `wb.addReport` 已支持多 sheet，ir.js:469 一条硬闸拒；放开 + 多 sheet 载体 + 真引擎验证。
+- ~~R3-9（P2 低成本）：多 Sheet~~（完成 A1+#127：extraSheets[] + planner 透传 + e2e 结构链路 #135）
 
 ### C 类（Object 部分/原生类未接）
-- R3-10：TemplateInfoAttrMark（与已构造 Id/Theme 同族，低成本）
-- R3-11：隐藏行列（先研究 FR API 面再做）
+- R3-10：TemplateInfoAttrMark（与已构造 Id/Theme 同族，低成本；探针裁定 cloud 插件类 noncore 不追）
+- ~~R3-11：隐藏行列~~（完成 C2，README #116：IR+object+ReportSpec 三层 + 载体 PNG）
 
 ### D 类（Engine 支持未接）
-- vmap/poly/heatmap/组合图/热链：保持 pending 不接线（P2–P3）
+- vmap：~~pending~~ 已接（D2 area+point，README #136/#138，agentAvailable=false）
+- poly/heatmap/热链：保持 pending 不接线（P2–P3）
+- 组合图 D1：blocked（第4轮结论：构造/序列化同构、线系列无头不可见；重开条件=可运行系列分配语料）
 
 ## 能力矩阵路线图（2026-11-06，docs/architecture/capability-matrix.md）
 
-### R3-1（P1，下一项候选）：ReportSpec 条件高亮通路 + 静默丢弃修复
-- 证据：`lib/spec_compiler.js:149` detail 硬写 `conditions:null/highlight:null` → plan/create 路无法交付"<80% 高亮"（golden 需求原句就有）；`spec_validator:33-35` footnote 过校验但 rows 编译器从不发射（`spec_compiler:146-161`）；rows 路 sort/topN/dateRange/filters 不检查不消费。
-- 验收：plan 路可表达 conditions；footnote/sort/topN 不再静默丢（实现或结构化拒）；载体+PNG 真值；golden 同需求可由 plan 直达。
+### ~~R3-1（P1）：ReportSpec 条件高亮通路 + 静默丢弃修复~~（完成 B1，2026-11-06）
+- 已完成：presentation.conditions→IR detail.conditions；footnote 发射、sort/topN/dateRange/filters 结构化拒（C1 dataset 键白名单兜底）；hl_conditions 载体 PNG；README #118。
 
-### R3-2（P1）：ReportSpec 参数面板 + 执行期筛选
-- 证据：`spec_compiler.js` 零 param（IR 有 13 控件族，rawIR 可用；JSON 路无通路）；golden 用编译期 dateRange 字面量。
-- 验收：spec 可表达 param 控件族；plan→create 产出带参数面板 cpt；执行期传参筛选真值对拍。
+### ~~R3-2（P1）：ReportSpec 参数面板 + 执行期筛选~~（完成 B2+#140，2026-11-06）
+- 已完成：params 控件族+params[].filter→IR.param.filters；param_filter 载体默认值 A线 PNG 真值；C3 口径收紧（agentAvailable=false）。
 
-### R3-3（P1）：合计行非 sum 聚合（avg/ratio/count）
-- 证据：`lib/ir.js:454` aggregate.fn 仅 sum（object 硬编码 =SUM）；planner `capability.js:9-12` avg/count/ratio deferred（且仅 warning 不阻断）。
-- 验收：IR aggregate.fn 白名单扩展；Object 构造对应 FR 聚合；合计行 PNG 真值对拍。
+### ~~R3-3（P1）：合计行非 sum 聚合（avg/ratio/count）~~（完成 #122/#124，2026-11-06）
+- 已完成：IR aggregate.fn 全词表+sumCols[].fn；test_total_agg/test_total_ratio 载体 PNG 真值。
 
-### R3-4（P1）：planner deferred 阻断性
-- 证据：`capability.js:10-12` deferred 只写 warning 不阻断，spec 仍 ready（`planner.js:127`）→ Agent 可能"成功"产出少东西的报表。
-- 验收：deferred 进入 unresolvedQuestions 或明确降级告知；fast_planner 断言。
+### ~~R3-4（P1）：planner deferred 阻断性~~（完成 C6，2026-11-06 收口）
+- 已完成：rows 分支 blockedMetrics 累计阻断（deferred/rejected 聚合指标→rejected，不静默少指标）；fast_planner C6 断言先红后绿。
 
 ## ~~B-审查1-1 manifest 补新能力行~~（完成 2026-11-06）
 - 已完成：6 行入 manifest（sheet.hideRowsCols / cells.rowSpan / spec.rows.conditions / spec.rows.cells / spec.rows.sumCols / spec.params.panel），KEY_OF 同步；四层状态按证据如实（cells rendering=pending、params=serialization-only、rowSpan agentOverride=false）；fast_manifest_evidence 零 FAIL。

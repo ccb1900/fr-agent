@@ -90,7 +90,7 @@ var CapabilityManifest = (function () {
     // 2026-11-06 C2：隐藏行列（行高/列宽归零）；ReportSpec sheet.hideRows/hideCols 有入口
     cap('sheet.hideRowsCols', 'verified', 'verified', 'verified', 'verified', 'C2（2026-11-06）：IR hideRows/hideCols→object sheet 构建末 setRowHeight/setColumnWidth(FU 0)；carrier test_hidden 真引擎 failures=0（RowHeight[1]=0/ColumnWidth[1]=0），PNG 目检表头行与「完成」列消失；spec 载体 examples/report-spec/hidden.json 同证；fast_report_spec C2 断言', 'rendering'),
     // 2026-11-06 R3-0：cells 多行/多列合并（rowSpan）；ReportSpec 无入口（presentation.cells 拒绝对 r）
-    cap('cells.rowSpan', 'verified', 'verified', 'verified', 'verified', 'README #113/#114 R3-0：IR rowSpan 整数闸+块内重叠静态拒；carrier test_merge_header 部署 cpt rs="2"×2/cs="2"×1，PNG 目检合并表头；fast_ir_contract R3-0 断言。**ReportSpec/Planner 无入口 → Agent 不可用**', 'rendering', false)
+    cap('cells.rowSpan', 'verified', 'verified', 'verified', 'verified', 'README #113/#114 R3-0：IR rowSpan 整数闸+块内重叠静态拒+ds+rowSpan 结构化拒（C2，putDSCell 不合并）；carrier test_merge_header 部署 cpt rs="2"×2/cs="2"×1，PNG 目检合并表头；fast_ir_contract R3-0/C2 断言。**spec 可表达=presentation.cells 无绝对 r 的 rowSpan item（2026-11-06 C5 口径：probe 实证编译+Ir.validate 零误报）；plan→create 无 rowSpan 证据 → agentAvailable=false**', 'rendering', false)
   ];
   // ReportSpec / 数据集 / 语义 / 模板产品面（README #55/#59/#60/#74/#76/#82）
   var product = [
