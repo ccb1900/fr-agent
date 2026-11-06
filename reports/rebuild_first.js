@@ -90,7 +90,7 @@ var SPEC = {
           type: 'chart', kind: 'bar', span: 8, heightPt: H_CHART,
           title: '', dataset: 'ds2', category: '销售员',
           values: PRODUCTS, legend: { position: 4, visible: true, bold: false, fontPt: 12 }, noBorder: true,
-          axisY: { min: 0, max: 1000 }, barInterval: 40
+          axisY: { min: 0, max: 1000 }   // P3：legacy Bar2DPlot 的 barInterval 不落 XML（部署 cpt 零命中），移除伪键
         }
       ]
     }],

@@ -287,10 +287,13 @@ check('审查1 多 sheet + write 拒', codeAt(mut(function (ir) {
   ir.write = { table: { name: 't' }, columns: [{ name: 'c', cell: [0, 0] }] };
 }), 'UNSUPPORTED_CAPABILITY', 'write'));
 check('审查1 vscatter 缺 x/y 拒', codeAt(chartIR('vscatter', {}), 'REQUIRED', 'sheets[0].blocks[1]'));
-// 审查轮2：sumCols col0（与合计 label 同格）与 legacy barInterval（无 legend 会被 object 丢）都要拒
+// 审查轮2：sumCols col0（与合计 label 同格）必须拒
 check('审查2 sumCols col0 拒', codeAt(mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, sumCols: [{ col: 0 }] }; }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[3].sumCols[0].col'));
-check('审查2 legacy barInterval 无 legend 拒', codeAt(chartIR('bar', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
-check('审查2 legacy barInterval 带 legend 零误报', errsOf(chartIR('bar', { barInterval: 0.5, legend: { position: 1 } })).length === 0);
+// 审查轮2/P3：barInterval 真正可见宿主只有 vbar（legacy Bar2DPlot setter 在但 writer 不落 XML）；其余拒
+check('P3 legacy bar barInterval 拒（不落 XML）', codeAt(chartIR('bar', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
+check('P3 legacy pie barInterval 拒', codeAt(chartIR('pie', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
+check('P3 varea barInterval 拒（无 setter）', codeAt(chartIR('varea', { barInterval: 0.5 }), 'INVALID_SHAPE', 'sheets[0].blocks[1].barInterval'));
+check('P3 vbar barInterval 零误报', errsOf(chartIR('vbar', { barInterval: 0.5 })).length === 0);
 // ===== 2026-11-06 P1：合计行非 sum 聚合（IR aggregate.fn + sumCols.fn） =====
 function totalIR(agg) { return mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, aggregate: agg }; }); }
 check('P1 aggregate avg 零误报', errsOf(totalIR({ fn: 'avg', col: 1 })).length === 0);

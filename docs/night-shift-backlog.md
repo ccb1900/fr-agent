@@ -95,10 +95,8 @@
 - 方向：schema 自declare spec_validator 为权威，宽松方向不产生假绿；若外部工具依赖 schema 严格性再收紧（additionalProperties/not）。
 - 验收：schema 与 validator 双向一致性测试（可选）。
 
-## B-审查3-2 legacy pie/line + legend + barInterval 仍被 object 丢（P3，2026-11-06）
-- 证据：IR 放行（(van||legend) 真），object.js:511 只在 plot.setCategoryIntervalPercent 存在时应用；legacy Line/Pie 无此 setter。
-- 影响：写了不生效（非数据错误，视觉静默）。
-- 验收：IR 按 kind 精确限定 barInterval 宿主（vbar/varea 或 legacy Bar2D）+ 负项断言。
+## ~~B-审查3-2 legacy pie/line + legend + barInterval 仍被 object 丢~~（完成 2026-11-06）
+- 已完成：反射+部署 cpt 一手定案——真正落 XML 的宿主只有 vbar（legacy Bar2DPlot 有 setter 但 writer 不序列化）；IR 限 vbar，其余 kind 结构化拒；object 改为 setter 存在性守卫；载体 test_barinterval（vbar，categoryIntervalPercent=25.0 入 XML）；rebuild_first 移除从未生效的 legacy barInterval 伪键。
 
 ## B-审查3-3 fast_report_spec 3 列 span 测试的 dataset.rows 仍 2 列（P3，2026-11-06）
 - 证据：编译期不校验 rows 宽度，IR validate 未跑该产物；断言本身有效。

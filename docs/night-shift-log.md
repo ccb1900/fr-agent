@@ -939,3 +939,25 @@ P2：hasOwn 修复把 '__proto__' 的假阳翻成假阴——`seenSheet['__proto
 
 ### Commit
 （本条提交。）
+
+## 2026-11-06 barInterval 宿主精确化（backlog B-审查3-2 完成）
+
+### 证据
+- 反射 probe_barinterval_hosts：setCategoryIntervalPercent 仅 Bar2DPlot 与 VanChartColumnPlot 有。
+- 部署 cpt 对照：legacy bar 载体（kind=bar, barInterval=25）XML 零命中 categoryIntervalPercent；vbar 载体 XML 命中 "25.0"。
+- 结论：真正可见宿主只有 vbar（legacy setter 在但 writer 不落）。
+
+### 实施
+- IR：barInterval 仅 kind=vbar 放行，其余（bar/pie/line/vline/varea/scatter/bubble/vpie/vgauge）INVALID_SHAPE。
+- object：调用点保留 setter 存在性守卫（不再用 (van||legend) 猜）。
+- reports/rebuild_first.js：移除从未落 XML 的 legacy barInterval 伪键。
+- 载体：reports/test_barinterval.js（vbar, barInterval 25 → 部署 cpt categoryIntervalPercent="25.0" 一手）。
+- 测试：fast_ir_contract 更新 4 条（legacy bar/pie/varea 拒、vbar 零误报）。
+- backlog B-审查3-2 标记完成。
+
+### 验证
+- 引擎：test_barinterval failures=0，XML categoryIntervalPercent="25.0"。
+- fast 15 套件 rc=0；scan ok=58 bad=0；基线 MD5 精确。
+
+### 边界
+- legacy Bar2DPlot 的 setter 面存在但序列化不落，属引擎 writer 行为；若未来 FR 版本落 XML，可重新评估放行 bar。
