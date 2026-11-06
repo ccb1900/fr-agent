@@ -269,7 +269,7 @@ check('审查1 vscatter 需 x/y', (function () {
 })());
 check('审查1 vscatter x/y 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vscatter', x: 'planned', y: 'planned' }; })).length === 0);
 // D2 地图（sql 路编译：category/value + geoUrl 透传；无省份数据源，仅形状/IR 合同）
-check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vmap', category: 'bizDate', value: 'planned', geoUrl: 'assets/map/geographic/world/中国.json', zoom: 4 }; })).length === 0);
+check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentation.chart = { kind: 'vmap', mapType: 'point', category: 'bizDate', value: 'planned', geoUrl: 'assets/map/geographic/world/中国.json', zoom: 0 }; })).length === 0);
 (function () {
   var deps = {
     model: { dimensions: [{ name: 'd', label: 'D' }], metrics: [{ name: 'm', label: 'M' }] },
@@ -277,13 +277,13 @@ check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentati
   };
   var rs = { specVersion: '1', report: { name: 't' }, outName: 'vmap',
     dataset: { kind: 'sql', connection: 'C', entity: 'E', dimensions: ['d'], metrics: ['m'], dateRange: { from: '2026-01-01', to: '2026-01-02' } },
-    presentation: { type: 'table', chart: { kind: 'vmap', category: 'd', value: 'm', geoUrl: 'assets/map/geographic/world/中国.json', zoom: 4 } } };
+    presentation: { type: 'table', chart: { kind: 'vmap', mapType: 'point', category: 'd', value: 'm', geoUrl: 'assets/map/geographic/world/中国.json', zoom: 0 } } };
   var c = null;
   try { c = SpecCompiler.compile(rs, deps); } catch (e) { check('D2 vmap compile 不抛: ' + e, false); return; }
   var cb = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'chart') cb = b; });
   var ie = Ir.validate(c);
   if (ie.length) print('VMAP IR ERRS: ' + JSON.stringify(ie));
-  check('D2 vmap compile 发射 geoUrl/zoom 且 IR 零误报', !!(cb && cb.kind === 'vmap' && cb.geoUrl && cb.zoom === 4 && ie.length === 0));
+  check('D2 vmap compile 发射 geoUrl/zoom/mapType 且 IR 零误报', !!(cb && cb.kind === 'vmap' && cb.geoUrl && cb.zoom === 0 && cb.mapType === 'point' && ie.length === 0));
 })();
 // 审查轮2：非散点 kind 的 x/y 会被编译器丢 → 拒
 check('审查2 bar 带 x/y 拒', (function () {

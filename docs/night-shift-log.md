@@ -1053,3 +1053,21 @@ P1：geoUrl 自由字符串直入引擎资源流（SimpleWorkResource 无归一�
 
 ### 验证
 - 真引擎：test_vmap failures=0（auto=true 后 PNG 仍中国区域着色+图例）；fast 15 rc=0；scan 59 ok；基线 MD5 精确。
+
+## 2026-11-06 D2 扩展：点地图 point + D1 第 4 轮结论
+
+### D1 重开（第 4 轮，结论：不接线）
+- 新假设①「SQL 数据集可解分类塌缩」：验证成立——test_combo_sql（stage 分组，COUNT/float）真引擎 failures=0，PNG 见 L/R 两分类分组柱（此前内嵌数据集恒单分类）。
+- 新假设②「setDataSheet2PlotList + column/line 拆分绑定可出线」：未成立——column 只含 planned、line 用 done 时，PNG 仍只有 planned 柱、无可见线；官方 柱形图变形.cpt 无头渲染同样只见柱（无可见线）。判定为组合图线系列在无头渲染不可见（或需设计器侧更多条件配置），不接线。
+- 实验分支已回收；载体移至 probes/probe_combo_sql_carrier.js；证据 logs/vcustom_sql*.log + logs/_vcustom_official.png。D1 维持「构造/序列化已证、渲染未达成」。
+
+### D2 扩展：point 地图
+- 官方 doc/Chart/Map/散点地图.cpt 结构：mapType=point + VanMapDefinition/pointDefinition(VanMapMoreNameCDDefinition, useAreaName) + mapmarkertype（COMMON 散点实测可见）。
+- object vmap 分支：mapType 参数（area|point），point 走 setPointDefinition + MapMarkerType.COMMON；默认 zoom point=0/area=4；有经纬度才锁 ViewCenter，否则 auto=true。
+- IR：mapType 白名单 area|point（line/custom 未接拒绝）；mapType 仅 vmap；spec/compiler 透传 mapType。
+- 载体：reports/test_vmap_point.js（同 5 省份）。
+- 测试：fast_ir_contract +3（point 零误报/mapType=line 拒/非 vmap mapType 拒）；fast_report_spec vmap 用例改 point 并断言 mapType 透传。
+
+### 验证
+- 真引擎：test_vmap_point failures=0，PNG 目检中国底图 + 散点标记 + 图例 0..280000。
+- fast 15 套件 rc=0；scan ok=60 bad=0；基线 MD5 精确。

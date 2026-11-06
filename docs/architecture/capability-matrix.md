@@ -127,7 +127,7 @@
 | 合计行非 sum 聚合（avg/ratio/count） | 高 | 高（完成率/合格率/平均） | **已收（2026-11-06）**：IR aggregate.fn=sum|avg|count|min|max|ratio + sumCols[].fn | 高（公式 AVERAGE/COUNT/MIN/MAX；ratio=SUM/SUM） | 中（object 公式映射+2 载体） | 高 | **P1→完成** |
 | 跨数据集关联 | 中高 | 中（分析报表） | 完全缺失 | 中（SQL 本身可 join） | 高（新语义+校验+执行） | 中 | P2 |
 | 组合图/双轴 | 中 | 中 | 完全缺失 | 中高 | 中高 | 中 | P2 |
-| 地图 vmap | 中 | 低中 | **已接 area（D2）** | ✓ VanChartMapPlot+VanMapDefinition | 中（10 参绑定+geo 参数） | 低中 | **P2→完成（area）** |
+| 地图 vmap | 中 | 低中 | **已接 area+point（D2）** | ✓ VanChartMapPlot+VanMapDefinition | 中（10 参绑定+geo 参数） | 低中 | **P2→完成（area/point）** |
 | 多 Sheet | 中 | 低 | rejected | 高 | 高 | 低 | P2 |
 | VLOOKUP/SUMPRODUCT | 中 | 中 | 引擎不支持 | **无**（实测 InterpreterError） | 极高（需自定义函数注册） | 中 | P3 |
 | Poly/块面、填报 DML、Verifier | 低 | 极低 | 缺失 | 部分 | 高 | 低 | P3 |

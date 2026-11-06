@@ -305,6 +305,9 @@ check('D2 vmap geoUrl 反斜杠拒', codeAt(chartIR('vmap', { geoUrl: 'assets\\m
 check('D2 vmap zoom 小数拒', codeAt(chartIR('vmap', { zoom: 4.5 }), 'INVALID_NUMBER', 'sheets[0].blocks[1].zoom'));
 check('D2 非 vmap 带 geoUrl 拒', codeAt(chartIR('vbar', { geoUrl: 'assets/map/geographic/world/中国.json' }), 'INVALID_SHAPE', 'sheets[0].blocks[1].geoUrl'));
 check('D2 vmap 带 axisY 拒（无轴）', codeAt(chartIR('vmap', { axisY: { min: 0 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY'));
+check('D2 vmap point 零误报', errsOf(chartIR('vmap', { mapType: 'point', zoom: 0 })).length === 0);
+check('D2 vmap mapType=line 拒（未接）', codeAt(chartIR('vmap', { mapType: 'line' }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapType'));
+check('D2 非 vmap 带 mapType 拒', codeAt(chartIR('vbar', { mapType: 'point' }), 'INVALID_SHAPE', 'sheets[0].blocks[1].mapType'));
 // ===== 2026-11-06 P1：合计行非 sum 聚合（IR aggregate.fn + sumCols.fn） =====
 function totalIR(agg) { return mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, aggregate: agg }; }); }
 check('P1 aggregate avg 零误报', errsOf(totalIR({ fn: 'avg', col: 1 })).length === 0);

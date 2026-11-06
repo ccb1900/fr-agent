@@ -78,7 +78,7 @@
 
 | 能力 | E1 | 证据 | 价值 | 建议 |
 |---|---|---|---|---|
-| 地图 vmap | ✓ | ✓ 已接（D2，2026-11-06） | **完成（area）**：VanChartMapPlot(mapType=area/geourl/zoom/viewcenter) + VanMapDefinition/areaDefinition(VanMapMoreNameCDDefinition 10 参, useAreaName)；carrier test_vmap 真引擎 failures=0，PNG 中国区域着色；POINT/LINE/CUSTOM 未接 | P2→完成（area） |
+| 地图 vmap | ✓ | ✓ 已接（D2，2026-11-06） | **完成（area+point）**：VanChartMapPlot(mapType/geourl/zoom/viewcenter) + VanMapDefinition(areaDefinition|pointDefinition)(VanMapMoreNameCDDefinition 10 参, useAreaName)；carrier test_vmap/test_vmap_point 真引擎 failures=0，PNG 区域着色 / 散点标记；LINE/CUSTOM 未接 | P2→完成（area/point） |
 | 热力图 heatmap | ✓ 核心 heatmap 包 | manifest pending | 中低 | P3 |
 | Poly 块面 | ✓ 核心 jar | probe_r4m21 方法面 | 低 | P3（240 demo 仅 4-5 处） |
 | 组合图 VanChartCustomPlot | ✓ | **构造+序列化已证，渲染未达成**（D1，2026-11-06） | 中 → **阻塞** | 已打通：CustomStyle.parse/CustomPlotList/CustomDefinition+DefinitionMap(枚举键) → 部署 cpt 与官方 柱形图变形.cpt 同构；但渲染分类轴恒单类（4 行=1 类 6 系列），缺子图系列分配 ConditionCollection(AttrSeriesStackAndAxis)+分类 Present；plain Chart 外层 NPE。证据 probe_customplot*/probe_customtype/probe_customdef* + logs/d1_combo*。重开条件：先有可运行系列分配语料 |
