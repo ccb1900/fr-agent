@@ -41,6 +41,11 @@ var CapabilityManifest = (function () {
     cap('chart.conditionalSeries', 'verified', 'verified', 'verified', 'verified', 'probe_r4m7 D_a 实拍：系列条件染色正类=AttrBackground+ColorBackground(AttrColor 引擎不染)；carrier test_vanchart 实跑'),
     cap('chart.trendLine', 'verified', 'verified', 'verified', 'verified', 'README #72 LineStyleInfo 门槛补齐后红趋势线画出 PNG'),
     cap('chart.axisYUnit', 'verified', 'verified', 'verified', 'verified', 'probe_r4m17 实拍：unit=50 主刻度 0..300 全渲染（无轴标题时）；setTitle 后引擎自动降密度 100 步（交互事实记档）；carrier test_vanchart vline 臂'),
+    cap('chart.hotTooltip', 'verified', 'verified', 'serialization-only', 'verified', 'probe_r4m14b Plot.setHotTooltipStyle(AttrContents) 方法面+m15 XML 断言；官方 newHotTooltipStyle 节点同构；渲染=web 交互不外宣（同 tooltip 口径，审查 P2-4 补行）'),
+    cap('chart.seriesBorder', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrBorder(Color,int)/AttrBorderWithAlpha(Color,int,double) CTOR+m15 XML 断言；边框渲染视觉未单独目检（审查 P2-4 补行）'),
+    cap('chart.effect', 'verified', 'verified', 'serialization-only', 'verified', 'probe_r4m14 AttrEffect(period) 方法面+m15 XML 断言；web 动画渲染不外宣（审查 P2-4 补行）'),
+    cap('chart.areaFill', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrAreaSeriesFillColorBackground 方法面+m15 XML 断言；面积填充视觉未单独目检（审查 P2-4 补行）'),
+    cap('chart.seriesImage', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14b ImageBackground(ImageWithSuffix.build(byte[])) 方法面+m15 XML 断言（审查 P2-4 补行）'),
     cap('chart.hyperlinkCell', 'pending', 'pending', 'pending', 'pending', 'README #79 ChartHyperRelateCellLink 挂接面未探完，随地图批')
   ];
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）

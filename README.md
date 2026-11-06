@@ -809,5 +809,14 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 #105 漏账清零 + 批H 定性 + 批I R0 翻案（2026-11-06，单元7-13 冲刺收口；probe_r4m19/m20 一手；ALIGN 漏账 9→0）：
 - **批I R0 翻案（重大前提修正）**：官方 doc/Chart/mapfather.cpt 经 readTemplateWorkBook+execute+ImageExporter **无头渲染成功实拍**（区域地图+省份染色+图例 0-280000 全出，logs/_r4m19_mapfather.png）——#79 "GIS 底图无轻量通路" 前提**被证伪**：静态导出走内置地图几何即可，无需 GIS 瓦片；vmap 构造词汇（VanChartMapPlot+VanMapMoreNameCDDefinition+AttrMapLabel/Tooltip）下一轮按官方 cpt 路接线，类面已 dump（probe_r4m19，AttrMapTooltip=area/point/line 三槽）。
 - **漏账 9 类判定收编（probe_r4m20 方法面）**：非真缺 3（ChartCommonCondition=chart 条件通道已用 CommonCondition 实证 m7 D_c；ExcelTableData/RecursionTableData=数据集入口边界 SQL/内嵌既定纪律；DataSetDefinition=chartx legacy 已被 chartdata 路覆盖）+ 显式排期 4（VanChartCustomPlot=组合图车道需双轴批定义；MultiFileEditor=参数控件族后继；TreeNodeToggleButton=表单树域；CustomToolBarButton=工具条按钮域）+ 待探针 2（FileAttrErrorMarker 疑引擎内部 IO 标记；VanMapMoreNameCDDefinition 归批I vmap 路未单列）——**ALIGN unattributed 9→0，52 项全数批归属+判定注记**。
-- **批H 定性收尾**：sort=CellSortAttr 已收（B 表 full，#45/#46 语料在）；SortHeader 表头点击排序=web 交互行为（serialize-only 口径同 tooltip，不外宣）——挂账关闭定性。
+- **批H 定性**：~~表头点击排序=web 交互~~ **勘误（README #571-573 原义为准）**：SortHeader=服务端 `com.fr.report.core.sort` 族类，env 后可加载、挂点已证（setResultSortHeader/SetCellSortAttr）；挂账真因=**240 demo 无非空 cellSortAttr 语料**（组合形态无参照，IR sort 结构化拒不硬凑）——**语料阻塞型挂账，等真实排序 cpt 到手批收**，非本轮可关闭项。
 - **门**：coverage 重刷幂等；fast/scan/负门/双铁证维持 GREEN（本轮零生产代码改动，纯账本+文档）。
+
+
+#106 审查修复环轮 1 + 幽灵键勘误 + FineDateFormat 收案（2026-11-06，外部审查代理审 214e952..a2c158c；用户点名"偷工减料"后补证补做）：
+- **P1（复现属实，已修）**：`label.summary` ir 对全 van kind 放行、object 仅 vpie 消费（PieCategoryLabelContent 独有槽位）→ 非 vpie 静默丢=撞"写了但没生效一律结构化拒"红线——修=ir 加 vpie 闸（INVALID_SHAPE）。
+- **P2 修复**：① BATCH_CLASS 三格式件（AreaName/MapValue/StartAndEnd）注记与 #102 矛盾→改批I；② AttrLabelDetail live 行注记对齐 #103 已收口径+ALIGN 注释 67→动态；③ manifest 补 5 行新词汇（hotTooltip/seriesBorder/effect/areaFill/seriesImage——rendering 按实况 serialization-only/pending 如实分层，agentAvailable 不假承诺）；④ axisX 去掉 (van||b.legend) 继承闸（公共 setter 非公式包装，legacy 同适用）。
+- **幽灵键勘误（用户点名后全 jar 扫描实证）**：FrozenState/RepeatAndCollapsible **全 fine-*.jar 零命中=非本版 FR 类**、Diagonal/SortHeader 不在 223 类账本——B 表 freeze/diagonal 家族键为跨版本研究笔记残留：freeze 键勘误=['setRepeatHeaderRowFrom']（#31 引擎侧已收→full）、diagonal 键=['BiasTextPainter','setIsBackSlash']（v3.3 实装→full）。**B/C 表两条 phantom missing 系假缺，勘误后账实相符**。
+- **漏账判定证据补齐**：FileAttrErrorMarker=引擎内部 IO 容错标记（AbstractIOFileAttrMark/ClassNotFoundHolder，m21 方法面）非真缺；DataSetDefinition=chartx 新代并行接口（CTOR NameTableData+ColumnFieldCollection，与 MoreNameCD/OneValue 同语义）非真缺不双实现；RecursionTableData=递归 SQL 类型（父子标记字段）数据集边界既定。
+- **FineDateFormat 收案**（批D 残项之一）：buildFormat 日期派生换 `FineDateFormat.getInstance(pattern)`（SimpleDateFormat 子类 drop-in，demo 5 语料+m21 方法面）；probe_r4m22 wb.export 序列化断言；coverage missing 33→32。
+- **门**：fast 13 GREEN / scan 48+1 / coverage missing=32 partial=20 / 负门+m22 后台跑批结论回填 night-shift-log。
