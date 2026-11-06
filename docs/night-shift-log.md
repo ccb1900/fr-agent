@@ -961,3 +961,18 @@ P2：hasOwn 修复把 '__proto__' 的假阳翻成假阴——`seenSheet['__proto
 
 ### 边界
 - legacy Bar2DPlot 的 setter 面存在但序列化不落，属引擎 writer 行为；若未来 FR 版本落 XML，可重新评估放行 bar。
+
+## 2026-11-06 seriesImage 判别实验 + 载体 J 覆盖修复
+
+### 发现
+reports/test_visual_deco.js 顶部 `var J = Files class` 覆盖 make_api 全局 J(n) 工厂 → 管线在 make_api:273 TypeError（rc=102，fail-closed）。此前该载体标注的"PNG 目检"证据已不可复跑（P1 测试 bug）。
+
+### 实施
+- 载体局部变量改名 JF，不再覆盖全局 J。
+- seriesImage 判别 fixture：由纯色（0x77BBFF，与默认柱色同色、不可判定）改为 16×16 品红/白棋盘，每次运行重建。
+- legacy 第二图加 title:'' 抑制引擎默认标题噪声。
+- manifest chart.seriesImage evidence 更新为棋盘格实验结论。
+
+### 验证
+- 真引擎：test_visual_deco failures=0；部署 cpt ImageBackground×2 / AttrSeriesImageBackground×1；PNG 目检柱体仍为纯蓝（棋盘未现形）→ rendering 维持 pending（证据从"无法判定"升级为"判别性阴性"）。
+- fast 15 套件 rc=0；scan ok=58 bad=0。

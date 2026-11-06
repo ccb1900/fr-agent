@@ -53,7 +53,7 @@ var CapabilityManifest = (function () {
     cap('chart.seriesBorder', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14 AttrBorder(Color,int)/AttrBorderWithAlpha(Color,int,double) CTOR+probe_r4m15 XML 断言；§5步4 真引擎 PNG 目检：reports/test_vanchart.js 堆叠臂柱缘无可分辨蓝框（0x3355AA alpha0.9 可能被抗锯齿吃掉或未渲染），维持 pending', 'serialization'),
     cap('chart.effect', 'verified', 'verified', 'serialization-only', 'verified', 'probe_r4m14 AttrEffect(period) 方法面+probe_r4m15 XML 断言；web 动画渲染不外宣', 'serialization'),
     cap('chart.areaFill', 'verified', 'verified', 'verified', 'verified', 'probe_r4m14 AttrAreaSeriesFillColorBackground 方法面+probe_r4m15 XML 断言；§5步4 真引擎 PNG 目检：reports/test_vanchart.js varea 臂浅蓝面积带(0x77BBFF alpha0.45)可见（logs/_visual_top.png 第3面板）', 'rendering'),
-    cap('chart.seriesImage', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14b ImageBackground(ImageWithSuffix.build(byte[])) 方法面+probe_r4m15 XML 断言；§5步4 真引擎 reports/test_visual_deco.js PNG 目检：柱体仍纯色，图片未可见渲染（AttrSeriesImageBackground 序列化在但视觉未现形，不升层）', 'serialization'),
+    cap('chart.seriesImage', 'verified', 'verified', 'pending', 'verified', 'probe_r4m14b ImageBackground(ImageWithSuffix.build(byte[])) 方法面+probe_r4m15 XML 断言；2026-11-06 棋盘格判别实验：fixture 改品红/白 16x16 棋盘（纯色会与默认柱色同色无法判定），test_visual_deco 真引擎 failures=0、部署 cpt ImageBackground/AttrSeriesImageBackground 在，PNG 柱仍纯蓝 → 视觉未现形，rendering 维持 pending', 'serialization'),
     cap('chart.hyperlinkCell', 'pending', 'pending', 'pending', 'pending', 'README #79 ChartHyperRelateCellLink 挂接面未探完，随地图批')
   ];
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）
