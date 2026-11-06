@@ -43,7 +43,7 @@ run.ps1 -Script make_api.js
 - 记住 make_api.js 每轮**只回写当前 spec**，最后一步必须用默认 spec 收尾，否则基线铁证被踩
 - 交付核对面=渲染 PNG 人工过目 + TABLE_DESIGN_STANDARD 检查清单，**不许"validator 绿了就报完成"**
 - **分层门（README #53/#54，改 lib/ir/object/runresult/browser 必跑）**：
-  - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（fast_parse + fast_ir_contract + fast_runresult + fast_browser_sql + fast_report_spec 五套件，任一 rc≠0 整体 exit 1）
+  - 快速层（无引擎，秒级，不碰 FineDB/不产字节）：`scripts/run-fast-tests.ps1`（16 套件：fast_parse/fast_ir_contract/fast_runresult/fast_browser_sql/fast_report_spec/fast_schema/fast_semantic/fast_planner/fast_sqlbuilder/fast_sqlpath/fast_closure/fast_template/fast_contracts/fast_manifest_evidence/fast_golden_closure/fast_baseline，任一 rc≠0 整体 exit 1；fast_baseline=三铁证 MD5 快速层断言）
   - 零误伤扫描（无引擎）：`nashorn.jar ... Shell probes/scan_all_specs.js`（reports/ 全量 compile+validate，合法报表=回归门）
   - 引擎负门（需 java/FineDB，会杀 java）：`scripts/run-engine-negative-tests.ps1`——断言"失败必非零退出码、无假绿"，末步自动回补默认 spec 护基线
   - 工具链集成门（r13/r14，改 agent/tools/*、runtime supervisor、config.ps1、run.ps1、contracts.js 必跑）：`scripts/run-integration-tests.ps1`（`verify/check_ps1_static.ps1` 静态门：PSParser tokenize+ASCII-only+无硬编路径；`verify/integration_runtime.ps1` **全链故障注入**——现行 S 号见 `docs/architecture/runtime-supervisor.md` §5（r21 起至 S28：互斥 S2/S4/S15·真宿主崩溃 S20·pidfile 十变体 S21·同 RunId 并发 S24·登记故障 S25/S26·文件四分类 S27/S27e·status 黑盒链 S28·patch 证据 S17 等；"S1–S19"是 r13/r14 历史编号，只作档案不作现行断言）。**Runtime Supervisor 状态协议见 `docs/architecture/runtime-supervisor.md`；互斥=OS 命名 Mutex（单 Session）、恢复=进程身份+文件状态 fail-closed；不变量必须配能主动制造故障并证明系统正确拒绝的测试（r14 原则，不以 GREEN 自证）**

@@ -53,8 +53,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 
 - 交互式参数/日期控件（日期范围在编译时写成字面量；运行期筛选=未接）。
 - 按派生比率列排序（`completionRate` 不在 SQL 里，不能直接 ORDER BY）。
-- 条件格式/高亮（如"完成率<80% 标红"）。
 - 自由文本 SQL、非白名单 patch op（style/列宽/筛选/参数/标题）。
+- ~~条件格式/高亮~~：已接（2026-11-06 B1，`presentation.conditions` → 明细格条件属性；能力边界以 `discover` 的 capabilityManifest/agentAvailable 为准——文档此节不再是能力清单真相源，manifest 是）。
 
 > 这些不是"静默降级"：Agent 应在交付说明里列出，并给出可用的替代（如改按计划数降序）。
 
@@ -109,3 +109,21 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 - **java.pid 登记前移与失败收口**（r17 P1-3 + r18 P1-2 + r19 P2，engine_launch.ps1）：spawn 前先写 `PENDING`，进程起来后立即覆盖为 "pid start"；**spawn 前任一步失败可撤登记**（此刻确实没有 java）；**spawn 成功后的登记失败（StartTime 读取失败/pidfile 覆盖失败）绝不删 PENDING 冒充"没启动"**——`Collect-UnregisteredSpawn` 在已持有的同对象上 Kill 后以 WaitForExit 裁决（**Kill 异常只是提示**——JVM 已自退时 Kill 抛 InvalidOperationException 是好结局，r19 竞态修复：确认退出才清登记，否则 PENDING 留守下一次拒绝）；StartTime 失败绝不写 `pid -1` 伪身份。Windows Job Object 方案评估过、未引入（现有 .NET/Win32 已够，且 r17 起禁止新增运行机制）。
 - `FR_AGENT_HEAP` env 可覆盖堆（embedded spec 无 j2v8，测试用低堆保证故障注入确定性）；`FR_AGENT_RUNTIME_DIR`/`FR_AGENT_MUTEX` env 供测试隔离。
 - 验收 `verify/integration_runtime.ps1` 故障注入（r17/r18/r19 诚实口径：互斥 S2/S4/S15·遗留**路径**（decoy 构造）S5/S5b·放过 S14·活锁拒绝 S6·损坏拒绝 S16·真宿主崩溃 S20·java.pid **十变体**拒绝 S21（r19 补多空格/tab/Int32·Int64 溢出）·PENDING 拒 S22·RunId 重复拒 S23·同 RunId 并发单赢 S24·spawn 前登记故障无泄漏 S25（r19 改确定性注入：pidfile 父路径=普通文件，不依赖盘符）·spawn 后登记失败白盒收集 S26（真 java confirmed/两 stub 留守/自退竞态分支 confirmed）·**文件状态四分类 S27**（白盒 absent/readable/锁住 unknown/畸形 unknown + 黑盒锁哨兵防退化；**S27e unreadable 分支证明=Everyone-deny Read，管理员运行也成立**）·**runtime.ps1 status 真实黑盒链 S28**（持久回归：pidfile 不可确认透出 unknown 绝不显示 absent；r21 收尾审查曾抓到收尾提交误删 `$jp=Read-JavaPid…` 使全部哨兵查询退化 unknown——正常链 alive + 锁定 unknown 双断言修复后转绿）·排队 S8·patch 证据 S17）。协议详见 `docs/architecture/runtime-supervisor.md`。
+
+## 阶段2 B段（2026-11-07）：外置 Agent 产品闭环 verbs + 错误面统一
+
+新增五个 verb（混合路线：plan 链保业务术语映射/歧义反问/SQL 语义安全，表达层由外置 LLM 直写 ReportSpec、validator 把门）：
+
+| Verb | 参数 | 产物（logs/agent/runs/{runId}/） | 取 Runtime 锁 |
+|---|---|---|---|
+| list_reports | — | list_reports.json（部署目录 .cpt 清单：名称/字节/mtime/伴随 PNG/PDF + sourceCpt 相对名） | 否 |
+| sample_data | -Sample <spec JSON> | sample.json（只读 LIMIT 采样：{entity, columns?, limit?≤200, where?}；entity/columns 模型白名单，op/值面受控字面量） | 否（plain JVM + WEB-INF/lib 驱动 classpath） |
+| inspect_template | -Target fineagent/<名>.cpt | inspect.json（sheet 尺寸+逐格文本真实坐标+XML 侧数据集/参数名——modify 打通的前置体检；只读，不 export） | 是（引擎读 cpt） |
+| promote | （同 runId） | promote.json（把 staging 里回归全绿的补丁件就地部署到 sourceCpt；MD5 复核；diffClean/execution/render/datasetChecks 任一失败即拒=fail-closed） | 是 |
+| restore | （同 runId） | restore.json（用同 run staging 的 .orig.cpt 覆盖回部署面=撤销 promote；MD5 复核） | 是 |
+
+**modify→promote→restore 闭环**：modify 只写 staging（原件 .orig.cpt 自动保留）→ promote 才真正替换部署报表（fail-closed 于回归全绿）→ restore 一键回退。promote/restore 都要求**同一 runId**（staging 按 run 隔离）。
+
+**退出码一致（B段裁决规则）**：`resolve` 与 `plan` 同规——exit 0 = 产出可向前走的答案（resolve: resolved|ambiguous；plan: ready）；exit 1 = 失败（resolve: unknown；plan: ambiguous/rejected）；exit 2 = 用法错误。合同行 `ok` 字段与退出码同步。
+
+**错误面 nextActions 约定**：所有 verb 的失败输出（合同行或产物 JSON）带 `nextActions`（下一步可执行动作）；名单类拒绝（实体/属性/verb 不存在）附**可用名单**（如 unknown entity → available entities: …）。

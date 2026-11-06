@@ -13,10 +13,10 @@ var runDir = runDirOf(runId);
 //  原本地版无条件拼 ROOT+'/'，与 absOf 组合产生双重拼接——绝对/相对路径都读不到（r11 P1）。
 
 var intentPath = System.getenv('AGENT_INTENT');
-if (!intentPath) { print('{"ok":false,"error":"AGENT_INTENT required (intent JSON file path)"}'); System.exit(2); }
+if (!intentPath) { print('{"ok":false,"error":"AGENT_INTENT required (intent JSON file path)","nextActions":["write the intent JSON (outName/dimensions/metrics or dataset.kind=sql) to a file and pass -Intent <path>","run -Verb discover to see model dimensions/metrics and ReportSpec capabilities"]}'); System.exit(2); }
 var intent = null;
 try { intent = JSON.parse(readUtf(absOf(intentPath))); } catch (e) { intent = null; }
-if (!intent) { print('{"ok":false,"error":"intent JSON unreadable: ' + intentPath + '"}'); System.exit(2); }
+if (!intent) { print('{"ok":false,"error":"intent JSON unreadable: ' + intentPath + '","nextActions":["check the file exists and is valid JSON (UTF-8)","pass the path relative to FR_AGENT_HOME or absolute"]}'); System.exit(2); }
 
 // Planner 五注入（I4 接口契约 docs/agent-planner-interface.md；I5.1 教训：装载面必须前置 model/vocab）
 load(ROOT + '/semantic/model/vocab.js');

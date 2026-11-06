@@ -129,6 +129,35 @@ if (-not $stop) {
     }
   }
 }
+# 8: promote (Phase-2 B-sect) - deploy the verified patched cpt onto the deployed source, hash-verified;
+#    then 9: restore - put the kept .orig.cpt back (deployed artifact returns to the run-created state).
+if (-not $stop) {
+  $cptName2 = -join ([char[]]@(0x751F,0x4EA7,0x65E5,0x62A5)) + 'GOLDEN_api.cpt'
+  $deployed = "D:\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent\$cptName2"
+  $md5Before = (Get-FileHash $deployed -Algorithm MD5).Hash
+  $pr = Invoke-Step 'promote' @('-Verb', 'promote', '-RunId', $RunId)
+  if ($pr) {
+    $md5After = (Get-FileHash $deployed -Algorithm MD5).Hash
+    $stagedMf = Get-Content (Join-Path $Root "logs\agent\runs\$RunId\staging\manifest.json") -Raw -Encoding UTF8 | ConvertFrom-Json
+    $md5Staged = (Get-FileHash $stagedMf.out -Algorithm MD5).Hash
+    if ($md5After -ne $md5Staged) { Fail "promote: deployed cpt != staged patched cpt" }
+    elseif ($md5After -eq $md5Before) { Fail "promote: deployed cpt unchanged (promote no-op?)" }
+    else { Write-Host "STEP promote OK (deployed artifact now the verified patched bytes)" }
+  }
+}
+if (-not $stop) {
+  $cptName3 = -join ([char[]]@(0x751F,0x4EA7,0x65E5,0x62A5)) + 'GOLDEN_api.cpt'
+  $deployed2 = "D:\software\FineReport_11.0\webapps\webroot\WEB-INF\reportlets\fineagent\$cptName3"
+  $rs = Invoke-Step 'restore' @('-Verb', 'restore', '-RunId', $RunId)
+  if ($rs) {
+    $md5Back = (Get-FileHash $deployed2 -Algorithm MD5).Hash
+    $staging2 = Join-Path $Root "logs\agent\runs\$RunId\staging"
+    $origFile = (Get-ChildItem $staging2 -Filter '*.orig.cpt' | Select-Object -First 1).FullName
+    $md5Orig = (Get-FileHash $origFile -Algorithm MD5).Hash
+    if ($md5Back -ne $md5Orig) { Fail "restore: deployed cpt != staged original" }
+    else { Write-Host "STEP restore OK (deployed artifact back to pre-patch state)" }
+  }
+}
 # default-spec restore + byte baseline (AGENTS sec.1): every create step runs make_api with THIS run's
 #   spec, and make_api exports its artifact to demo_api.cpt (make_api.js localCpt) - so the baseline file
 #   is left as this run's report. The LAST make_api run of the gate must be the default spec (same
