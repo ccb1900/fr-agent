@@ -122,7 +122,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|vbar|vline|varea|vscatter|vbubble|vpie|vgauge');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return r.chart === 'unsupported' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';

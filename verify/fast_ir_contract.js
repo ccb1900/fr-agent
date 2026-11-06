@@ -298,6 +298,13 @@ check('P3 vbar barInterval 零误报', errsOf(chartIR('vbar', { barInterval: 0.5
 check('D2 vmap 零误报（geoUrl/zoom/view）', errsOf(chartIR('vmap', { geoUrl: 'assets/map/geographic/world/中国.json', zoom: 4, longitude: 106.25, latitude: 38.47 })).length === 0);
 check('D2 vmap geoUrl 非串拒', codeAt(chartIR('vmap', { geoUrl: 5 }), 'INVALID_TYPE', 'sheets[0].blocks[1].geoUrl'));
 check('D2 vmap zoom 非数拒', codeAt(chartIR('vmap', { zoom: '4' }), 'INVALID_NUMBER', 'sheets[0].blocks[1].zoom'));
+// 复审（vmap）：路径安全 / kind 归属 / 无轴 / zoom 枚举
+check('D2 vmap geoUrl 路径穿越拒', codeAt(chartIR('vmap', { geoUrl: 'assets/map/../../secret.json' }), 'INVALID_PATH', 'sheets[0].blocks[1].geoUrl'));
+check('D2 vmap geoUrl 绝对路径拒', codeAt(chartIR('vmap', { geoUrl: '/etc/passwd.json' }), 'INVALID_PATH', 'sheets[0].blocks[1].geoUrl'));
+check('D2 vmap geoUrl 反斜杠拒', codeAt(chartIR('vmap', { geoUrl: 'assets\\map\\x.json' }), 'INVALID_PATH', 'sheets[0].blocks[1].geoUrl'));
+check('D2 vmap zoom 小数拒', codeAt(chartIR('vmap', { zoom: 4.5 }), 'INVALID_NUMBER', 'sheets[0].blocks[1].zoom'));
+check('D2 非 vmap 带 geoUrl 拒', codeAt(chartIR('vbar', { geoUrl: 'assets/map/geographic/world/中国.json' }), 'INVALID_SHAPE', 'sheets[0].blocks[1].geoUrl'));
+check('D2 vmap 带 axisY 拒（无轴）', codeAt(chartIR('vmap', { axisY: { min: 0 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].axisY'));
 // ===== 2026-11-06 P1：合计行非 sum 聚合（IR aggregate.fn + sumCols.fn） =====
 function totalIR(agg) { return mut(function (ir) { ir.sheets[0].blocks[3] = { type: 'total', label: 'T', span: 1, aggregate: agg }; }); }
 check('P1 aggregate avg 零误报', errsOf(totalIR({ fn: 'avg', col: 1 })).length === 0);

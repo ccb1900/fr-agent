@@ -1039,3 +1039,17 @@ test_visual_deco 用 `var J = Java.type(...)` 覆盖 make_api 同作用域全局
 
 ### 边界
 - 仅 AREA；POINT/LINE/CUSTOM/DRILL_CUSTOM 与 MapMatchResult/地图下钻未接。ReportSpec 仅 sql 路（rows 路不出图）。
+
+## 2026-11-06 D2 vmap 复审修复（1 P1 + 4 P2）
+
+### 发现
+P1：geoUrl 自由字符串直入引擎资源流（SimpleWorkResource 无归一化）→ 可 `assets/map/../../x.json` 读任意本地 JSON。P2：vmap 的 axisY/axisX 过 IR 后静默丢（地图无轴）；falsy 默认吞掉合法 0（geoUrl/经纬度/zoom 0）且 ViewCenter 固定中国中心；geo 键未按 kind 归属（bar/vbar 带 geoUrl 绿着丢）；capabilities 的 vanChart/sql.chart 列表漏 vmap（discover 少报）。
+
+### 修复
+- IR：geoUrl 白名单 `^assets/map/[^:\]+$` + 禁 `..`/反斜杠/scheme（INVALID_PATH）；zoom 整数 0..21；geo 键仅 vmap（INVALID_SHAPE）；vmap 带 axisY/axisX 拒（INVALID_SHAPE）。
+- object：默认值改 `!= null`（0 不再被吞）；经纬度显式给出才 auto=false 锁中心，否则 auto=true 由引擎自适配。
+- capabilities：ir.js vanChart + report_spec.js sql.chart 列表补 vmap（并注明 area-only/geoUrl 限制）；fast 固定列表断言同步。
+- 测试：fast_ir_contract +6（穿越/绝对/反斜杠/zoom 小数/非 vmap geo/vmap axis）；fast_report_spec 列表断言更新。
+
+### 验证
+- 真引擎：test_vmap failures=0（auto=true 后 PNG 仍中国区域着色+图例）；fast 15 rc=0；scan 59 ok；基线 MD5 精确。
