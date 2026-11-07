@@ -1391,3 +1391,35 @@ backlog P3 三项（词表去重/'=' helper/fast 样板）按 P4 纪律择机；
 - **修复**：scripts/run-c-maturity-e2e.ps1:78 文案改 ASCII ' (review)'（编辑器逐字替换，非 PS -replace/Set-Content；补丁文本禁 ']' 由 template/validator.js 把关不受影响；CJK 标题文本本就来自 UTF-8 fixture/inspect.json，不经本文件）。
 - **修后复跑（全部本轮真跑）**：静态门 `STATIC SCOPE: parse 20 / ascii 20, STATIC END, failures=0`（exit 0）；fast16 16/16 PASS + FAST GATE GREEN；集成门复跑（结果见下）；golden e2e 末行 PASS 文案同步为九步口径（plan+create+validate+truth-grid+preview+modify+promote+restore+baseline-restore——上轮已接 promote/restore 两步但末行文案仍写旧四步，顺带纠正）。
 - **诚实边界**：C 段 e2e 未因本次文案修改重跑全链（核对者明示勿动已绿部分；改动=字符串字面量交换，文件经静态门 parse 20 件覆盖语法验证；上一轮 GREEN 跑的是 '（复审）' 字面量，行为差异仅补丁文本内容，链路断言不依赖具体文案）。
+
+## 2026-11-07 08:05（阶段3 第一阶段：修改部署安全收口——promote/restore fail-closed 全链 + 30例回归矩阵）
+
+### 工作目标
+基线 36bd152。评审规范 A-F 全部反例先行：A promote 安全 / B restore 安全 / C 文件原子替换 / D 回归矩阵≥12例（全失败路径）/ E 约束（Runtime 冻结等）/ F 验收（fast+静态+负向+真引擎 E2E+版本冲突实证+三态留痕）。
+
+### 反例先行（D 项，RED→GREEN 全程）
+- 先写 `scripts/run-promote-restore-tests.ps1`（全沙箱：FR_AGENT_HOME/FR_HOME/FR_AGENT_RUNTIME_DIR/FR_AGENT_MUTEX 四 env 重定向；真实部署目录清单[302 文件+逐文件 MD5]篡改证据前后比对）。
+- **首轮对旧实现 24 红**（旧 promote：`if ($mf.execution -and ...)` 缺失即跳过、datasetChecks null 静默放行、Copy-Item -Force、仅 MD5、无 sourceHash/promotedHash；旧 restore：无 promote 记录校验、无 DEPLOYED_CHANGED、无 staging 原件哈希闸）。守卫面全部命中后实现，复跑 30/30 GREEN。
+- 过程中实证两个坑并写进代码注释：①PS5.1 方法绑定把字面 `$null` 转成 `""` 传给 File.Replace → 「路径的形式不合法」，改 `[NullString]::Value`（探针实证 null-arg THREW / nullstring-arg OK）；②嵌套 JSON `[]` 经 ConvertTo/From-Json 往返稳定为空数组非 null（探针实证），`$null -eq` 判缺失可靠。
+
+### 实施（A/B/C 项）
+- `agent/tools/_deploy.ps1` 新建（与 _identity.ps1 同层函数库，无新基础设施）：Get-FileSha256（.NET SHA256，缺/不可读返 null→调用方 fail-closed）+ Replace-FileAtomic（同卷 `._deploy_<guid>.tmp` + File.Replace 原子替换；任何异常=目标件字节不动；**无 Move/Copy -Force 回退**，FS 不支持时明确失败+诊断）。
+- `template/patch_main.js`：manifest 增 `sourceHash`（modify 时点部署件 SHA-256，大写 hex，MessageDigest）+ `datasetOps`。
+- `agent/tools/fr_agent.ps1` promote：fail-closed 链 patch.json ok→manifest→diffClean 严格 true→**execution/render 存在且 pass==true**→**datasetChecks 存在**（每项 pass；datasetOps>0 时条数≥datasetOps）→staged 在本 run staging 内+.cpt→磁盘 manifest.json 与内嵌一致（MANIFEST_MISMATCH）→sourceCpt 三处一致+白名单→**SHA-256(部署件)==manifest.sourceHash 否则 SOURCE_CHANGED**→.orig.cpt 存在且哈希==sourceHash→原子替换→换后复核→记 sourceHash/origHash/deployedHash/promotedHash/deployedBeforeHash。
+- restore：本 run patch.json（RESTORE_NO_PATCH）→**本 run 成功 promote.json 且带 deployedHash+origHash**（RESTORE_NO_PROMOTE）→.orig.cpt 哈希==promote 时 origHash（STAGING_ORIG_CHANGED）→**SHA-256(部署件)==promote 时 deployedHash 否则 DEPLOYED_CHANGED**→原子替换→换后==orig 哈希→记 origHash/restoredHash/deployedBeforeHash。守卫全部先于换件，拒绝绝不触碰部署文件。
+- 文档：agent-tools.md 阶段3 节（fail-closed 链全文+_deploy.ps1 说明+矩阵口径）。
+
+### 门禁与验收（全部本轮真跑）
+- **矩阵 30/30 PASS**（反例先行：首轮 24 红）。覆盖：P1 正常 promote / P2 execution 缺失 / P3 render 缺失 / P4 datasetChecks 缺失 / P5 dataset 项失败 / P6 staged 缺失 / P7 staged 在 staging 外 / P8 sourceCpt 不一致 / P9 越白名单 / P10 SOURCE_CHANGED（外部改动） / P11 SOURCE_HASH_MISSING / P12 diffClean=false / P13 patch.json ok=false / P14 orig 缺失 / P15 磁盘 manifest 不一致 / P16 锁定目标原子替换失败保留原文件（NTFS FileShare 注入，无代码钩子）/ R1 正常 restore / R2 未 promote 就 restore / R3 DEPLOYED_CHANGED / R4 staging 篡改 / R5 二次 restore 拒（r22e 单次注册语义，stdout RUNID_EXISTS 断言）/ R6 promote 后 staging 丢失=中途失败恢复面 / R7 无 patch.json / X1-X4 原子替换单元+静态接线断言。≥12 例要求达成（30 例）。
+- 静态门 STATIC END failures=0（22 件 parse+ASCII，含新 _deploy.ps1/matrix）；fast16 FAST GATE GREEN；scan ok=61 bad=0 skipped=1；集成门 GREEN（STATIC 0/MATRIX 30/INTEGRATION failures=0 skips=0，矩阵已接入 run-integration-tests.ps1）；引擎负门 ENGINE NEG GATE GREEN（无假绿+默认基线完好）。
+- **真引擎 E2E：GOLDEN E2E PASS**（runId=ge20261107075805-e6d427，plan+create+validate+truth-grid 33531:26531+preview+modify+promote+restore+baseline-restore）。真 run 哈希链直证：manifest.sourceHash=6E86EA88…＝promote.origHash＝restore.restoredHash＝**restore 后部署件当前 SHA-256**（字节级往返）；promote.deployedHash=promotedHash=8B5EF0DC…=restore.deployedBeforeHash。
+- **真实部署件版本冲突实证**（logs/_conflict_probe.ps1，已清理）：golden run 真实 staging + 外部改写部署件 → promote exit 1 / SOURCE_CHANGED 明确诊断 / 拒绝不触碰部署文件（外部字节保留）/ 可逆还原 SHA-256 字节级一致。
+- 基线：demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F 本轮直证。
+
+### 约束自查（E 项）
+Runtime 生产代码零改动（git diff 仅 fr_agent.ps1/patch_main.js/_deploy.ps1 新建/matrix/集成门接线/文档）；无 DB/队列/分布式锁/OwnerToken；patch 引擎只加 manifest 字段未改引擎行为；无新架构层（_deploy.ps1=tools 同层函数库）；复用 Mutex/SHA-256/.NET/staging/manifest；创建报表字节基线未动。
+
+### 三态报告
+- PASS：上述全部（矩阵 30 例/静态门/fast16/scan/集成门/引擎负门/golden e2e/版本冲突实证/基线直证）。
+- NOT RUN：C 段 maturity e2e 未因本轮改动重跑（其 promote 步骤在新守卫下需 manifest.sourceHash——新 modify 必产；本轮 golden e2e 已覆盖同链路真执行）；MULTISHEET E2E 未重跑（未触碰多 Sheet 面）。
+- BLOCKED：无。

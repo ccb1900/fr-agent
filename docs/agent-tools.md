@@ -119,11 +119,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 | list_reports | — | list_reports.json（部署目录 .cpt 清单：名称/字节/mtime/伴随 PNG/PDF + sourceCpt 相对名） | 否 |
 | sample_data | -Sample <spec JSON> | sample.json（只读 LIMIT 采样：{entity, columns?, limit?≤200, where?}；entity/columns 模型白名单，op/值面受控字面量） | 否（plain JVM + WEB-INF/lib 驱动 classpath） |
 | inspect_template | -Target fineagent/<名>.cpt | inspect.json（sheet 尺寸+逐格文本真实坐标+XML 侧数据集/参数名——modify 打通的前置体检；只读，不 export） | 是（引擎读 cpt） |
-| promote | （同 runId） | promote.json（把 staging 里回归全绿的补丁件就地部署到 sourceCpt；MD5 复核；diffClean/execution/render/datasetChecks 任一失败即拒=fail-closed） | 是 |
-| restore | （同 runId） | restore.json（用同 run staging 的 .orig.cpt 覆盖回部署面=撤销 promote；MD5 复核） | 是 |
+| promote | （同 runId） | promote.json（把 staging 里回归全绿的补丁件原子部署到 sourceCpt；SHA-256 全链复核；缺失即拒=fail-closed，见阶段3节） | 是 |
+| restore | （同 runId） | restore.json（用同 run staging 的 .orig.cpt 原子回退部署面=撤销 promote；SHA-256 全链复核，见阶段3节） | 是 |
 
 **modify→promote→restore 闭环**：modify 只写 staging（原件 .orig.cpt 自动保留）→ promote 才真正替换部署报表（fail-closed 于回归全绿）→ restore 一键回退。promote/restore 都要求**同一 runId**（staging 按 run 隔离）。
 
 **退出码一致（B段裁决规则）**：`resolve` 与 `plan` 同规——exit 0 = 产出可向前走的答案（resolve: resolved|ambiguous；plan: ready）；exit 1 = 失败（resolve: unknown；plan: ambiguous/rejected）；exit 2 = 用法错误。合同行 `ok` 字段与退出码同步。
 
 **错误面 nextActions 约定**：所有 verb 的失败输出（合同行或产物 JSON）带 `nextActions`（下一步可执行动作）；名单类拒绝（实体/属性/verb 不存在）附**可用名单**（如 unknown entity → available entities: …）。
+
+## 阶段3 A/B/C（2026-11-07）：修改部署安全收口（promote/restore fail-closed 全链）
+
+modify 端（template/patch_main.js）：manifest 新增 `sourceHash`（modify 时点部署件 SHA-256，大写十六进制，java.security.MessageDigest）与 `datasetOps`（replace_dataset op 数）。promote/restore 端（agent/tools/fr_agent.ps1 + agent/tools/_deploy.ps1 共享函数）：
+
+**promote fail-closed 链（缺失=拒，绝不跳过）**：patch.json ok==true → manifest 存在 → diffClean 严格 true → **execution/render 块必须存在且 pass==true** → **datasetChecks 必须存在**（每项 pass==true；datasetOps>0 时条数 ≥ datasetOps）→ staged 补丁件存在且位于本 run staging 目录内且 .cpt 后缀 → staging 磁盘 manifest.json 与 patch.json 内嵌 manifest 逐字段一致（MANIFEST_MISMATCH）→ sourceCpt 三处一致（patch.json→PatchSpec vs manifest，白名单闸）→ 部署件存在 → **SHA-256(部署件)==manifest.sourceHash，否则 SOURCE_CHANGED 拒绝**（外部改动绝不覆盖）→ staging .orig.cpt 存在且哈希==sourceHash → **同卷临时件 + File.Replace 原子替换**（失败保留原文件+明确诊断，无 Copy-Item -Force 无条件覆盖）→ 换后 SHA-256 复核 → promote.json 记 `sourceHash/origHash/deployedHash/promotedHash/deployedBeforeHash`。
+
+**restore fail-closed 链**：本 run patch.json（RESTORE_NO_PATCH）→ **本 run 成功 promote.json 且带 deployedHash+origHash**（RESTORE_NO_PROMOTE；未 promote 的 run 无回退资格）→ staging .orig.cpt 存在且哈希==promote 时 origHash（STAGING_ORIG_CHANGED）→ 部署件存在且 **SHA-256==promote 时 deployedHash，否则 DEPLOYED_CHANGED 拒绝**（promote 后被外部改动不回退覆盖）→ 原子替换 → 换后 SHA-256==orig 哈希 → restore.json 记 `origHash/restoredHash/deployedBeforeHash`。任一拒绝不触碰部署文件（守卫全部先于换件执行）。
+
+**共享件 agent/tools/_deploy.ps1**（与 _identity.ps1 同层函数库，无新基础设施）：`Get-FileSha256`（.NET SHA256，缺/不可读返 null 由调用方 fail-closed）；`Replace-FileAtomic`（同卷 `._deploy_<guid>.tmp` + `[IO.File]::Replace(tmp,target,[NullString]::Value)`——PS5.1 方法绑定把字面 $null 转 "" 会炸「路径形式不合法」，探针实证后用 NullString；任何异常=目标件字节不动，**无 Move/Copy -Force 回退**，文件系统不支持原子替换时明确失败=拒绝部署+诊断，恢复策略=排除原因后重跑 promote/restore）。
+
+**验收**：`scripts/run-promote-restore-tests.ps1` 回归矩阵 30 例全 PASS（反例先行：首轮对旧实现 24 红），已接入 `scripts/run-integration-tests.ps1`（静态门后、引擎场景前）。矩阵含全部失败路径：execution/render/datasetChecks 缺失、dataset 项失败、staged 缺失/staging 外/非 .cpt、磁盘 manifest 不一致、sourceCpt 不一致/越白名单、SOURCE_CHANGED、SOURCE_HASH_MISSING、orig 缺失、diffClean=false、patch.json ok=false、锁定目标原子替换失败保留原文件（NTFS FileShare 注入，无代码钩子）、未 promote 就 restore、DEPLOYED_CHANGED、staging 篡改、二次 restore 拒、promote 后 staging 丢失（中途失败恢复面）、正常 promote/restore 锚例 + 原子替换单元 2 例 + 静态接线断言 4 例；全程真实部署目录清单（302 文件+MD5）篡改证据比对=零改动。

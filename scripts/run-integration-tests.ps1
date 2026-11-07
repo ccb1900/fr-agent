@@ -10,6 +10,12 @@ Write-Output "== static check"
 & "$ROOT\verify\check_ps1_static.ps1"
 if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "STATIC GATE FAIL" }
 
+# Phase-3 deploy-safety regression matrix (promote/restore guard chain; engine-free, fully sandboxed -
+# never writes the real deployed reportlets dir; tamper evidence asserted inside).
+Write-Output "== promote/restore deploy-safety matrix"
+& "$ROOT\scripts\run-promote-restore-tests.ps1"
+if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "PROMOTE-RESTORE MATRIX FAIL" }
+
 Write-Output "== runtime supervisor integration (current scenario set S1..S28, full chain)"
 & "$ROOT\verify\integration_runtime.ps1"
 if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "INTEGRATION GATE FAIL" }

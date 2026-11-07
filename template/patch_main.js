@@ -20,6 +20,18 @@ var staging = genv('TEMPLATE_STAGING', R + '/logs/template_staging');
 var force = genv('TEMPLATE_FORCE', '') === '1';
 Files.createDirectories(Pth.get(staging));
 
+// Phase-3 spec A: SHA-256 (uppercase hex) of the deployed source file AT MODIFY TIME -> manifest.sourceHash.
+//   promote re-hashes the deployed file and refuses (SOURCE_CHANGED) on any external change between modify
+//   and promote; restore grounds its verification on the same chain (origHash / deployedHash recorded by promote).
+//   Same algorithm/format as agent/tools/_deploy.ps1 Get-FileSha256 (System.BitConverter hex, no dashes).
+function sha256File(p) {
+  var md = J('java.security.MessageDigest').getInstance('SHA-256');
+  var dg = md.digest(Files.readAllBytes(Pth.get(p)));
+  var s = '';
+  for (var i = 0; i < dg.length; i++) { var b = dg[i] & 0xff; s += (b < 16 ? '0' : '') + java.lang.Integer.toHexString(b); }
+  return s.toUpperCase();
+}
+
 var FAIL = 0;
 function fail(m) { print('PATCH REJECT: ' + m); FAIL = 1; }
 try {
@@ -29,6 +41,7 @@ try {
 
   var srcAbs = Paths.frWebInf() + '/reportlets/' + patch.sourceCpt;   // reportlets 相对 → 绝对读盘（守卫 + copy）
   if (!Files.exists(Pth.get(srcAbs))) throw new Error('源件不存在: ' + patch.sourceCpt);
+  var srcHash = sha256File(srcAbs);   // Phase-3 spec A：modify 时点的部署件 SHA-256（promote 的 SOURCE_CHANGED 基准）
   var srcXml = readUtf(srcAbs);
   var ns = TemplateDiff.namedStyles(srcXml);
   if (ns > 0 && !force) throw new Error('源件含命名样式(' + ns + ' 处 style_name=)，readTemplateWorkBook 会默认化→未改部分受损(README:103)；拒绝，除非 TEMPLATE_FORCE=1');
@@ -165,7 +178,7 @@ try {
   print('PATCH OK source=' + patch.sourceCpt + ' out=' + outAbs + ' ops=' + patch.ops.length + ' namedStyle=' + ns);
   print('  diff clean(未改部分不变)=' + d.clean + '  added=' + JSON.stringify(d.added) + ' removed=' + JSON.stringify(d.removed));
   if (!d.clean) { print('  UNINTENDED: ' + JSON.stringify(d.unintended)); FAIL = 1; }
-  var manifest = { sourceCpt: patch.sourceCpt, out: outAbs, ops: patch.ops.length, namedStyles: ns, diffClean: d.clean, added: d.added, removed: d.removed, structDelta: d.structDelta, execution: ev, render: rv, pixelStats: stats, datasetChecks: dsChecks };
+  var manifest = { sourceCpt: patch.sourceCpt, out: outAbs, ops: patch.ops.length, namedStyles: ns, diffClean: d.clean, added: d.added, removed: d.removed, structDelta: d.structDelta, execution: ev, render: rv, pixelStats: stats, datasetChecks: dsChecks, datasetOps: datasetOps.length, sourceHash: srcHash };
   Files.write(Pth.get(staging + '/manifest.json'), J('java.lang.String').valueOf(JSON.stringify(manifest, null, 1)).getBytes('UTF-8'));
 } catch (e) {
   fail('' + e);

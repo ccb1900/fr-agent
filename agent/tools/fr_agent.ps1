@@ -29,6 +29,7 @@ param(
 )
 $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot 'config.ps1')
+. (Join-Path $PSScriptRoot '_deploy.ps1')   # Phase-3: Get-FileSha256 + Replace-FileAtomic (promote/restore deploy-safety)
 $cfg = Get-AgentConfig
 $ROOT = $cfg.Root
 $FR = $cfg.FrHome
@@ -342,38 +343,84 @@ switch ($inner) {
     exit $(if ($okAll) { 0 } else { 1 })
   }
   'promote' {
-    # Phase-2 B-sect: deploy a verified patched cpt from this run's staging onto the deployed source
-    # (in-place). Fail-closed: manifest must exist and every regression must pass. Engine-mutex (deployed
-    # artifact state change; no JVM boot inside the body).
+    # Phase-3 spec A: deploy a verified patched cpt from this run's staging onto the deployed source.
+    # Fail-closed chain (missing = refuse, never skip): patch.json ok==true -> manifest -> diffClean strictly
+    # true -> execution/render blocks PRESENT and pass==true -> datasetChecks PRESENT, every entry pass==true
+    # (count >= datasetOps when the patch carried dataset ops) -> staged file exists INSIDE this run's staging
+    # dir -> disk manifest.json agrees with the embedded manifest (MANIFEST_MISMATCH) -> sourceCpt three-way
+    # consistent (patch.json->PatchSpec vs manifest, whitelist) -> deployed file exists -> SHA-256(deployed)
+    # == manifest.sourceHash (else SOURCE_CHANGED: deployed artifact changed since modify) -> staged
+    # .orig.cpt present and matching sourceHash (staging grounds for restore) -> ATOMIC swap (same-volume
+    # temp + File.Replace, original preserved on failure) -> post-swap SHA-256 verify -> promote.json records
+    # sourceHash/origHash/deployedHash/promotedHash (restore's guard chain). Engine-mutex (deployed-state
+    # change; no JVM boot inside the body).
     $body = {
       $rcP = 0
-      $err = $null
+      $deployedHashNow = $null
       try {
+        if (-not (Test-Path "$runDir\patch.json")) { throw 'PROMOTE_NO_PATCH: patch.json missing (run -Verb modify first)' }
         $pj = [System.IO.File]::ReadAllText("$runDir\patch.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json
         if ($pj.ok -ne $true) { throw 'patch.json ok!=true (modify must succeed first)' }
         $mf = $pj.manifest
         if (-not $mf) { throw 'patch.json has no manifest' }
         if ($mf.diffClean -ne $true) { throw ('refusing to promote: diffClean=' + $mf.diffClean) }
-        if ($mf.execution -and $mf.execution.pass -ne $true) { throw ('refusing to promote: execution regression failed (' + $mf.execution.reason + ')') }
-        if ($mf.render -and $mf.render.pass -ne $true) { throw ('refusing to promote: render regression failed (' + $mf.render.reason + ')') }
-        foreach ($dc in @($mf.datasetChecks)) { if ($dc -and $dc.pass -ne $true) { throw ('refusing to promote: dataset regression failed (' + $dc.where + ': ' + $dc.reason + ')') } }
+        if (-not $mf.execution) { throw 'refusing to promote: execution regression MISSING (fail-closed)' }
+        if ($mf.execution.pass -ne $true) { throw ('refusing to promote: execution regression failed (' + $mf.execution.reason + ')') }
+        if (-not $mf.render) { throw 'refusing to promote: render regression MISSING (fail-closed)' }
+        if ($mf.render.pass -ne $true) { throw ('refusing to promote: render regression failed (' + $mf.render.reason + ')') }
+        if ($null -eq $mf.datasetChecks) { throw 'refusing to promote: datasetChecks MISSING (fail-closed)' }
+        $dcs = @($mf.datasetChecks)
+        if ($mf.datasetOps -and ($mf.datasetOps -gt 0) -and ($dcs.Count -lt $mf.datasetOps)) { throw ('refusing to promote: datasetChecks count ' + $dcs.Count + ' < datasetOps ' + $mf.datasetOps + ' (fail-closed)') }
+        foreach ($dc in $dcs) { if (-not $dc -or ($dc.pass -ne $true)) { throw ('refusing to promote: dataset regression failed (' + $dc.where + ': ' + $dc.reason + ')') } }
         $staged = $mf.out
-        if (-not (Test-Path $staged)) { throw "staged patched cpt missing: $staged" }
+        if (-not $staged) { throw 'manifest missing out (staged file path)' }
+        if (-not $pj.stagingDir) { throw 'patch.json missing stagingDir' }
+        if (-not (Test-Path $staged -PathType Leaf)) { throw "staged patched cpt missing: $staged" }
+        $stagedFull = [System.IO.Path]::GetFullPath($staged)
+        $stgFull = [System.IO.Path]::GetFullPath($pj.stagingDir)
+        if (-not $stgFull.EndsWith('\')) { $stgFull += '\' }
+        if (-not $stagedFull.StartsWith($stgFull, [System.StringComparison]::OrdinalIgnoreCase)) { throw "refusing to promote: staged file outside this run's staging dir: $staged" }
+        if (-not $stagedFull.EndsWith('.cpt', [System.StringComparison]::OrdinalIgnoreCase)) { throw "refusing to promote: staged file is not a .cpt: $staged" }
+        # disk manifest.json must agree with the manifest embedded in patch.json (tamper/swap guard)
+        $mfDiskPath = Join-Path $pj.stagingDir 'manifest.json'
+        if (-not (Test-Path $mfDiskPath -PathType Leaf)) { throw "refusing to promote: staging manifest.json missing: $mfDiskPath" }
+        $mfDisk = [System.IO.File]::ReadAllText($mfDiskPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+        if (-not $mfDisk) { throw 'refusing to promote: staging manifest.json unreadable (fail-closed)' }
+        if (([string]$mfDisk.sourceCpt -ne [string]$mf.sourceCpt) -or ([string]$mfDisk.out -ne [string]$mf.out) -or ($mfDisk.diffClean -ne $true) -or ([string]$mfDisk.sourceHash -ne [string]$mf.sourceHash)) { throw 'refusing to promote: MANIFEST_MISMATCH (staging manifest.json disagrees with patch.json manifest)' }
         if (-not $pj.patch) { throw 'patch.json missing patch path (source identity)' }
         $patchSpec = [System.IO.File]::ReadAllText((Join-Path $ROOT $pj.patch), [System.Text.Encoding]::UTF8) | ConvertFrom-Json
         $srcRel = $patchSpec.sourceCpt
+        if (-not $srcRel) { throw 'refusing to promote: PatchSpec missing sourceCpt' }
         if ($srcRel -notmatch '^fineagent/[^\\/]+' -or $srcRel -like '*..*') { throw "sourceCpt outside whitelist: $srcRel" }
+        if (-not $mf.sourceCpt) { throw 'refusing to promote: manifest missing sourceCpt (fail-closed)' }
+        if ([string]$mf.sourceCpt -ne [string]$srcRel) { throw "refusing to promote: sourceCpt mismatch (patch.json/PatchSpec '$srcRel' vs manifest '$($mf.sourceCpt)')" }
         $deployed = Join-Path $cfg.DeployDir ($srcRel -replace '^fineagent/', '')
-        if (-not (Test-Path $deployed)) { throw "deployed source missing: $deployed" }
-        Copy-Item -Force $staged $deployed
-        $h1 = (Get-FileHash $staged -Algorithm MD5).Hash
-        $h2 = (Get-FileHash $deployed -Algorithm MD5).Hash
-        if ($h1 -ne $h2) { throw 'post-copy hash mismatch (deploy failed, deployed artifact left as patched copy - run restore)' }
-        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $true; staged = $staged; deployed = $deployed; bytes = (Get-Item $deployed).Length; md5 = $h1 }
+        if (-not (Test-Path $deployed -PathType Leaf)) { throw "deployed source missing: $deployed" }
+        # version guard: the deployed file must be byte-identical to what modify saw (manifest.sourceHash)
+        if (-not $mf.sourceHash) { throw 'refusing to promote: SOURCE_HASH_MISSING (manifest carries no modify-time hash; re-run -Verb modify)' }
+        $deployedHashNow = Get-FileSha256 $deployed
+        if (-not $deployedHashNow) { throw "refusing to promote: cannot read deployed file for hashing: $deployed" }
+        if ($deployedHashNow -ne [string]$mf.sourceHash) { throw ('SOURCE_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. != modify-time sourceHash ' + ([string]$mf.sourceHash).Substring(0, 12) + '.. (deployed artifact changed since modify; re-run modify on the current deployed state; refusing to overwrite)') }
+        # staging grounds for restore: .orig.cpt present, byte-identical to the modify-time source
+        $origPath = Join-Path $pj.stagingDir ((Split-Path -Leaf $srcRel) -replace '\.cpt$', '.orig.cpt')
+        if (-not (Test-Path $origPath -PathType Leaf)) { throw "staged original missing: $origPath (modify keeps it automatically)" }
+        $origHash = Get-FileSha256 $origPath
+        if (-not $origHash) { throw "refusing to promote: cannot read staged original: $origPath" }
+        if ($origHash -ne [string]$mf.sourceHash) { throw 'refusing to promote: staged .orig.cpt hash != modify-time sourceHash (staging original tampered/mismatched)' }
+        $stagedHash = Get-FileSha256 $staged
+        if (-not $stagedHash) { throw "refusing to promote: cannot read staged patched file: $staged" }
+        # ATOMIC deploy: same-volume temp + File.Replace; on ANY failure the deployed file is left untouched
+        Replace-FileAtomic $staged $deployed | Out-Null
+        $deployedHash = Get-FileSha256 $deployed
+        if (-not $deployedHash) { throw 'post-replace hash mismatch: cannot hash the deployed file after the swap' }
+        if ($deployedHash -ne $stagedHash) { throw 'post-replace hash mismatch (deployed artifact may be corrupted; run restore with this runId)' }
+        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $true; staged = $staged; deployed = $deployed; orig = $origPath; bytes = (Get-Item $deployed).Length; md5 = (Get-FileHash $deployed -Algorithm MD5).Hash
+          sourceHash = [string]$mf.sourceHash; origHash = $origHash; deployedHash = $deployedHash; promotedHash = $deployedHash; deployedBeforeHash = $deployedHashNow; promoteAt = (Get-Date).ToString('o') }
         WriteAtomic "$runDir\promote.json" ($obj | ConvertTo-Json -Depth 4)
       } catch {
-        $rcP = 1; $err = $_.Exception.Message
-        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $false; error = $err; nextActions = @('re-run -Verb modify and require ok=true before promote', 'inspect -Verb inspect_template -Target <sourceCpt> for real cell coordinates') }
+        $rcP = 1
+        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $false; error = $_.Exception.Message; deployedHashAtFail = $deployedHashNow
+          nextActions = @('re-run -Verb modify (new RunId) on the current deployed state and require ok=true before promote', 'inspect -Verb inspect_template -Target <sourceCpt> for real cell coordinates') }
         WriteAtomic "$runDir\promote.json" ($obj | ConvertTo-Json -Depth 4)
       }
       @{ rc = $rcP }
@@ -389,30 +436,54 @@ switch ($inner) {
     exit $(if ($okAll) { 0 } else { 1 })
   }
   'restore' {
-    # Phase-2 B-sect: undo a promote - copy the run's staged .orig.cpt back over the deployed source.
-    # Fail-closed: needs this run's patch.json + staging .orig.cpt; hash-verified after copy.
+    # Phase-3 spec B: undo a promote - put this run's staged .orig.cpt back over the deployed source.
+    # Fail-closed chain: patch.json PRESENT (RESTORE_NO_PATCH) -> a SUCCESSFUL promote.json for THIS runId
+    # carrying deployedHash+origHash (RESTORE_NO_PROMOTE: restore only undoes its own successful promote)
+    # -> staged .orig.cpt present and hash-equal to promote-time origHash (STAGING_ORIG_CHANGED)
+    # -> deployed file present and hash-equal to promote-time deployedHash (else DEPLOYED_CHANGED: the
+    # deployed artifact changed after promote - restoring would clobber it) -> ATOMIC swap (original
+    # preserved on failure) -> post-swap SHA-256 verify vs the original -> restore.json records the hash
+    # chain. A refusal NEVER touches the deployed file (guards all run before the swap).
     $body = {
       $rcP = 0
+      $deployedHashNow = $null
       try {
+        if (-not (Test-Path "$runDir\patch.json")) { throw 'RESTORE_NO_PATCH: patch.json missing in this run (restore undoes THIS run modify)' }
         $pj = [System.IO.File]::ReadAllText("$runDir\patch.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json
         if (-not $pj.patch) { throw 'patch.json missing patch path (source identity)' }
+        $prPath = "$runDir\promote.json"
+        if (-not (Test-Path $prPath)) { throw 'RESTORE_NO_PROMOTE: no promote.json in this run (restore only undoes a SUCCESSFUL promote of the SAME runId)' }
+        $pr = [System.IO.File]::ReadAllText($prPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
+        if ($pr.ok -ne $true) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok!=true (promote failed or was refused)' }
+        if (-not $pr.deployedHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no deployedHash (promote predates the guard; re-run modify+promote with a new RunId)' }
+        if (-not $pr.origHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no origHash (promote predates the guard; re-run modify+promote with a new RunId)' }
         $patchSpec = [System.IO.File]::ReadAllText((Join-Path $ROOT $pj.patch), [System.Text.Encoding]::UTF8) | ConvertFrom-Json
         $srcRel = $patchSpec.sourceCpt
+        if (-not $srcRel) { throw 'RESTORE_NO_PATCH: PatchSpec missing sourceCpt' }
         if ($srcRel -notmatch '^fineagent/[^\\/]+' -or $srcRel -like '*..*') { throw "sourceCpt outside whitelist: $srcRel" }
         $base = Split-Path -Leaf $srcRel
         $orig = Join-Path $pj.stagingDir ($base -replace '\.cpt$', '.orig.cpt')
-        if (-not (Test-Path $orig)) { throw "staged original missing: $orig (modify keeps it automatically)" }
+        if (-not (Test-Path $orig -PathType Leaf)) { throw "staged original missing: $orig (modify keeps it automatically)" }
+        $origHashNow = Get-FileSha256 $orig
+        if (-not $origHashNow) { throw "cannot read staged original: $orig" }
+        if ($origHashNow -ne [string]$pr.origHash) { throw ('STAGING_ORIG_CHANGED: staged original hash ' + $origHashNow.Substring(0, 12) + '.. != promote-time origHash ' + ([string]$pr.origHash).Substring(0, 12) + '.. (staging was modified after promote; refusing)') }
         $deployed = Join-Path $cfg.DeployDir ($srcRel -replace '^fineagent/', '')
-        if (-not (Test-Path $deployed)) { throw "deployed source missing: $deployed" }
-        Copy-Item -Force $orig $deployed
-        $h1 = (Get-FileHash $orig -Algorithm MD5).Hash
-        $h2 = (Get-FileHash $deployed -Algorithm MD5).Hash
-        if ($h1 -ne $h2) { throw 'post-copy hash mismatch' }
-        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $true; orig = $orig; deployed = $deployed; bytes = (Get-Item $deployed).Length; md5 = $h1 }
+        if (-not (Test-Path $deployed -PathType Leaf)) { throw "deployed source missing: $deployed" }
+        $deployedHashNow = Get-FileSha256 $deployed
+        if (-not $deployedHashNow) { throw "cannot read deployed file for hashing: $deployed" }
+        if ($deployedHashNow -ne [string]$pr.deployedHash) { throw ('DEPLOYED_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. != promote-time deployedHash ' + ([string]$pr.deployedHash).Substring(0, 12) + '.. (deployed artifact changed after promote; restoring would clobber it; refusing)') }
+        # ATOMIC restore: same-volume temp + File.Replace; on ANY failure the deployed file is left untouched
+        Replace-FileAtomic $orig $deployed | Out-Null
+        $restoredHash = Get-FileSha256 $deployed
+        if (-not $restoredHash) { throw 'post-replace hash mismatch: cannot hash the deployed file after the swap' }
+        if ($restoredHash -ne $origHashNow) { throw 'post-replace hash mismatch (restored file may be corrupted; inspect manually and re-promote from staging)' }
+        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $true; orig = $orig; deployed = $deployed; bytes = (Get-Item $deployed).Length; md5 = (Get-FileHash $deployed -Algorithm MD5).Hash
+          origHash = $origHashNow; restoredHash = $restoredHash; deployedBeforeHash = $deployedHashNow; restoreAt = (Get-Date).ToString('o') }
         WriteAtomic "$runDir\restore.json" ($obj | ConvertTo-Json -Depth 4)
       } catch {
         $rcP = 1
-        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $false; error = $_.Exception.Message; nextActions = @('restore needs the SAME runId that ran modify (staging .orig.cpt lives per-run)', 'check logs/agent/runs/<runId>/staging for the kept original') }
+        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $false; error = $_.Exception.Message; deployedHashAtFail = $deployedHashNow
+          nextActions = @('restore needs the SAME runId that ran modify AND a successful promote (staging .orig.cpt lives per-run)', 'check logs/agent/runs/<runId>/staging for the kept original and logs/agent/runs/<runId>/promote.json for the recorded hashes') }
         WriteAtomic "$runDir\restore.json" ($obj | ConvertTo-Json -Depth 4)
       }
       @{ rc = $rcP }
