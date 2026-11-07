@@ -439,7 +439,7 @@ function msSpec(mut) {
 check('多Sheet extraSheets 零误报', errsOf(msSpec()).length === 0);
 check('多Sheet 重名拒（占 sheet1）', codeAt(msSpec(function (rs) { rs.extraSheets[0].name = 'sheet1'; }), 'DUPLICATE', 'extraSheets[0].name'));
 check('多Sheet 重名拒（两项同名）', codeAt(msSpec(function (rs) { rs.extraSheets.push(JSON.parse(JSON.stringify(rs.extraSheets[0]))); }), 'DUPLICATE', 'extraSheets[1].name'));
-check('多Sheet sql 数据集拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].dataset = { kind: 'sql', entity: 'E', connection: 'C', dimensions: ['d'] }; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].dataset.kind'));
+check('多Sheet SQL extra 零误报（2026-11-07 放开）', errsOf(msSpec(function (rs) { rs.extraSheets[0].dataset = { kind: 'sql', entity: 'E', connection: 'C', dimensions: ['d'] }; })).length === 0);
 check('多Sheet 内部未知键拒（路径带前缀）', codeAt(msSpec(function (rs) { rs.extraSheets[0].presentation.magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].presentation.magic'));
 check('多Sheet extra sheet 未知键拒', codeAt(msSpec(function (rs) { rs.extraSheets[0].magic = 1; }), 'UNSUPPORTED_CAPABILITY', 'extraSheets[0].magic'));
 (function () {

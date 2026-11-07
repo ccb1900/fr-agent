@@ -1,0 +1,60 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "多Sheet SQL extra"
+  },
+  "outName": "能力自检_多sheet_sqlextra",
+  "dimensions": [
+    {
+      "field": "line",
+      "label": "生产线",
+      "widthPt": 160
+    }
+  ],
+  "metrics": [
+    {
+      "field": "planned",
+      "label": "计划",
+      "aggregation": "sum",
+      "dataType": "number",
+      "widthPt": 120,
+      "format": "#,##0"
+    }
+  ],
+  "dataset": {
+    "rows": [
+      [
+        "A线",
+        80
+      ],
+      [
+        "B线",
+        40
+      ]
+    ]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true
+  },
+  "extraSheets": [
+    {
+      "name": "SQL明细",
+      "dataset": {
+        "kind": "sql",
+        "connection": "ATOM_LIVE",
+        "entity": "InspectionRecord",
+        "dimensions": [
+          "stage"
+        ],
+        "metrics": [
+          "planned"
+        ]
+      },
+      "presentation": {
+        "type": "table",
+        "showTotal": true
+      }
+    }
+  ]
+}

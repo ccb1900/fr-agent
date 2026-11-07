@@ -105,7 +105,13 @@ try {
       RR.fail('input_load'); stamp('SPEC VALIDATE FAILED: refusing to compile/build'); finishRun(2);
     }
     var compiledIR;
-    if (rs.dataset && rs.dataset.kind === 'sql') {
+    // 2026-11-07 多 Sheet SQL extra：任一数据集为 sql（基表或 extraSheets）都要载 model/sqlbuilder 并过 preflight
+    var sqlDsForDeps = null;
+    if (rs.dataset && rs.dataset.kind === 'sql') sqlDsForDeps = rs.dataset;
+    else if (Object.prototype.toString.call(rs.extraSheets) === '[object Array]') {
+      rs.extraSheets.forEach(function (ex) { if (!sqlDsForDeps && ex && ex.dataset && ex.dataset.kind === 'sql') sqlDsForDeps = ex.dataset; });
+    }
+    if (sqlDsForDeps) {
       // I5 模型驱动 SQL：载 model + sqlbuilder，编译成含 kind:sql 数据集的 cells IR；连接名→凭据本地注入
       load(Paths.lib('report_spec.js'));
       load(Paths.semantic('model/vocab.js'));   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY，前置加载
@@ -118,7 +124,7 @@ try {
       load(Paths.semantic('model/validator.js'));
       load(Paths.semantic('model/evidence.js'));   // r5/r6：证据解析/身份绑定/完整性（纯函数，本 runner 仍零连库）
       load(Paths.semantic('preflight.js'));        // r6-D：前置检查单点（指纹+回溯+证据完整性）
-      var schemaName = 'schema_' + (rs.dataset.schema || modelObj.source || 'atom_live_demo') + '.json';
+      var schemaName = 'schema_' + (sqlDsForDeps.schema || modelObj.source || 'atom_live_demo') + '.json';
       var schemaAbs = Paths.data(schemaName);
       if (!J('java.nio.file.Files').exists(J('java.nio.file.Paths').get(schemaAbs))) {
         RR.diag('SCHEMA MISSING: ' + schemaName + '（先跑 semantic/schema/inspect_main.js 生成结构快照）');
@@ -138,7 +144,7 @@ try {
       }
       var evMaxAge = parseFloat(genv('I55_EVIDENCE_MAX_AGE_DAYS', '30'));
       var pf = SemanticPreflight.run({
-        reportSpec: rs, model: modelObj, schema: schemaObj, evidenceRaw: evRaw,
+        reportSpec: (rs.dataset && rs.dataset.kind === 'sql') ? rs : (function () { var c = JSON.parse(JSON.stringify(rs)); c.dataset = sqlDsForDeps; return c; })(), model: modelObj, schema: schemaObj, evidenceRaw: evRaw,
         connection: { driver: drvC, url: urlC, user: usrC },
         nowMs: new Date().getTime(),
         maxAgeDays: isFinite(evMaxAge) ? evMaxAge : ModelEvidence.DEFAULT_MAX_AGE_DAYS
