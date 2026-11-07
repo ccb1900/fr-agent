@@ -1523,8 +1523,31 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 
 ### 三态报告
 - PASS：3.1-1（S1a/S1b/S1c/S1d）、3.1-2（S2a/S2b）、3.1-3（S3a/S3b/S3c）、3.1-4（S4a/S4b/S4c）、3.2-1（S5a/S5b/S5c/S5d）、3.2-2（S6a/S6b）、3.2-3（S7a/S7b）、3.2-4（S8a/S8b）+ 门禁 S9a/S9b/S9c/S9d/S9e/S9f/S9g1/S9g2。
-- NOT RUN：无——终验为全量模式（验证器 34 项检查在本轮提交后全量跑）。
+- NOT RUN：无——终验为全量模式（验证器 36 项检查在本轮提交后全量跑：S1a-d4+S2a-b2+S3a-d4+S4a-c3+S5a-d4+S6a-b2+S7a-b2+S8a-b2+S9×8+S10a-d4+S0）。
 - BLOCKED：S3d 真进程 kill 注入（毫秒级窗口黑盒不可确定性注入；S3b/S3c 为确定性等价注入）；S8 Handle 抛异常真注入（PS5.1 句柄时序；S8a 为结构断言并如实区分）。S10b（HEAD==origin/main）受本轮执行环境约束不 push，提交后由外层流程收口。
 
 ### 独立复审
 本轮执行者逐文件交叉复核：① promote/restore 全守卫仍先于任何部署件写路径，恢复分支不引入「先写后验」——COMMITTED 补记只发生在哈希身份证实之后，PREPARED 证据缺失时同字节态仍拒；② 恢复幂等：COMMITTED(recovered)→promote.json 重物化期间再崩 → 下次重试仍走恢复分支重物化，部署件零字节副作用；③ Compare-ManifestVerdict 对 execution/render/datasetChecks 缺失侧 fail-closed（presence 不对称即 mismatch），cosmetic 字段（pixelStats）不比较不误伤；④ fast_template 改钉三条新钉均为新合同正反对照，非放水（表头篡改/行数变化/无值池三向仍拒）；⑤ S0 白名单外零变化保持硬断言；⑥ diff.js dataset/plain 拆分后 structDelta/attrTokens 口径未动（fast_template 全钉复绿）。复审结论：本轮无未决缺陷，全部修复当场闭环；3.2-3 坐标映射作为既有研究方向继续挂在账本，不在本轮冒充收口。
+
+## 2026-11-07（阶段3 第三阶段收口：S10b 快进 push + 3.2-3 真引擎映射探针 + 人工过目缺陷入账）
+
+### 本轮动作
+
+**S10b push 收口**：上轮 4675a67/c3ebd28 两提交经审查方 git ls-remote 实证未推送（origin/main=a82e8ba1b7d…，HEAD=c3ebd2852a8…），验证器 S10b FAIL 是真红不是误报；本轮按收口要求执行一次快进 push（git push origin main，无强推、无历史改写），push 后 HEAD==origin/main。
+
+**3.2-3 真引擎探针（上轮「未定案」状态由本轮升级为「实测规律」）**：
+- 新增 probes/probe_coord_map_expand.js（runraw 引擎路径；只在内存中换数据集+执行，不写部署目录、不导出、不杀 java；ASCII-only 源码、中文全部 \uXXXX 转义杜绝编码歧义）：靶件 fineagent/生产日报S3_api.cpt（plan 链产物，ds1=EmbeddedTableData，实测 N0=10、列 bizDate/planned/done/defect 无 DB 依赖），对 ds1 快照后取前 N 行（同列同型）换入并执行，N∈{2,5,10} 共 n=3 个测量点；静态标记=表头（业务日期 r1）/总计（r3）/脚注（口径 r5），数据块锚=首个 text 列首行值。
+- 实测（PROBE PASS，rc=0）：块上静态行位移恒 0（header 1→1 全部 N）；数据块起点恒 r2；块下静态行 total 3→4/7/12（位移 +1/+4/+9）、note 5→6/9/14（+1/+4/+9）——规律=**数据块之下 grid_row = template_row + (N − k)，k=1=模板数据块行数，n=3 全一致**；N=10 的 +9 精确复现阶段3任务⑤的单点观察（模板 r3 总计→栅格 r12），该 n=1 观察升格为规律。
+- 如实边界：本件数据块为单模板行（k=1）已证；多行数据块/合并单元格/列位移未测（backlog 继续）；规律确认≠解锁——dataset 替换下执行栅格行/列数变化仍保守拒绝（S7b PASS 不变），解锁行数回归是独立变更、需先泛化到多行块并按反例先行变更。
+- S7a 留证升级：本轮新增探针文件（git --diff-filter=A 命中 coord/map 词根）+ 本条目实测数字双路留证。
+
+**人工过目基线缺陷入账（审查方 PNG 人工过目发现；均为 create 链/夹具基线期既有问题，本轮 3.1/3.2 交付面未引入新视觉缺陷——modify 渲染 pre/post 像素差 bbox=147,55-420,146、0.25% 即标题格本身）**：四项全部入 night-shift-backlog P2 清单：①plan 链产物全表无内边框+完成数/完成率相邻粘连可误读（违反 AGENTS §2 内边框红线，对照钉基线 销售明细_api.png 合格）；②C1/C2 直建链合计行计划数总计被吞（README #71 total.label span=n−1 同族，真值栅格「合计|合计|合计|424」）；③golden 总计行机台列='0'（文本列被数值聚合）；④C1 脚注文案「红底」与实际黄底不符（夹具文本自身不准确，高亮色 16638754=#FDE322 与夹具一致）。
+
+**值池单侧屏蔽加固挂账（审查方观察级发现，非红灯）**：regression.js 值池屏蔽生产路径只有新值池（patch_main 只传 datasetValues；patch.js:58 before.dataset 不带原值行）——「非数据格被改写为恰在值池内的值」单看执行回归会放行，但 diff.js plain 侧严格守恒兜底（未申报格文本变化→diffClean=false→promote 拒），defense-in-depth 成立；旧值池采集（datasetSnapshot→before.dataset.rows→datasetValuesBefore）入 backlog P3。
+
+**微瑕修正**：上轮条目「验证器 34 项检查」实为 36 项（S1a-d4+S2a-b2+S3a-d4+S4a-c3+S5a-d4+S6a-b2+S7a-b2+S8a-b2+S9×8+S10a-d4+S0），叙述笔误本轮已改。
+
+### 三态报告
+- PASS：探针 PROBE PASS（n=3 规律一致 + 任务⑤ n=1 交叉验证 CONSISTENT，rc=0）；S10b push 后转 PASS；探针文件与文档本轮 commit 后 push。
+- NOT RUN：无。
+- BLOCKED：S3d 真进程 kill 注入与 S8 Handle 真注入延续上轮口径（毫秒级窗口/PS5.1 句柄时序黑盒不可确定性注入，结构断言与确定性等价注入已 PASS）。

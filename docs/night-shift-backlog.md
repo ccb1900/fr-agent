@@ -142,3 +142,22 @@
 - 外部依赖：无。
 
 - 2026-11-07 阶段3 3.2-3 进展（本项继续开放）：中间防线已落——regression.js masked() 增加数据集值池屏蔽面（新值 ∈ PatchSpec op.rows 扁平池才视为数据区格变化，模板坐标口径不变，fast_template 3 钉钉住）；但扩展区位移映射（模板 r3 总计 → 执行栅格 r12）仍未定案，dataset 替换下执行栅格行/列数变化维持保守拒绝。验收标准不变：fast 层位移屏蔽断言 + 真引擎总计行公式修改 promote 全绿 + 拒绝行为不回归。
+
+### P2: create 链产物视觉/数据缺陷清单（2026-11-07 审查方 PNG 人工过目发现——基线既有，非 3.1/3.2 交付面引入）
+- 证据（审查方全分辨率裁剪核对+真值栅格对拍）：
+  ① plan 链产物（生产日报图C/生产日报GOLDEN）全表无内边框，完成数与完成率相邻粘连可误读成一个数（真值栅格 2854|67.34 均在，视觉可读成 285467.34）；对照钉基线 销售明细_api.png 版式完全合格有全内边框——违反 AGENTS §2「表格必须有内边框（2026-10-27 口径）」红线。
+  ② C1/C2 直建链合计行计划数总计被吞：真值栅格即「合计|合计|合计|424」「合计|合计|374」，计划数总计 470/404 不在栅格——README #71 v2 总分列须放最右同族（total.label span=n−1，两度量列时中列被吞）。
+  ③ golden 总计行机台列='0'（文本列被数值聚合，真值栅格自带该形态）。
+  ④ C1 脚注文案「计划数低于 60 的行红底高亮」与实际行为不符（实际=格级 <60 黄底；高亮色 16638754=#FDE322 与夹具一致，行为符合 README #71 引擎事实）——夹具 verify/fixtures/c_maturity/c1_params_hl.json 脚注文本自身不准确。
+- 用户影响：①粘连影响数字可读性（数据呈现正确性）；②合计行缺一个总计值（报表数据面缺项）；③④语义/文案瑕疵。
+- 修改范围：①create 链边框/列宽生成（对照 TABLE_DESIGN_STANDARD 落地检查清单）；②C1/C2 夹具 spec 总分列布局（夹具级最小改）或 totalCol 引擎面核查；③golden intent 总计行文本列聚合口径；④夹具脚注一行文本。
+- 验收标准：①渲染 PNG 全内边框+相邻数字列可分辨（像素核对）；②真值栅格含计划数总计且与 spec 数值一致；③机台列显示非 '0'；④脚注文案与实际高亮行为一致。改后 run-c-maturity-e2e 全绿+渲染 PNG 人工过目。
+- 优先级：P2（①②影响数据可读/完整性；③④文案级）。外部依赖：无（①可能涉及 create 链版式方向，按 AGENTS 一次一方向开工）。
+
+### P3: regression.js 值池屏蔽单侧加固（观察级，defense-in-depth 已兜底）
+- 证据：patch_main.js 只传 datasetValues（新值池）；TemplatePatch.apply 的 before.dataset（template/patch.js:58）只回 {name,rowCount,cols} 不带原值行——旧值池不可得，「非数据格被改写为恰在值池内的值」单看执行回归会放行。
+- 现有兜底：diff.js plain 侧严格守恒（3.2-2）使任何未申报格文本变化→diffClean=false→promote 拒——defense-in-depth 成立，非红灯。
+- 修改范围：patch.js replace_dataset 前用 datasetSnapshot 抓旧值行塞入 before.dataset.rows；patch_main 传 datasetValuesBefore。
+- 验收标准：fast_template 新钉（新值不在新池、旧值不在旧池的变化→FAIL；恰落双池的值→按既有口径屏蔽）+ 真链 replace_dataset 全绿不回归。
+
+- 2026-11-07 收口轮进展（位移映射 P2 项）：单行数据块位移规律已真引擎探针确认（probes/probe_coord_map_expand.js，n=3：块上位移 0、数据块起点恒为模板块行、块下 grid_row = template_row + (N − k)，k=1=模板数据块行数；N=10 的 +9 复现阶段3任务⑤单点观察）；多行数据块/合并单元格/列位移仍未测——解锁行数回归需先泛化规律并按反例先行变更，保守拒绝维持（S7b 不变）。
