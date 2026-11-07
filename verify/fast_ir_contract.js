@@ -511,5 +511,25 @@ check('批I hotHyperLink 缺 relateCCName 拒', codeAt(chartIR('vmap', { hotHype
 check('批I mapLabel payload 未知键拒', codeAt(chartIR('vmap', { mapLabel: { areaLabel: { nosuch: 1 } } }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapLabel.areaLabel.nosuch'));
 check('批I mapTooltip payload 未知键拒', codeAt(chartIR('vmap', { mapTooltip: { areaTooltip: { enable: true } } }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapTooltip.areaTooltip.enable'));
 
+// ===== 2026-11-08 复审：地图装饰 IR 类型闸（键名白名单之外的值类型） =====
+(function () {
+  function mdIr(mut) {
+    var ir = { sheets: [{ name: 's', widthsPt: [160, 120], blocks: [
+      { type: 'title', text: 't', span: 2, heightPt: 30 },
+      { type: 'header', columns: [{ name: 'province', label: 'P', type: 'text' }, { name: 'amount', label: 'A', type: 'number' }], heightPt: 24 },
+      { type: 'detail', dataset: 'd', columns: [{ name: 'province', type: 'text' }, { name: 'amount', type: 'number' }], heightPt: 24 },
+      { type: 'chart', kind: 'vmap', dataset: 'd', category: 'province', value: 'amount', heightPt: 300 }
+    ] }], datasets: [{ name: 'd', columns: [{ name: 'province', type: 'text' }, { name: 'amount', type: 'number' }], rows: [['广东省', 1]] }] };
+    mut(ir); return ir;
+  }
+  var P = 'sheets[0].blocks[3]';
+  check('批I mapLabel enable 非布拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapLabel = { areaLabel: { enable: 'false' } }; }), 'INVALID_TYPE', P + '.mapLabel.areaLabel.enable'));
+  check('批I mapLabel fontPt 非数拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapLabel = { areaLabel: { fontPt: 'large' } }; }), 'INVALID_NUMBER', P + '.mapLabel.areaLabel.fontPt'));
+  check('批I mapLabel bold 非布拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapLabel = { pointLabel: { bold: 'yes' } }; }), 'INVALID_TYPE', P + '.mapLabel.pointLabel.bold'));
+  check('批I mapTooltip muti 非布拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapTooltip = { areaTooltip: { muti: 'false' } }; }), 'INVALID_TYPE', P + '.mapTooltip.areaTooltip.muti'));
+  check('批I mapTooltip richText.content 非串拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapTooltip = { pointTooltip: { richText: { content: 5 } } }; }), 'INVALID_TYPE', P + '.mapTooltip.pointTooltip.richText.content'));
+  check('批I mapLabel 合法形态零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].mapLabel = { areaLabel: { enable: true, fontPt: 12, bold: false, color: 0x333333 } }; ir.sheets[0].blocks[3].mapTooltip = { areaTooltip: { muti: true, format: '#,##0', richText: { content: 'x', auto: false } } }; })).length === 0);
+})();
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);
