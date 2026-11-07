@@ -31,7 +31,7 @@ var SPEC = {
       blocks: [
         { type: 'cells', heightPt: 30, items: [{ c: 0, span: 1, text: 'P1 visual: seriesImage + legacy axisX' }] },
         { type: 'chart', kind: 'vbar', dataset: 'ds', category: '机型', values: ['产量'], heightPt: 320,
-          seriesImage: { image: 'logs/_visual_fixture.png' } },
+          seriesImage: { image: 'logs/_visual_fixture.png', layout: 1 } },
         { type: 'chart', kind: 'bar', dataset: 'ds', category: '机型', values: ['产量'], title: '', heightPt: 320,
           axisX: { fontPt: 14 }, axisY: { fontPt: 14 } }
       ]
