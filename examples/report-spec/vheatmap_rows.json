@@ -1,0 +1,13 @@
+{
+  "specVersion": "1",
+  "report": { "name": "热力图 Agent 接入" },
+  "outName": "能力自检_vheatmap_agent",
+  "dimensions": [{ "field": "province", "label": "省份", "widthPt": 160 }],
+  "metrics": [{ "field": "amount", "label": "热度", "aggregation": "sum", "dataType": "number", "widthPt": 120 }],
+  "dataset": { "rows": [["广东省", 280], ["北京市", 150], ["上海市", 180], ["黑龙江省", 60], ["四川省", 90]] },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": { "kind": "vheatmap", "category": "province", "value": "amount", "geoUrl": "assets/map/geographic/world/中国.json", "heightPt": 360 }
+  }
+}

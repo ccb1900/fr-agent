@@ -1,0 +1,15 @@
+{
+  "specVersion": "1",
+  "report": { "name": "区域地图 Agent 接入" },
+  "outName": "能力自检_vmap_agent",
+  "dimensions": [{ "field": "province", "label": "省份", "widthPt": 160 }],
+  "metrics": [{ "field": "amount", "label": "销售额", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }],
+  "dataset": {
+    "rows": [["广东省", 280000], ["北京市", 150000], ["上海市", 180000], ["黑龙江省", 60000], ["四川省", 90000]]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": { "kind": "vmap", "mapType": "area", "category": "province", "value": "amount", "geoUrl": "assets/map/geographic/world/中国.json", "heightPt": 360 }
+  }
+}
