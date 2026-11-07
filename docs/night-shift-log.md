@@ -1704,8 +1704,9 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 层门 72 项：spec PASS 27→38、planner 47→52（UNKNOWN 45→34 / 25→20）；I1/I2/I3/planner-BLOCKED 违反仍为 0。
 - fast 18/18 rc=0（fast_planner 全绿）；scan ok=88 bad=0（新载体）；multisheet e2e GREEN（rows plan→create 回归）；默认管线 failures=0；demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F。
 - **真引擎 create（mapdeco_e2e_002）PASS**：examples/report-spec/mapdeco_rows.json → cpt_validate/render/deploy/roundtrip 全 passed；部署 cpt 含 AttrMapLabel×3 / AttrMapTooltip×3 / AttrTooltipAreaNameFormat×6 / AttrTooltipMapValueFormat×5 / VanChartMapPlot×3；PNG 1587×2245 / 26,198B（首跑暴露并修复载体缺 formula cell：showTotal:false→true，CPT GATE missing formula cell）。
-- 未验证：hotHyperLink/hotTooltip 两项合同的真引擎 create（其证据为 IR 载体 test_mapdeco_ir + probe_r4m14b；本轮只在 plan→spec→Ir.validate 层验证）。
+- **真引擎 create（hotdeco_e2e_001）PASS**：examples/report-spec/hotdeco_rows.json（vbar + hotTooltip + hotHyperLink）→ 全 passed；部署 cpt 含 newHotTooltipStyle×2 / ChartHyperRelateCellLink×2 / NameJavaScriptGroup×2；PNG 24,293B。=> hotHyperLink/hotTooltip 也升到真引擎 create 证据。
+- 至此本轮 5 项新增合同全部具备真引擎 create+渲染证据（scan 载体 89 项）。
 
 ### 未决
-- 地图装饰 spec 路已真引擎 create/渲染（mapLabel/mapTooltip/mapTooltipFormat）；hotHyperLink/hotTooltip 可补同款 carrier。
 - planner 20 项 UNKNOWN：工具/运行时族 + 部分装饰（无 spec 表面），保持诚实。
+- seriesBorder 渲染未达成（高对比仍无框，维持 pending）。
