@@ -1,6 +1,6 @@
 # demo240 能力覆盖率看板
 
-> 由 `probes/coverage_report.js` 生成（Sat Nov 07 04:12:51 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
+> 由 `probes/coverage_report.js` 生成（Sat Nov 07 21:01:40 CST 2026），幂等重写勿手 edit；状态源=`logs/_demo_classes.txt`+`logs/_demo_feature_scan.txt`+lib/engine 源码。
 > 分类：**full**=类名在引擎源码构造/字符串命中；**partial**=部分 token 命中；**missing**=零命中。
 > 数字含义（勿混）：**unattributed=0 表示"缺口归属清零"**（每个 missing/partial 都有批次归属或明确判定），**不表示缺失类已实现**；missing 数才是仍未实现/未命中的类。二者不是一回事。
 > 圈定的不追目标（noncore）：com.fr.esd.*、com.fr.plugin.cloud.*、com.fr.widgettheme.*（插件配置类）。
@@ -14,34 +14,28 @@
 
 | demo类 | 频次 | 状态 | 参考批次 |
 |---|---|---|---|
-| com.fr.base.chart.chartdata.model.NormalDataModel | 180 | missing | 引擎内部 DataProcessor 标记(官方 XML 同款已在产物流,无构造面,README #104) |
-| com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat | 61 | missing | 批I(map.tooltip 域,消费者 mapfather/mapson 一手,README #102/#106) |
-| com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat | 54 | missing | 批I(map.tooltip 域,消费者 mapfather/mapson 一手,README #102/#106) |
-| com.fr.chart.web.ChartHyperRelateCellLink | 18 | missing | 批I(挂账,#79/#581 图表热链随地图批) |
-| com.fr.chart.chartattr.ChartCommonCondition | 14 | missing | 非真缺:chart 条件通道已用 CommonCondition 实证(m7 D_c 全染),变体类同语义(README #105) |
-| com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | missing | 批I(map.tooltip 域,消费者 mapfather/mapson 一手,README #102/#106) |
-| com.fr.plugin.chart.map.attr.AttrMapLabel | 8 | missing | 批I(挂账,#79/#597) |
-| com.fr.plugin.chart.map.attr.AttrMapTooltip | 8 | missing | 批I(挂账,#79/#597) |
-| com.fr.plugin.chart.map.line.condition.AttrCurve | 6 | missing | 批I(挂账, map.line 域,#79) |
-| com.fr.plugin.chart.bubble.attr.VanChartAttrBubble | 6 | missing | 批I后继·bubble 属性(未排; bubble plot 已收 #79) |
-| com.fr.plugin.chart.map.line.condition.AttrLineEffect | 6 | missing | 批I(挂账, map.line 域,#79) |
-| com.fr.form.ui.MultiFileEditor | 5 | missing | 编辑器扩项·参数控件族后继(文件上传控件,需 widget kind 批定义,README #105) |
-| com.fr.report.web.button.form.TreeNodeToggleButton | 4 | missing | 表单树控件域(需表单树批定义,README #105) |
-| com.fr.report.web.button.write.DeleteColumnRow | 4 | missing | 批F后继·write 按钮(未排) |
-| com.fr.report.poly.PolyECBlock | 4 | missing | 批J(挂账,#80/#586 块面 API 未探全) |
-| com.fr.write.config.DeleteConfig | 2 | missing | 批F后继·WriteActor DML 工单(#558/#600) |
-| com.fr.write.config.UpdateConfig | 2 | missing | 批F后继·WriteActor DML 工单(#558/#600) |
-| com.fr.report.web.button.write.CustomizeImportExcelData | 2 | missing | 批F后继·write 按钮(未排) |
-| com.fr.form.ui.CustomToolBarButton | 2 | missing | 工具条按钮域(自定义JS按钮,需批定义,README #105) |
-| com.fr.data.impl.ExcelTableData | 2 | missing | 非真缺:数据集入口边界=SQL/内嵌(数据纪律既定),文件数据集不引入(README #105) |
-| com.fr.js.Commit2DBJavaScript | 2 | missing | 批F(#75 挪填报章,未排) |
-| com.fr.report.write.ValueVerifier | 2 | missing | 批F后继·Verifier 族工单(#558/#600) |
-| com.fr.data.impl.RecursionTableData | 2 | missing | 非真缺:递归 SQL 数据集类型(父子标记字段,m21 方法面),管线数据集入口=SQL/内嵌既定边界,自连接场景走 SQL 本身(README #106) |
-| com.fr.report.web.button.write.ClearStashedButton | 1 | missing | 批F后继·write 按钮(未排) |
-| com.fr.report.web.button.write.StashButton | 1 | missing | 批F后继·write 按钮(未排) |
-| com.fr.base.io.FileAttrErrorMarker | 1 | missing | 待探针确认(疑引擎内部 IO 标记,README #105) |
-| com.fr.report.poly.PolyWorkSheet | 1 | missing | 批J(挂账,#80/#586 块面 API 未探全) |
-| com.fr.chartx.data.DataSetDefinition | 1 | missing | 非真缺:chartx legacy 数据接口,现有 chartdata 路已覆盖(README #105) |
+| com.fr.base.chart.chartdata.model.NormalDataModel | 180 | excluded(正当排除) | 正当排除:引擎内部 DataProcessor 标记,无构造面,README #104 |
+| com.fr.chart.chartattr.ChartCommonCondition | 14 | excluded(正当排除) | 正当排除:变体类同语义,chart 条件通道已用 CommonCondition 实证(m7 D_c 全染),README #105 |
+| com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat | 12 | deferred(挂账待用户) | 挂账待用户:同槽机制已证,消费方=流向图(随 map.line 批),README #102/#106 |
+| com.fr.plugin.chart.map.line.condition.AttrCurve | 6 | deferred(挂账待用户) | 挂账待用户:流向线 map.line 域(vmap line 结构化拒现状),README #79 |
+| com.fr.plugin.chart.map.line.condition.AttrLineEffect | 6 | deferred(挂账待用户) | 挂账待用户:流向线 map.line 域,README #79 |
+| com.fr.form.ui.MultiFileEditor | 5 | deferred(挂账待用户) | 挂账待用户:widget kind 扩项批定义(文件上传控件),README #105 |
+| com.fr.report.web.button.form.TreeNodeToggleButton | 4 | deferred(挂账待用户) | 挂账待用户:表单树控件域批定义,README #105 |
+| com.fr.report.web.button.write.DeleteColumnRow | 4 | deferred(挂账待用户) | 挂账待用户:批F write 按钮,README #554/#600 |
+| com.fr.report.poly.PolyECBlock | 4 | deferred(挂账待用户) | 挂账待用户:Poly 块面 API 未探全(manifest cell.poly=pending),README #80/#586 |
+| com.fr.write.config.DeleteConfig | 2 | deferred(挂账待用户) | 挂账待用户:批F WriteActor DML 工单,README #558/#600 |
+| com.fr.write.config.UpdateConfig | 2 | deferred(挂账待用户) | 挂账待用户:批F WriteActor DML 工单,README #558/#600 |
+| com.fr.report.web.button.write.CustomizeImportExcelData | 2 | deferred(挂账待用户) | 挂账待用户:批F write 按钮,README #554/#600 |
+| com.fr.form.ui.CustomToolBarButton | 2 | excluded(正当排除) | 正当排除:自定义 JS 按钮=任意 JS 注入,与模板安全边界冲突(IR toolbar className 逃生口已除),README #48/#105 |
+| com.fr.data.impl.ExcelTableData | 2 | excluded(正当排除) | 正当排除:数据集入口边界=SQL/内嵌(数据纪律既定),文件数据集不引入,README #105 |
+| com.fr.js.Commit2DBJavaScript | 2 | deferred(挂账待用户) | 挂账待用户:批F 写回(WriteActor DML 工单),README #75/#558/#600 |
+| com.fr.report.write.ValueVerifier | 2 | excluded(正当排除) | 正当排除:Verifier 族=manifest write.verifiers 结构化拒(VerifyItem 不实现 Verifier 接口一手实证),README #76 |
+| com.fr.data.impl.RecursionTableData | 2 | excluded(正当排除) | 正当排除:递归 SQL 数据集类型走 SQL 自连接(管线数据集入口既定边界),README #106 |
+| com.fr.report.web.button.write.ClearStashedButton | 1 | deferred(挂账待用户) | 挂账待用户:批F write 按钮,README #554/#600 |
+| com.fr.report.web.button.write.StashButton | 1 | deferred(挂账待用户) | 挂账待用户:批F write 按钮,README #554/#600 |
+| com.fr.base.io.FileAttrErrorMarker | 1 | excluded(正当排除) | 正当排除:引擎内部 IO 容错标记(无公共构造器,ClassNotFoundHolder 占位,_probe_template 实测一手),README #105 |
+| com.fr.report.poly.PolyWorkSheet | 1 | deferred(挂账待用户) | 挂账待用户:Poly 块面 API 未探全,README #80/#586 |
+| com.fr.chartx.data.DataSetDefinition | 1 | excluded(正当排除) | 正当排除:chartx legacy 数据接口,现有 chartdata 路已覆盖,README #105 |
 | com.fr.data.condition.ObjectCondition | 506 | partial | 批A(定性:cell 高亮面已覆盖,数据集级过滤仍缺口,#45/#515) |
 | com.fr.plugin.chart.base.AttrLabelDetail | 150 | partial | 批B 已收(label 扩容六 setter 接线,README #103;深水 content 域随 vmap/富文本后续) |
 | com.fr.plugin.chart.attr.axis.VanChartValueAxis | 129 | partial | 批B axis 实例配置非构造(README #103) |
@@ -103,7 +97,7 @@
 | diagonal | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | barcode | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | image | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | #45 观察 |
-| map | partial (缺: AttrMapLabel) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
+| map | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | specialcharts | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | #79(bubble) |
 | poly | missing (缺: PolyECBlock+PolyWorkSheet) | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
 | group (自定义分组) | full | — | verify/fast_parse+ir_contract+runresult+browser_sql+report_spec+schema+semantic+planner+sqlbuilder+sqlpath+closure+template+contracts+manifest_evidence+golden_closure+baseline(16) + scan_all_specs + 引擎负门6路 + 三铁证MD5快速层 + 字节基线 CBEB42E3/A8EF39AB | 待回填 |
@@ -135,7 +129,7 @@
 | float | 18 | full |
 | diagonal | 15 | full |
 | watermark | 7 | full |
-| map | 7 | partial 0x1 |
+| map | 7 | full |
 | barcode | 4 | full |
 | image | 2 | full |
 | group | 1 | full |
@@ -151,9 +145,9 @@
 | 批C | headerfooter、template marks | 6/0 | — | 0+0 | #73 |
 | 批D | dict、formats | 9/0 | — | 3+0 | #45、数字格式既有 |
 | 批E | webpage、hyperlink、jsEvents | 9/1 | Commit2DBJavaScript | 0+0 | #45、#25/#45、#?/#45 |
-| 批F | writeButtons、submit (填报)、reg 校验族 | 11/1 | ValueVerifier | 1+8 | 待回填 |
+| 批F | writeButtons、submit (填报)、reg 校验族 | 11/1 | ValueVerifier | 1+0 | 待回填 |
 | 批G | freeze、subreport、barcode、group (自定义分组) | 4/0 | — | 0+0 | #31、待回填 |
 | 批H | sort | 1/0 | — | 0+0 | #45 受阻断 |
-| 批I | chart Van、map、specialcharts | 10/1 | AttrMapLabel | 0+9 | #46、待回填、#79(bubble) |
-| 批J | poly | 0/2 | PolyECBlock+PolyWorkSheet | 0+2 | 待回填 |
-| 其他 | objCondition(定性) | 1/0 | — | 0+9 | #45/#72 |
+| 批I | chart Van、map、specialcharts | 11/0 | — | 0+0 | #46、待回填、#79(bubble) |
+| 批J | poly | 0/2 | PolyECBlock+PolyWorkSheet | 0+0 | 待回填 |
+| 其他 | objCondition(定性) | 1/0 | — | 0+0 | #45/#72 |
