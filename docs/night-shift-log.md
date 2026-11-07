@@ -1551,3 +1551,22 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 - PASS：探针 PROBE PASS（n=3 规律一致 + 任务⑤ n=1 交叉验证 CONSISTENT，rc=0）；S10b push 后转 PASS；探针文件与文档本轮 commit 后 push。
 - NOT RUN：无。
 - BLOCKED：S3d 真进程 kill 注入与 S8 Handle 真注入延续上轮口径（毫秒级窗口/PS5.1 句柄时序黑盒不可确定性注入，结构断言与确定性等价注入已 PASS）。
+
+## 2026-11-07（产品定位验证器：agent 全生命周期 e2e 单入口落地）
+
+### 本轮动作
+**改进项=造一个能驱动真实主路径的端到端验证器**（定位那件事的客观判定尺：没有尺子，每步「做好了」只是执行者自己的说法）：
+- 新增 `scripts/run-agent-lifecycle-e2e.ps1`（单入口，exit 0=绿）：按外置 agent 的方式**仅经 agent/tools/fr_agent.ps1 契约行**（取最后一个 {..} 行）驱动全生命周期——发现（list_reports：count+reports[]，inspect 靶件从工具输出选、不硬编码）→理解（inspect_template 引擎只读逐格坐标／sample_data 只读 LIMIT 采样／resolve 三态+候选）→创建·检查·验证·修改·部署·回滚（**复用 scripts/run-golden-e2e.ps1 已验证链路于本 RunId，不重复实现 Golden v1**）→payload 审计（独立回读 runDir 文件真相：plan=ready、validate/artifact runId 绑定防陈旧、patch 三判定 diffClean/execution/render、promote/restore SHA-256 哈希链），fail-fast。
+- 负控内置（`-NegativeControl`）：把核心入口替换为「输出为空」的 stub（logs/agent/e2e_neg/stub_fr_agent.ps1，不碰生产文件），验证器必须转红（rc≠0）负控才成立——空核假绿被结构性排除。
+- 教训留痕：PS 5.1 `-File` 调用对**未在 param 块声明的命名参数静默忽略**、脚本照跑默认路径——首轮负控因此变成空转（跑成了正向全绿）；负控修复后按反例先行口径重跑成立。引申：任何「开关型验证入口」必须在真跑里证明它真的改变了行为。
+
+### 验证结果（全部本轮真跑）
+- 静态门 `verify/check_ps1_static.ps1` failures=0（新脚本 PARSE/ASCII 双 PASS）。
+- 正向全链 PASS：`AGENT LIFECYCLE E2E PASS`（runId=ale20261107144347-338bfa，exit 0）：discover count=98 → inspect sheets=1 cells=16 → sample 5 rows → resolve=resolved(candidates=1) → golden 链 rc=0（plan+create+validate+truth-grid 33531:26531+preview+modify+promote+restore+baseline）→ payload 审计 OK。
+- 负控 PASS：`NEGATIVE CONTROL HELD`（空核 → 验证器 rc=1，负控本身 exit 0）。
+- 回滚字节级证据（本 run promote.json/restore.json）：origHash=6E86EA88EDCD→deployedHash=1A8C83411F20（promote 确实换了件），restore restoredHash==origHash（回滚后与改前逐字节一致）。
+- 基线铁证完好：demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F；无 java 残留。
+
+### 未验证事项/边界（如实）
+- 本验证器覆盖定位链路的「入口可驱动+可见结果可断言」面；TABLE_DESIGN_STANDARD 人工过目清单与像素级排版质量仍属交付核对面（验证器不替代人工过目，AGENTS §1 口径不变）。
+- 未并入 `scripts/run-integration-tests.ps1` 门（保持本轮最小交付，是否并门由外层流程决定）；未 push（约束，S10b 类收口由外层流程处理）。
