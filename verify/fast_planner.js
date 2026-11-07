@@ -92,13 +92,13 @@ var rC6unk = plan({ outName: 'c6unk', dimensions: ['bizTime'], metrics: [{ term:
 check('P1c 未知术语 → 阻断不 ready + 保留模型缺口 warning', hasWarn(rC6unk, /模型缺口/) && rC6unk.status !== 'ready' && rC6unk.reportSpec === null);
 var rfil = plan({ outName: 'fl', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), filters: [{ column: 'stage' }] });
 check('filters 越权→deferred(I2/I3) 记录', hasWarn(rfil, /I2/));
-var rcht = plan({ outName: 'ch', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'bar' } });
-check('chart 越权→deferred 记录', hasWarn(rcht, /I4|I5/));
+var rcht = plan({ outName: 'ch', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo' } });
+check('chart 直通（2026-11-07 两路支持）→ ready 且 spec 带 chart', rcht.status === 'ready' && rcht.reportSpec.presentation.chart.kind === 'vbar');
 // —— C6 同口径扩展（2026-11-07 B段复审）：rows 路 intent.filters/intent.chart 被能力墙丢掉时
 //    不得 ready（与 metrics 同理：数据范围/报表结构悄悄变窄比失败更危险）。此前仅 warning 仍 ready。
 check('C6 同口径: rows 路 intent.filters 被丢 → 不得 ready', rfil.status !== 'ready' && rfil.reportSpec === null);
-check('C6 同口径: rows 路 intent.chart 被丢 → 不得 ready', rcht.status !== 'ready' && rcht.reportSpec === null);
-check('C6 同口径: 阻断时 owner 归属能力墙', hasWarn(rcht, /I4|I5/) && rcht.status === 'rejected');
+check('C6 同口径: rows 路 intent.chart 直通不再被丢', rcht.status === 'ready' && rcht.reportSpec !== null);
+check('C6 同口径: filters 阻断时 owner 归属能力墙', hasWarn(rfil, /I2/) && rfil.status === 'rejected');
 
 // —— 未知 → 不编造字段
 var runk = plan({ outName: 'uk', dimensions: ['___幽灵维度___'], metrics: [{ term: '___幽灵指标___' }], rows: [] });

@@ -112,7 +112,7 @@ var ReportPlanner = (function () {
     // C6 同口径（2026-11-07 B段复审）：被能力墙丢掉的 filters/chart 同样累计阻断——
     //   数据范围/报表结构悄悄变窄比失败更危险（与 blockedMetrics 同一立论），不得 ready。
     var blockedFeatures = 0;
-    (['filters', 'chart']).forEach(function (feat) {
+    (['filters']).forEach(function (feat) {
       if (hasOwn(intent, feat) && intent[feat] != null) {
         var c = ctx.capability.intentFeature(feat, ctx.caps);
         if (c.verdict !== 'supported') { validationWarnings.push({ feature: feat, reason: c.reason, owner: c.owner }); blockedFeatures++; }
@@ -159,6 +159,8 @@ var ReportPlanner = (function () {
     }
     if (presRows.type == null) presRows.type = 'table';
     if (presRows.showTotal == null) presRows.showTotal = showTotal;
+    // 2026-11-07：rows 路 chart 已支持——顶层 intent.chart 转 presentation.chart（与 sql 路同口径）
+    if (presRows.chart == null && intent.chart != null) presRows.chart = intent.chart;
 
     var rows = intent.rows;
     var spec = {

@@ -13,9 +13,11 @@ var PlannerCapability = (function () {
   }
 
   // 意图级越权键：filters/chart/multiSheet/semanticQuery 各归其主迭代，planner 结构化拒、不静默降级。
+  //   2026-11-07 全面闭环：chart 两路已支持（rows+sql 的 presentation.chart）→ supported；
+  //   rows 路 filters 仍 deferred（请预筛内嵌），sql 路 filters 走 dataset.filters。
   function intentFeature(key, caps) {
-    var OWNERS = { filters: 'I2/I3', chart: 'I4 图种/I5', multiSheet: '后端单 sheet 边界', semanticQuery: 'I2/I3' };
-    if (hasOwn(OWNERS, key)) return { verdict: 'deferred', reason: key + ' 暂不支持（I1 v1 只 table+sum+内嵌 rows）', owner: OWNERS[key] };
+    var OWNERS = { filters: 'I2/I3（rows 路请预筛数据内嵌；sql 路走 dataset.filters）', multiSheet: 'Planner 多 sheet 入口（extraSheets 已由透传支持，intent 顶层 multiSheet 键未定义）', semanticQuery: 'I2/I3' };
+    if (hasOwn(OWNERS, key)) return { verdict: 'deferred', reason: key + ' 不是受支持的意图片段', owner: OWNERS[key] };
     return { verdict: 'supported' };
   }
 
