@@ -101,7 +101,10 @@ var TemplateDiff = (function () {
       if (/java\.lang\.|java\.math\.|java\.sql\./.test(s)) return true;
       if (/EmbeddedTableData|DBTableData|NameDatabaseConnection|ATOM_LIVE/.test(s)) return true;
       if (/[,]/.test(s) && /^[\w,.\s"'\-]+$/.test(s)) return true;   // 列名 CSV / 行值 CSV（旧/新集）
-      if (/^[\x20-\x7E]{10,}$/.test(s) && /[>"'~$]/.test(s)) return true;  // 内嵌行序列化串（trim 后）
+      // 阶段3 反例（任务二真跑）：EmbeddedTableData 行值序列化串是【含换行】的多行 token —— \n(<0x20) 不在
+      //   [\x20-\x7E] 内，旧正则漏配 → 合法 replace_dataset 被 diff 误杀。扩入 \r\n；中文等非 ASCII 仍不匹配
+      //   （豁免不扩大化，fast_template 两断言钉住）。
+      if (/^[\x20-\x7E\r\n]{10,}$/.test(s) && /[>"'~$]/.test(s)) return true;  // 内嵌行序列化串（含多行）
       return false;
     }
     if (hasDatasetOp) {

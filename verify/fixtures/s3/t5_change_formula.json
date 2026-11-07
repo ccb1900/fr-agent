@@ -1,0 +1,13 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报S3_api.cpt",
+  "outName": "S3T5",
+  "ops": [
+    {
+      "op": "replace_cell_value",
+      "sheet": 0,
+      "cell": { "c": 3, "r": 3 },
+      "value": { "kind": "formula", "text": "=AVERAGE(D3)" }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报S3_api.cpt",
+  "outName": "S3T3",
+  "ops": [
+    { "op": "add_parameter", "sheet": 0, "name": "bizDate", "kind": "date", "label": "业务日期", "value": "2026-09-13" },
+    { "op": "add_filter", "sheet": 0, "target": "A3", "expr": "=bizDate" }
+  ]
+}

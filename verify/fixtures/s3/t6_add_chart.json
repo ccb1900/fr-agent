@@ -1,0 +1,8 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报S3_api.cpt",
+  "outName": "S3T6",
+  "ops": [
+    { "op": "add_chart", "kind": "heatmap", "sheet": 0, "anchor": { "c": 4, "r": 1 }, "category": "bizDate", "value": "planned", "title": "区域热力图" }
+  ]
+}

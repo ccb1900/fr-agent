@@ -1,0 +1,13 @@
+{
+  "outName": "生产日报S3",
+  "reportName": "生产日报（阶段3 任务一：从零创建，计划/完成/完成率）",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true, "footnote": "口径：计划=当日有效评分记录数；完成=评分>=0.9 记录数；完成率=完成/计划×100。" }
+}

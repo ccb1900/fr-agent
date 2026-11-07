@@ -1423,3 +1423,47 @@ Runtime 生产代码零改动（git diff 仅 fr_agent.ps1/patch_main.js/_deploy.
 - PASS：上述全部（矩阵 30 例/静态门/fast16/scan/集成门/引擎负门/golden e2e/版本冲突实证/基线直证）。
 - NOT RUN：C 段 maturity e2e 未因本轮改动重跑（其 promote 步骤在新守卫下需 manifest.sourceHash——新 modify 必产；本轮 golden e2e 已覆盖同链路真执行）；MULTISHEET E2E 未重跑（未触碰多 Sheet 面）。
 - BLOCKED：无。
+
+## 2026-11-07 08:55（阶段3 第二阶段：真实报表生命周期验证——8 任务经 agent 工具链逐个执行留证）
+
+### 工作目标
+评审 §九 八任务作产品验收：工具调用序列+产物+验证结论逐个留证；引擎限制处如实记录不虚报。
+
+### 逐任务证据（全部本轮真跑，产物在 logs/agent/runs/）
+
+| 任务 | 工具调用序列 | 产物/验证结论 |
+|---|---|---|
+| ① 创建生产日报（从零） | plan(t1 intent 真库 SQL 口径)→plan2spec→create→validate→inspect_template | runId=s3t1a 全链 ok；部署 生产日报S3_api.cpt/png；PNG 目检：10 日明细+总计 33531:26531（与 golden 真值同口径）+口径脚注 |
+| ② 增加统计指标（修改现有） | inspect 取真实坐标→modify(t2: replace_dataset 超集新增 defect 指标列+脚注格)→promote | runId=s3t2b：diffClean/execution/render 全绿+datasetChecks 1/1 逐格核对；promote 哈希链 5186838C→88173C10 真部署；部署 cpt 含 defect 列（grep 2 命中）。**如实限制**：显示面加新列不可（patch 白名单仅 2 op），新增指标以数据面+说明落地 |
+| ③ 增加日期筛选器 | modify(t3: add_parameter+add_filter) | **引擎限制留证（真跑拒绝）**：INVALID_ENUM 未知 op + UNSUPPORTED_CAPABILITY「参数/条件面读回无口(getReportParameterAttr 全库 0 命中)」→ patch.json ok=false exit=1。参数/筛选面 v1 不做=R0 探针既定口径 |
+| ④ 增加 Sheet | modify(t4: add_sheet) | **引擎限制留证（真跑拒绝）**：ok=false exit=1 |
+| ⑤ 修改统计口径（公式聚合） | modify(t5: 总计完成率 =C4*100/B4 → =AVERAGE(D3)) | **引擎限制留证（真跑拒绝）**：执行回归拒「未预期单元格变动 r=12 c=3: 79.12→80.00」——根因=回归屏蔽用模板坐标，明细扩展 10 行后总计/脚注等扩展区之后格全部位移（栅格 r12/r14），此前真测只改过 r0（无位移）。**fail-closed 方向安全（保守拒非误放）**，挂 backlog；patch 链公式修改可达面=明细块前静态格=如实 |
+| ⑥ 增加区域热力图 | modify(t6: add_chart kind=heatmap) | **引擎限制留证（真跑拒绝）**：ok=false exit=1；vheatmap 能力账本 agentAvailable=false（无热度数据源/plan→create 未接）口径不变 |
+| ⑦ 修改标题与表头 | modify(t7: 标题格 r0+表头格 r1 文本)→promote | runId=s3t7：diffClean=True（未改部分语义 token 不变）+exec/render 绿；promote 88173C10→C0C9ED9E 真部署（模板保真） |
+| ⑧ 修改后恢复原版 | restore(s3t7) | ok=true；部署件 SHA-256 字节级回到⑦前（deployedBefore=C0C9ED9E→restored=88173C10，直证 deployed 当前哈希==restoredHash） |
+
+### 过程中反例先行修复（两处，均探针实证）
+
+**P0：engine_launch.ps1 ExitCode 空读 → 引擎失败误报 exit=0（本轮新发现，非本轮引入）**
+- 反例：任务③ REJECT 后 patch.json 竟 ok=true exit=0；直跑 runraw 同参 RC=1。
+- 探针定根因（logs/_sp_probe*.ps1 四组，已清理）：PS 5.1 `Start-Process -PassThru` 在 **-NoNewWindow 及/或 -RedirectStandardOutput** 形态下，手动 `WaitForExit()` 后 `$p.ExitCode` 读数为 **$null**（真 java System.exit(1) 复现；`-Wait` 或先取 `$p.Handle` 则=1 正确）。$null 经 runraw `exit ($null)`→0→fr_agent $LASTEXITCODE=0→patch.json exit=0。ok 判断 `($rc -eq 0)` 对 0 为 true → **真 fail 被记 ok=true**（合同行恰被 artifact 组装器 validation.ok=false 兜住才未假绿到 verb 层）。
+- 修复：WaitForExit 前加 `$null = $p.Handle`（强制 SafeProcessHandle 预分配；D/E 两形态探针 1 正确；r17/r18 注册时序 spawn→pidfile→handle→wait 不变）。
+- 修后验证：任务③/④ REJECT patch.json ok=false exit=1 真实记录；集成门全绿（S25 pre-spawn 故障注入 rc=1 无泄漏 + S26 收集器 confirmed/kept 分支——Handle 预取未破坏注册语义）；引擎负门 GREEN（无假绿+默认基线完好）。
+
+**diff.js：replace_dataset 多行内嵌序列化串被误杀（任务②真跑发现）**
+- 反例：任务②合法补丁 diffClean=false；探针定位 unintended=[一条含换行的 EmbeddedTableData 行值序列化 token]——isDatasetToken 的 `/^[\x20-\x7E]{10,}$/` 不匹配 \n(<0x20)。I6.1-B 豁免意图本含「行值/序列化属性」，正则漏多行。
+- 反例先行：fast_template.js 先加两断言（多行串放行+中文偷改仍拒=豁免不扩大化）确认红→修 `/^[\x20-\x7E\r\n]{10,}$/` →绿。
+
+### 门禁（全部本轮真跑，含修复后复跑）
+fast16 FAST GATE GREEN / scan ok=62 bad=0 skipped=1（s3_daily.js 入扫）/ 静态门 failures=0 / 集成门 GREEN（STATIC 0+MATRIX 30/30+INTEGRATION failures=0 skips=0）/ 引擎负门 GREEN / **基线 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F 直证（见下「基线踩踏与恢复」）**。
+
+### 基线踩踏与恢复（如实）
+任务①的 create 走 run.ps1 make_api.js，按其既有行为每次把产物同时写 demo_api.cpt（本地基线文件）；本阶段 create 后未按 AGENTS §1「最后一步默认 spec 收尾」执行 → fast_baseline 抓到 demo_api.cpt=EDDB59CA≠CBEB42E3。已跑默认 spec 恢复（PIPELINE failures=0），复证 CBEB42E3，fast 全绿。教训已在本条目留痕：**agent 链 create 之后必须默认 spec 收尾**（golden e2e 驱动末步已有此机制，独立跑 create 的流程没有——不引入新机制，靠本纪律）。
+
+### 三态报告
+- PASS：①②④（④=拒绝留证完成）⑤（=拒绝留证完成）⑥⑦⑧ 如上表；两处反例先行修复（diff.js/engine_launch.ps1）+ 全门禁绿 + 基线恢复。
+- NOT RUN：C 段 maturity e2e / MULTISHEET e2e 未因本轮 diff.js+engine_launch 变更重跑全链（diff.js 变更面=replace_dataset diff 豁免，fast_template 两断言+任务②真跑已覆盖；engine_launch 变更面=退出码读取，集成门 S25/S26+引擎负门+任务③④⑤真跑已覆盖）；preview verb 在任务①中未达（preview.js 对该 cpt 的 PNG 生成失败——compile 产物自带部署 PNG 已目检，preview 失败原因未深查，如实记录）。
+- BLOCKED：无。
+
+### 下一步
+backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐标，解锁扩展区公式/格修改——先探针后修）；agent 链 create 的默认 spec 收尾自动化评估（不引新机制前提下）。

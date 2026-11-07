@@ -95,6 +95,19 @@ check('I6.1-B dataset op 仍拒"单元格文本"未预期改动（非数据集�
   var a = '<R><TableData><![CDATA[SELECT x FROM y]]></TableData><O><![CDATA[被偷偷改的标题]]></O></R>';
   return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === false;
 })());
+// 阶段3 反例（任务二真跑发现）：EmbeddedTableData 的行值序列化串是【含换行】的多行 token，
+//   isDatasetToken 的 /^[\x20-\x7E]{10,}$/ 不匹配 \n（<0x20）→ 合法 replace_dataset 被 diff 误杀 diffClean=false。
+//   I6.1-B 豁免意图本就声明"行值/序列化属性"属数据集本体——修则扩字符集，且中文偷改仍必须拒（豁免不扩大化）。
+check('阶段3 dataset op 放行多行内嵌序列化串（含换行的行值 token）', (function () {
+  var b = '<R><TableData><![CDATA[SELECT a FROM t]]></TableData><O><![CDATA[标题]]></O></R>';
+  var a = '<R><TableData><![CDATA[9o_4H"a,.c^2%s,WQW>n"5qO+rF8D\nnPFc3*]A@OAMb!_oT--5?@$!m0WeK\n]]></TableData><O><![CDATA[标题]]></O></R>';
+  return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === true;
+})());
+check('阶段3 dataset op 多行串豁免后仍拒中文文本偷改（豁免不扩大化）', (function () {
+  var b = '<R><TableData><![CDATA[SELECT a FROM t]]></TableData><O><![CDATA[标题]]></O></R>';
+  var a = '<R><TableData><![CDATA[9o_4H"a,.c^2%s,WQW>n"5qO+rF8D\nnPFc3*]A@OAMb!_oT--5?@$!m0WeK\n]]></TableData><O><![CDATA[被偷改标题]]></O></R>';
+  return TemplateDiff.diff(b, a, { ops: [{ op: 'replace_dataset' }] }).clean === false;
+})());
 
 // ===== I6.1-C/r5 执行/渲染回归裁决（纯函数，禁假 PASS） =====
 var BAD = { ok: false, rows: null, error: 'boom' };

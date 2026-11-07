@@ -63,6 +63,13 @@ function Start-EngineJava {
         Collect-UnregisteredSpawn $p $PidFile | Out-Null
         return 1
       }
+      # Phase-3 P0 fix (probed, redirect and no-redirect shapes alike): PS 5.1 Start-Process -PassThru returns a
+      #   Process whose ExitCode reads NULL when WaitForExit() runs without the handle allocated first. NULL then
+      #   flows through `exit ($null)` => exit code 0, so an engine REJECT was recorded as exit=0 on the agent
+      #   path (false-green; runraw/fr_agent $LASTEXITCODE=0). Accessing .Handle forces the SafeProcessHandle
+      #   allocation BEFORE the process exits and makes ExitCode reliable (probed: java System.exit(1) reads 1
+      #   in both shapes). r17/r18 registration order untouched: spawn -> pidfile -> handle -> wait.
+      try { $null = $p.Handle } catch { }
       $p.WaitForExit()
       return $p.ExitCode
     }

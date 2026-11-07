@@ -1,0 +1,19 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报S3_api.cpt",
+  "outName": "S3T7",
+  "ops": [
+    {
+      "op": "replace_cell_value",
+      "sheet": 0,
+      "cell": { "c": 0, "r": 0 },
+      "value": { "kind": "text", "text": "生产日报（加工达成：计划 / 完成 / 完成率）" }
+    },
+    {
+      "op": "replace_cell_value",
+      "sheet": 0,
+      "cell": { "c": 3, "r": 1 },
+      "value": { "kind": "text", "text": "完成率(%)" }
+    }
+  ]
+}

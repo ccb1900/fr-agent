@@ -1,0 +1,8 @@
+{
+  "patchVersion": "1",
+  "sourceCpt": "fineagent/生产日报S3_api.cpt",
+  "outName": "S3T4",
+  "ops": [
+    { "op": "add_sheet", "name": "sheet2", "title": "明细附页" }
+  ]
+}
