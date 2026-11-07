@@ -50,9 +50,18 @@ try {
     for (var r = 0; r < sd.rows; r++) {
       for (var c = 0; c < sd.cols; c++) {
         if (dumped >= CELL_CAP) { truncated = true; break; }
-        var ct = TemplateInspector.cellText(wb, i, c, r);
-        if (ct.ok === false) throw new Error('cellText failed: ' + JSON.stringify(ct.error));
-        if (ct.text !== '') { sheet.cells.push({ c: c, r: r, text: ct.text }); dumped++; }
+        var ct = TemplateInspector.cellMeta(wb, i, c, r);
+        if (ct.ok === false) throw new Error('cellMeta failed: ' + JSON.stringify(ct.error));
+        if (ct.text !== '' || ct.type === 'chart') {
+          var item = { c: c, r: r, text: ct.text };
+          if (ct.type) item.type = ct.type;
+          if (ct.formula != null) item.formula = ct.formula;
+          if (ct.dsColumn != null) item.dsColumn = ct.dsColumn;
+          if (ct.chartClass) item.chartClass = ct.chartClass;
+          if (ct.colSpan != null) item.colSpan = ct.colSpan;
+          if (ct.rowSpan != null) item.rowSpan = ct.rowSpan;
+          sheet.cells.push(item); dumped++;
+        }
       }
       if (truncated) break;
     }

@@ -46,6 +46,42 @@ var TemplateInspector = (function () {
       return { ok: true, text: v == null ? '' : String(v) };
     } catch (e) { return err('getValue', 'sheet=' + sheet + ' c=' + c + ' r=' + r + ': ' + e); }
   }
+  // 2026-11-07 inspect 深度：单元格元信息（公式/合并/数据集绑定/图表）——Agent 理解已有报表用
+  //   严格失败语义同 cellText；取不到的类型留空不臆造。
+  function cellMeta(wb, sheet, c, r) {
+    var meta = { ok: true };
+    try {
+      var ce = wb.getReport(sheet).getCellElement(c, r);
+      if (!ce) { meta.text = ''; return meta; }
+      var v = ce.getValue();
+      var cn = v && v.getClass ? String(v.getClass().getName()) : '';
+      if (v == null) { meta.text = ''; }
+      else if (cn === 'com.fr.base.Formula') {
+        meta.type = 'formula';
+        meta.formula = (typeof v.getContent === 'function') ? String(v.getContent()) : String(v);
+        meta.text = meta.formula;
+      } else if (cn === 'com.fr.report.cell.cellattr.core.group.DSColumn') {
+        meta.type = 'dsColumn';
+        meta.dsColumn = (typeof v.getColumnName === 'function') ? String(v.getColumnName()) : String(v);
+        meta.text = meta.dsColumn;
+      } else if (cn.indexOf('ChartCollection') >= 0) {
+        meta.type = 'chart';
+        meta.chartClass = '';
+        try {
+          var ch = v.getChart(0);
+          if (ch && ch.getPlot) meta.chartClass = String(ch.getPlot().getClass().getName());
+        } catch (eCh) { }
+        meta.text = '[chart]';
+      } else {
+        meta.type = 'value';
+        meta.text = String(v);
+      }
+      try { var cs = +ce.getColumnSpan(); if (isFinite(cs) && cs > 1) meta.colSpan = cs; } catch (eCs) { }
+      try { var rs = +ce.getRowSpan(); if (isFinite(rs) && rs > 1) meta.rowSpan = rs; } catch (eRs) { }
+      return meta;
+    } catch (e) { return err('cellMeta', 'sheet=' + sheet + ' c=' + c + ' r=' + r + ': ' + e); }
+  }
+
   // r5 P1 / r6-B：数据集只读快照（列名/列型/逐格值）——供 replace_dataset 结果回归。
   //   r6 严格失败语义：任何反射调用失败都返回 {ok:false,error,...}，绝不降级成 'text'/null——
   //   "读不到"与"读到空值"是两种状态，降级会让数据回归误通过。
@@ -80,5 +116,5 @@ var TemplateInspector = (function () {
     }
     return { ok: true, columns: cols, rows: rows };
   }
-  return { describe: describe, datasetExists: datasetExists, cellExists: cellExists, cellText: cellText, datasetSnapshot: datasetSnapshot };
+  return { describe: describe, datasetExists: datasetExists, cellExists: cellExists, cellText: cellText, cellMeta: cellMeta, datasetSnapshot: datasetSnapshot };
 })();
