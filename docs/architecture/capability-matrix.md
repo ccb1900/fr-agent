@@ -33,7 +33,7 @@
 | 能力 | IR | Object | CPT | 引擎渲染 | Agent 可用 | 优先级 | 证据 |
 |---|---|---|---|---|---|---|---|
 | 合并列（colSpan） | ✓ `span` | ✓ setColumnSpan | ✓ | ✓ | ✓ | P0 | ir.js:544；object.js:302；demo `cs>1` **5757 处** |
-| **cells 多行合并表头（rowSpan）** | ✓ `rowSpan`（正整数闸） | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | **部分**（spec 可表达=presentation.cells 无绝对 r 的 rowSpan item；plan→create 无 rowSpan 证据 → manifest agentAvailable=false） | **P0** | R3-0：ir.js 整数闸+块内重叠静态拒+ds+rowSpan 拒（C2）；object 游标含 rowSpan+重叠兜底；载体 test_merge_header + test_rowspan_cases；部署 cpt `rs="2"`×2/`cs="2"`×1；PNG 实拍。**使用该能力 103/240 demo 文件（42.9%），1364 个单元格** |
+| **cells 多行合并表头（rowSpan）** | ✓ `rowSpan`（正整数闸） | ✓ setRowSpan | ✓ `rs="2"` | ✓ PNG 合并渲染 | **✓（2026-11-08 更新：manifest agentAvailable=true；spec cells_rowspan 真引擎 failures=0 + planner 合同 presentation.cells 已通）** | **P0** | R3-0：ir.js 整数闸+块内重叠静态拒+ds+rowSpan 拒（C2）；object 游标含 rowSpan+重叠兜底；载体 test_merge_header + test_rowspan_cases；部署 cpt `rs="2"`×2/`cs="2"`×1；PNG 实拍。**使用该能力 103/240 demo 文件（42.9%），1364 个单元格** |
 | header block 原生多层表头 | ✗ 单层 columns | — | — | — | ✗ | P1 | ir.js:8 `header{columns[],heightPt}` 仍单层；当前多层表头只能走 cells + r 坐标（上方已收） |
 | 边框/背景/字体/对齐 | ✓ `st` | ✓ | ✓ | ✓ | ✓ | P0 | 全量生产报表；AGENTS §2 排版红线 |
 | 行高/列宽 | ✓ | ✓ | ✓ | ✓ | ✓ | P0 | ir.js heightsPt/widthsPt |
@@ -74,8 +74,8 @@
 | Van 7 图（vbar/vline/varea/vscatter/vbubble/vpie/vgauge） | ✓ | ✓ | ✓ | ✓ | ✓ | P1 | test_vanchart 11 块 PNG |
 | 装饰（tooltip/label/stack/条件色/趋势线/轴） | ✓ 多数 | ✓ | ✓ | ✓/`~` 分层 | ✓/✗ | P1 | manifest（3 项 pending：seriesBorder/areaFill/seriesImage） |
 | 组合图（多 plot/双轴） | ✗ | ✗ | ✗ | **构造/序列化已证、渲染未达成（D1 第4轮，2026-11-06）** | ✗ | P2（D1 blocked） | 官方 柱形图变形.cpt 同构；线系列无头不可见（官方 demo 同）；重开条件=可运行系列分配语料；probes/probe_combo_sql_carrier.js + logs/d1_combo* |
-| 地图 vmap | ✓ mapType=area\|point（line/custom 拒） | ✓ | ✓ | ✓ PNG（区域着色/散点标记） | ✗（无省份数据源/无 plan→create e2e → agentAvailable=false） | P2→完成（area/point） | D2：test_vmap/test_vmap_point 载体；manifest chart.vmap |
-| 热力图 vheatmap | ~~✗~~ **✓ kind=vheatmap（heat 四参，缺省官方 35/45/0/70）** | ✓ | ✓ | **✓ PNG（5 省热力光晕+渐变色例 96..40；官方模板无头渲染 RENDER-OK）** | ✗（无热度数据源/无 plan→create e2e → agentAvailable=false） | **P3→完成（2026-11-07）** | D2：probe_heatmap R0（javap 方法面+官方渲染）+ test_vheatmap 载体（cpt 与官方逐字段同构）；manifest chart.vheatmap |
+| 地图 vmap | ✓ mapType=area\|point（line/custom 拒） | ✓ | ✓ | ✓ PNG（区域着色/散点标记） | ✓（2026-11-08：agentAvailable=true；rows vmap_rows 真引擎 + planner 合同已通） | P2→完成（area/point） | D2：test_vmap/test_vmap_point 载体；manifest chart.vmap |
+| 热力图 vheatmap | ~~✗~~ **✓ kind=vheatmap（heat 四参，缺省官方 35/45/0/70）** | ✓ | ✓ | **✓ PNG（5 省热力光晕+渐变色例 96..40；官方模板无头渲染 RENDER-OK）** | ✓（2026-11-08：agentAvailable=true；rows vheatmap_rows 真引擎 + planner 合同已通） | **P3→完成（2026-11-07）** | D2：probe_heatmap R0（javap 方法面+官方渲染）+ test_vheatmap 载体（cpt 与官方逐字段同构）；manifest chart.vheatmap |
 | 雷达/漏斗/词云 | ✗ | ✗ | ✗ | 部分原生 | ✗ | P3 | 无 IR 键 |
 | 图表单元格热链（ChartHyperRelateCellLink） | ✗ | ✗ | ✗ | — | ✗ | P3 | manifest chart.hyperlinkCell pending |
 
@@ -142,7 +142,7 @@
 5. chartDeco 深水区剩余（tooltip 格式件视觉）——P3
 
 ### 3.2 新增（当前完全无法表达且业务价值高）
-1. ~~**合并行/多层表头（cells rowSpan）**~~——P0→IR/渲染已收（R3-0）；plan→create 证据缺（agentAvailable=false）
+1. ~~**合并行/多层表头（cells rowSpan）**~~——P0→IR/渲染已收（R3-0）；plan→create 证据后补（2026-11-08：manifest agentAvailable=true，cells_rowspan 真引擎 + planner 合同）
 2. **跨数据集关联**——P2，成本高
 3. 组合图/双轴——P2
 4. 地图/热力——P2/P3
@@ -152,7 +152,7 @@
 
 | 序 | 能力 | 优先级 | 验收标准 |
 |---|---|---|---|
-| **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=部分**（spec 可表达=presentation.cells rowSpan item；plan→create 证据缺 → agentAvailable=false，C5 口径） |
+| **1（本轮已实施 + R3-0 收尾）** | **cells 多行合并表头（rowSpan）** | **P0** | ✅ 游标含 rowSpan（不再覆盖合并区）；IR 整数闸 + 块内重叠静态拒；7 场景断言（含零/负/小数拒、r 拒、单行零回归）；真引擎 `rs="2"`×2 + PNG（副表头落在合并区下方）；fast15/负门5路/铁证 CBEB42E3；**Agent 可用=✓**（2026-11-08 更新：spec presentation.cells rowSpan + cells_rowspan 真引擎 + planner 合同 presentation.cells → manifest agentAvailable=true；C5 旧口径已由证据补齐） |
 | 2（~~待办~~ **已实施 B1**） | **ReportSpec 条件高亮通路 + 静默丢弃修复** | P1 | ✅ presentation.conditions→IR detail.conditions；footnote 发射、sort/topN/dateRange/filters 结构化拒（C1 白名单兜底）；hl_conditions 载体 PNG；README #118 |
 | 3（**已实施 2026-11-06**） | **ReportSpec 参数面板 + 执行期筛选** | P1 | ✅ param 控件族（B2）+ `params[].filter` → IR.param.filters；param_filter 载体默认值 A线 → PNG 只渲染 A线 行；部署 cpt 参数面板 + 条件；fast 断言 |
 | 4（**已实施 2026-11-06**） | 合计行非 sum 聚合（avg/ratio/count/min/max + ratio） | P1 | ✅ IR aggregate.fn 白名单 + sumCols[].fn；载体 test_total_agg（PNG 合计 60.0/2/35）与 test_total_ratio（PNG 1.14）；部署 cpt 公式 =AVERAGE/=COUNT/=MIN/=SUM/SUM；fast 断言 + scan57 |
@@ -173,5 +173,5 @@
 
 ### 5.3 口径修正（外部审查）
 - `cells` 多行合并表头与 `header` block 原生多层表头**拆为两行**（后者仍 ✗ 单层）。
-- rowSpan 的 **Agent 可用改为「部分」**（2026-11-06 C5 口径：spec 经 presentation.cells 可表达 rowSpan item——probe 实证编译+Ir.validate 零误报；rawIR 载体不能证明 plan→create 链路 → manifest agentAvailable=false）。
+- rowSpan 的 **Agent 可用改为「✓」**（2026-11-08 更新：C5 旧"部分"口径被证据补齐——spec presentation.cells rowSpan + cells_rowspan 真引擎 failures=0 + planner 合同 presentation.cells → manifest agentAvailable=true；历史 C5 结论保留于 git history）。
 - 频率口径：从「rs>1 单元格 1364」改为「**103/240 demo 文件（42.9%）使用，1364 个单元格**」——文件数是需求覆盖面，单元格数是使用密度。

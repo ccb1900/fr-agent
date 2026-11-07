@@ -46,13 +46,13 @@
 |---|---|---|---|---|---|
 | **条件格式/高亮（8 族）** | ✓ 全 verified | **✓ 已接**（B1：presentation.conditions→IR detail.conditions） | ✓（hl_conditions 载体 PNG 高亮行可见） | **极高** | fast_report_spec B1；README #118 |
 | **参数面板（13 控件）** | ✓ 全 supported | **✓ 已接**（B2：params[]→IR.param widgets） | ✓（结构链路；面板渲染属 web 静态 PNG 不现形，serialization-only 口径） | **极高** | fast_report_spec B2；manifest spec.params.panel |
-| 参数执行期筛选 params[].filter | ✓ param.filters | **✓ 已接**（rows 路；多 filter 暂限 1） | **部分**：默认参数值过滤已验证（param_filter PNG 只渲染 A线）；Web 交互改参重查询/plan→create 未验证 → agentAvailable=false（C3 口径） | 高 | README #140/#141；manifest spec.params.filter |
+| 参数执行期筛选 params[].filter | ✓ param.filters | **✓ 已接**（rows 路；多 filter 暂限 1） | **✓**（2026-11-08 更新：默认参数值过滤 param_filter 真引擎 + plan→create e5filter001 全链 → manifest agentAvailable=true；Web 交互改参重查询仍不在承诺内） | 高 | README #140/#141；manifest spec.params.filter |
 | 富文本 / 字典 / 子报表 / 条码 / 斜线表头 | ✓ cells item 全有 | **✓ 已接**（B3：presentation.cells 直通 IR cells item 族） | 部分（spec.rows.cells rendering=pending） | 中 | spec_compiler.js:261-268；README #118 |
 | 展开属性（expand 方向/左父格） | ✓ | ✓（同上直通 item.expand） | 同上 | 中 | 同上 |
 | 超链/钻取（linkTo/parameter js/reportlet） | ✓ | ✓（cells 级 linkTo/web 直通；detail 列级仍无 spec 入口） | 部分 | 中高 | 同上 |
 | 页眉页脚 / 水印 / 浮动元素 / 工具栏 | ✓ 全 verified | **✓ 已接**（B4：sheet.headerFooter/floats/paper/watermark/toolbar） | 部分（cells_extras 载体 cpt 断言） | 中（档案式报表高频） | README #118 |
 | 纸型（ReportSettings/PaperSetting） | ✓ | ✓（B4 paper） | 同上 | 中 | 同上 |
-| cells 多行合并表头（rowSpan） | ✓（R3-0 收） | **✓ 可表达**（presentation.cells 无绝对 r 的 rowSpan item 直通；绝对 r 拒；ds+rowSpan 结构化拒） | 部分：rawIR 载体渲染已证（test_merge_header/test_rowspan_cases）；plan→create 未验 → agentAvailable=false | 高（103/240 文件） | fast_ir_contract R3-0/C2；probe 实证 rowSpan=2 经 spec 编译+Ir.validate 零误报（2026-11-06 收口） |
+| cells 多行合并表头（rowSpan） | ✓（R3-0 收） | **✓ 可表达**（presentation.cells 无绝对 r 的 rowSpan item 直通；绝对 r 拒；ds+rowSpan 结构化拒） | ✓（2026-11-08 更新：rawIR 渲染 + cells_rowspan spec 真引擎 + planner 合同 → manifest agentAvailable=true） | 高（103/240 文件） | fast_ir_contract R3-0/C2；probe 实证 rowSpan=2 经 spec 编译+Ir.validate 零误报（2026-11-06 收口） |
 | 合计行 sumCols（多列求和）/ groupCustom | ✓ | **✓ 已接**（B6 total.sumCols + total.aggregate fn 全词表 sum|avg|count|min|max|ratio） | ✓（sumcols_reg/total_agg/total_ratio 载体 PNG 真值） | 中 | README #118/#122/#124 |
 | 图表装饰全族（tooltip/label/stack/条件色/轴/预警） | ✓ 多数 | **✓ 已接**（B5：CHART_KEYS 直通 IR chart 块） | 分层以 manifest 为准（tooltip/hotTooltip/effect=serialization-only；seriesBorder/seriesImage rendering pending） | 中 | spec_compiler.js:126-136；README #101/#102 |
 | 编辑器校验 reg | ✓ | ✓（params[].reg 直通） | 部分（editorReg serialization-only） | 低 | manifest write.editorReg |

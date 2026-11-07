@@ -1671,12 +1671,14 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 4. `data/engine_class_map.json`：能力→类→落地模块单一真相（62 verified 锚定，3 agent.* runtime 无引擎类，6 pending/rejected 记录原因）。
 5. `verify/fast_layer_coherence.js`（第 18 套件）：I1 承诺有实现 / I2 承诺有入口 / jar 锚定（类在 jar 且在模块字面量）/ 清单指纹，72 项 0 违反。
 6. 报告：`docs/architecture/layer-coherence.md`（11 层定义 + 分布 + 诚实清单）。
+7. 文档与账本口径同步（第三轮）：`lib/ir.js`/`lib/report_spec.js` 里 vmap/vheatmap/spec.params.filter 的旧 `agentAvailable=false` 文案改为与 manifest 一致（这些能力已在 e5filter001/vmap_rows/vheatmap_rows/cells_rowspan 全链或 spec 真引擎实证后升 true）；`docs/architecture/capability-matrix.md` 与 `native-capability-inventory.md` 的 rowSpan/vmap/vheatmap/params.filter 旧"部分/✗"状态同步更新并标注日期（历史结论保留在 git history）。
 
 ### 验证结果
 - 层门 72 项×11 层：I1/I2/I3(承诺侧)/I4(负控) 违反=0；分布 jar 63/6/3、tool 5/2/65、planner 47 PASS/25 UNKNOWN（无 BLOCKED）。
 - fast 18/18 rc=0（含新 fast_layer_coherence）；scan ok=87 bad=0。
 - 默认管线 `run.ps1 -Script make_api.js` failures=0，全 stage passed；`demo_api.cpt` MD5=CBEB42E3CE48E46E362B9AE80168026F（仓库根实测）。
 - 部署矩阵 48/48；静态门 failures=0；引擎负门 GREEN（no false-green, default baseline intact）；集成门 S1-S28 GREEN failures=0 skips=0。
+- 全链实测：`run-golden-e2e.ps1` PASS（runId=ge20261108053139-20f321）——plan→plan2spec→create→validate(逐格真值)→preview→modify(diffClean)→promote→restore→baseline-restore，自然语言意图到引擎回读整条链在本轮改动后仍闭合。
 - 未验证：jar 层"类被调用"是静态字面量断言（非运行期堆栈），运行期由各 carrier failures=0 承担。
 
 ### 未决

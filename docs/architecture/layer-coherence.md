@@ -87,3 +87,5 @@ scripts\build_jar_inventory.ps1
 ```
 
 **五态标注**：以上 I1/I2/I4/I5 已自动化测试并真实运行（nashorn 真实执行 plan()，真实 jar 扫描）；I3 的 jar 存在性是真实扫描，但"类被调用"仅静态字面量断言，不是运行期堆栈证明——运行期证明由各 carrier 的引擎 failures=0 与部署 cpt 承担（见 manifest evidence）。
+
+**全链实测（2026-11-08，本轮变更后复跑）**：`scripts/run-golden-e2e.ps1` PASS（runId=ge20261108053139-20f321），链路=plan→plan2spec→create→validate（含逐格真值 grid）→preview→modify（diffClean）→promote→restore→baseline-restore；即自然语言意图→ReportSpec→IR→Object→CPT→引擎渲染→回读验证整条链在本轮改动后仍闭合。
