@@ -45,6 +45,9 @@ GATE_ARTIFACT_PREFIXES = (
     "生产日报图C_api.",      # c-maturity C3（c3_chart_intent.json）
     "生产日报GOLDEN_api.",   # golden e2e（logs/agent/golden/g1_intent.json）
     "neg_secret_leak_api.",  # 引擎负门 secret-leak 夹具（deploy 后撤回，pdf/png 残留为门禁自产件）
+    "销售明细_api.",         # make_api 默认 spec（销售明细/reports/sales_demo）的部署产物——每轮门禁
+                             #   末步默认 spec 收尾都会重写：cpt 确定性字节不变、png 钉 A8EF39AB（fast_baseline
+                             #   钉住部署件语义面）、pdf 内嵌时间戳逐跑不同（本轮全量终验 S0 实测唯一 stray）
 )
 
 RESULTS = []

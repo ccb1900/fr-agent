@@ -1519,7 +1519,7 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 - promote/restore 矩阵 30/30 PASS（过程中 P11 曾因守卫重排红→修：SOURCE_HASH_MISSING 存在性检查先于 orig 哈希比对——守卫顺序也是合同）。
 - fast16 FAST GATE GREEN / scan ok=62 bad=0 / 静态门 failures=0 / 基线 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F。
 - c-maturity e2e GREEN（新守卫下真链 create+validate+inspect+modify+promote）+ golden e2e PASS（runId=ge20261107111826-b80d6b，plan+create+validate+truth-grid+preview+modify+promote+restore+baseline-restore）+ 引擎负门 ENGINE NEG GATE GREEN（无假绿+默认基线完好）。
-- S0 机制实证：部署目录前后清点对拍（logs/inv_before/inv_after）——一次 c-maturity e2e 改写 5 个文件，全部属于门禁自产件（工单参数查询C/车间双页日报C/生产日报图C 的 cpt/pdf；cpt/pdf 内嵌创建时间戳逐跑字节不同、png 像素确定性不变）；neg_secret_leak_api.pdf/png 为引擎负门自产件残留。验证器 S0 语义随之明确为：既有件零丢失 + 变化仅限门禁自产件白名单 + 白名单外零变化（不丢生产件的验证器侧铁证不变，验证器与沙盒用例本身仍全程只读真实部署目录）。
+- S0 机制实证：部署目录前后清点对拍（logs/inv_before/inv_after）——一次 c-maturity e2e 改写 5 个文件，全部属于门禁自产件（工单参数查询C/车间双页日报C/生产日报图C 的 cpt/pdf；cpt/pdf 内嵌创建时间戳逐跑字节不同、png 像素确定性不变）；neg_secret_leak_api.pdf/png 为引擎负门自产件残留。验证器 S0 语义随之明确为：既有件零丢失 + 变化仅限门禁自产件白名单 + 白名单外零变化（不丢生产件的验证器侧铁证不变，验证器与沙盒用例本身仍全程只读真实部署目录）。全量终验 S0 二次实证：唯一白名单外 stray=销售明细_api.pdf——make_api 默认 spec（销售明细）的部署产物，每轮门禁末步默认 spec 收尾都重写（cpt 确定性字节不变、png 钉 A8EF39AB 由 fast_baseline 钉住、pdf 内嵌时间戳逐跑不同），已入白名单并注明依据。
 
 ### 三态报告
 - PASS：3.1-1（S1a/S1b/S1c/S1d）、3.1-2（S2a/S2b）、3.1-3（S3a/S3b/S3c）、3.1-4（S4a/S4b/S4c）、3.2-1（S5a/S5b/S5c/S5d）、3.2-2（S6a/S6b）、3.2-3（S7a/S7b）、3.2-4（S8a/S8b）+ 门禁 S9a/S9b/S9c/S9d/S9e/S9f/S9g1/S9g2。
