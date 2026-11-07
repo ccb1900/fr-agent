@@ -147,8 +147,30 @@ C['spec.sql.filters'] = { intent: baseSql(null, { filters: [{ field: 'planned', 
 C['spec.sql.sort'] = { intent: baseSql(null, { sort: [{ field: 'bizDate', dir: 'desc' }] }), expect: 'dataset.sort' };
 C['spec.sql.topN'] = { intent: baseSql(null, { topN: 5 }), expect: 'dataset.topN', eq: 5 };
 var NEG = [{ name: 'rows-top-level-filters', intent: baseRows({ showTotal: true }, { filters: [{ field: 'rowNo', op: '>', value: 1 }] }) }, { name: 'chart-bogus-kind', intent: baseRows({ showTotal: false, chart: { kind: 'vbarNope', category: 'bizTime', value: 'rowNo' } }) }, { name: 'sheet-bogus-key', intent: baseRows({ showTotal: true }, { sheet: { notAKey: 1 } }) }];
+C['chart.mapLabel'] = { intent: baseRows({ showTotal: false, chart: { kind: 'vmap', category: 'bizTime', value: 'rowNo', mapLabel: { areaLabel: { enable: true, fontPt: 10, color: 255 } } } }), expect: 'presentation.chart.mapLabel' };
+C['chart.mapTooltip'] = { intent: baseRows({ showTotal: false, chart: { kind: 'vmap', category: 'bizTime', value: 'rowNo', mapTooltip: { areaTooltip: { muti: false, format: '#,##0' } } } }), expect: 'presentation.chart.mapTooltip' };
+C['chart.mapTooltipFormat'] = { intent: baseRows({ showTotal: false, chart: { kind: 'vmap', category: 'bizTime', value: 'rowNo', tooltip: { formats: { category: true, value: '#,##0.0' } } } }), expect: 'presentation.chart.tooltip.formats' };
+C['chart.hyperlinkCell'] = { intent: baseRows({ showTotal: false, chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo', hotHyperLink: { target: 'plot' } } }), expect: 'presentation.chart.hotHyperLink' };
+C['chart.hotTooltip'] = { intent: baseRows({ showTotal: false, chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo', hotTooltip: { position: 1, showMutiSeries: true } } }), expect: 'presentation.chart.hotTooltip' };
 function runC(c) { var it = JSON.parse(JSON.stringify(c.intent)); if (c.patchChart) c.patchChart(it.presentation.chart); var r = ReportPlanner.plan(it, ctx); if (r.status !== 'ready' || !r.reportSpec) return 'NO:' + r.status; var g = getIn(r.reportSpec, c.expect); if (g === undefined || g === null) return 'NO:no ' + c.expect; if (c.eq !== undefined && String(g) !== String(c.eq)) return 'NO:' + c.expect + '=' + g; return 'PASS:' + c.expect + '=' + g; }
+// SPECC (2026-11-08 coherence round): the spec layer's executable contract. The capability's intent is
+//   planned, the EMITTED spec must pass SpecValidator, compile through SpecCompiler, and the compiled IR
+//   must pass Ir.validate with zero errors. A capability that can only exist in one of those surfaces
+//   (validator whitelist but no compiler support, say) fails here instead of collecting a vocabulary green.
+function runSpecC(c) {
+  var it = JSON.parse(JSON.stringify(c.intent)); if (c.patchChart) c.patchChart(it.presentation.chart);
+  var r = ReportPlanner.plan(it, ctx);
+  if (r.status !== 'ready' || !r.reportSpec) return 'no:plan ' + r.status;
+  var errs = SpecValidator.validate(r.reportSpec);
+  if (errs && errs.length) return 'no:spec ' + errs[0].code + ' ' + errs[0].path;
+  var ir = null, ie = [];
+  try { ir = SpecCompiler.compile(r.reportSpec, {}); } catch (e) { ie = ['COMPILE_THROW: ' + e]; }
+  if (ir) ie = Ir.validate(ir);
+  if (ie && ie.length) return 'no:ir ' + ie[0].code + ' ' + ie[0].path;
+  return 'ok:spec+compile+Ir.validate clean';
+}
 for (var nm in C) if (Object.prototype.hasOwnProperty.call(C, nm)) print('PLANC|' + nm + '|' + runC(C[nm]));
+for (var nm2 in C) if (Object.prototype.hasOwnProperty.call(C, nm2)) print('SPECC|' + nm2 + '|' + runSpecC(C[nm2]));
 var negOk = true;
 for (var q = 0; q < NEG.length; q++) { var rn = ReportPlanner.plan(NEG[q].intent, ctx); if (rn.status === 'ready') { negOk = false; print('NEGC|' + NEG[q].name + '|ACCEPTED-BAD'); } else print('NEGC|' + NEG[q].name + '|refused'); }
 print('NEGOK|' + negOk);
@@ -171,11 +193,13 @@ print('SPECJSON|' + JSON.stringify(sc));
 $planText = & $java '-Djava.awt.headless=true' '-Xmx400m' '-cp' $nashorn 'jdk.nashorn.tools.Shell' $planJs 2>&1
 $planRc = $LASTEXITCODE
 $PLANRES = @{}
+$SPECRES = @{}
 $planNegLines = @()
 $negOk = ''
 foreach ($ln in $planText) {
   $s = '' + $ln
   if ($s.StartsWith('PLANC|')) { $pp = $s.Split('|'); $PLANRES[$pp[1]] = $pp[2] }
+  elseif ($s.StartsWith('SPECC|')) { $pp2 = $s.Split('|'); $SPECRES[$pp2[1]] = $pp2[2] }
   elseif ($s.StartsWith('NEGC|')) { $planNegLines += $s }
   elseif ($s.StartsWith('NEGOK|')) { $negOk = $s.Substring(6).Trim() }
 }
@@ -369,8 +393,12 @@ foreach ($ln in $planText) {
   if ($s.StartsWith('SPECTOK|')) { foreach ($t in $s.Substring(8).Split(',')) { if ($t.Trim()) { [void]$specTokSet.Add($t.Trim()) } } }
 }
 if ($specTokSet.Count -lt 5) { Write-Output 'LAYER-GATE BLOCKED spec vocabulary dump empty (SPECTOK missing)'; exit 3 }
-if ($specTokSet.Contains($specTok)) { Add-Verdict 'spec' 'PASS' ('ReportSpec.capabilities() exact member "' + $specTok + '"') }
-else { Add-Verdict 'spec' 'UNKNOWN' ("ReportSpec surface has no exact member '" + $specTok + "' - not verifiable at this layer (many caps reach the engine via IR/rawIR, their own layer)") }
+if ($SPECRES.ContainsKey($target) -and (('' + $SPECRES[$target]).StartsWith('ok:'))) {
+  # strongest form: the capability's intent survives plan -> SpecValidator -> SpecCompiler -> Ir.validate
+  Add-Verdict 'spec' 'PASS' ('executable contract: plan -> SpecValidator -> SpecCompiler -> Ir.validate clean (' + ('' + $SPECRES[$target]).Substring(3) + ')')
+}
+elseif ($specTokSet.Contains($specTok)) { Add-Verdict 'spec' 'PASS' ('ReportSpec.capabilities() exact member "' + $specTok + '"') }
+else { Add-Verdict 'spec' 'UNKNOWN' ("ReportSpec surface has no exact member '" + $specTok + "' and no executable spec contract covers it - not verifiable at this layer (many caps reach the engine via IR/rawIR, their own layer)") }
 # planner layer: a REAL ReportPlanner.plan() run per capability contract (input intent -> emitted spec
 #   path), not a substring of the planner source. EXACT input/output, with negative controls below that
 #   MUST refuse - an always-true check would report green for a capability the planner cannot route.

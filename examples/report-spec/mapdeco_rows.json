@@ -1,0 +1,22 @@
+{
+  "specVersion": "1",
+  "report": { "name": "地图装饰 spec 路（mapLabel/mapTooltip/formats）" },
+  "outName": "能力自检_map装饰spec",
+  "dimensions": [ { "field": "line", "label": "区域", "widthPt": 160 } ],
+  "metrics": [ { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" } ],
+  "dataset": { "rows": [["广东", 95], ["四川", 62]] },
+  "presentation": {
+    "type": "table",
+    "showTotal": false,
+    "chart": {
+      "kind": "vmap",
+      "category": "line",
+      "value": "planned",
+      "mapType": "area",
+      "geoUrl": "assets/map/中国.json",
+      "mapLabel": { "areaLabel": { "enable": true, "fontPt": 10, "color": 255 } },
+      "mapTooltip": { "areaTooltip": { "muti": false, "format": "#,##0" } },
+      "tooltip": { "formats": { "category": true, "value": "#,##0.0" } }
+    }
+  }
+}
