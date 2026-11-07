@@ -1618,3 +1618,19 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 - D2/D3/D5/D8 的「提交记录丢失」用重写 promote/restore.json ok=false 模拟（真实触发=COMMITTED/promote.json 写失败，同属 Add-DeployStateEvent/WriteAtomic 写失败族，状态面等价）；D1 的 PREPARED 写失败用 deploy_state.jsonl 置为目录注入（黑盒、无代码钩子）。
 - 断电级（fsync）语义未实现也未声称——按 backlog 要求如实声明支持范围=进程崩溃恢复（promote.json concurrencyBoundary 字段+runtime-supervisor.md §7+agent-tools.md 均已写明）。
 - 引擎负门（run-engine-negative-tests.ps1）本轮未跑：改动面=agent/tools PS 层与矩阵/文档，不触 lib/ir/object/cpt 与引擎语义；集成门+E2E 已覆盖。
+
+## 2026-11-07 全面闭环：六类断点修复（直接执行）
+
+### 断点与处置
+1. **Planner 词表窄** — ①capability.intentFeature 移除 chart 越权（两路已支持；filters 仍 deferred）②planner rows 顶层 intent.chart → presentation.chart ③fast_planner 断言改向。真通道验证：组合 intent（chart vbar+label+legend + total.aggregate avg + cells + params.filter + hideRows）plan→plan2spec→create 全链 PASS（runId=plan_full_004，artifact exit=0，部署 cpt VanChart×21/AVERAGE×1/CommonCondition×2）。
+2. **rows 路出图** — spec_validator 放开 + compileRows chart 块发射；载体 rows_chart.json 真引擎 PNG 柱形图。
+3. **多 Sheet SQL extra** — compileSql opts{dsName,sheetName} + compile 按 kind 分发 + make_api deps 触发扩展；载体 multisheet_sql_extra.json 全阶段 passed（真连库），cpt 2 Report/ds2/DBTableData。
+4. **inspect_template 深度** — inspector.cellMeta（formula/dsColumn/chartClass/colSpan/rowSpan）；实测 销售明细_api.cpt 返回 =SUM(D3)/dsColumn×4/colSpan=4。
+5. **回归载体接满** — scan_all_specs 扩展至 examples/report-spec/*.json（ok 62→84）+ reports/test_mapdeco_ir.js（→85）；manifest 回归 pending→verified：mapLabel/mapTooltip/hyperlinkCell/mapTooltipFormat。
+6. **agentAvailable 升级** — vmap/vheatmap（rows 路 e2e 实证）→true；mapLabel（四层全 verified，scan 载体入册）→true。剩余 false 均有明确原因（serialization-only 渲染 / 引擎墙 / 无 plan→create e2e）。
+
+### 视觉 pending 裁定（照 D1 先例）
+seriesBorder（柱缘无可见框+无官方语料）、seriesImage（棋盘格判别阴性）= 引擎/无头渲染墙，维持 pending 并写明重开条件。
+
+### 门禁
+fast16 rc=0 / scan 85 ok 0 bad / 基线 MD5=CBEB42E3 不变 / 全部已 push。
