@@ -1,0 +1,50 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "rows 路图表"
+  },
+  "outName": "能力自检_rows图表",
+  "dimensions": [
+    {
+      "field": "line",
+      "label": "生产线",
+      "widthPt": 160
+    }
+  ],
+  "metrics": [
+    {
+      "field": "planned",
+      "label": "计划",
+      "aggregation": "sum",
+      "dataType": "number",
+      "widthPt": 120,
+      "format": "#,##0"
+    }
+  ],
+  "dataset": {
+    "rows": [
+      [
+        "A线",
+        80
+      ],
+      [
+        "B线",
+        40
+      ],
+      [
+        "C线",
+        150
+      ]
+    ]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vbar",
+      "category": "line",
+      "value": "planned",
+      "heightPt": 300
+    }
+  }
+}

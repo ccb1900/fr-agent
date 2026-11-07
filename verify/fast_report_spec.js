@@ -115,7 +115,7 @@ check('I1.1 sql 路 presentation.type 越词表→INVALID_ENUM', codeAt(mutSql(f
 check('I1.1 presentation 未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）', codeAt(mutSql(function (r) { r.presentation.foo = 1; }), 'UNSUPPORTED_CAPABILITY', 'presentation.foo'));
 check('I1.1 sql 路 chart 合法形状零误报', errsOf(JSON.parse(src('examples/report-spec/daily_chart.sql.json'))).length === 0);
 check('I1.1 sql 路 chart.value 缺失→REQUIRED', codeAt(mutSql(function (r) { r.presentation.chart = { kind: 'bar', category: 'bizDate' }; }), 'REQUIRED', 'presentation.chart.value'));
-check('I1.1 rows 路 presentation.chart→UNSUPPORTED_CAPABILITY（compiler 不读=不静默丢图）', codeAt(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart'));
+check('I1.1 rows 路 presentation.chart 零误报（2026-11-07 消除 SQL-only 限制）', errsOf(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm' }; })).length === 0);
 // r8 A2：表头文案/列宽覆盖 + 脚注（迁移旧报表用；未知键/坏类型明确拒）
 check('r8-A2 footnote 非字符串→INVALID_TYPE', codeAt(mutSql(function (r) { r.presentation.footnote = 123; }), 'INVALID_TYPE', 'presentation.footnote'));
 check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', foo: 1 }]; }), 'UNSUPPORTED_CAPABILITY', 'dataset.dimensions[0].foo'));
@@ -125,7 +125,7 @@ check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) 
 check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
-  return r.chart === 'unsupported' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
+  return typeof r.chart === 'object' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
 })());
 // 镜像 schema 不得与 validator 口径打架（声明式镜像同步演进，validator 仍是权威）
 var schemaMirror = JSON.parse(src('schemas/report-spec.schema.json'));
