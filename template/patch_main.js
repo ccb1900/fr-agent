@@ -119,7 +119,7 @@ try {
   var descriptor = TemplateInspector.describe(wb);
   if (descriptor.ok === false) throw new Error('描述符读取失败（严格语义，不降级）: ' + descriptor.error.operation + ': ' + descriptor.error.message);
   var expected = { added: [], removed: [], ops: patch.ops.slice() };   // I6.1-B：ops 决定允许的结构变化类别
-  var changedCells = [], keyCells = [], dsChecks = [];
+  var changedCells = [], keyCells = [], dsChecks = [], datasetValues = [];
   patch.ops.forEach(function (op) {
     var res = TemplatePatch.apply(wb, op, descriptor);
     if (res.before.cell) {
@@ -129,6 +129,9 @@ try {
     }
     if (res.before.dataset) {
       expected.added.push('/*replace_dataset ' + res.before.dataset.name + ' rows=' + res.before.dataset.rowCount + '*/');
+      // 3.2-1：新数据集值池（op.rows 扁平化）交给执行栅格回归——数据区格变化只有落进值池才被屏蔽，
+      //   表头/绑定等非数据区格被改坏仍 FAIL（旧 hasDatasetOp 短路是 fail-open，反例见 fast_template 3.2-1 钉）
+      (op.rows || []).forEach(function (row) { (row || []).forEach(function (v) { datasetValues.push(v); }); });
       // r5 P1：数据集替换必须按 PatchSpec 逐列名/列型/行数/逐格核对（不再"能执行就 PASS"）
       var dr = TemplateRegression.dataset({ columns: op.columns, rows: op.rows }, TemplateInspector.datasetSnapshot(wb, op.name));
       dsChecks.push({ where: 'in-memory', pass: dr.pass, reason: dr.reason });
@@ -139,7 +142,7 @@ try {
   var pngAfter = renderPng(wb, staging + '/_post.png');
 
   // 任一执行/渲染/数据集失败 = 回归失败；裁决逻辑在 template/regression.js 纯函数（离线可证）
-  var ev = TemplateRegression.execution(before, after, { changedCells: changedCells, keyCells: keyCells, hasDatasetOp: hasDatasetOp });
+  var ev = TemplateRegression.execution(before, after, { changedCells: changedCells, keyCells: keyCells, hasDatasetOp: hasDatasetOp, datasetValues: datasetValues });
   var stats = pixelStats(staging + '/_pre.png', staging + '/_post.png');
   var rv = TemplateRegression.render(pngBefore, pngAfter, stats, { maxRatio: 0.05, expectPixelChange: (patch.ops || []).length > 0 });
   print('  execution regression=' + (ev.pass ? 'PASS(' : 'FAIL(') + ev.reason + ') (rows=' + (before.rows ? before.rows.length : -1) + ')');

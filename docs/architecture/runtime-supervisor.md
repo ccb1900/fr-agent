@@ -113,3 +113,11 @@ logs/agent/runs/<runId>/java.pid   本次 Java 身份（PENDING=预登记未起/
 `agent/tools/config.ps1` 提供 root/fr/java/nashorn/runtime dir(FR_AGENT_RUNTIME_DIR env)/deploy/heap(FR_AGENT_HEAP env)/MutexName(FR_AGENT_MUTEX env)/AcquireTimeoutSec；runtime.ps1/fr_agent.ps1/engine_launch/run/runraw/集成/静态/入口脚本一律源自它或 env，无裸硬编路径（`check_ps1_static.ps1` 把关，r17 起把 engine_launch.ps1/_identity.ps1 纳入 PARSE/ASCII 清单）。**Mutex 作用域约束见 §0（单 Windows 登录 Session；跨 Session 需先评估 Global\+ACL）。**
 
 另：`run.ps1` 的 `Get-Process java | Stop-Process`（手动门专用路径，agent 路径一律 -NoKill）为既有惯例，其"全杀 java"副作用的使用边界单独记录于 README（#89）；本协议职责边界仅覆盖 agent 路径。
+
+## 7. 部署窗口（promote/restore 替换的协作边界，2026-11-07 阶段3 3.1-4）
+
+promote/restore 的部署替换是一个 **check-then-act 窗口**：全部哈希守卫（patch.json ok、manifest 全量比对、staging 绑定 RunId、sourceHash 三方一致、staged/.orig 哈希）都在 agent 运行时命名 Mutex **之内**、紧贴 `File.Replace` 原子替换之前执行，窗口内不存在第二个持有执行权的写入者——这就是 promote 部署窗口的协作边界声明。引擎写路径（make_api deploy）与 promote/restore 一样各自整体处于 Mutex 区内，两个写入者在窗口上串行，不共享未受保护间隙。
+
+崩溃一致性（3.1-3）：替换前写 `PREPARED`、替换并哈希复核后写 `COMMITTED`（每 run 的 `deploy_state.jsonl`）。进程在替换与提交之间任意时刻崩溃，下一次 promote/restore 按**实际部署件哈希**对照 PREPARED 记录识别"已换未记"状态：补完成提交（重物化丢失的 promote.json/restore.json），绝不盲目重换；无 PREPARED 证据时同字节态仍按 SOURCE_CHANGED/DEPLOYED_CHANGED 拒绝（fail-closed）。
+
+并发窗口故障测试结论（如实三态）：真进程 kill 注入（`File.Replace`→`WriteAtomic` 提交之间毫秒级窗口）黑盒不可确定性注入 = **BLOCKED**；其确定性等价注入（真实 promote/restore 成功后截断提交物 → 重试按哈希身份识别并补提交）= **PASS**（stage3 验证器 S3b/S3c + 回归矩阵 R5 二次 restore 拒 / P16 锁定目标原子替换失败保留原文件）。并发窗口本身的互斥语义由 S2/S4/S15/S24 真并发用例持续把守。

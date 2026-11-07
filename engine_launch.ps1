@@ -69,7 +69,15 @@ function Start-EngineJava {
       #   path (false-green; runraw/fr_agent $LASTEXITCODE=0). Accessing .Handle forces the SafeProcessHandle
       #   allocation BEFORE the process exits and makes ExitCode reliable (probed: java System.exit(1) reads 1
       #   in both shapes). r17/r18 registration order untouched: spawn -> pidfile -> handle -> wait.
-      try { $null = $p.Handle } catch { }
+      # 3.2-4 (stage3 final check S8a): a Handle allocation failure must NOT be silently swallowed - without
+      #   the handle PS 5.1 reads ExitCode as NULL and a rejected engine run would be recorded as exit 0
+      #   (false-green, the P0 class this file exists to prevent). Fail-closed: collect the unidentifiable
+      #   spawn on the SAME object (confirmed kill+wait -> pidfile dropped; otherwise PENDING kept so the
+      #   next run refuses by identity) and return an explicit failure instead of an untrustworthy exit code.
+      try { $null = $p.Handle } catch {
+        Collect-UnregisteredSpawn $p $PidFile | Out-Null
+        return 1
+      }
       $p.WaitForExit()
       return $p.ExitCode
     }

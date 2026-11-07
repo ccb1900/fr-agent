@@ -138,7 +138,21 @@ check('r5 前两行非指定格意外变化→FAIL（旧实现会整体跳过）
   var a = { ok: true, rows: [['h', 'CHANGED'], ['hh', 'y']], error: null };
   return TemplateRegression.execution(b, a, { changedCells: [{ c: 0, r: 0 }] }).pass === false;
 })());
-check('r5 dataset op：执行差异交 dataset 回归（不在这里误判）', TemplateRegression.execution({ ok: true, rows: [['a']], error: null }, { ok: true, rows: [['b']], error: null }, { hasDatasetOp: true }).pass === true);
+// 3.2-1（反例先行）：r5 旧钉「执行差异交 dataset 回归」正是本轮要拆的 fail-open 短路（数据读回对但
+//   绑定/表头被改坏也 PASS）。新合同：无 dataset 值池时执行差异必须 FAIL；数据区格变化只有新值落在
+//   PatchSpec 数据集值池里才屏蔽；非数据区格（表头）被改一律 FAIL。
+check('3.2-1 dataset op 不再短路：无值池时执行差异 FAIL（旧 r5 钉的 fail-open 已拆）', TemplateRegression.execution({ ok: true, rows: [['a']], error: null }, { ok: true, rows: [['b']], error: null }, { hasDatasetOp: true }).pass === false);
+check('3.2-1 dataset op 数据区格：新值 ∈ datasetValues → 屏蔽 PASS', TemplateRegression.execution({ ok: true, rows: [['a']], error: null }, { ok: true, rows: [['b']], error: null }, { hasDatasetOp: true, datasetValues: ['b'] }).pass === true);
+check('3.2-1 dataset op 非数据区格（表头）被改 → FAIL（绑定/公式改坏必须拦）', (function () {
+  var b = { ok: true, rows: [['Header', 'd1'], ['Val', '1']], error: null };
+  var a = { ok: true, rows: [['HeaderTampered', 'd1'], ['Val', '1']], error: null };
+  return TemplateRegression.execution(b, a, { hasDatasetOp: true, datasetValues: ['d1', '1'] }).pass === false;
+})());
+check('3.2-1 dataset op 行数变化仍保守拒（映射未定案不放宽，S7b 同钉）', (function () {
+  var b = { ok: true, rows: [['a'], ['b']], error: null };
+  var a = { ok: true, rows: [['a']], error: null };
+  return TemplateRegression.execution(b, a, { hasDatasetOp: true, datasetValues: ['a'] }).pass === false;
+})());
 // r5 渲染：像素 diff 必须真的执行（尺寸/比例/bbox）
 var POK = { ok: true, bytes: 40000, error: null };
 check('C 渲染失败→FAIL', TemplateRegression.render({ ok: false, bytes: -1, error: 'e' }, POK, null, {}).pass === false);

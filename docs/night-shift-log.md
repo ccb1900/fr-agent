@@ -1467,3 +1467,64 @@ fast16 FAST GATE GREEN / scan ok=62 bad=0 skipped=1（s3_daily.js 入扫）/ 静
 
 ### 下一步
 backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐标，解锁扩展区公式/格修改——先探针后修）；agent 链 create 的默认 spec 收尾自动化评估（不引新机制前提下）。
+
+## 2026-11-07（阶段3 第三阶段：fail-closed 真实故障注入收口——验证器 3.1-1..3.1-4 + 3.2-1..3.2-4 全绿）
+
+### 工作目标
+交付后无人值守 owner 敢让 Agent 直接动生产报表：promote/restore 即使被篡改证据、被指错 staging、在替换与记账之间任意时刻崩溃也不丢生产件不假报成功；模板改数据集时「数据读回对但绑定/公式被改坏」也被拦。方法=verify/stage3_final_check.py 每条 fail-closed 声明在真实代码路径真实注入故障、先红后绿（基线 a82e8ba 实测 14 PASS/18 FAIL/1 BLOCKED/2 NOT RUN，exit=1，红集合与任务书一致）。
+
+### 逐项（全部本轮真跑，先红后绿；每项绿由本轮证据支撑，不继承旧 PASS）
+
+**3.1-1（promote manifest 全量一致性）**
+- 反例（基线实测穿透，exit=0 部署件被换）：内嵌 manifest 的 execution/render/datasetChecks 篡改 pass=true、磁盘 manifest.json=false → 旧四字段比对（sourceCpt/out/diffClean/sourceHash）看不见，verdict 全部只在内嵌 manifest 裁决（fr_agent.ps1 旧 :366-374/:389）。
+- 修复：_deploy.ps1 新增 Compare-ManifestVerdict（sourceCpt/out/sourceHash/datasetOps/diffClean/execution/render/datasetChecks 逐块 canonical 比较、presence 不对称即 mismatch），promote 在触碰部署件前拒 MANIFEST_MISMATCH。
+- 验证：S1a/S1b/S1c 真子进程注入 → exit=1 + promote.json ok=false + 沙盒部署件 SHA-256 字节不变（PASS）；S1d 一致 manifest 正对照 promote 成功且 deployedHash/promotedHash/sourceHash 哈希链完整（PASS）；矩阵 P15 同类拒 PASS。
+
+**3.1-2（staging 绑定 RunId）**
+- 反例（基线实测穿透）：patch.json.stagingDir 指向其它 RunId 的 staging（staged/.orig 自洽）→ 旧校验只查「staged 在自声明目录内」（fr_agent.ps1 旧 :379-382，RunId 变量在手边未绑定）→ exit=0。
+- 修复：promote/restore 在读任何 staged 文件前强制 stagingDir == $agentDir\runs\<RunId>\staging（GetFullPath + OrdinalIgnoreCase），拒 STAGING_RUNID_MISMATCH。
+- 验证：S2a 越权注入拒且部署件不变（PASS）；S2b 本 RunId staging 正对照成功（PASS）；矩阵 P7（staged 在白名单外）PASS。
+
+**3.1-3（PREPARED/COMMITTED 部署操作日志 + 崩溃恢复）**
+- 反例（基线实测死锁）：真 promote 成功后截断 promote.json（=替换成功、提交丢失）→ 重试 SOURCE_CHANGED 死锁；restore 同理 DEPLOYED_CHANGED（无恢复路径）。
+- 修复：每 run `deploy_state.jsonl` 追加式操作日志（Add-DeployStateEvent/Get-DeployStateEvents）；替换前 PREPARED（stagedHash/sourceHash/origHash/deployedBeforeHash）、哈希复核后 COMMITTED；重试按**实际部署件哈希**对照 PREPARED 识别「已换未记」→ 补完成提交（重物化 promote.json/restore.json，绝不重换）；无 PREPARED 证据时同字节态仍按 SOURCE_CHANGED/DEPLOYED_CHANGED 拒（fail-closed）。
+- 验证：S3b promote 崩溃恢复=识别未提交→完成提交（PASS）；S3c restore 崩溃恢复=识别已替换→补提交、部署件=orig 字节（PASS）；S3a 静态断言（PASS）；S3d 真进程 kill 注入（File.Replace→WriteAtomic 毫秒级窗口）黑盒不可确定性注入=BLOCKED（如实；S3b/S3c 为真实操作日志+截断提交物的确定性等价注入，标准原文即「模拟崩溃」）；矩阵 R5（二次 restore 拒）/P16（锁定目标替换失败保留原文件）/R6（中途 staging 丢失拒）PASS=恢复路径未破坏既有拒绝语义。
+
+**3.1-4（协作边界声明）**
+- promote.json/restore.json 成功件携带 concurrencyBoundary + mutex 字段（单写者部署窗口：全部哈希守卫在运行时命名 Mutex 内紧贴 File.Replace 执行；S4a PASS）。
+- 文档：runtime-supervisor.md 新增 §7「部署窗口」——check-then-act 窗口 + 协作边界 + 崩溃一致性 + 并发窗口故障测试结论（S4b PASS）。
+- 并发窗口结论留痕：真 kill=BLOCKED、确定性等价注入=PASS（S4c PASS）。
+
+**3.2-1（replace_dataset 不再跳过执行栅格回归）**
+- 反例：regression.js:54 `if (opts.hasDatasetOp) return {pass:true,...}` 短路 → 数据读回对但表头/绑定被改也 PASS（fail-open；S5b 基线 FAIL）。
+- 修复：拆短路；执行栅格仍逐格对比，屏蔽面=① PatchSpec 点名坐标（原语义不变）② 数据集值池可论证变化（新值 ∈ op.rows 扁平值池、空串不入池；patch_main.js 组装 datasetValues 传入）；行/列数变化在 dataset 替换下继续保守拒绝（映射未定案，见 3.2-3）。
+- fast_template.js 旧钉「r5 dataset op：执行差异交 dataset 回归」正是被拆的 fail-open 合同——反例先行后随 3.2-1 语义升级改钉，并新增 3 钉：无值池执行差异 FAIL / 新值∈值池屏蔽 PASS / 表头篡改 FAIL / 行数变化仍拒。
+- 验证：S5a 短路不存在（PASS）；S5b hasDatasetOp 下非数据区格被改 → FAIL（PASS）；S5c dataset integrity 判定原样保持=正确读回 PASS（PASS，拆分未动 dataset()）；S5d patch_main.js manifest 含独立 execution/datasetChecks 双块（PASS）；fast_template failures=0。
+
+**3.2-2（diff 数据集豁免按 TableData 节点上下文）**
+- 反例：含 > 和 $ 的普通 <O> 单元格文本变化（budget>100$ → budget>999$）被 isDatasetToken 宽规则（≥10 可打印字符含 [>"'~$]）误豁免 clean=true 穿透（基线 S6a FAIL）。
+- 修复：diff.js 新增 datasetNodeCdata 按 `<TableData>…</TableData>` span 收集节点内 CDATA 多重集（与 tokens() 同套 UUID/数字噪声过滤），dataset/plain 双侧拆分；isDatasetToken 豁免只作用于 dataset 侧，plain 侧（单元格文本/其它语义）严格守恒；expected 抵扣改走 plain 侧；无 dataset op 时 dataset 侧变化一律算未预期（改数据集不申报=可疑）。
+- 验证：S6a 含 >/$ 单元格文本变化不再豁免（clean=false 且 token 进 unintended，PASS）；S6b TableData 节点内多行序列化串仍豁免不回归（PASS）；fast_template 全部 diff 断言（含阶段3 两钉）绿。
+
+**3.2-3（坐标映射留证 + 保守拒绝不放宽）**
+- 本轮映射结论（留证即本条目）：模板坐标→执行栅格坐标的位移映射仍未定案（对应既有 backlog P2 项「regression.js 扩展位移映射」）；本轮为其落中间防线——数据集值池屏蔽（3.2-1）把数据区格变化的合法性从坐标改为值语义论证；扩展区位移（阶段3 任务⑤实证：模板 r3 总计 → 栅格 r12）仍未解，故 dataset 替换下执行栅格行/列数变化维持保守拒绝、changedCells 坐标屏蔽口径不变。
+- 验证：S7a 本条目即本轮留证（坐标映射结论，PASS）；S7b Nashorn 真跑执行栅格行数变化仍 FAIL（映射未定案前保守拒绝未被拆除，PASS）。
+
+**3.2-4（engine_launch Handle 失败不再空吞）**
+- 反例：engine_launch.ps1 `try { $null = $p.Handle } catch { }` 空块（基线 S8a FAIL）——句柄分配失败被静默吞，ExitCode NULL 假绿风险无兜底。
+- 修复：catch 内 Collect-UnregisteredSpawn（kill+wait 确认退出→撤 pidfile；否则 PENDING 留守供下次运行按身份拒）+ return 1 显式失败路径（不返回不可信 ExitCode）。
+- 验证：S8a 结构断言（PASS）；S8b 真 java 正常路径回归 rc=0 + java.pid 身份已注册 pid+ticks（PASS）；真 Handle 抛异常黑盒不可确定性注入（PS5.1 句柄时序）——S8a 为结构断言口径，如实区分。
+
+### 门禁（全部本轮真跑）
+- promote/restore 矩阵 30/30 PASS（过程中 P11 曾因守卫重排红→修：SOURCE_HASH_MISSING 存在性检查先于 orig 哈希比对——守卫顺序也是合同）。
+- fast16 FAST GATE GREEN / scan ok=62 bad=0 / 静态门 failures=0 / 基线 demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F。
+- c-maturity e2e GREEN（新守卫下真链 create+validate+inspect+modify+promote）+ golden e2e PASS（runId=ge20261107111826-b80d6b，plan+create+validate+truth-grid+preview+modify+promote+restore+baseline-restore）+ 引擎负门 ENGINE NEG GATE GREEN（无假绿+默认基线完好）。
+- S0 机制实证：部署目录前后清点对拍（logs/inv_before/inv_after）——一次 c-maturity e2e 改写 5 个文件，全部属于门禁自产件（工单参数查询C/车间双页日报C/生产日报图C 的 cpt/pdf；cpt/pdf 内嵌创建时间戳逐跑字节不同、png 像素确定性不变）；neg_secret_leak_api.pdf/png 为引擎负门自产件残留。验证器 S0 语义随之明确为：既有件零丢失 + 变化仅限门禁自产件白名单 + 白名单外零变化（不丢生产件的验证器侧铁证不变，验证器与沙盒用例本身仍全程只读真实部署目录）。
+
+### 三态报告
+- PASS：3.1-1（S1a/S1b/S1c/S1d）、3.1-2（S2a/S2b）、3.1-3（S3a/S3b/S3c）、3.1-4（S4a/S4b/S4c）、3.2-1（S5a/S5b/S5c/S5d）、3.2-2（S6a/S6b）、3.2-3（S7a/S7b）、3.2-4（S8a/S8b）+ 门禁 S9a/S9b/S9c/S9d/S9e/S9f/S9g1/S9g2。
+- NOT RUN：无——终验为全量模式（验证器 34 项检查在本轮提交后全量跑）。
+- BLOCKED：S3d 真进程 kill 注入（毫秒级窗口黑盒不可确定性注入；S3b/S3c 为确定性等价注入）；S8 Handle 抛异常真注入（PS5.1 句柄时序；S8a 为结构断言并如实区分）。S10b（HEAD==origin/main）受本轮执行环境约束不 push，提交后由外层流程收口。
+
+### 独立复审
+本轮执行者逐文件交叉复核：① promote/restore 全守卫仍先于任何部署件写路径，恢复分支不引入「先写后验」——COMMITTED 补记只发生在哈希身份证实之后，PREPARED 证据缺失时同字节态仍拒；② 恢复幂等：COMMITTED(recovered)→promote.json 重物化期间再崩 → 下次重试仍走恢复分支重物化，部署件零字节副作用；③ Compare-ManifestVerdict 对 execution/render/datasetChecks 缺失侧 fail-closed（presence 不对称即 mismatch），cosmetic 字段（pixelStats）不比较不误伤；④ fast_template 改钉三条新钉均为新合同正反对照，非放水（表头篡改/行数变化/无值池三向仍拒）；⑤ S0 白名单外零变化保持硬断言；⑥ diff.js dataset/plain 拆分后 structDelta/attrTokens 口径未动（fast_template 全钉复绿）。复审结论：本轮无未决缺陷，全部修复当场闭环；3.2-3 坐标映射作为既有研究方向继续挂在账本，不在本轮冒充收口。

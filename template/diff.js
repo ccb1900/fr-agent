@@ -52,6 +52,38 @@ var TemplateDiff = (function () {
     return out;
   }
   function countAll(xml, re) { return (String(xml).match(re) || []).length; }
+  // 3.2-2（反例先行，stage3 final check S6a）：数据集本体豁免必须限定在 <TableData>…</TableData> 节点内。
+  //   旧实现 isDatasetToken 直接按 token 文本判断，`含 >$ 的 ≥10 可打印字符` 宽规则把普通 <O> 单元格文本
+  //   （budget>100$ → budget>999$）也豁免了（clean=true 放过非数据区改动，基线实测穿透）。改为按节点
+  //   上下文把 CDATA token 分成 dataset/plain 两个多重集：dataset 侧=TableData 节点内的 CDATA（与 tokens()
+  //   同一套 UUID/数字噪声过滤），dataset op 的豁免只作用于 dataset 侧；plain 侧（单元格文本/样式/其它
+  //   语义）仍严格守恒，不享受 isDatasetToken 豁免。
+  function datasetNodeCdata(xml) {
+    var s = String(xml), out = {}, m;
+    var spanRe = /<TableData[\s>][\s\S]*?<\/TableData\s*>/g;
+    while ((m = spanRe.exec(s))) {
+      var span = m[0], cm, cRe = /<!\[CDATA\[([\s\S]*?)\]\]>/g;
+      while ((cm = cRe.exec(span))) {
+        var t = cm[1];
+        if (isUuidNoise(t)) continue;
+        var tag = ownerTag(span, cm.index);
+        if (tag && NUMERIC_NOISE_TAGS[tag] && isNumericNoise(t)) continue;
+        out[t] = (out[t] || 0) + 1;
+      }
+    }
+    return out;
+  }
+  function countsToList(c) {
+    var l = [];
+    for (var k in c) { if (Object.prototype.hasOwnProperty.call(c, k)) { for (var i = 0; i < c[k]; i++) l.push(k); } }
+    return l;
+  }
+  function subMultiset(list, counts) {
+    var c = {}, out = [];
+    for (var k in counts) { if (Object.prototype.hasOwnProperty.call(counts, k)) c[k] = counts[k]; }
+    list.forEach(function (t) { if ((c[t] || 0) > 0) { c[t]--; } else { out.push(t); } });
+    return out;
+  }
   function profile(xml) {
     return {
       cells: countAll(xml, /<O[ >]/g),
@@ -79,12 +111,19 @@ var TemplateDiff = (function () {
   //   replace_cell_value: 任何结构计数变化都不允许；replace_dataset: 仅 dataCols/tableData 允许变（其余守恒）。
   function diff(beforeXml, afterXml, expected) {
     expected = expected || {};
-    var ms = multisetDiff(tokens(beforeXml), tokens(afterXml));
+    var allB = tokens(beforeXml), allA = tokens(afterXml);
+    var ms = multisetDiff(allB, allA);
+    // 3.2-2：dataset/plain 双侧拆分（dataset 侧 = TableData 节点内的 CDATA 多重集）
+    var dsB = datasetNodeCdata(beforeXml), dsA = datasetNodeCdata(afterXml);
+    var plainB = subMultiset(allB, dsB), plainA = subMultiset(allA, dsA);
+    var msPlain = multisetDiff(plainB, plainA);
+    var msDs = multisetDiff(countsToList(dsB), countsToList(dsA));
     var ams = multisetDiff(attrTokens(beforeXml), attrTokens(afterXml));
     var eA = (expected.added || []).slice(), eR = (expected.removed || []).slice();
     var eAttrA = (expected.attrAdded || []).slice(), eAttrR = (expected.attrRemoved || []).slice();
-    var unintendedAdded = consume(eA.slice(), ms.added);
-    var unintendedRemoved = consume(eR.slice(), ms.removed);
+    // expected（PatchSpec 点名的单元格变化）只从 plain 侧抵扣；dataset 侧的豁免由 isDatasetToken 管辖
+    var unintendedAdded = consume(eA.slice(), msPlain.added);
+    var unintendedRemoved = consume(eR.slice(), msPlain.removed);
     var unintendedAttrAdded = consume(eAttrA.slice(), ams.added);
     var unintendedAttrRemoved = consume(eAttrR.slice(), ams.removed);
 
@@ -94,6 +133,8 @@ var TemplateDiff = (function () {
     var hasDatasetOp = ops.some(function (o) { return o.op === 'replace_dataset'; });
     // I6.1-B：replace_dataset 时数据集本体（SQL/连接/列名/Java 类/行值/序列化属性）预期整体替换，
     //   这些 token 从 unintended 豁免；但单元格/样式/其它语义 token 仍严格守恒（不静默放过未改部分）。
+    //   3.2-2：isDatasetToken 现在只作用于【TableData 节点内】的 token（msDs）——普通 <O> 单元格文本
+    //   不再被文本宽规则误豁免；无 dataset op 时 dataset 侧变化一律算未预期（改数据集却不申报=可疑）。
     function isDatasetToken(t) {
       var s = String(t).trim();
       if (s === '' || /^(ds\d+|ATOM_LIVE)$/.test(s)) return true;        // 空占位 / 数据集名 / 连接名
@@ -107,9 +148,11 @@ var TemplateDiff = (function () {
       if (/^[\x20-\x7E\r\n]{10,}$/.test(s) && /[>"'~$]/.test(s)) return true;  // 内嵌行序列化串（含多行）
       return false;
     }
+    var dsAdded = hasDatasetOp ? msDs.added.filter(function (t) { return !isDatasetToken(t); }) : msDs.added.slice();
+    var dsRemoved = hasDatasetOp ? msDs.removed.filter(function (t) { return !isDatasetToken(t); }) : msDs.removed.slice();
+    unintendedAdded = unintendedAdded.concat(dsAdded);
+    unintendedRemoved = unintendedRemoved.concat(dsRemoved);
     if (hasDatasetOp) {
-      unintendedAdded = unintendedAdded.filter(function (t) { return !isDatasetToken(t); });
-      unintendedRemoved = unintendedRemoved.filter(function (t) { return !isDatasetToken(t); });
       unintendedAttrAdded = unintendedAttrAdded.filter(function (t) { return !/class=com\.fr\.data\.impl\.(EmbeddedTableData|DBTableData|NameDatabaseConnection)/.test(t); });
       unintendedAttrRemoved = unintendedAttrRemoved.filter(function (t) { return !/class=com\.fr\.data\.impl\.(DBTableData|NameDatabaseConnection)/.test(t); });
     }

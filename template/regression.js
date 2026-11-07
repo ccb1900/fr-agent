@@ -45,17 +45,29 @@ var TemplateRegression = (function () {
   }
 
   // before/after: {ok:bool, rows:[[text]]|null, error:string|null}
-  // opts: {changedCells:[{c,r}], hasDatasetOp:bool}
+  // opts: {changedCells:[{c,r}], hasDatasetOp:bool, datasetValues:[v], datasetValuesBefore:[v]}
   function execution(before, after, opts) {
     opts = opts || {};
     if (!before || !before.ok || !after || !after.ok) {
       return { pass: false, reason: '执行失败: before=' + ((before && before.error) || 'ok') + ' after=' + ((after && after.error) || 'ok') };
     }
-    if (opts.hasDatasetOp) return { pass: true, reason: 'dataset 替换：数据一致性由 dataset 回归（列名/列型/行数/逐格）判定' };
+    // 3.2-1（反例先行，stage3 final check S5b）：hasDatasetOp 不再短路放行。旧语义「数据一致性由 dataset
+    //   回归判定」= 数据读回正确时，报表绑定/公式/标题被改坏也 PASS（fail-open，基线实测穿透）。现数据集
+    //   替换下执行栅格仍逐格对比，只有两类格变化被屏蔽：① PatchSpec 点名坐标（changedCells）；
+    //   ② 数据集值池可论证的变化——新值 ∈ datasetValues（来自 PatchSpec op.rows，空串不入池）且调用方
+    //   提供旧值池时旧值 ∈ datasetValuesBefore。表头/标题等非数据区格被改（新值不在池里）→ FAIL。
+    //   行数/列数变化在 dataset 替换下仍保守拒绝（模板坐标→执行坐标映射未定案，见 night-shift-log 3.2-3）。
     var b = before.rows, a = after.rows;
     if (!isArr(b) || !isArr(a)) return { pass: false, reason: '执行结果栅格形态非法（rows 非数组）' };
-    if (b.length !== a.length) return { pass: false, reason: '行数变化: before=' + b.length + ' after=' + a.length };
+    if (b.length !== a.length) return { pass: false, reason: '行数变化: before=' + b.length + ' after=' + a.length + (opts.hasDatasetOp ? '（dataset 替换下执行栅格行数变化需坐标映射定案后才能放行——保守拒绝）' : '') };
     var changes = opts.changedCells || [];
+    function pool(vals) {
+      var p = {};
+      (vals || []).forEach(function (v) { var s = normCell(v); if (s !== '') p[s] = 1; });
+      return p;
+    }
+    var dsNew = pool(opts.datasetValues);                       // 新数据集值池（来自 PatchSpec op.rows）
+    var dsOld = opts.datasetValuesBefore ? pool(opts.datasetValuesBefore) : null;
     function masked(r, c, bv, av) {
       for (var i = 0; i < changes.length; i++) {
         var ch = changes[i];
@@ -64,6 +76,7 @@ var TemplateRegression = (function () {
         // 合并单元格：同一标题值会复制到被合并的各列，同"旧值→新值"的重复格也是预期变化
         if (typeof ch.oldText === 'string' && bv === ch.oldText && av === ch.newText) return true;
       }
+      if (opts.hasDatasetOp && dsNew[normCell(av)] === 1 && (!dsOld || dsOld[normCell(bv)] === 1)) return true;   // 数据区格：变化可由数据集值池论证
       return false;
     }
     for (var r = 0; r < b.length; r++) {
