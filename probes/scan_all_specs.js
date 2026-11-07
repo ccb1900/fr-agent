@@ -40,5 +40,39 @@ names.forEach(function (fn) {
     });
   } else ok++;
 });
+// 2026-11-07：examples/report-spec/*.json 也进回归门（ReportSpec 路：validator 全量 + rows 路 compile+Ir.validate；
+//   sql 路 compile 需 deps，仅 validator+结构闸，不打网络/库）
+load(ROOT + '/lib/report_spec.js');
+load(ROOT + '/lib/isodate.js');
+load(ROOT + '/lib/spec_validator.js');
+load(ROOT + '/lib/spec_compiler.js');
+var exDir = new java.io.File(ROOT + '/examples/report-spec');
+var exs = exDir.exists() ? exDir.listFiles() : [];
+var exNames = [];
+for (var ei = 0; ei < exs.length; ei++) if (exs[ei].isFile() && /\.json$/.test(exs[ei].getName())) exNames.push(exs[ei].getName());
+exNames.sort();
+exNames.forEach(function (fn) {
+  var rel = 'examples/report-spec/' + fn;
+  var txt = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(ROOT + '/' + rel)), 'UTF-8')).replace(/^﻿/, '');
+  var rs = null;
+  try { rs = JSON.parse(txt); } catch (e0) { bad++; print('SPEC JSON FAIL ' + rel + ': ' + e0); return; }
+  var errs = [];
+  try { errs = SpecValidator.validate(rs); } catch (e1) { bad++; print('SPEC VALIDATOR THREW ' + rel + ': ' + e1); return; }
+  if (errs.length) {
+    bad++; print('SPEC VALIDATE FAIL ' + rel + ' (' + errs.length + ')');
+    errs.slice(0, 8).forEach(function (e) { print('   ' + (e && e.code ? e.code + ' @ ' + e.path + ': ' + e.message : String(e))); });
+    return;
+  }
+  var hasSql = (rs.dataset && rs.dataset.kind === 'sql') || (Array.isArray(rs.extraSheets) && rs.extraSheets.some(function (x) { return x && x.dataset && x.dataset.kind === 'sql'; }));
+  if (hasSql) { ok++; print('SPEC OK (sql: validator only) ' + rel); return; }
+  var ir2 = null;
+  try { ir2 = SpecCompiler.compile(rs); } catch (e2) { bad++; print('SPEC COMPILE FAIL ' + rel + ': ' + e2); return; }
+  var ie = [];
+  try { ie = Ir.validate(ir2); } catch (e3) { bad++; print('SPEC IR THREW ' + rel + ': ' + e3); return; }
+  if (ie.length) {
+    bad++; print('SPEC IR FAIL ' + rel + ' (' + ie.length + ')');
+    ie.slice(0, 8).forEach(function (e) { print('   ' + (e && e.code ? e.code + ' @ ' + e.path + ': ' + e.message : String(e))); });
+  } else ok++;
+});
 print('SCAN END: ok=' + ok + ' bad=' + bad + ' skipped=' + skipped);
 System.exit(bad ? 1 : 0);
