@@ -640,6 +640,56 @@ try {
     Assert-Refuse 'D14 restore: committed promote without log evidence -> COMMIT_CHAIN_MISMATCH' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'COMMIT_CHAIN_MISMATCH' $h0
   }
 
+  # ---------------- D15: FOREIGN-RunId events with the SAME hashes -> restore refuses ----------------
+  #   2026-11-08 review P1 counter-example: the endorsement must be THIS RunId's transaction. After a
+  #   normal promote, every promote event's runId is rewritten to a foreign value; the staged/promoted/
+  #   orig/source hashes stay identical and the per-verb order stays legal, so the log itself reads
+  #   TRUSTED - but the current RunId owns no event. Hash-only matching (the pre-fix behaviour) would
+  #   endorse and restore; the RunId-bound replay must refuse with COMMIT_CHAIN_MISMATCH and leave the
+  #   deployed (patched) bytes untouched.
+  $c = New-Case 'D15' ('ORIG-D15' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D15' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D15 restore: foreign-RunId same-hash events (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $logPath = Join-Path $c.runDir 'deploy_state.jsonl'
+    $lines = [System.IO.File]::ReadAllLines($logPath)
+    $new = @()
+    foreach ($ln in $lines) {
+      $o = $ln | ConvertFrom-Json
+      if (([string]$o.verb) -eq 'promote') { $o.runId = 'mtx999FOREIGN' }
+      $new += ($o | ConvertTo-Json -Compress -Depth 6)
+    }
+    [System.IO.File]::WriteAllLines($logPath, $new)
+    $h0 = Sha256 $c.deployed
+    Assert-Refuse 'D15 restore: FOREIGN-RunId same-hash events -> COMMIT_CHAIN_MISMATCH' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'COMMIT_CHAIN_MISMATCH' $h0
+  }
+
+  # ---------------- D16: FORGED promote.json.origHash (deployedHash genuine) -> restore refuses ----------------
+  #   2026-11-08 review P1 counter-example 2: only the recorded ORIGINAL hash is rewritten; the
+  #   deployedHash/sourceHash are the real committed values, so a check that compares hashes against the
+  #   live deployed file alone is satisfied here. The PREPARED event's origHash is the witness: the chain
+  #   replay compares it field-to-field with promote.json.origHash, so the forged record refuses
+  #   (restoring on a wrong origHash would also validate the restored bytes against a hash the original
+  #   never had). Deployed bytes must survive the refusal untouched.
+  $c = New-Case 'D16' ('ORIG-D16' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D16' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D16 restore: forged origHash (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $pr = Read-Json (Join-Path $c.runDir 'promote.json')
+    $pr.origHash = ('F' * 64)     # FORGERY: the only mismatching field
+    [System.IO.File]::WriteAllText((Join-Path $c.runDir 'promote.json'), ($pr | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
+    $h0 = Sha256 $c.deployed
+    Assert-Refuse 'D16 restore: forged promote.json.origHash -> COMMIT_CHAIN_MISMATCH' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'COMMIT_CHAIN_MISMATCH' $h0
+  }
+
   # ---------------- X1: Replace-FileAtomic unit - success swaps bytes, leaves no temp ----------------
   if (-not (Test-Path $deployHelper)) { Bad 'X1 Replace-FileAtomic success' '_deploy.ps1 missing' }
   else {

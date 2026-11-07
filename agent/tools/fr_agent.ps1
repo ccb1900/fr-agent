@@ -559,24 +559,47 @@ switch ($inner) {
         if ($pr -and ($pr.ok -eq $true)) {
           if (-not $pr.deployedHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no deployedHash (promote predates the guard; re-run modify+promote with a new RunId)' }
           if (-not $pr.origHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no origHash (promote predates the guard; re-run modify+promote with a new RunId)' }
-          # Phase-4 batch-1 (restore cross-validation, ask P1): the committed deployedHash must be
-          #   BACKED by the append-only deploy log. promote.json is a single forgeable file - an
-          #   external party can edit the deployed artifact AND rewrite promote.json.deployedHash to
-          #   the foreign hash, which would make the deployed-hash guard pass and let restore clobber
-          #   foreign state "legally". The log is the evidence: at least one PREPARED/SWAPPED/COMMITTED
-          #   promote event must carry the same hash (stagedHash for PREPARED/SWAPPED - the deployed
-          #   bytes were verified equal to the staged bytes - or promotedHash for COMMITTED). A torn
-          #   tail only removes the LAST event, so a committed promote always keeps hash evidence in
-          #   the readable prefix. No backing event = forged or lost commit record = COMMIT_CHAIN_MISMATCH.
+          # 2026-11-08 review P1: the endorsement must be THIS RunId's COMPLETE promote transaction - never
+          #   another attempt's or another RunId's same-hash events. Replay the events in order: PREPARED
+          #   opens a transaction (carrying sourceHash/origHash/stagedHash), SWAPPED carries the stagedHash
+          #   forward, COMMITTED closes it with promotedHash; FAILED_* ends the current attempt. promote.json's
+          #   three hashes must match the closing transaction's PREPARED+COMMITTED fields field-for-field,
+          #   otherwise COMMIT_CHAIN_MISMATCH. ONE documented exception (Phase-4 batch-1 tail policy, matrix
+          #   D10): when the log's LAST line is a torn partial write, the COMMITTED event was lost mid-flush -
+          #   this RunId's PREPARED->SWAPPED pair witnessing the staged hash promote.json reports as
+          #   deployedHash then closes the transaction. The exception is gated on TornTail being detected, so
+          #   cleanly deleting the COMMITTED line still refuses (matrix D14).
           $dsLog = Get-DeployStateEvents $runDir
           if ($dsLog.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog.Error + ' (the commit chain cannot be confirmed from an untrustworthy deploy log; refusing)') }
+          $openPrep = $null
+          $tornSwap = $null
           $chainBacked = $false
           foreach ($ev in $dsLog.Events) {
             if ([string]$ev.verb -ne 'promote') { continue }
-            if ((([string]$ev.event -eq 'PREPARED') -or ([string]$ev.event -eq 'SWAPPED')) -and ([string]$ev.stagedHash -eq [string]$pr.deployedHash)) { $chainBacked = $true; break }
-            if (([string]$ev.event -eq 'COMMITTED') -and ([string]$ev.promotedHash -eq [string]$pr.deployedHash)) { $chainBacked = $true; break }
+            if ([string]$ev.runId -ne [string]$RunId) { continue }   # a foreign-RunId event never endorses this run
+            $evt = [string]$ev.event
+            if ($evt -eq 'PREPARED') { $openPrep = $ev; $tornSwap = $null; continue }
+            if ($evt -eq 'FAILED_BEFORE_SWAP' -or $evt -eq 'FAILED_AFTER_SWAP') { $openPrep = $null; $tornSwap = $null; continue }
+            if (-not $openPrep) { continue }
+            if ($evt -eq 'SWAPPED') {
+              if ([string]$ev.stagedHash -ne [string]$openPrep.stagedHash) { $openPrep = $null; $tornSwap = $null; continue }
+              $tornSwap = $openPrep   # the swap is witnessed by this RunId; a COMMITTED lost to the torn tail may close here
+              continue
+            }
+            if ($evt -eq 'COMMITTED') {
+              $tornSwap = $null
+              $sameDeployed = ([string]$ev.promotedHash -eq [string]$pr.deployedHash)
+              $sameOrig = ([string]$openPrep.origHash -eq [string]$pr.origHash)
+              $sameSource = ([string]$openPrep.sourceHash -eq [string]$pr.sourceHash)
+              $sameStaged = ([string]$openPrep.stagedHash -eq [string]$pr.deployedHash)
+              if ($sameDeployed -and $sameOrig -and $sameSource -and $sameStaged) { $chainBacked = $true; break }
+              $openPrep = $null
+            }
           }
-          if (-not $chainBacked) { throw ('COMMIT_CHAIN_MISMATCH: promote.json.deployedHash ' + ([string]$pr.deployedHash).Substring(0, 12) + '.. is not backed by any PREPARED/SWAPPED/COMMITTED promote event in deploy_state.jsonl (forged or lost commit evidence); refusing to restore') }
+          if (-not $chainBacked -and $dsLog.TornTail -and $tornSwap) {
+            if (([string]$tornSwap.origHash -eq [string]$pr.origHash) -and ([string]$tornSwap.sourceHash -eq [string]$pr.sourceHash) -and ([string]$tornSwap.stagedHash -eq [string]$pr.deployedHash)) { $chainBacked = $true }
+          }
+          if (-not $chainBacked) { throw ('COMMIT_CHAIN_MISMATCH: promote.json sourceHash/origHash/deployedHash do not match a PREPARED->COMMITTED transaction of THIS RunId field-for-field (foreign-RunId events, a tampered origHash and lost evidence all refuse); refusing to restore') }
           $expectDeployed = [string]$pr.deployedHash
           $origExpect = [string]$pr.origHash
         } elseif ($pr -and ($pr.ok -eq $false)) {
@@ -585,7 +608,7 @@ switch ($inner) {
           $dsLog2 = Get-DeployStateEvents $runDir
           if ($dsLog2.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog2.Error + ' (the uncommitted-promote state cannot be judged from an untrustworthy deploy log; refusing)') }
           foreach ($ev in $dsLog2.Events) {
-            if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'promote' -and ([string]$ev.sourceHash -eq [string]$pj.manifest.sourceHash) -and $ev.stagedHash) { $prepEv = $ev }
+            if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'promote' -and ([string]$ev.runId -eq [string]$RunId) -and ([string]$ev.sourceHash -eq [string]$pj.manifest.sourceHash) -and $ev.stagedHash) { $prepEv = $ev }
           }
           if (-not $prepEv) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok=false and the deploy-state log has no PREPARED promote record (the promote never reached the swap; nothing uncommitted to undo); refusing' }
           $expectDeployed = [string]$prepEv.stagedHash
