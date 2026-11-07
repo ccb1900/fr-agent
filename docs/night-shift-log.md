@@ -1570,3 +1570,26 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 ### 未验证事项/边界（如实）
 - 本验证器覆盖定位链路的「入口可驱动+可见结果可断言」面；TABLE_DESIGN_STANDARD 人工过目清单与像素级排版质量仍属交付核对面（验证器不替代人工过目，AGENTS §1 口径不变）。
 - 未并入 `scripts/run-integration-tests.ps1` 门（保持本轮最小交付，是否并门由外层流程决定）；未 push（约束，S10b 类收口由外层流程处理）。
+
+## 2026-11-07（05b60c3 CWD 修复面收口：3 个引擎 verb 入口锚定 + e2e 跨 CWD 冒烟 + 05b60c3 补落账）
+
+### 背景与证据
+- 05b60c3 立论前提是「外置 agent 调用目录不可控」，但只修了 4 个零引擎 verb（_lib.readUtf absOf 单点化）；同一前提下 3 个引擎 verb 入口仍绑死 JVM CWD：agent/tools/fr_agent.ps1:226（create→run.ps1 -Script make_api.js）、:269（modify→runraw.ps1 'template/patch_main.js'）、:328（inspect_template→runraw.ps1 'template/inspect_main.js'）传裸相对脚本名，run.ps1:15/runraw.ps1:8/engine_launch.ps1:41,90,93 原样透传 nashorn，而 nashorn 相对脚本名按 JVM 工作目录解析——外置 agent 从任意非 D:\fineagent 目录调用，生命周期在 create/modify/inspect_template 三步必挂。
+- 反例先行（本轮真跑复现）：TEMP CWD 下 ①fr_agent -Verb inspect_template -Target fineagent/demo_api.cpt → 契约行 ok=false rc=1，inspect.log 报 `java.io.IOException: template\inspect_main.js is not a file`；②run.ps1 -Script make_api.js -NoKill → RUN_RC=103，log 报 `make_api.js is not a file`（engine_launch.ps1:90）——文件未找到即退、引擎未启动（fail-closed 非假绿，但产品主链断）。
+- 尺子盲区坐实：da86f25 交付的 run-agent-lifecycle-e2e.ps1 全程 $Root 绝对拼装、从不度量跨 CWD 可驱动性；night-shift-log 对 05b60c3 零落账（grep readUtf|absOf|单点化|换目录 = 0 命中）——下轮会把「换目录调用即崩修复」误读为端到端已可换目录。本条目即补落账。
+
+### 实施（最小修复，不动 Runtime 冻结面）
+- run.ps1/runraw.ps1 各一处：相对 -Script 经 IsPathRooted 判定后 Join-Path $PSScriptRoot + GetFullPath 归一为绝对（与 runtime/paths.js:20 FR_AGENT_HOME root 相对语义同构）；绝对路径恒等透传，engine_launch.ps1 未动。一处修三点——fr_agent.ps1 三个引擎入口全部受益，fr_agent 本身零改动；其余传相对名的既有调用点（scripts/run-golden-e2e.ps1:166、run-engine-negative-tests.ps1:55/72、run-c-maturity-e2e.ps1:103、run-multisheet-e2e.ps1:70，均 make_api.js）同受保护，从 $Root 运行的门禁行为零变化；绝对调用方（tools_abr_regr/tools_br_run/tools_prod_run）恒等。
+- scripts/run-agent-lifecycle-e2e.ps1 补跨 CWD 冒烟：新增 Invoke-CrossCwdSmoke（作为 PHASE 0 随全量 e2e 每跑必测）+ -CrossCwdSmoke 独立开关（零引擎、秒级）；覆盖 6 个零引擎 verb（list_reports/discover/resolve/plan/plan2spec/sample_data，超出改进项最低 4 个），CWD=$env:TEMP 下按产品交接形态（root 相对 -Intent/-Sample）断言契约行 ok=true；含 plan→plan2spec 链交接。
+
+### 验证结果（全部本轮真跑）
+- 修后 TEMP CWD 产品路径：①inspect_template（靶件 fineagent/demo_template_final.cpt）ok=true rc=0，payload 实质 sheetCount=1/cells=16/datasets=1（首轮 demo_api.cpt 为不存在的靶件名，换 list_reports 工具输出选靶后过——靶名错误与 CWD 修复无关）；②run.ps1 -Script make_api.js 全链 rc=0、PIPELINE END failures=0、11 阶段全 passed；③整只 run-agent-lifecycle-e2e.ps1 从 TEMP CWD 跑全链 PASS（runId=ale20261107171222-6633fe，rc=0）——三引擎入口+全部零引擎 verb 在异目录走完整产品路径（含 truth-grid/preview/modify 三判定/promote-restore 哈希链/baseline-restore）。
+- CWD 散落检查：TEMP CWD 跑 make_api 前后文件清单 diff=仅自建 -Out 日志，零散落（引擎读写均 FR_AGENT_HOME/FR_HOME 锚定）。
+- 冒烟自证非空转：独立模式 PASS（6 verb 全 ok，runId=ale20261107171518-1a5c4fccw，ccs runDir 七件产物齐全含 plan.json/reportSpec.json 链）；空核 stub 下 SMOKE FAILED rc=1（fail-fast 生效，冒烟会红）；-NegativeControl 重跑 HELD rc=0。
+- 门禁：fast16 GREEN（三铁证完好：CBEB42E3/6161F402/A8EF39AB）+ 静态门 failures=0（run.ps1/runraw.ps1/run-agent-lifecycle-e2e.ps1 三文件 PARSE+ASCII 双 PASS）+ 集成门 INTEGRATION GATE GREEN（rc=0，INTEGRATION END failures=0 skips=0，全量真跑含收尾默认 spec）。
+- 门后复核：demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F；无 java 残留；git 工作区仅 3 个预期文件。
+
+### 未验证事项/边界（如实）
+- 集成门输出经 tail -20 截留：末 10 条 IT PASS 与聚合结论（failures=0 skips=0）在手，23 条 IT 逐条 transcript 未保留——聚合判定以脚本自身 rc=0 + INTEGRATION END 行为准。
+- 冒烟只覆盖零引擎 verb 面；三引擎入口的跨 CWD 面由「整只 e2e 从 TEMP 真跑」度量（本轮已跑，runId 见上），未把引擎 verb 塞进每跑冒烟（引擎冒烟依赖 FineDB 健康，会毁掉秒级冒烟的稳定性）；该口径已写入 e2e 头注与 run.ps1 注释。
+- 引擎负门（run-engine-negative-tests.ps1）本轮未跑（本轮改动不触 lib/ir/object/cpt 与引擎语义，集成门已覆盖 run.ps1 变更面；fast_baseline 三铁证完好）。

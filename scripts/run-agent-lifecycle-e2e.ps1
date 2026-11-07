@@ -12,6 +12,12 @@
 #     output is EMPTY (the injected fault: core returns empty). The verifier MUST then fail (exit != 0);
 #     a 0 there means the check is vacuously green and the script exits 1. This is the anti-false-green
 #     proof required by the improvement item.
+#   Cross-CWD smoke (PHASE 0, also standalone via -CrossCwdSmoke): an external agent calls from a directory
+#     it does not control, so EVERY run re-proves the six zero-engine verbs under CWD=$env:TEMP (nashorn
+#     resolves relative paths against the JVM working directory - the 05b60c3 bug class). The ENGINE verb
+#     entries are anchored in run.ps1/runraw.ps1 (relative -Script -> $PSScriptRoot, 2026-11-07); their
+#     cross-CWD face is measured by running THIS WHOLE SCRIPT from a foreign CWD (2026-11-07:
+#     runId=ale20261107171222-6633fe, full lifecycle PASS from $env:TEMP).
 #   ASCII-only (PS 5.1 GBK lesson, AGENTS sec.5): every CJK value comes from UTF-8 fixtures/payloads or
 #     char codes, never from literals in this file. Exit 0 = green; 1 = failure.
 param(
@@ -20,7 +26,8 @@ param(
   [string]$Intent = 'logs/agent/golden/g1_intent.json',
   [string]$Totals = '33531:26531',
   [string]$Agent = '',            # default: the real entry point agent\tools\fr_agent.ps1
-  [switch]$NegativeControl
+  [switch]$NegativeControl,
+  [switch]$CrossCwdSmoke
 )
 $ErrorActionPreference = 'Continue'
 if (-not $Agent) { $Agent = Join-Path $Root 'agent\tools\fr_agent.ps1' }
@@ -50,6 +57,36 @@ function Read-Payload($rel) {
   catch { Fail ("payload unreadable as UTF-8 JSON: {0}" -f $rel); return $null }
 }
 
+# ---- CROSS-CWD SMOKE (05b60c3 follow-up, 2026-11-07): drive the six zero-engine verbs with the process
+#   working directory parked OUTSIDE the repo ($env:TEMP). This is the surface an external agent actually
+#   drives from an uncontrollable directory; a relative-path regression here must turn this phase red.
+#   Fixtures are root-relative exactly as the product hands them over (plan -Intent, sample_data -Sample);
+#   every path inside the verbs resolves via FR_AGENT_HOME (_lib.absOf), never the JVM CWD.
+function Invoke-CrossCwdSmoke {
+  $smokeRunId = $RunId + 'ccw'
+  if ($smokeRunId.Length -gt 64) { $smokeRunId = 'ccw' + (Get-Date -Format 'HHmmss') }
+  $smokeDirAbs = Join-Path $Root ("logs\agent\runs\{0}" -f $smokeRunId)
+  New-Item -ItemType Directory -Force -Path $smokeDirAbs | Out-Null
+  $sampleSpecRel = "logs/agent/runs/$smokeRunId/sample_spec.json"
+  [System.IO.File]::WriteAllText((Join-Path $smokeDirAbs 'sample_spec.json'), '{"entity":"InspectionRecord","columns":["bizDate"],"limit":2}', (New-Object System.Text.UTF8Encoding($false)))
+  $term = [string]::Join('', [char[]]@(0x5B8C, 0x6210, 0x7387))   # CJK via char codes (ASCII-only file)
+  $foreign = [System.IO.Path]::GetTempPath()
+  $prevLoc = Get-Location
+  $beforeFails = $script:fails
+  Set-Location $foreign
+  try {
+    Invoke-Verb 'ccw/list_reports' @('-Verb', 'list_reports', '-RunId', $smokeRunId) | Out-Null
+    Invoke-Verb 'ccw/discover' @('-Verb', 'discover', '-RunId', $smokeRunId) | Out-Null
+    Invoke-Verb 'ccw/resolve' @('-Verb', 'resolve', '-Term', $term, '-RunId', $smokeRunId) | Out-Null
+    Invoke-Verb 'ccw/plan' @('-Verb', 'plan', '-Intent', $Intent, '-RunId', $smokeRunId) | Out-Null
+    Invoke-Verb 'ccw/plan2spec' @('-Verb', 'plan2spec', '-RunId', $smokeRunId) | Out-Null
+    Invoke-Verb 'ccw/sample_data' @('-Verb', 'sample_data', '-Sample', $sampleSpecRel, '-RunId', $smokeRunId) | Out-Null
+  } finally {
+    Set-Location $prevLoc
+  }
+  if ($script:fails -eq $beforeFails) { Ok ("cross-CWD smoke: 6 zero-engine verbs ok from CWD={0} (runId={1})" -f $foreign, $smokeRunId) }
+}
+
 if ($NegativeControl) {
   # Inject the fault "core returns empty" at the contract boundary (the entry point itself) and prove
   # the verifier goes red. No production file is touched: the stub lives under logs\agent\e2e_neg.
@@ -67,6 +104,17 @@ if ($NegativeControl) {
   Write-Host ("NEGATIVE CONTROL HELD: empty core -> verifier failed rc={0} (the check can fail)" -f $rc)
   exit 0
 }
+
+# ---- Standalone smoke mode: -CrossCwdSmoke runs ONLY the cross-CWD smoke and exits (zero engine, no FineDB).
+if ($CrossCwdSmoke) {
+  Invoke-CrossCwdSmoke
+  if ($script:fails -eq 0) { Write-Host 'CROSS-CWD SMOKE PASS (6 zero-engine verbs from a foreign CWD)'; exit 0 }
+  Write-Host ("CROSS-CWD SMOKE FAILED, failures={0}" -f $script:fails)
+  exit 1
+}
+
+# ---- PHASE 0: cross-CWD smoke - every full run re-proves the verb surface is drivable from a foreign CWD.
+Invoke-CrossCwdSmoke
 
 # ---- PHASE 1: discover - what reports exist on the deployed surface (visible result: count + a pick)
 $lr = Invoke-Verb 'list_reports' @('-Verb', 'list_reports')

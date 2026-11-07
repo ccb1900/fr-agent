@@ -8,6 +8,13 @@ param([Parameter(Mandatory = $true)][string]$Script, [string]$Out = '', [string]
 # r16: Java launch unified via engine_launch.ps1 (records java.pid on the agent path when FR_AGENT_JAVA_PIDFILE is set).
 $ErrorActionPreference = 'Continue'
 . (Join-Path $PSScriptRoot 'engine_launch.ps1')
+# 2026-11-07 CWD anchoring (05b60c3 follow-up): nashorn resolves a RELATIVE script name against the JVM
+#   working directory (the CALLER's CWD), not this repo root - reproduced from a TEMP CWD ('is not a file',
+#   rc=103, engine never started). External callers may invoke from any directory and fr_agent.ps1 passes
+#   relative names for the engine verbs (create -> make_api.js; patch/inspect_template -> template/*.js via
+#   runraw.ps1), so anchor a relative -Script to THIS file's directory. Same root-relative semantics as
+#   runtime/paths.js (FR_AGENT_HOME); absolute paths pass through unchanged. engine_launch.ps1 untouched.
+if (-not [System.IO.Path]::IsPathRooted($Script)) { $Script = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot $Script)) }
 $FR = if ($env:FR_HOME) { $env:FR_HOME } else { 'D:\software\FineReport_11.0' }
 if (-not $NoKill) { Get-Process java -ErrorAction SilentlyContinue | Stop-Process -Force }
 $lck = "$FR\webapps\webroot\WEB-INF\embed\finedb\db.lck"
