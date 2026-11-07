@@ -7,7 +7,7 @@
   "dataset": { "rows": [["广东", 95], ["四川", 62]] },
   "presentation": {
     "type": "table",
-    "showTotal": false,
+    "showTotal": true,
     "chart": {
       "kind": "vmap",
       "category": "line",
