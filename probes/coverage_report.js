@@ -126,16 +126,60 @@ var NONCORE = /^com\.fr\.(esd|plugin\.cloud|widgettheme)\./; // 插件配置/云
 //     共 4 类；com.fr.form.ui.reg.MobileReg=手机号校验（表单验证基本功能）不在此列，已 full。
 var NONCORE_PAID = /^com\.fr\.plugin\.chart\.(kpi|meter|wisdomtree|globe|catalog|fluid|time|particlecounter|multidata)\.|^com\.fr\.plugin\.chart\.(map\.groupmap|column\.(arccolumn|carouselbar|shapecolumn)|pie\.carouselpie)\.|^com\.fr\.extended\.chart\.|^com\.fr\.(report\.mobile|form\.ui\.mobile)\./;
 var SKIP_FURTHER = 0;
+// ---------- 阶段4 批3（2026-11-07）：缺口处置表（推进/排除/挂账三态，逐项 README# 证据）----------
+//   动机（任务书）：missing≤10 必须升格为"逐项可审计"——每个仍缺的类要么带 README# 证据的正当排除，
+//   要么显式挂账待用户（批F 写回/批D 凭据/流向线/poly/widget 扩项），不允许"无归属 missing"混在数字里。
+//   promoted=本批已接入（源码已命中，分类器自动转 full，此处留名+成本量化锚点见 night-shift-log）；
+//   excluded=正当排除（引擎内部标记/变体类/既定边界/结构化拒/安全边界，README# 引证）；
+//   deferred=挂账待用户（真实能力缺口、工单在案，须用户拍板排期后转推进——不擅自动批F 写回/批D 凭据）。
+//   处置只作用于源码真缺（missing）的行；full/partial 以源码命中为准，不因处置漂移。
+var DISPOSITIONS = {
+  'com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat': { d: 'promoted', ev: '阶段4 批3 首靶:tooltip.formats 类目槽按 vmap|vheatmap 选子类,probe_mapdeco XML 断言+官方按钮式图表切换.cpt 同构,manifest chart.mapTooltipFormat,成本量化见 night-shift-log' },
+  'com.fr.plugin.chart.base.format.AttrTooltipMapValueFormat': { d: 'promoted', ev: '阶段4 批3:值槽地图子类同批接入,probe_mapdeco XML 断言,manifest chart.mapTooltipFormat' },
+  'com.fr.plugin.chart.map.attr.AttrMapLabel': { d: 'promoted', ev: '阶段4 批3:IR mapLabel 键+object 条件集合,probe_mapdeco XML 断言+PNG 目检 90000 面积标签,manifest chart.mapLabel' },
+  'com.fr.plugin.chart.map.attr.AttrMapTooltip': { d: 'promoted', ev: '阶段4 批3:IR mapTooltip 键(area/point/line payload),probe_mapdeco XML 断言,manifest chart.mapTooltip' },
+  'com.fr.chart.web.ChartHyperRelateCellLink': { d: 'promoted', ev: '阶段4 批3:IR hotHyperLink 键+NameJavaScriptGroup 宿主,probe_mapdeco XML 断言,manifest chart.hyperlinkCell 升层' },
+  'com.fr.plugin.chart.bubble.attr.VanChartAttrBubble': { d: 'promoted', ev: '阶段4 批3:IR bubble 键,probe_mapdeco XML 断言,manifest chart.bubbleAttr' },
+  'com.fr.base.chart.chartdata.model.NormalDataModel': { d: 'excluded', ev: '正当排除:引擎内部 DataProcessor 标记,无构造面,README #104' },
+  'com.fr.chart.chartattr.ChartCommonCondition': { d: 'excluded', ev: '正当排除:变体类同语义,chart 条件通道已用 CommonCondition 实证(m7 D_c 全染),README #105' },
+  'com.fr.data.impl.ExcelTableData': { d: 'excluded', ev: '正当排除:数据集入口边界=SQL/内嵌(数据纪律既定),文件数据集不引入,README #105' },
+  'com.fr.data.impl.RecursionTableData': { d: 'excluded', ev: '正当排除:递归 SQL 数据集类型走 SQL 自连接(管线数据集入口既定边界),README #106' },
+  'com.fr.chartx.data.DataSetDefinition': { d: 'excluded', ev: '正当排除:chartx legacy 数据接口,现有 chartdata 路已覆盖,README #105' },
+  'com.fr.report.write.ValueVerifier': { d: 'excluded', ev: '正当排除:Verifier 族=manifest write.verifiers 结构化拒(VerifyItem 不实现 Verifier 接口一手实证),README #76' },
+  'com.fr.form.ui.CustomToolBarButton': { d: 'excluded', ev: '正当排除:自定义 JS 按钮=任意 JS 注入,与模板安全边界冲突(IR toolbar className 逃生口已除),README #48/#105' },
+  'com.fr.base.io.FileAttrErrorMarker': { d: 'excluded', ev: '正当排除:引擎内部 IO 容错标记(无公共构造器,ClassNotFoundHolder 占位,_probe_template 实测一手),README #105' },
+  'com.fr.form.ui.MultiFileEditor': { d: 'deferred', ev: '挂账待用户:widget kind 扩项批定义(文件上传控件),README #105' },
+  'com.fr.report.web.button.form.TreeNodeToggleButton': { d: 'deferred', ev: '挂账待用户:表单树控件域批定义,README #105' },
+  'com.fr.plugin.chart.map.line.condition.AttrCurve': { d: 'deferred', ev: '挂账待用户:流向线 map.line 域(vmap line 结构化拒现状),README #79' },
+  'com.fr.plugin.chart.map.line.condition.AttrLineEffect': { d: 'deferred', ev: '挂账待用户:流向线 map.line 域,README #79' },
+  'com.fr.plugin.chart.base.format.AttrTooltipStartAndEndNameFormat': { d: 'deferred', ev: '挂账待用户:同槽机制已证,消费方=流向图(随 map.line 批),README #102/#106' },
+  'com.fr.report.poly.PolyECBlock': { d: 'deferred', ev: '挂账待用户:Poly 块面 API 未探全(manifest cell.poly=pending),README #80/#586' },
+  'com.fr.report.poly.PolyWorkSheet': { d: 'deferred', ev: '挂账待用户:Poly 块面 API 未探全,README #80/#586' },
+  'com.fr.js.Commit2DBJavaScript': { d: 'deferred', ev: '挂账待用户:批F 写回(WriteActor DML 工单),README #75/#558/#600' },
+  'com.fr.write.config.DeleteConfig': { d: 'deferred', ev: '挂账待用户:批F WriteActor DML 工单,README #558/#600' },
+  'com.fr.write.config.UpdateConfig': { d: 'deferred', ev: '挂账待用户:批F WriteActor DML 工单,README #558/#600' },
+  'com.fr.report.web.button.write.DeleteColumnRow': { d: 'deferred', ev: '挂账待用户:批F write 按钮,README #554/#600' },
+  'com.fr.report.web.button.write.CustomizeImportExcelData': { d: 'deferred', ev: '挂账待用户:批F write 按钮,README #554/#600' },
+  'com.fr.report.web.button.write.ClearStashedButton': { d: 'deferred', ev: '挂账待用户:批F write 按钮,README #554/#600' },
+  'com.fr.report.web.button.write.StashButton': { d: 'deferred', ev: '挂账待用户:批F write 按钮,README #554/#600' }
+};
+
+// 阶段4 批3：处置只作用于源码真缺（missing）的行；full/partial 以源码命中为准，不因处置漂移。
+//   DISPOSITIONS 表本体在下方 batchOf 之后定义（批3 处置表节）——此处先引用提升（var 提升，ES5 函数级作用域）。
 var ledger = cls.map(function (c) {
-  var cat;
+  var cat, disp = DISPOSITIONS[c.fq] || null;
   if (NONCORE.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
   else if (NONCORE_PAID.test(c.fq)) { cat = 'noncore'; SKIP_FURTHER++; }
-  else cat = classifyToken(c.fq);
-  return { n: c.n, fq: c.fq, cat: cat };
+  else {
+    cat = classifyToken(c.fq);
+    if (disp && cat === 'missing') cat = disp.d;
+  }
+  return { n: c.n, fq: c.fq, cat: cat, disp: disp };
 });
 // 'com.fr.' 短名全等命中算 full；只剩非常用词（Formula/Attr 等 XML tag 词）已经是 full 无妨
 var MISSING = ledger.filter(function (r) { return r.cat === 'missing'; });
 var PARTIAL = ledger.filter(function (r) { return r.cat === 'partial'; });
+var DISPOSED = ledger.filter(function (r) { return r.disp && (r.disp.d === 'excluded' || r.disp.d === 'deferred'); });
 
 // ---------- 3) 组合稳定证据（每族：载体 spec 是否在库）---------
 var carriersInRepo = [];
@@ -255,9 +299,11 @@ function batchOf(fq) {
     || (FAMILIES.filter(function (f) { return f.keys.indexOf(fq) >= 0; })[0] || IDX[String(fq).split('.').pop()] || {}).batch
     || '(漏账：批排期时人工归入)';
 }
+
+DISPOSED.forEach(function (r) { A.push(tableRow([r.fq, String(r.n), r.disp.d + '(' + (r.disp.d === 'deferred' ? '挂账待用户' : '正当排除') + ')', r.disp.ev])); });
 MISSING.forEach(function (r) { A.push(tableRow([r.fq, String(r.n), 'missing', batchOf(r.fq)])); });
 PARTIAL.forEach(function (r) { A.push(tableRow([r.fq, String(r.n), 'partial', batchOf(r.fq)])); });
-if (!MISSING.length && !PARTIAL.length) A.push(tableRow(['(无)', '0', 'all full', '']));
+if (!MISSING.length && !PARTIAL.length) A.push(tableRow(['(无未处置缺口)', '0', 'all full/dispositioned', '']));
 
 B.push('## B. 已实现族·组合稳定证据（“已支持特性可稳定组合”，r1.md §六口径）');
 B.push('');

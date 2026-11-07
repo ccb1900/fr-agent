@@ -457,7 +457,9 @@ switch ($inner) {
         #   PREPARED evidence the same byte state is still refused (fail-closed).
         if ($deployedHashNow -ne [string]$mf.sourceHash) {
           if ($deployedHashNow -eq $stagedHash) {
-            foreach ($ev in (Get-DeployStateEvents $runDir)) {
+            $dsLog = Get-DeployStateEvents $runDir
+            if ($dsLog.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog.Error + ' (crash recovery needs a trustworthy deploy log; refusing)') }
+            foreach ($ev in $dsLog.Events) {
               if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'promote' -and ([string]$ev.stagedHash -eq [string]$stagedHash) -and ([string]$ev.sourceHash -eq [string]$mf.sourceHash)) { $recovered = $true }
             }
             if (-not $recovered) { throw ('SOURCE_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. equals this run staged bytes but no PREPARED record exists for this RunId (not a recognizable uncommitted promote); refusing to overwrite') }
@@ -557,12 +559,32 @@ switch ($inner) {
         if ($pr -and ($pr.ok -eq $true)) {
           if (-not $pr.deployedHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no deployedHash (promote predates the guard; re-run modify+promote with a new RunId)' }
           if (-not $pr.origHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no origHash (promote predates the guard; re-run modify+promote with a new RunId)' }
+          # Phase-4 batch-1 (restore cross-validation, ask P1): the committed deployedHash must be
+          #   BACKED by the append-only deploy log. promote.json is a single forgeable file - an
+          #   external party can edit the deployed artifact AND rewrite promote.json.deployedHash to
+          #   the foreign hash, which would make the deployed-hash guard pass and let restore clobber
+          #   foreign state "legally". The log is the evidence: at least one PREPARED/SWAPPED/COMMITTED
+          #   promote event must carry the same hash (stagedHash for PREPARED/SWAPPED - the deployed
+          #   bytes were verified equal to the staged bytes - or promotedHash for COMMITTED). A torn
+          #   tail only removes the LAST event, so a committed promote always keeps hash evidence in
+          #   the readable prefix. No backing event = forged or lost commit record = COMMIT_CHAIN_MISMATCH.
+          $dsLog = Get-DeployStateEvents $runDir
+          if ($dsLog.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog.Error + ' (the commit chain cannot be confirmed from an untrustworthy deploy log; refusing)') }
+          $chainBacked = $false
+          foreach ($ev in $dsLog.Events) {
+            if ([string]$ev.verb -ne 'promote') { continue }
+            if ((([string]$ev.event -eq 'PREPARED') -or ([string]$ev.event -eq 'SWAPPED')) -and ([string]$ev.stagedHash -eq [string]$pr.deployedHash)) { $chainBacked = $true; break }
+            if (([string]$ev.event -eq 'COMMITTED') -and ([string]$ev.promotedHash -eq [string]$pr.deployedHash)) { $chainBacked = $true; break }
+          }
+          if (-not $chainBacked) { throw ('COMMIT_CHAIN_MISMATCH: promote.json.deployedHash ' + ([string]$pr.deployedHash).Substring(0, 12) + '.. is not backed by any PREPARED/SWAPPED/COMMITTED promote event in deploy_state.jsonl (forged or lost commit evidence); refusing to restore') }
           $expectDeployed = [string]$pr.deployedHash
           $origExpect = [string]$pr.origHash
         } elseif ($pr -and ($pr.ok -eq $false)) {
           if (-not $pj.manifest -or -not $pj.manifest.sourceHash) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok=false and patch.json carries no manifest sourceHash (cannot judge the uncommitted-promote state; refusing)' }
           $prepEv = $null
-          foreach ($ev in (Get-DeployStateEvents $runDir)) {
+          $dsLog2 = Get-DeployStateEvents $runDir
+          if ($dsLog2.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog2.Error + ' (the uncommitted-promote state cannot be judged from an untrustworthy deploy log; refusing)') }
+          foreach ($ev in $dsLog2.Events) {
             if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'promote' -and ([string]$ev.sourceHash -eq [string]$pj.manifest.sourceHash) -and $ev.stagedHash) { $prepEv = $ev }
           }
           if (-not $prepEv) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok=false and the deploy-state log has no PREPARED promote record (the promote never reached the swap; nothing uncommitted to undo); refusing' }
@@ -602,7 +624,9 @@ switch ($inner) {
         #   the same byte state is still refused (fail-closed).
         if ($deployedHashNow -ne $expectDeployed) {
           if ($deployedHashNow -eq $origHashNow) {
-            foreach ($ev in (Get-DeployStateEvents $runDir)) {
+            $dsLog3 = Get-DeployStateEvents $runDir
+            if ($dsLog3.Error) { throw ('DEPLOY_LOG_UNTRUSTED: ' + $dsLog3.Error + ' (crash recovery needs a trustworthy deploy log; refusing)') }
+            foreach ($ev in $dsLog3.Events) {
               if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'restore' -and ([string]$ev.origHash -eq [string]$origHashNow) -and ([string]$ev.deployedBeforeHash -eq $expectDeployed)) { $recovered = $true }
             }
             if (-not $recovered) {

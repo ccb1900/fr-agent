@@ -511,6 +511,135 @@ try {
     Assert-Refuse 'D8 restore: undo requires PREPARED evidence' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'RESTORE_NO_PROMOTE' $stagedHash
   }
 
+  # ---------------- D9: FORGED promote.json.deployedHash (external edit + hash rewritten) -> restore refuses ----------------
+  #   Phase-4 batch-1 P1 counter-example: after a normal promote, an external party edits the deployed
+  #   file AND rewrites promote.json.deployedHash to the EXTERNAL hash. The deployed-hash guard alone
+  #   then passes and restore would clobber foreign state "legally". The append-only deploy log is the
+  #   evidence: no PREPARED/SWAPPED/COMMITTED promote event carries the forged hash -> COMMIT_CHAIN_MISMATCH,
+  #   deployed (external) bytes preserved.
+  $c = New-Case 'D9' ('ORIG-D9' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D9' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D9 restore: forged deployedHash (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    [System.IO.File]::WriteAllBytes($c.deployed, ([System.Text.Encoding]::UTF8.GetBytes(('EXTERNAL-EDIT-D9' + ('z' * 400)))))
+    $h0 = Sha256 $c.deployed
+    $pr = Read-Json (Join-Path $c.runDir 'promote.json')
+    $pr.deployedHash = $h0      # FORGERY: make the deployed-hash guard pass on foreign bytes
+    [System.IO.File]::WriteAllText((Join-Path $c.runDir 'promote.json'), ($pr | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
+    Assert-Refuse 'D9 restore: forged deployedHash -> COMMIT_CHAIN_MISMATCH' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'COMMIT_CHAIN_MISMATCH' $h0
+  }
+
+  # ---------------- D10: TORN (truncated) last log line -> restore still succeeds ----------------
+  #   Phase-4 batch-1 P2 tail policy: the log's LAST line may be a partial write (writer died mid-line).
+  #   The readable prefix still carries the commit evidence, so restore must COMPLETE (deployed back to
+  #   the staged original), not deadlock on the torn fragment.
+  $c = New-Case 'D10' ('ORIG-D10' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D10' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D10 restore: TAIL-TRUNCAT last log line recoverable (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $logPath = Join-Path $c.runDir 'deploy_state.jsonl'
+    $lines = [System.IO.File]::ReadAllLines($logPath)
+    $last = $lines[$lines.Count - 1]
+    $cutLen = [Math]::Max(1, [Math]::Floor($last.Length * 0.6))
+    $keep = @()
+    for ($i = 0; $i -lt ($lines.Count - 1); $i++) { $keep += $lines[$i] }
+    [System.IO.File]::WriteAllText($logPath, (($keep -join "`r`n") + "`r`n" + $last.Substring(0, $cutLen)), (New-Object System.Text.UTF8Encoding($false)))
+    $origHash = Sha256 $c.origPath
+    $inv2 = Invoke-Agent 'restore' $c.rid
+    $rs = Read-Json (Join-Path $c.runDir 'restore.json')
+    if ($inv2.rc -ne 0) { Bad 'D10 restore: TAIL-TRUNCAT last log line recoverable' ("restore exit=$($inv2.rc) out=$($inv2.text)") }
+    elseif (-not $rs -or $rs.ok -ne $true) { Bad 'D10 restore: TAIL-TRUNCAT last log line recoverable' ('restore.json ok!=' + $rs.ok) }
+    elseif ((Sha256 $c.deployed) -ne $origHash) { Bad 'D10 restore: TAIL-TRUNCAT last log line recoverable' 'deployed bytes are not the staged original after the restore' }
+    else { Ok 'D10 restore: TAIL-TRUNCAT last log line recoverable' }
+  }
+
+  # ---------------- D11: CORRUPT line in the MIDDLE of the log -> restore refuses ----------------
+  #   Phase-4 batch-1 P2 mid policy: an unparseable line that is NOT the tail means the log was edited
+  #   or damaged after the fact - the evidence chain is broken, restore must refuse (fail-closed) and
+  #   keep the deployed bytes.
+  $c = New-Case 'D11' ('ORIG-D11' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D11' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D11 restore: MID-CORRUPT log line refuses (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $logPath = Join-Path $c.runDir 'deploy_state.jsonl'
+    $lines = [System.IO.File]::ReadAllLines($logPath)
+    $new = @()
+    for ($i = 0; $i -lt $lines.Count; $i++) { if ($i -eq [Math]::Floor($lines.Count / 2)) { $new += '{ this line is not json' }; $new += $lines[$i] }
+    [System.IO.File]::WriteAllLines($logPath, $new)
+    $h0 = Sha256 $c.deployed
+    Assert-Refuse 'D11 restore: MID-CORRUPT log line refuses' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'DEPLOY_LOG_UNTRUSTED' $h0
+  }
+
+  # ---------------- D12: UNREADABLE log (held exclusively) -> restore refuses ----------------
+  #   Phase-4 batch-1 P2 unreadable policy: when the deploy log cannot be READ, the commit chain cannot
+  #   be confirmed - restore must refuse with the log diagnosis, never fall back to promote.json alone.
+  $c = New-Case 'D12' ('ORIG-D12' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D12' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D12 restore: UNREADABLE-LOCK log refuses (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $h0 = Sha256 $c.deployed
+    $lockFs = [System.IO.File]::Open((Join-Path $c.runDir 'deploy_state.jsonl'), [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::None)
+    try { $inv2 = Invoke-Agent 'restore' $c.rid } finally { $lockFs.Close() }
+    $rs = Read-Json (Join-Path $c.runDir 'restore.json')
+    if ($inv2.rc -ne 1) { Bad 'D12 restore: UNREADABLE-LOCK log refuses' ("restore exit=$($inv2.rc)") }
+    elseif (-not $rs -or $rs.ok -ne $false) { Bad 'D12 restore: UNREADABLE-LOCK log refuses' ('restore.json ok!=' + $rs.ok) }
+    elseif (([string]$rs.error) -notlike '*DEPLOY_LOG_UNTRUSTED*') { Bad 'D12 restore: UNREADABLE-LOCK log refuses' ('no log diagnosis in: ' + $rs.error) }
+    elseif ((Sha256 $c.deployed) -ne $h0) { Bad 'D12 restore: UNREADABLE-LOCK log refuses' 'deployed bytes changed by the refused restore' }
+    else { Ok 'D12 restore: UNREADABLE-LOCK log refuses' }
+  }
+
+  # ---------------- D13: REORDERED log lines (COMMITTED first) -> restore refuses ----------------
+  #   Phase-4 batch-1 P2 order policy: the log is append-only; lines arriving out of the state-machine
+  #   order (here: fully reversed) are tampering or corruption, not history - restore must refuse.
+  $c = New-Case 'D13' ('ORIG-D13' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D13' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D13 restore: EVENT-REORDER refuses (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    $logPath = Join-Path $c.runDir 'deploy_state.jsonl'
+    $lines = [System.IO.File]::ReadAllLines($logPath)
+    [Array]::Reverse($lines)
+    [System.IO.File]::WriteAllLines($logPath, $lines)
+    $h0 = Sha256 $c.deployed
+    Assert-Refuse 'D13 restore: EVENT-REORDER refuses' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'DEPLOY_LOG_UNTRUSTED' $h0
+  }
+
+  # ---------------- D14: promote.json ok=true but the WHOLE deploy log is GONE -> restore refuses ----------------
+  #   Cross-validation bar (mirrors D8 for the committed state): a committed promote whose evidence log
+  #   was deleted cannot be undone - the hash chain must be backed by the append-only log, not by
+  #   promote.json alone (which is a forgeable single file).
+  $c = New-Case 'D14' ('ORIG-D14' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D14' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D14 restore: committed promote without log evidence (promote pre-step)' "promote rc=$($inv.rc)" }
+  else {
+    Remove-Item -LiteralPath (Join-Path $c.runDir 'deploy_state.jsonl') -Force
+    $h0 = Sha256 $c.deployed
+    Assert-Refuse 'D14 restore: committed promote without log evidence -> COMMIT_CHAIN_MISMATCH' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'COMMIT_CHAIN_MISMATCH' $h0
+  }
+
   # ---------------- X1: Replace-FileAtomic unit - success swaps bytes, leaves no temp ----------------
   if (-not (Test-Path $deployHelper)) { Bad 'X1 Replace-FileAtomic success' '_deploy.ps1 missing' }
   else {

@@ -497,5 +497,19 @@ check('B段 界内零误报（span=2 满宽 / c=1 单格）', errsOf(cellsIR([{ 
 // ===== 批I（2026-11-05）vbubble 图种（VanChartBubblePlot + BubbleTableDefinition，vscatter 同法） =====
 check('批I vbubble 零误报', errsOf(chartIR('vbubble', { seriesName: '机型线', x: '机型', y: '产量', bubbleSize: '产量' })).length === 0);
 
+// ===== 批I 地图族（2026-11-07 阶段4）：mapLabel/mapTooltip/bubble/hotHyperLink 词表闸（probe_mapdeco 一手） =====
+check('批I mapLabel vmap 零误报', errsOf(chartIR('vmap', { mapLabel: { areaLabel: { enable: true, fontPt: 12 }, pointLabel: { enable: true } } })).length === 0);
+check('批I mapTooltip vmap 零误报', errsOf(chartIR('vmap', { mapTooltip: { areaTooltip: { muti: true, format: '#,##0' } } })).length === 0);
+check('批I hotHyperLink vmap 零误报', errsOf(chartIR('vmap', { hotHyperLink: { target: 'area', items: [{ name: 'x', relateCCName: 'cc1' }] } })).length === 0);
+check('批I bubble vbubble 零误报', errsOf(chartIR('vbubble', { x: '机型', y: '产量', bubbleSize: '产量', bubble: { minDiameter: 5, maxDiameter: 30 } })).length === 0);
+check('批I mapLabel 非 vmap 拒', codeAt(chartIR('vbar', { mapLabel: { areaLabel: { enable: true } } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].mapLabel'));
+check('批I mapTooltip 非 vmap 拒', codeAt(chartIR('vbar', { mapTooltip: { areaTooltip: {} } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].mapTooltip'));
+check('批I bubble 非 vbubble 拒', codeAt(chartIR('vbar', { bubble: { minDiameter: 5 } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].bubble'));
+check('批I hotHyperLink items 非数组拒', codeAt(chartIR('vmap', { hotHyperLink: { items: {} } }), 'INVALID_TYPE', 'sheets[0].blocks[1].hotHyperLink.items'));
+check('批I hotHyperLink item 未知键拒', codeAt(chartIR('vmap', { hotHyperLink: { items: [{ relateCCName: 'c', parameters: [] }] } }), 'INVALID_ENUM', 'sheets[0].blocks[1].hotHyperLink.items[0].parameters'));
+check('批I hotHyperLink 缺 relateCCName 拒', codeAt(chartIR('vmap', { hotHyperLink: { items: [{ name: 'x' }] } }), 'REQUIRED', 'sheets[0].blocks[1].hotHyperLink.items[0].relateCCName'));
+check('批I mapLabel payload 未知键拒', codeAt(chartIR('vmap', { mapLabel: { areaLabel: { nosuch: 1 } } }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapLabel.areaLabel.nosuch'));
+check('批I mapTooltip payload 未知键拒', codeAt(chartIR('vmap', { mapTooltip: { areaTooltip: { enable: true } } }), 'INVALID_ENUM', 'sheets[0].blocks[1].mapTooltip.areaTooltip.enable'));
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

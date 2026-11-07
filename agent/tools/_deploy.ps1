@@ -54,27 +54,93 @@ function Add-DeployStateEvent([string]$RunDir, [hashtable]$Fields) {
   #   transactional: PREPARED failure aborts BEFORE the swap, COMMITTED failure leaves the explicit
   #   ok=false unfinished state the same-RunId retry then completes. The failure catch writes its
   #   FAILED_* diagnostic best-effort around this function so it can never mask the original error.
+  # Phase-4 batch-1 (torn-tail repair): a previous writer may have died mid-line (file does not end
+  #   with a newline). The fragment was never a complete event; leaving it in place and appending
+  #   after it would glue our event onto the torn line (one corrupt line mid-log). Drop the fragment
+  #   first so the invariant 'every complete line is an event' survives recovery.
+  $lp = Join-Path $RunDir 'deploy_state.jsonl'
   try {
-    Add-Content -Path (Join-Path $RunDir 'deploy_state.jsonl') -Value ($e | ConvertTo-Json -Compress -Depth 4) -Encoding ASCII -ErrorAction Stop
+    if (Test-Path -LiteralPath $lp -PathType Leaf) {
+      $bytes = [System.IO.File]::ReadAllBytes($lp)
+      if ($bytes.Length -gt 0 -and $bytes[$bytes.Length - 1] -ne 10) {
+        $cut = $bytes.Length
+        while ($cut -gt 0 -and $bytes[$cut - 1] -ne 10) { $cut-- }
+        if ($cut -gt 0) { [System.IO.File]::WriteAllBytes($lp, [byte[]]$bytes[0..($cut - 1)]) }
+        else { [System.IO.File]::WriteAllBytes($lp, [byte[]]@()) }   # the whole file is one torn fragment
+      }
+    }
+    Add-Content -Path $lp -Value ($e | ConvertTo-Json -Compress -Depth 4) -Encoding ASCII -ErrorAction Stop
   } catch {
     throw ('deploy_state.jsonl write failed: ' + $_.Exception.Message)
   }
   return $true
 }
+# Phase-4 batch-1 (log reading policy, four states - ask P2):
+#   MISSING     : no deploy_state.jsonl -> no evidence (callers judge; NOT an error - D8 semantics).
+#   UNREADABLE  : file exists but cannot be read (locked/held exclusively) -> Error (fail-closed;
+#                 restore refuses with the explicit log diagnosis instead of falling back silently).
+#   TORN TAIL   : the LAST non-empty line is unparseable -> abandoned partial write, recoverable; it
+#                 is skipped (TornTail=true) and Add-DeployStateEvent repairs it before the next append.
+#   MID CORRUPT : an unparseable line that is NOT the tail -> the log was edited/damaged after the
+#                 fact, the evidence chain is broken -> Error (restore refuses).
+#   OUT OF ORDER: the append-only log must replay as a per-verb state machine (PREPARED -> SWAPPED ->
+#                 COMMITTED, FAILED_* terminal, COMMITTED from the no-attempt state only with
+#                 recovered=1) -> any other sequence is tampering/reordering -> Error.
+# Returns @{ Events = <list>; Error = <'' or diagnosis>; TornTail = <bool> }. Error is authoritative:
+# callers must refuse on a non-empty Error and never fall back to the readable prefix.
+function Test-DeployStateEventOrder($Events) {
+  $st = @{ promote = 'none'; restore = 'none' }
+  for ($i = 0; $i -lt $Events.Count; $i++) {
+    $e = $Events[$i]
+    $v = [string]$e.verb
+    if (($v -ne 'promote') -and ($v -ne 'restore')) { return ('line ' + ($i + 1) + ': unknown verb "' + $v + '"') }
+    $ev = [string]$e.event
+    $s = $st[$v]
+    switch ($ev) {
+      'PREPARED' { $st[$v] = 'prepared' }   # a new attempt may start after any ending (crash/failure/commit)
+      'SWAPPED' {
+        if ($s -ne 'prepared') { return ('line ' + ($i + 1) + ': ' + $v + ' SWAPPED without a preceding uncompleted PREPARED') }
+        $st[$v] = 'swapped'
+      }
+      'COMMITTED' {
+        if (($s -ne 'prepared') -and ($s -ne 'swapped') -and (-not $e.recovered)) {
+          return ('line ' + ($i + 1) + ': ' + $v + ' COMMITTED without PREPARED/SWAPPED and without recovered=1')
+        }
+        $st[$v] = 'none'
+      }
+      'FAILED_BEFORE_SWAP' { $st[$v] = 'none' }   # terminal for the attempt; a retry may start anew
+      'FAILED_AFTER_SWAP' { $st[$v] = 'none' }
+      default { return ('line ' + ($i + 1) + ': unknown event "' + $ev + '"') }
+    }
+  }
+  return ''
+}
 function Get-DeployStateEvents([string]$RunDir) {
   $out = New-Object System.Collections.Generic.List[object]
+  $res = @{ Events = $out; Error = ''; TornTail = $false }
   $p = Join-Path $RunDir 'deploy_state.jsonl'
-  if (Test-Path -LiteralPath $p -PathType Leaf) {
-    try {
-      foreach ($line in (Get-Content -LiteralPath $p -Encoding UTF8)) {
-        $t = ('' + $line).Trim()
-        if (-not $t) { continue }
-        try { $o = $t | ConvertFrom-Json } catch { continue }
-        if ($o) { $out.Add($o) }
-      }
-    } catch { }   # unreadable tail: the readable prefix still carries the evidence
+  if (-not (Test-Path -LiteralPath $p -PathType Leaf)) { return $res }   # MISSING: no evidence, not corruption
+  $lines = $null
+  try { $lines = [System.IO.File]::ReadAllLines($p, [System.Text.Encoding]::UTF8) }
+  catch { $res.Error = ('deploy_state.jsonl unreadable: ' + $_.Exception.Message); return $res }   # UNREADABLE: fail-closed
+  $lastIdx = -1
+  for ($i = $lines.Count - 1; $i -ge 0; $i--) { if (('' + $lines[$i]).Trim()) { $lastIdx = $i; break } }
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    $t = ('' + $lines[$i]).Trim()
+    if (-not $t) { continue }
+    $o = $null
+    try { $o = $t | ConvertFrom-Json } catch { $o = $null }
+    if (-not $o) {
+      if ($i -eq $lastIdx) { $res.TornTail = $true; continue }   # TORN TAIL: abandoned partial write
+      $res.Error = ('deploy_state.jsonl corrupt at line ' + ($i + 1) + ' (not the tail; refusing to trust the log)')
+      return $res   # MID CORRUPT: evidence chain broken
+    }
+    if (-not $o.event) { $res.Error = ('deploy_state.jsonl line ' + ($i + 1) + ' carries no event field'); return $res }
+    $out.Add($o)
   }
-  return ,$out
+  $ordErr = Test-DeployStateEventOrder $out
+  if ($ordErr) { $res.Error = ('deploy_state.jsonl out of order: ' + $ordErr); return $res }   # OUT OF ORDER
+  return $res
 }
 function Get-FileSha256([string]$Path) {
   if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $null }
