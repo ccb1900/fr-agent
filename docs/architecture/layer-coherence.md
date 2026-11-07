@@ -44,14 +44,14 @@
 | object | 65 | 7 | 0 | 7 项 pending/rejected |
 | cpt | 65 | 7 | 0 | 同上 |
 | render | 50 | 22 | 0 | 22 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
-| ir | 32 | 0 | 40 | UNKNOWN = 词表无该 token（多为 deco/工具/运行时族） |
-| spec | 26 | 0 | 46 | UNKNOWN = ReportSpec 表面无该 token |
+| ir | 44 | 0 | 28 | UNKNOWN = 词表无该 token（工具/运行时族 + validator-only 键） |
+| spec | 27 | 0 | 45 | UNKNOWN = ReportSpec 表面无该 token |
 | planner | 47 | 0 | 25 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
 | agent | 50 | 22 | 0 | 22 项未承诺（manifest 分类见下） |
 | manifest | 72 | 0 | 0 | 全部条目在账本且有证据 |
 
 **怎么读 UNKNOWN**：UNKNOWN 不是"没做"，是"这一层不是该能力的入口，或者本门没有合同可验证"。
-例：`chart.mapLabel` 的入口在 IR/rawIR（ir=UNKNOWN 是因为 token 不叫 mapLabel？不——它 ir=PASS；spec=UNKNOWN 因为 ReportSpec 表面不列它；planner=UNKNOWN 因为 planner 不承载装饰键）。这些能力由 manifest 四层 + 载体 + jar 锚定背书，不靠某一层凑绿。
+例：`chart.mapLabel` 的 ir=PASS（Ir.capabilities().chart.deco 有 mapLabel）、spec=UNKNOWN（ReportSpec 表面不列它）、planner=UNKNOWN（planner 不承载装饰键）、jar=PASS（AttrMapLabel 在核心 jar）；这些能力由 manifest 四层 + 载体 + jar 锚定背书，不靠某一层凑绿。工具族（`template.patch.*` / `agent.*`）在 ir/spec/planner 三列都是 UNKNOWN 属设计内——它们的入口是 tool 层（verb 接线）+ integration S-cases。
 
 ## 4. 引擎分析：demo CPT 不是引擎面，jar 才是（E1）
 

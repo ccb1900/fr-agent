@@ -61,6 +61,8 @@ var m = CapabilityManifest.build();
 });
 var ic = Ir.capabilities();
 print('IRCHART|legacy=' + (ic.chart.legacy || []).join(',') + '|van=' + (ic.chart.vanChart || []).join(',') + '|deco=' + Object.keys(ic.chart.deco || {}).join(','));
+print('IRBLOCK|' + Object.keys(ic.block || {}).join(','));
+print('IRDATASET|' + Object.keys(ic.dataset || {}).join(','));
 print('IRSHEET|' + Object.keys(ic.sheet || {}).join(','));
 print('IRPARAM|' + Object.keys(ic.param || {}).join(','));
 print('IRCOND|keys=' + Object.keys(ic.condition || {}).join(',') + '|then=' + (ic.condition.thenActions || []).join(','));
@@ -302,16 +304,23 @@ $parts = $target.Split('.')
 $fam = $parts[0]; $leaf = if ($parts.Length -gt 1) { $parts[$parts.Length - 1] } else { $parts[0] }
 $irTok = ''
 if ($fam -eq 'condition' -and $parts[1] -eq 'then') { $irTok = $parts[2] }
-elseif ($fam -eq 'chart') { $irTok = if ($leaf -eq 'trendLine') { 'trend' } elseif ($leaf -eq 'axisYUnit') { 'axisYUnit' } elseif ($leaf -eq 'conditionalSeries') { 'conditionalSeries' } elseif ($leaf -eq 'hotTooltip') { 'tooltip' } elseif ($leaf -eq 'mapTooltip' -or $leaf -eq 'mapTooltipFormat') { 'mapTooltip' } elseif ($leaf -eq 'mapLabel') { 'mapLabel' } elseif ($leaf -eq 'bubbleAttr') { 'bubbleAttr' } elseif ($leaf -eq 'seriesBorder') { 'seriesBorder' } elseif ($leaf -eq 'seriesImage') { 'seriesImage' } elseif ($leaf -eq 'effect') { 'effect' } elseif ($leaf -eq 'areaFill') { 'areaFill' } elseif ($leaf -eq 'hyperlinkCell') { 'hyperlink' } else { $leaf } }
+elseif ($fam -eq 'chart') { $irTok = if ($leaf -eq 'trendLine') { 'trend' } elseif ($leaf -eq 'axisYUnit') { 'axisYUnit' } elseif ($leaf -eq 'conditionalSeries') { 'conditionalSeries' } elseif ($leaf -eq 'hotTooltip') { 'hotTooltip' } elseif ($leaf -eq 'mapTooltip') { 'mapTooltip' } elseif ($leaf -eq 'mapTooltipFormat') { 'mapTooltipFormat' } elseif ($leaf -eq 'mapLabel') { 'mapLabel' } elseif ($leaf -eq 'bubbleAttr') { 'bubble' } elseif ($leaf -eq 'seriesBorder') { 'seriesBorder' } elseif ($leaf -eq 'seriesImage') { 'seriesImage' } elseif ($leaf -eq 'effect') { 'effect' } elseif ($leaf -eq 'areaFill') { 'areaFill' } elseif ($leaf -eq 'hyperlinkCell') { 'hotHyperLink' } else { $leaf } }
 elseif ($fam -eq 'spec' -and $parts[1] -eq 'sql') {
-  if ($leaf -eq 'filters') { $irTok = 'filters' } elseif ($leaf -eq 'sort') { $irTok = 'sort' } elseif ($leaf -eq 'topN') { $irTok = 'topN' } elseif ($leaf -eq 'chart') { $irTok = 'chart' } elseif ($leaf -eq 'model') { $irTok = 'sql' }
+  # dataset domain keys live under dataset.* (embedded/sql); filters/sort/topN are builder options, not
+  # IR vocabulary keys - they stay UNKNOWN here rather than borrowing an unrelated token.
+  if ($leaf -eq 'chart') { $irTok = 'chart' } elseif ($leaf -eq 'model') { $irTok = 'dataset' } elseif ($leaf -eq 'filters' -or $leaf -eq 'sort' -or $leaf -eq 'topN') { $irTok = '' }
 } elseif ($fam -eq 'spec' -and $parts[1] -eq 'rows') {
-  if ($leaf -eq 'sum') { $irTok = 'showTotal' } elseif ($leaf -eq 'conditions') { $irTok = 'conditions' } elseif ($leaf -eq 'cells') { $irTok = 'cells' } elseif ($leaf -eq 'sumCols') { $irTok = 'sumCols' } elseif ($leaf -eq 'totalAgg') { $irTok = 'aggregate' } elseif ($leaf -eq 'params') { $irTok = 'params' } elseif ($leaf -eq 'filter') { $irTok = 'filter' }
+  if ($leaf -eq 'sum') { $irTok = 'total' } elseif ($leaf -eq 'conditions') { $irTok = 'condition' } elseif ($leaf -eq 'cells') { $irTok = 'cells' } elseif ($leaf -eq 'sumCols') { $irTok = 'total' } elseif ($leaf -eq 'totalAgg') { $irTok = 'total' } elseif ($leaf -eq 'params') { $irTok = 'param' } elseif ($leaf -eq 'filter') { $irTok = 'filter' } elseif ($leaf -eq 'panel') { $irTok = 'param' }
+} elseif ($fam -eq 'spec' -and $parts[1] -eq 'params') {
+  if ($leaf -eq 'panel') { $irTok = 'param' } elseif ($leaf -eq 'filter') { $irTok = 'filter' }
 } elseif ($fam -eq 'write') { $irTok = 'ReportWriteAttr' }
 elseif ($fam -eq 'template') { $irTok = 'patchVersion' }
-elseif ($fam -eq 'sheet') { $irTok = 'hideRows' }
-elseif ($fam -eq 'page') {
-  if ($leaf -eq 'multiSheet') { $irTok = 'multiSheet' } elseif ($leaf -eq 'headerFooter') { $irTok = 'headerFooter' } elseif ($leaf -eq 'repeatHeaderRow') { $irTok = 'repeatHeaderRow' } elseif ($leaf -eq 'templateMarks') { $irTok = 'templateId' } elseif ($leaf -eq 'freezeWeb') { $irTok = '' } elseif ($leaf -eq 'cell.sort') { $irTok = 'sort' } elseif ($leaf -eq 'cell.subreport') { $irTok = 'subreport' } elseif ($leaf -eq 'cell.barcode') { $irTok = 'barcode' } elseif ($leaf -eq 'cell.groupCustom') { $irTok = 'CustomGrouper' } elseif ($leaf -eq 'cell.poly') { $irTok = 'PolyWorkSheet' } elseif ($leaf -eq 'cells.rowSpan' -or $leaf -eq 'rowSpan') { $irTok = 'rowSpan' } elseif ($leaf -eq 'hideRowsCols') { $irTok = 'hideRows' }
+elseif ($fam -eq 'sheet') { $irTok = 'hideRowsCols' }
+elseif ($fam -eq 'cells') { $irTok = 'cells' }
+elseif ($fam -eq 'cell') {
+  if ($leaf -eq 'sort') { $irTok = 'sort' } elseif ($leaf -eq 'subreport') { $irTok = 'subreport' } elseif ($leaf -eq 'barcode') { $irTok = 'barcode' } elseif ($leaf -eq 'groupCustom') { $irTok = 'CustomGrouper' } elseif ($leaf -eq 'poly') { $irTok = 'PolyWorkSheet' }
+} elseif ($fam -eq 'page') {
+  if ($leaf -eq 'multiSheet') { $irTok = 'multiSheet' } elseif ($leaf -eq 'headerFooter') { $irTok = 'headerFooter' } elseif ($leaf -eq 'repeatHeaderRow') { $irTok = 'repeatHeaderRow' } elseif ($leaf -eq 'templateMarks') { $irTok = 'templateId' } elseif ($leaf -eq 'freezeWeb') { $irTok = '' } elseif ($leaf -eq 'cells.rowSpan' -or $leaf -eq 'rowSpan') { $irTok = 'cells' } elseif ($leaf -eq 'hideRowsCols') { $irTok = 'hideRowsCols' }
 } elseif ($fam -eq 'product' -and $parts[1] -eq 'dataset' -and $parts[2] -eq 'databaseDict') { $irTok = 'databaseDict' }
 elseif ($fam -eq 'cells') { $irTok = $leaf }        # cells.rowSpan -> rowSpan (top-level family, not page.<leaf>)
 elseif ($fam -eq 'cell') {
@@ -326,7 +335,7 @@ elseif ($fam -eq 'cell') {
 $irVocab = New-Object System.Collections.Generic.HashSet[string]
 foreach ($ln in $dumpText) {
   $s = '' + $ln
-  if (-not ($s.StartsWith('IRCHART|') -or $s.StartsWith('IRCOND|') -or $s.StartsWith('IRPARAM|') -or $s.StartsWith('IRDOMAIN|') -or $s.StartsWith('IRSHEET|'))) { continue }
+  if (-not ($s.StartsWith('IRCHART|') -or $s.StartsWith('IRCOND|') -or $s.StartsWith('IRPARAM|') -or $s.StartsWith('IRDOMAIN|') -or $s.StartsWith('IRSHEET|') -or $s.StartsWith('IRBLOCK|') -or $s.StartsWith('IRDATASET|'))) { continue }
   $payload = $s.Substring($s.IndexOf('|') + 1)
   foreach ($piece in [regex]::Split($payload, '[|,]')) {
     $t = ($piece -replace '^[a-zA-Z]+=', '').Trim()   # 'legacy=bar' -> 'bar', 'van=vbar' -> 'vbar'
@@ -345,6 +354,12 @@ else { Add-Verdict 'ir' 'UNKNOWN' ("IR vocabulary has no exact member '" + $irTo
 #   'presentation' against the source text; that is exactly what this replaces.
 $specTok = $leaf
 if ($fam -eq 'condition' -and $parts[1] -eq 'then') { $specTok = $parts[2] }
+if ($fam -eq 'chart') {
+  # ReportSpec.capabilities() advertises 'conditions' for chart-conditional series; the rest of the deco
+  # keys are only in the VALIDATOR whitelist, not in the advertised capability surface - they stay
+  # UNKNOWN here (the IR layer and the manifest carry them) instead of being aliased into a green.
+  if ($leaf -eq 'conditionalSeries') { $specTok = 'conditions' }
+}
 if ($fam -eq 'spec') {
   if ($leaf -eq 'model') { $specTok = 'sql' } elseif ($leaf -eq 'sum') { $specTok = 'showTotal' } elseif ($leaf -eq 'totalAgg') { $specTok = 'aggregate' } elseif ($leaf -eq 'filter') { $specTok = 'filter' } elseif ($leaf -eq 'topN') { $specTok = 'topN' } elseif ($leaf -eq 'chart') { $specTok = 'chart' } elseif ($leaf -eq 'filters') { $specTok = 'filters' } elseif ($leaf -eq 'sort') { $specTok = 'sort' } elseif ($leaf -eq 'conditions') { $specTok = 'conditions' } elseif ($leaf -eq 'cells') { $specTok = 'cells' } elseif ($leaf -eq 'sumCols') { $specTok = 'sumCols' } elseif ($leaf -eq 'panel') { $specTok = 'params' } elseif ($leaf -eq 'databaseDict') { $specTok = 'databaseDict' }
 }
