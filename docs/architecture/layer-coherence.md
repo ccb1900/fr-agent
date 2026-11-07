@@ -46,7 +46,7 @@
 | object | 65 | 7 | 0 | 7 项 pending/rejected |
 | cpt | 65 | 7 | 0 | 同上 |
 | render | 50 | 22 | 0 | 22 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
-| ir | 44 | 0 | 28 | UNKNOWN = 词表无该 token（工具/运行时族 + validator-only 键） |
+| ir | 48 | 0 | 24 | UNKNOWN = 词表无该 token（write/template/agent 族 + validator-only 键） |
 | spec | 38 | 0 | 34 | PASS = 可执行合同（plan→SpecValidator→SpecCompiler→Ir.validate）或表面精确成员 |
 | planner | 52 | 0 | 20 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
 | agent | 50 | 22 | 0 | 22 项未承诺（manifest 分类见下） |

@@ -1710,3 +1710,7 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 ### 未决
 - planner 20 项 UNKNOWN：工具/运行时族 + 部分装饰（无 spec 表面），保持诚实。
 - seriesBorder 渲染未达成（高对比仍无框，维持 pending）。
+
+### 第 5 轮小项收口（同日）
+- IR 词表映射：`$irTok` 默认取叶名（条件族 condition.formula/column/list 此前漏判 UNKNOWN）；`Ir.capabilities().sheet` 补 headerFooter（IR 校验+object 均支持，广告面缺列）；ir 层 PASS 44→48。
+- 两个真引擎 create 载体（mapdeco/hotdeco）自动进 scan（ok=89）；create 按管线惯例回写仓库根 demo_api.cpt，按纪律最后默认 spec 回补后才跑 fast——首次 fast 因时序在回补前执行而 baseline 失败，回补后 FAST GREEN（记录该 sequencing 纪律）。

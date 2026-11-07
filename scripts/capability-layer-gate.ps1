@@ -326,7 +326,7 @@ Add-Verdict 'render' (Layer-Verdict $entry.rendering) ('manifest rendering=' + $
 #   reader cannot prove the IR path without an assertion, so it reports the gap instead of a green.
 $parts = $target.Split('.')
 $fam = $parts[0]; $leaf = if ($parts.Length -gt 1) { $parts[$parts.Length - 1] } else { $parts[0] }
-$irTok = ''
+$irTok = $leaf
 if ($fam -eq 'condition' -and $parts[1] -eq 'then') { $irTok = $parts[2] }
 elseif ($fam -eq 'chart') { $irTok = if ($leaf -eq 'trendLine') { 'trend' } elseif ($leaf -eq 'axisYUnit') { 'axisYUnit' } elseif ($leaf -eq 'conditionalSeries') { 'conditionalSeries' } elseif ($leaf -eq 'hotTooltip') { 'hotTooltip' } elseif ($leaf -eq 'mapTooltip') { 'mapTooltip' } elseif ($leaf -eq 'mapTooltipFormat') { 'mapTooltipFormat' } elseif ($leaf -eq 'mapLabel') { 'mapLabel' } elseif ($leaf -eq 'bubbleAttr') { 'bubble' } elseif ($leaf -eq 'seriesBorder') { 'seriesBorder' } elseif ($leaf -eq 'seriesImage') { 'seriesImage' } elseif ($leaf -eq 'effect') { 'effect' } elseif ($leaf -eq 'areaFill') { 'areaFill' } elseif ($leaf -eq 'hyperlinkCell') { 'hotHyperLink' } else { $leaf } }
 elseif ($fam -eq 'spec' -and $parts[1] -eq 'sql') {
