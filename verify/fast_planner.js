@@ -208,5 +208,21 @@ check('B1: 混合（ambiguous+unknown）→ 优先反问（ambiguous）', b1Mix.
 var b1Clean = planSql(['bizDate', 'machine'], ['planned', 'done', 'completionRate']);
 check('B1: 全部规范成员 → ready 不回归', b1Clean.status === 'ready' && b1Clean.reportSpec.dataset.dimensions.indexOf('machine') >= 0);
 
+// ===== 2026-11-08 层间一致性：rows 路 chart 坐标引用归一（业务术语 -> 物理列）=====
+//   此前 dims/metrics 已 mapTerm 成物理列，但 chart.category/value 原样透传：plan 报 ready，
+//   create 期 Ir.validate 却 UNKNOWN_REF。这里钉住"术语归一 + 物理列原样 + 未知不臆造 + 不改调用方"。
+function planRows(chart) {
+  return plan({ outName: 'rp', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: [['2026-01-01', 1]], presentation: { showTotal: false, chart: chart } });
+}
+var rpTerm = planRows({ kind: 'vbar', category: 'bizTime', value: 'rowNo' });
+check('rows chart 术语引用 -> 归一为物理列', rpTerm.status === 'ready' && rpTerm.reportSpec.presentation.chart.category === 'biz_time' && rpTerm.reportSpec.presentation.chart.value === 'row_number');
+var rpField = planRows({ kind: 'vbar', category: 'biz_time', value: 'row_number' });
+check('rows chart 物理列引用原样保留', rpField.status === 'ready' && rpField.reportSpec.presentation.chart.category === 'biz_time' && rpField.reportSpec.presentation.chart.value === 'row_number');
+var rpGhost = planRows({ kind: 'vbar', category: 'ghost', value: 'rowNo' });
+check('rows chart 未知引用不臆造', rpGhost.status === 'ready' && rpGhost.reportSpec.presentation.chart.category === 'ghost' && rpGhost.reportSpec.presentation.chart.value === 'row_number');
+var rpIntent = { outName: 'rp2', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: [['2026-01-01', 1]], presentation: { showTotal: false, chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo' } } };
+plan(rpIntent);
+check('rows chart 归一不修改调用方 intent', rpIntent.presentation.chart.category === 'bizTime' && rpIntent.presentation.chart.value === 'rowNo');
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

@@ -161,6 +161,21 @@ var ReportPlanner = (function () {
     if (presRows.showTotal == null) presRows.showTotal = showTotal;
     // 2026-11-07：rows 路 chart 已支持——顶层 intent.chart 转 presentation.chart（与 sql 路同口径）
     if (presRows.chart == null && intent.chart != null) presRows.chart = intent.chart;
+    // 2026-11-08（层间一致性 P1）：rows 路的维度/度量已经过 mapTerm 解析成物理列（dims[].field /
+    //   mets[].field），但 chart 的坐标引用此前原样透传——NL 意图写业务术语（bizTime/rowNo）时
+    //   create 期 Ir.validate 报 UNKNOWN_REF（chart category not in dataset columns），plan 却已 ready。
+    //   这里按"解析后的 label→field"把图表引用归一；不是已知 label 的原样保留（可能本来就是物理列名），
+    //   未知引用不被臆造。sql 路不动：其 category/value 是数据集列别名，planner 不解析。
+    if (presRows.chart && typeof presRows.chart === 'object') {
+      presRows.chart = JSON.parse(JSON.stringify(presRows.chart));   // always clone: never normalise the caller's intent in place
+      var refMap = {};
+      dims.forEach(function (d) { refMap[d.label] = d.field; });
+      mets.forEach(function (m) { refMap[m.label] = m.field; });
+      ['category', 'value', 'x', 'y', 'bubbleSize'].forEach(function (rk) {
+        var rv = presRows.chart[rk];
+        if (typeof rv === 'string' && hasOwn(refMap, rv)) presRows.chart[rk] = refMap[rv];
+      });
+    }
 
     var rows = intent.rows;
     var spec = {
