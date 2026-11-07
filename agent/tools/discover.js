@@ -7,7 +7,8 @@ var ROOT = J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent';
 load(ROOT + '/agent/tools/_lib.js');
 var runId = runIdOf();
 var runDir = runDirOf(runId);
-function readUtf(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(ROOT + '/' + p)), 'UTF-8')); }
+// r24-CWD：本地 readUtf 死定义已删——它被上行 load(_lib.js) 的同名函数覆盖（惰性死代码，误导读者
+//   以为本 verb CWD 无关）；现在统一用 _lib.readUtf（内部 absOf 解析相对路径）。
 load(ROOT + '/lib/report_spec.js');
 load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/application/capability_manifest.js');

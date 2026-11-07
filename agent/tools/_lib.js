@@ -6,7 +6,10 @@ var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 var System = J('java.lang.System');
 var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
 
-function readUtf(abs) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(abs)), 'UTF-8')).replace(/^\uFEFF/, ''); }
+// r24-CWD：readUtf 单点化——相对路径在此统一按 FR_AGENT_HOME 解析（absOf），不再绑死 JVM 工作目录；
+//   绝对盘符路径经 absOf 恒等（原 4 处绝对调用方零行为变化）。此前 discover/resolve/plan/sample_data
+//   传裸相对路径时 Pth.get 直接落 CWD——外置 agent 任意 CWD 调用即 NoSuchFileException。
+function readUtf(p) { var abs = absOf(p); return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(abs)), 'UTF-8')).replace(/^\uFEFF/, ''); }
 function exists(abs) { return Files.exists(Pth.get(abs)); }
 function absOf(p) { return /^[A-Za-z]:[\\\/]/.test(String(p)) ? String(p) : (ROOT + '/' + String(p)); }
 function tryJson(abs) { try { return JSON.parse(readUtf(abs)); } catch (e) { return null; } }

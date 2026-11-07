@@ -12,7 +12,7 @@ var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
 load(ROOT + '/agent/tools/_lib.js');
 var runId = runIdOf();
 var runDir = runDirOf(runId);
-function readUtf(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(ROOT + '/' + p)), 'UTF-8')); }
+// r24-CWD：本地 readUtf 死定义已删——它被 load(_lib.js) 的同名函数覆盖（惰性死代码）；统一走 _lib.readUtf。
 load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/semantic/model/registry.js');
 load(ROOT + '/semantic/model/resolver.js');
