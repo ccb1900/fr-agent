@@ -74,7 +74,7 @@ function Test-ArtifactCommitted([string]$Path) {
 if ($artFile -and (Test-Path $artFile)) {
   $regTaken = $true
   if (($Verb -eq 'promote' -or $Verb -eq 'restore') -and -not (Test-ArtifactCommitted $artFile)) { $regTaken = $false }
-  if ($regTaken) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+  if ($regTaken) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }
 }
 if (-not (Test-Path $runDir)) { try { New-Item -ItemType Directory -Path $runDir -ErrorAction Stop | Out-Null } catch { } }
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
@@ -270,9 +270,9 @@ switch ($inner) {
       @{ rc = $rc; artRc = $artRc }   # both codes; caller surfaces ONE contract line
     }
     $r = Invoke-UnderMutex $body $artFile
-    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
-    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }   # r23: artifact appeared while we waited -> same RunId already ran
-    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT","nextActions":["wait and retry: the runtime mutex queue timed out (another run holds the FineReport engine)"]}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }   # r23: artifact appeared while we waited -> same RunId already ran
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY","nextActions":["another FineReport JVM holds the runtime mutex; wait for it to exit or stop it, then retry"]}'); exit 1 }
     $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/compile.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
@@ -306,9 +306,9 @@ switch ($inner) {
       @{ rc = $rc; artRc = $artRc }
     }
     $r = Invoke-UnderMutex $body $artFile
-    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
-    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }   # r23
-    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT","nextActions":["wait and retry: the runtime mutex queue timed out (another run holds the FineReport engine)"]}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }   # r23
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY","nextActions":["another FineReport JVM holds the runtime mutex; wait for it to exit or stop it, then retry"]}'); exit 1 }
     $rc = $r.rc.rc; $artRc = $r.rc.artRc
     $okAll = ($rc -eq 0) -and ($artRc -eq 0)
     Write-Output ('{"ok":' + $okAll.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/patch.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
@@ -353,9 +353,9 @@ switch ($inner) {
       @{ rc = $rc }
     }
     $r = Invoke-UnderMutex $body $artFile
-    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
-    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
-    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT","nextActions":["wait and retry: the runtime mutex queue timed out (another run holds the FineReport engine)"]}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY","nextActions":["another FineReport JVM holds the runtime mutex; wait for it to exit or stop it, then retry"]}'); exit 1 }
     $rc = $r.rc.rc
     $insp = $null
     if (Test-Path "$runDir\inspect.json") { $insp = [System.IO.File]::ReadAllText("$runDir\inspect.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
@@ -508,9 +508,9 @@ switch ($inner) {
       @{ rc = $rcP }
     }
     $r = Invoke-UnderMutex $body $artFile $true
-    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
-    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
-    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT","nextActions":["wait and retry: the runtime mutex queue timed out (another run holds the FineReport engine)"]}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY","nextActions":["another FineReport JVM holds the runtime mutex; wait for it to exit or stop it, then retry"]}'); exit 1 }
     $pr = $null
     if (Test-Path "$runDir\promote.json") { $pr = [System.IO.File]::ReadAllText("$runDir\promote.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
     $okAll = ($r.rc.rc -eq 0) -and ($pr -and $pr.ok)
@@ -676,9 +676,9 @@ switch ($inner) {
       @{ rc = $rcP }
     }
     $r = Invoke-UnderMutex $body $artFile $true
-    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
-    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
-    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
+    if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT","nextActions":["wait and retry: the runtime mutex queue timed out (another run holds the FineReport engine)"]}'); exit 1 }
+    if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '","nextActions":["this RunId already has a committed artifact; use a new RunId for a new report, or run -Verb restore with this RunId to undo the existing one"]}'); exit 1 }
+    if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY","nextActions":["another FineReport JVM holds the runtime mutex; wait for it to exit or stop it, then retry"]}'); exit 1 }
     $rs = $null
     if (Test-Path "$runDir\restore.json") { $rs = [System.IO.File]::ReadAllText("$runDir\restore.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json }
     $okAll = ($r.rc.rc -eq 0) -and ($rs -and $rs.ok)
