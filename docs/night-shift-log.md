@@ -1653,3 +1653,32 @@ fast 17/17 rc=0；scan ok=87 bad=0；基线 demo_api.cpt MD5=CBEB42E3CE48E46E362
 
 ### 未决（非本轮缺陷）
 F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 serialization-only 视为可承诺）；bubbleAttr/seriesBorder/spec.rows.cells 的渲染证据；poly/freezeWeb/databaseDict 未接线。
+
+## 2026-11-08 层间协调一致性：全层对账 + jar 级 E1 锚定（用户："从自然语言理解到 CPT 生成验证，含引擎 jar 分析，全层一致"）
+
+### 目标
+回答"各层是否真的接上并互相一致"：Agent 自然语言 → intent/planner → ReportSpec → IR → Object → CPT → 部署/验证 → 引擎渲染；并把引擎证据从"demo CPT 见过"升级为"核心 jar 物理类对账"。
+
+### 代码证据（先量后改）
+- 旧层门 `capability-layer-gate.ps1`：Planner 层＝`sourceText.Contains('presentation')`（任何图表能力都会 PASS）；IR/Spec 层＝`Contains(token)`；只有两态，无 UNKNOWN。→ 典型假阳性。
+- 72 项首次全量扫描：agentAvailable 50 项中有 5 项（template.patch.*、agent.*）在 probe/ir/spec/planner 全 UNKNOWN 且证据未指向存在载体 → 入口不闭环；chart.vscatter/vbubble 的 planner 合同探针形状错（漏 x/y）→ 假阴性 2 项。
+- jar 面：安装 102 核心 jar / 140,118 类；此前只有 jar_scan 关键字工具与 coverage 文字结论，没有账本×jar 机器对账；manifest 仅 5/65 verified 能力的证据点名 com.fr 类。
+
+### 实施
+1. `agent/tools/fr_agent.ps1` restore：按本 RunId 重放 PREPARED→SWAPPED→COMMITTED，promote.json 三哈希逐字段比对；跨 RunId 同哈希事件/篡改 origHash 一律 COMMIT_CHAIN_MISMATCH；撕裂尾行仅在 TornTail 时作结案证据（D10 保持）。矩阵 +D15/D16 = 48 例。
+2. `scripts/capability-layer-gate.ps1` 重写判定：IR/Spec＝运行期词表精确成员；Planner＝真实 `ReportPlanner.plan()` 输入→输出断言（47 合同 + 3 负控 selftest，负控被接受则全部 planner PASS 作废）；新增 tool 层（工具族 verb+实现+载体静态接线）与 jar 层（engine_class_map→jar 物理存在）；三态 PASS/BLOCKED/UNKNOWN。
+3. `scripts/build_jar_inventory.ps1` → `data/jar_class_inventory.json`（102 jar/140,118 类/包计数/182 管线点名类全解析 missing=0；修了 -match 大小写不敏感把类名剥成包名的 bug，改 -cmatch）。
+4. `data/engine_class_map.json`：能力→类→落地模块单一真相（62 verified 锚定，3 agent.* runtime 无引擎类，6 pending/rejected 记录原因）。
+5. `verify/fast_layer_coherence.js`（第 18 套件）：I1 承诺有实现 / I2 承诺有入口 / jar 锚定（类在 jar 且在模块字面量）/ 清单指纹，72 项 0 违反。
+6. 报告：`docs/architecture/layer-coherence.md`（11 层定义 + 分布 + 诚实清单）。
+
+### 验证结果
+- 层门 72 项×11 层：I1/I2/I3(承诺侧)/I4(负控) 违反=0；分布 jar 63/6/3、tool 5/2/65、planner 47 PASS/25 UNKNOWN（无 BLOCKED）。
+- fast 18/18 rc=0（含新 fast_layer_coherence）；scan ok=87 bad=0。
+- 默认管线 `run.ps1 -Script make_api.js` failures=0，全 stage passed；`demo_api.cpt` MD5=CBEB42E3CE48E46E362B9AE80168026F（仓库根实测）。
+- 部署矩阵 48/48；静态门 failures=0；引擎负门 GREEN（no false-green, default baseline intact）；集成门 S1-S28 GREEN failures=0 skips=0。
+- 未验证：jar 层"类被调用"是静态字面量断言（非运行期堆栈），运行期由各 carrier failures=0 承担。
+
+### 未决
+- planner 合同 25 项 UNKNOWN（装饰/工具/运行时族）需逐族补"意图→发射路径"载体后再开合同；ir/spec UNKNOWN 多为设计内（入口不在该层）。
+- render 22 项 BLOCKED＝web 交互/静态 PNG 不可见（已定性）；seriesBorder 渲染未达成维持 pending。
