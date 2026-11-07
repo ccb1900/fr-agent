@@ -32,6 +32,8 @@
 
 **2026-11-08 复审修复（去假阳性）**：旧层门用 `sourceText.Contains('presentation')` 判 Planner、用 `Contains(token)` 判 IR/Spec——任何图表能力都会因为源码里出现 "presentation" 这个词而 PASS。现在：IR/Spec 是**运行期词表精确成员**，Planner 是**真实 plan() 的输入→输出断言**，三态 PASS/BLOCKED/UNKNOWN，且层门自带三条负控（rows 顶层 filters、bogus chart kind、sheet 未知键）——负控被接受则全部 planner PASS 作废（selftest FAIL）。
 
+**2026-11-08 第二轮（可执行合同）**：spec 层再进一步——凡有 planner 合同的项，跑 `plan → SpecValidator → SpecCompiler → Ir.validate` 全绿才 PASS（不是"词表里有这个词"）。为此修了一个真实断点：planner 的 rows 路把维度/度量解析成物理列（bizTime→biz_time），但 `presentation.chart.category/value/x/y/bubbleSize` 原样透传，NL 意图写业务术语时 plan=ready 而 create 期 Ir.validate 报 UNKNOWN_REF。现在按解析后的 label→field 归一（物理列原样保留、未知引用不臆造、不修改调用方 intent），并补 5 项地图/热链装饰的 planner 合同（mapLabel/mapTooltip/mapTooltipFormat/hyperlinkCell/hotTooltip），spec 层 PASS 27→38、planner 47→52。
+
 ## 3. 72 项能力 × 11 层分布（机器扫描）
 
 数据文件：`logs/layer_sweep.csv`（每项一行，逐层 PASS/BLOCKED/UNKNOWN）。汇总（见 `logs/layer_sweep_summary3.txt`）：
@@ -45,13 +47,13 @@
 | cpt | 65 | 7 | 0 | 同上 |
 | render | 50 | 22 | 0 | 22 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
 | ir | 44 | 0 | 28 | UNKNOWN = 词表无该 token（工具/运行时族 + validator-only 键） |
-| spec | 27 | 0 | 45 | UNKNOWN = ReportSpec 表面无该 token |
-| planner | 47 | 0 | 25 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
+| spec | 38 | 0 | 34 | PASS = 可执行合同（plan→SpecValidator→SpecCompiler→Ir.validate）或表面精确成员 |
+| planner | 52 | 0 | 20 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
 | agent | 50 | 22 | 0 | 22 项未承诺（manifest 分类见下） |
 | manifest | 72 | 0 | 0 | 全部条目在账本且有证据 |
 
 **怎么读 UNKNOWN**：UNKNOWN 不是"没做"，是"这一层不是该能力的入口，或者本门没有合同可验证"。
-例：`chart.mapLabel` 的 ir=PASS（Ir.capabilities().chart.deco 有 mapLabel）、spec=UNKNOWN（ReportSpec 表面不列它）、planner=UNKNOWN（planner 不承载装饰键）、jar=PASS（AttrMapLabel 在核心 jar）；这些能力由 manifest 四层 + 载体 + jar 锚定背书，不靠某一层凑绿。工具族（`template.patch.*` / `agent.*`）在 ir/spec/planner 三列都是 UNKNOWN 属设计内——它们的入口是 tool 层（verb 接线）+ integration S-cases。
+例：`page.templateMarks` 的 ir=UNKNOWN（Ir.capabilities() 不列 templateId 键）、spec=UNKNOWN（ReportSpec 表面不承载模板标记）、planner=UNKNOWN（planner 不表达模板标记），但 manifest 四层 verified + jar=PASS（TemplateIdAttrMark 在核心 jar）+ probe=PASS（载体在盘）——它由模板层证据背书，不靠某层凑绿。工具族（`template.patch.*` / `agent.*`）在 ir/spec/planner 三列都是 UNKNOWN 属设计内——它们的入口是 tool 层（verb 接线）+ integration S-cases。
 
 ## 4. 引擎分析：demo CPT 不是引擎面，jar 才是（E1）
 

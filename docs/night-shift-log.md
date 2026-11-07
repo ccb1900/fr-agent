@@ -1684,3 +1684,27 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 ### 未决
 - planner 合同 25 项 UNKNOWN（装饰/工具/运行时族）需逐族补"意图→发射路径"载体后再开合同；ir/spec UNKNOWN 多为设计内（入口不在该层）。
 - render 22 项 BLOCKED＝web 交互/静态 PNG 不可见（已定性）；seriesBorder 渲染未达成维持 pending。
+
+## 2026-11-08 层间一致性第 4 轮：planner 图表坐标归一 + spec 可执行合同
+
+### 目标
+把上一轮"词表成员"式的 spec/planner 判定升级为**可执行合同**，并补齐地图装饰族在 spec/planner 路的真实断点。
+
+### 代码证据
+- planner rows 路：dims/metrics 经 mapTerm → 物理列（bizTime→biz_time、rowNo→row_number），但 `presentation.chart.category/value/x/y/bubbleSize` 原样透传 → plan 报 ready，`SpecCompiler.compile` 后 `Ir.validate` 报 UNKNOWN_REF（chart category not in dataset columns）。
+- 5 项装饰能力（mapLabel/mapTooltip/mapTooltipFormat/hyperlinkCell/hotTooltip）IR/Object 已支持，但 planner 无合同、spec 广告面无键 → 三层口径不一致。
+
+### 实施
+1. `semantic/planner/planner.js`：rows 路 chart 引用按已解析 label→field 归一（物理列原样保留、未知引用不臆造、clone 后修改不动调用方 intent；sql 路不动——其引用是别名）。
+2. `verify/fast_planner.js` +4 断言：术语归一/物理列原样/未知不臆造/不改调用方。
+3. `scripts/capability-layer-gate.ps1`：①5 项新 planner 合同（形状由 Ir.validate 逐键闸校验）②spec 层升为可执行合同——plan→SpecValidator→SpecCompiler→Ir.validate 全绿才 PASS。
+4. `examples/report-spec/mapdeco_rows.json`：地图装饰 spec 路载体入 scan。
+
+### 验证结果
+- 层门 72 项：spec PASS 27→38、planner 47→52（UNKNOWN 45→34 / 25→20）；I1/I2/I3/planner-BLOCKED 违反仍为 0。
+- fast 18/18 rc=0（fast_planner 全绿）；scan ok=88 bad=0（新载体）；multisheet e2e GREEN（rows plan→create 回归）；默认管线 failures=0；demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F。
+- 未验证：新增 5 项合同的**真引擎 create+渲染**（本轮只做到 plan→spec→compile→Ir.validate 零错；渲染证据仍在 IR 载体 test_mapdeco_ir）。
+
+### 未决
+- 地图装饰 spec 路的真引擎 create/PNG 验收（下一步可做成 e2e 或 spec 载体）。
+- planner 20 项 UNKNOWN：工具/运行时族 + 部分装饰（无 spec 表面），保持诚实。
