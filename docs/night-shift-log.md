@@ -1634,3 +1634,22 @@ seriesBorder（柱缘无可见框+无官方语料）、seriesImage（棋盘格�
 
 ### 门禁
 fast16 rc=0 / scan 85 ok 0 bad / 基线 MD5=CBEB42E3 不变 / 全部已 push。
+
+## 2026-11-08 能力账本口径收口（外部复核全量修复）
+
+### 复核结论采纳
+当前账本一处真相：manifest 72 项登记 / 50 项 agentAvailable / 22 项未承诺（旧快照 60/38/missing=32/127 构造类已废）。四类计数单位（240 demo CPT / 223 demo 类 / 139 object 构造类 / 72 能力项 / 15 verbs）不可相除。
+
+### 修复项
+1. **E5 两项补证升 true**：①cells.rowSpan——spec_validator 放开 presentation.cells.rowSpan（正整数闸），载体 cells_rowspan.json 真引擎 failures=0 部署 cpt rs="2"；②spec.params.filter——plan→plan2spec→create 全链 PASS（runId=e5filter001）。agentAvailable 48→50。
+2. **22 项未承诺成因入账**：manifest 新增 unavailableCatalog()/unavailabilityReason() 自动分类（webInteraction 12 / unverifiedRendering 3 / notImplemented 4 / rejected 3）+ totals 字段；不再用一句"真实原因"笼统带过。
+3. **证据强度口径**：evidenceGrade.fullE2e 名单 + note 明示"agentAvailable=可按账本承诺，不等于每项都跑过全生命周期"；remaining 为 layerEvidence。
+4. **机器级一致性门**：verify/fast_capability_gate_consistency.js（注册进 fast 第 17 套件）——manifest totals/分类/rejected 不开放/agentAvailableNames 一致；PlannerCapability 与 ReportSpec.capabilities 的 chart/filters/multiSheet/聚合口径一致；evidenceGrade 子集断言。
+5. **旧快照清理**：AGENTS.md §6、README 当前口径速查、capability-matrix 七源、inventory 构造类数全部刷新；capability-closure-audit.md 只加"当前口径提示"不改历史审计结论。
+6. **seriesImage 反转结论落账**：AttrSeriesImageBackground 挂 ConditionAttrList+ChartCommonCondition 后渲染达成（官方国旗柱图一手），rendering pending→verified；seriesBorder 高对比仍无框，订正为"渲染未达成、无官方语料"而非已证引擎墙。
+
+### 验证
+fast 17/17 rc=0；scan ok=87 bad=0；基线 demo_api.cpt MD5=CBEB42E3CE48E46E362B9AE80168026F；真引擎：cells_rowspan/e5filter001 全链 PASS；全部已 push。
+
+### 未决（非本轮缺陷）
+F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 serialization-only 视为可承诺）；bubbleAttr/seriesBorder/spec.rows.cells 的渲染证据；poly/freezeWeb/databaseDict 未接线。

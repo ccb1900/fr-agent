@@ -4,7 +4,7 @@
 > 目的：回答"优先补齐哪些能力，才能最大程度提升 Agent 独立创建真实报表的成功率"，而不是"补哪个功能看起来高级"。
 > 方法：六维评分 → 四优先级 → 全项目七源对账 → 两项排序（补齐现有 / 新增）→ 前三项（第一实施，后两待办）。
 > **证据规则**：每行状态必须有可查证据（IR 键+行号 / Object 代码 / CPT 断言 / 引擎 PNG / Agent runId）；**不从文件存在或 README 声明推断**。
-> 七源：① coverage.md（demo 类/tag 盘点）② capability_manifest.js（60 项四层+scope）③ lib/ir.js CAPABILITIES/validate ④ lib/object.js 构造 ⑤ lib/cpt.js + 引擎产物 ⑥ 官方 demo 240 + 生产参考 CPT ⑦ Agent 链路（plan/capability.js/patch）。
+> 七源：① coverage.md（demo 类/tag 盘点）② capability_manifest.js（2026-11-08：72 项四层+scope，agentAvailable=50）③ lib/ir.js CAPABILITIES/validate ④ lib/object.js 构造 ⑤ lib/cpt.js + 引擎产物 ⑥ 官方 demo 240 + 生产参考 CPT ⑦ Agent 链路（plan/capability.js/patch）。
 
 ## 0. 评分维度与优先级定义
 

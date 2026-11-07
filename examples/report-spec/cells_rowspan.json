@@ -1,0 +1,10 @@
+{
+  "specVersion": "1",
+  "report": { "name": "合并表头 Agent" },
+  "outName": "能力自检_rowSpan_agent",
+  "dimensions": [{ "field": "line", "label": "生产线", "widthPt": 160 }],
+  "metrics": [{ "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" }],
+  "dataset": { "rows": [["A线", 80], ["B线", 40]] },
+  "presentation": { "type": "table", "showTotal": true,
+    "cells": [{ "c": 0, "rowSpan": 2, "text": "合并表头", "st": { "bold": true } }] }
+}

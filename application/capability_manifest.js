@@ -94,7 +94,7 @@ var CapabilityManifest = (function () {
     // 2026-11-06 C2：隐藏行列（行高/列宽归零）；ReportSpec sheet.hideRows/hideCols 有入口
     cap('sheet.hideRowsCols', 'verified', 'verified', 'verified', 'verified', 'C2（2026-11-06）：IR hideRows/hideCols→object sheet 构建末 setRowHeight/setColumnWidth(FU 0)；carrier test_hidden 真引擎 failures=0（RowHeight[1]=0/ColumnWidth[1]=0），PNG 目检表头行与「完成」列消失；spec 载体 examples/report-spec/hidden.json 同证；fast_report_spec C2 断言', 'rendering'),
     // 2026-11-06 R3-0：cells 多行/多列合并（rowSpan）；ReportSpec 无入口（presentation.cells 拒绝对 r）
-    cap('cells.rowSpan', 'verified', 'verified', 'verified', 'verified', 'README #113/#114 R3-0：IR rowSpan 整数闸+块内重叠静态拒+ds+rowSpan 结构化拒（C2，putDSCell 不合并）；carrier test_merge_header 部署 cpt rs="2"×2/cs="2"×1，PNG 目检合并表头；fast_ir_contract R3-0/C2 断言。**spec 可表达=presentation.cells 无绝对 r 的 rowSpan item（2026-11-06 C5 口径：probe 实证编译+Ir.validate 零误报）；plan→create 无 rowSpan 证据 → agentAvailable=false**', 'rendering', false)
+    cap('cells.rowSpan', 'verified', 'verified', 'verified', 'verified', 'README #113/#114 R3-0：IR rowSpan 整数闸+块内重叠静态拒+ds+rowSpan 结构化拒（C2，putDSCell 不合并）；carrier test_merge_header 部署 cpt rs="2"×2/cs="2"×1，PNG 目检合并表头；fast_ir_contract R3-0/C2 断言。**2026-11-08 E5 实证**：spec_validator 放开 presentation.cells.rowSpan（正整数闸），examples/report-spec/cells_rowspan.json 真引擎 failures=0、部署 cpt rs="2"；agentAvailable=true', 'rendering', true)
   ];
   // ReportSpec / 数据集 / 语义 / 模板产品面（README #55/#59/#60/#74/#76/#82）
   var product = [
@@ -106,7 +106,7 @@ var CapabilityManifest = (function () {
     // 2026-11-06 P1：合计行非 sum 聚合（avg/count/min/max/ratio）
     cap('spec.rows.totalAgg', 'verified', 'verified', 'verified', 'verified', 'P1+复审（2026-11-06）：IR aggregate.fn=sum|avg|count|min|max|ratio（ratio={num,den}，整数列 1..25）+ sumCols[].fn；ReportSpec total.aggregate/sumCols[].fn 两通道；rawIR 载体 test_total_agg（PNG 60.0/2/35）+ test_total_ratio（PNG 1.14，aggregate.format）；spec 载体 examples total_agg.json（=AVERAGE(B3)，PNG 平均 60.0）与 total_ratio.json（=SUM(B3)/SUM(C3)，PNG 1.14）真引擎 failures=0；fast_report_spec +8 / fast_ir_contract +12（README #122）', 'rendering'),
     cap('spec.params.panel', 'verified', 'verified', 'serialization-only', 'verified', 'B2（2026-11-06）：ReportSpec params→IR.param widgets（DateEditor/ComboBox/NumberEditor/FormSubmitButton/WParameterLayout）；spec 载体 params.json 真引擎 failures=0；参数面板属 web 交互，静态 PNG 不现形（官方同口径）→ rendering 不升层；fast_report_spec B2 断言（README #118）', 'serialization'),
-    cap('spec.params.filter', 'verified', 'verified', 'verified', 'verified', 'C3 口径（2026-11-06）：params[].filter{column,op} → IR.param.filters（object 对每个明细格挂 CommonCondition）。**已验证=默认参数值过滤**：载体 examples/report-spec/param_filter.json 真引擎 failures=0，默认值 A线 → PNG 只渲染 A线 行（执行期筛选真值）；fast_report_spec 断言（README #140）。**未验证=Web 交互改参数后重查询**（静态 PNG 无法证明交互重查）与 **plan→create 链路**（无 e2e 载体）→ agentAvailable=false，Agent 不得承诺交互式筛选', 'rendering', false),
+    cap('spec.params.filter', 'verified', 'verified', 'verified', 'verified', 'C3 口径（2026-11-06）：params[].filter{column,op} → IR.param.filters（object 对每个明细格挂 CommonCondition）。**已验证=默认参数值过滤**：载体 examples/report-spec/param_filter.json 真引擎 failures=0，默认值 A线 → PNG 只渲染 A线 行（执行期筛选真值）；fast_report_spec 断言（README #140）。**未验证=Web 交互改参数后重查询**（静态 PNG 无法证明交互重查）；**2026-11-08 E5 实证**：plan→plan2spec→create 全链 PASS（runId=e5filter001，artifact execution exit=0），Agent 可承诺带默认值筛选的报表创建，不承诺交互式改参重查询；agentAvailable=true', 'rendering', true),
     cap('spec.sql.model', 'verified', 'verified', 'verified', 'verified', 'README #59 端到端 33531/26531/79.12 逐格真值；fast_sqlbuilder', 'agent'),
     cap('spec.sql.filters', 'verified', 'verified', 'verified', 'verified', 'README #62 受控字面量引擎 live；fast_sqlbuilder', 'cpt'),
     cap('spec.sql.sort', 'verified', 'verified', 'verified', 'verified', 'README #62 ORDER BY 别名 live；fast_sqlbuilder', 'cpt'),
@@ -121,11 +121,39 @@ var CapabilityManifest = (function () {
     cap('agent.runtime.serial', 'verified', 'verified', 'verified', 'verified', 'r12 单实例 Supervisor；integration_runtime maxLiveRuntime=1', 'agent')
   ];
 
+  // 2026-11-08：未承诺能力的成因分类（避免一句"引擎墙/真实原因"糊过去）。
+  //   规则：四层全 verified 但 agentAvailable=false → e5Evidence；rejected → rejected；
+  //   rendering=serialization-only → webInteraction；rendering=pending 但 regression/construction
+  //   已证 → unverifiedRendering；全 pending → notImplemented。
+  function unavailabilityReason(c) {
+    if (c.agentAvailable) return null;
+    if (c.construction === 'rejected' || c.serialization === 'rejected') return 'rejected';
+    if (c.rendering === 'serialization-only') return 'webInteraction';
+    if (c.construction === 'pending' && c.serialization === 'pending' && c.regression === 'pending') return 'notImplemented';
+    if (c.construction === 'verified' && c.serialization === 'verified' && c.rendering === 'verified' && c.regression === 'verified') return 'e5Evidence';
+    return 'unverifiedRendering';
+  }
+  function unavailableCatalog() {
+    var out = [];
+    [chart, condition, write, page, product].forEach(function (seg) {
+      seg.forEach(function (c) {
+        if (!c.agentAvailable) out.push({ name: c.name, reason: unavailabilityReason(c),
+          construction: c.construction, serialization: c.serialization, rendering: c.rendering, regression: c.regression });
+      });
+    });
+    return out;
+  }
   function build() {
     return {
       manifestVersion: '3',
       source: 'application/capability_manifest.js（一处真相；lib/ir.js CAPABILITIES 注记引用此处）',
-      legend: 'construction=API 构造 | serialization=CPT 序列化 | rendering=FineReport 实际渲染 | regression=可重复回归证据 | regressionScope=regression 覆盖的最高层(ir/object/cpt/serialization/rendering/agent，四层独立不强制一致) | agentAvailable=四层全 verified 才 true',
+      legend: 'construction=API 构造 | serialization=CPT 序列化 | rendering=FineReport 实际渲染 | regression=可重复回归证据 | regressionScope=regression 覆盖的最高层(ir/object/cpt/serialization/rendering/agent，四层独立不强制一致) | agentAvailable=四层全 verified 才 true；unavailable=未承诺能力成因分类（webInteraction=浏览器行为静态PNG不可验 / unverifiedRendering=渲染未达成 / notImplemented=未接线 / rejected=明确不做 / e5Evidence=四层全证但缺Agent全链）',
+      totals: { registered: [chart, condition, write, page, product].reduce(function (n, seg) { return n + seg.length; }, 0), agentAvailable: agentAvailableNames().length, unavailable: unavailableCatalog().length },
+      // 证据强度口径（2026-11-08）：agentAvailable=true 表示"可按账本承诺（四层状态+显式 override）"，
+      //   不等于每项都跑过 plan→create→preview→modify→promote→restore 全链。fullE2e 名单是真正有
+      //   端到端证据的项；其余为 layerEvidence（四层+回归证据）。discover 输出须带此口径，防"广告"被误读。
+      evidenceGrade: { fullE2e: ['agent.plan', 'agent.artifact.isolation', 'agent.runtime.serial', 'page.multiSheet', 'spec.rows.sum', 'spec.sql.model', 'template.patch.cellValue', 'template.patch.dataset', 'chart.vmap', 'chart.vheatmap', 'cells.rowSpan', 'spec.params.filter'], note: 'agentAvailable=可按账本承诺；fullE2e=有端到端工具链实证；未列名者=layerEvidence（四层/回归证据），不等于已跑全生命周期' },
+      unavailable: unavailableCatalog(),
       chart: chart, condition: condition, write: write, page: page, product: product
     };
   }
@@ -139,5 +167,5 @@ var CapabilityManifest = (function () {
     return out.sort();
   }
 
-  return { build: build, agentAvailableNames: agentAvailableNames };
+  return { build: build, agentAvailableNames: agentAvailableNames, unavailableCatalog: unavailableCatalog, unavailabilityReason: unavailabilityReason };
 })();

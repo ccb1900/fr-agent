@@ -5,6 +5,7 @@
 > 审计三层：**L1 Coverage**（类名/token 源码命中）→ **L2 Manifest**（IR/Object/CPT/渲染/回归证据声明）→ **L3 Agent**（能力发现→需求映射→真实生成/修改→FR 预期结果）。三层互不等价。
 
 > **本文件为最终审计基线**（经外部审查修正口径后定稿），可直接指导实施。修正要点：① `regression` 与 `rendering` 各自独立，regression 须**标明覆盖哪一层**，不得因渲染未验就错误降级合理的序列化回归；② vmap 区分"引擎渲染可行性（已证）"与"Agent 生成链路（未接通）"；③ Agent 清单是"能力说明"，非"强制闸门"，但仍经 discover 提供信息。
+> **当前口径提示（2026-11-08，勿以此报告历史快照排期）**：本报告写作时 manifest=60 项 / agentAvailable=38 / coverage missing=32；当前生成器复核为 manifest=72 项 / agentAvailable=50 / 类级 missing=0 partial=21。以下 §2/§5 的 60 项数字是**历史审计时点事实**，不是当前值；当前值以 application/capability_manifest.js 与 docs/architecture/coverage.md 为准。
 > **审计覆盖度（诚实标注，勿误读为全表逐项）**：L2 manifest **60 项**四层状态与 evidence 已逐项对账（§2/§4 类别2）；§3 六层矩阵是**关键项逐项 + 其余抽样**，非 60 项每行都填满六层；L1/L3 结论为源码通读 + 三路独立取证交叉，非穷举。本报告不授权 coding agent 直接据此改生产代码——实施须按 §5 顺序另行立项。
 
 ## 0. 审计方法（每个状态必须有证据路径 + 测试入口 + 结果）

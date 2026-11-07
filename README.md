@@ -310,9 +310,9 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 
 ---
 
-# 当前口径速查（2026-11-06）
+# 当前口径速查（2026-11-08）
 
 - **铁证三件**：demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F / 销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110 / v2 模板=6161F402B340321B4ABF68B68E301828——改 lib/object|ir|cpt 必逐字节复核。
-- **缺口账**：docs/architecture/coverage.md（missing=32 partial=20 noncore=44、漏账=0；A 表=排期依据）。
-- **能力声明一处真相**：application/capability_manifest.js（四层 construction/serialization/rendering/agentAvailable；agentAvailable 名单以 discover 输出为准）。
-- **现状**：批 0/A-J + 批B 车道全结（渲染端四项/词汇扩容/axis 群/头部类，#101-#106）；未结=vmap 词汇/poly/批F 写回/批D 字典凭据/审查环轮 2——直续步骤见 docs/night-shift-log.md。
+- **缺口账**：docs/architecture/coverage.md（2026-11-08 生成器复核：类级 missing=0 / partial=21 / noncore=44、unattributed=0；旧快照 missing=32 partial=20 已废）。注意不同计量单位不可相除：240 demo CPT / 223 demo 类 / 139 object 构造类 / 72 能力项 / 15 verbs。
+- **能力声明一处真相**：application/capability_manifest.js **72 项登记 / 50 项 agentAvailable**（四层+regressionScope；discover 输出为能力说明非强制闸门）。
+- **现状（2026-11-08）**：72 项能力登记 / 50 项可承诺 / 22 项未承诺（serialization-only 12、pending 6、rejected 3、spec.rows.cells rendering pending 1）；Spec 直写表达面宽于 Planner 生成面；Manifest 与 Planner/Validator 无机器级一致性门（已知架构缺口）；F8 写库/凭据未授权。直续步骤见 docs/night-shift-log.md。
