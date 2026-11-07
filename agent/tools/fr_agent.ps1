@@ -56,9 +56,26 @@ $artFile = $null
 if ($inner -eq 'compile') { $artFile = "$runDir\compile.json" }
 elseif ($inner -eq 'patch') { $artFile = "$runDir\patch.json" }   # zero-engine verbs: artFile stays $null = re-entry allowed
 elseif ($Verb -eq 'inspect_template') { $artFile = "$runDir\inspect.json" }   # engine verb: one inspect per RunId (written by the engine script, pass or fail)
-elseif ($Verb -eq 'promote') { $artFile = "$runDir\promote.json" }            # deployed-state change: one per RunId
+elseif ($Verb -eq 'promote') { $artFile = "$runDir\promote.json" }            # deployed-state change: one COMMIT per RunId
 elseif ($Verb -eq 'restore') { $artFile = "$runDir\restore.json" }
-if ($artFile -and (Test-Path $artFile)) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+# P1-2b (backlog P1x2 fix 2): a deploy verb's RunId registration is claimed by a COMMITTED artifact
+#   only. promote.json/restore.json with ok=false is the EXPLICIT UNFINISHED state the failure catch
+#   writes - an existence-only refusal here deadlocked BOTH the same-RunId retry and restore after a
+#   post-swap failure (the deployed file already carried new bytes with no tool path to commit or
+#   undo). Re-entry re-runs the full guard chain; the deploy-state log + the ACTUAL deployed SHA-256
+#   decide the outcome (complete the commit / undo the uncommitted swap / refuse again). Engine verbs
+#   keep existence-only registration (the r22e cross-pollination guard, unchanged).
+function Test-ArtifactCommitted([string]$Path) {
+  if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $false }
+  try { $o = [System.IO.File]::ReadAllText($Path, [System.Text.Encoding]::UTF8) | ConvertFrom-Json } catch { return $true }   # unreadable: cannot confirm unfinished -> fail-closed
+  if (-not $o) { return $true }
+  return ($o.ok -eq $true)
+}
+if ($artFile -and (Test-Path $artFile)) {
+  $regTaken = $true
+  if (($Verb -eq 'promote' -or $Verb -eq 'restore') -and -not (Test-ArtifactCommitted $artFile)) { $regTaken = $false }
+  if ($regTaken) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
+}
 if (-not (Test-Path $runDir)) { try { New-Item -ItemType Directory -Path $runDir -ErrorAction Stop | Out-Null } catch { } }
 New-Item -ItemType Directory -Force -Path $agentDir | Out-Null
 $env:FR_AGENT_HOME = $ROOT
@@ -82,7 +99,7 @@ function WriteAtomic([string]$path, [string]$text) {
 #     never "no JVM found" - refuse instead of racing an unidentifiable JVM.
 #   create_report/modify_report run OUTSIDE the mutex (they don't touch the engine) to shorten the lock hold
 #   (r16 sec.3). Returns @{gained; busy; rc}.
-function Invoke-UnderMutex([scriptblock]$RunBody, [string]$DupCheckFile = '') {
+function Invoke-UnderMutex([scriptblock]$RunBody, [string]$DupCheckFile = '', [bool]$DupCheckCommittedOnly = $false) {
   . (Join-Path $PSScriptRoot '_identity.ps1')
   $activeFile = "$($cfg.RuntimeDir)\active.json"
   $histFile = "$($cfg.RuntimeDir)\history.log"
@@ -96,8 +113,12 @@ function Invoke-UnderMutex([scriptblock]$RunBody, [string]$DupCheckFile = '') {
     #   The mutex serializes them and (r22e) the first caller writes its engine artifact BEFORE releasing -
     #   so re-checking the artifact HERE, inside the mutex and before the claim, makes the second caller
     #   refuse deterministically: the same RunId can never run the engine twice. (No lock/queue/token added.)
+    #   P1-2b: deploy verbs pass DupCheckCommittedOnly - an ok=false artifact is the unfinished state the
+    #   failure catch wrote, so the waiting caller re-enters instead of deadlocking (same rule as the door).
     if ($DupCheckFile -and (Test-Path $DupCheckFile)) {
-      return @{ gained = $true; busy = $false; dup = $true; rc = $null }
+      $isDup = $true
+      if ($DupCheckCommittedOnly -and -not (Test-ArtifactCommitted $DupCheckFile)) { $isDup = $false }
+      if ($isDup) { return @{ gained = $true; busy = $false; dup = $true; rc = $null } }
     }
     # leftover-process check (only reachable while we hold the mutex)
     # r19 P1: Test-Path false is NOT proof of absence - classify with Get-FilePresence, refuse on unreadable/unknown.
@@ -358,6 +379,8 @@ switch ($inner) {
     $body = {
       $rcP = 0
       $deployedHashNow = $null
+      $swapDone = $false      # P1-2a: catch records FAILED_BEFORE_SWAP vs FAILED_AFTER_SWAP by this flag
+      $recovered = $false
       try {
         if (-not (Test-Path "$runDir\patch.json")) { throw 'PROMOTE_NO_PATCH: patch.json missing (run -Verb modify first)' }
         $pj = [System.IO.File]::ReadAllText("$runDir\patch.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json
@@ -432,7 +455,6 @@ switch ($inner) {
         #   SOURCE_CHANGED. Now the retry recognizes that state by hash identity against the PREPARED record
         #   (stagedHash + sourceHash both matching) and COMPLETES the commit (never re-swaps). Without the
         #   PREPARED evidence the same byte state is still refused (fail-closed).
-        $recovered = $false
         if ($deployedHashNow -ne [string]$mf.sourceHash) {
           if ($deployedHashNow -eq $stagedHash) {
             foreach ($ev in (Get-DeployStateEvents $runDir)) {
@@ -444,32 +466,46 @@ switch ($inner) {
           }
         }
         if ($recovered) {
-          # crash window: the swap already happened (deployed bytes == staged bytes, PREPARED on record) but
-          #   the commit record (promote.json) was lost -> complete the commit from verified on-disk state.
+          # crash window / lost commit record: the swap already happened (deployed bytes == staged bytes,
+          #   PREPARED on record) but the commit record (promote.json) was lost or left ok=false -> complete
+          #   the commit from verified on-disk state. Never re-swaps.
           Add-DeployStateEvent $runDir @{ event = 'COMMITTED'; verb = 'promote'; runId = $RunId; promotedHash = $deployedHashNow; recovered = 1 }
           $deployedHash = $deployedHashNow
         } else {
+          # P1-2a: PREPARED is transactional - a write failure THROWS here, so promote terminates BEFORE the
+          #   swap and the deployed file is never touched without its recovery evidence on record.
           Add-DeployStateEvent $runDir @{ event = 'PREPARED'; verb = 'promote'; runId = $RunId; sourceHash = [string]$mf.sourceHash; origHash = $origHash; deployedBeforeHash = $deployedHashNow; stagedHash = $stagedHash }
           # ATOMIC deploy: same-volume temp + File.Replace; on ANY failure the deployed file is left untouched
           Replace-FileAtomic $staged $deployed | Out-Null
+          $swapDone = $true
+          Add-DeployStateEvent $runDir @{ event = 'SWAPPED'; verb = 'promote'; runId = $RunId; stagedHash = $stagedHash }
           $deployedHash = Get-FileSha256 $deployed
           if (-not $deployedHash) { throw 'post-replace hash mismatch: cannot hash the deployed file after the swap' }
           if ($deployedHash -ne $stagedHash) { throw 'post-replace hash mismatch (deployed artifact may be corrupted; run restore with this runId)' }
+          # P1-2a: a COMMITTED write failure also throws -> the catch leaves the explicit ok=false unfinished
+          #   state (deployed already carries the verified staged bytes); the same-RunId retry completes the
+          #   commit from the PREPARED record + actual hash (the recovered branch above).
           Add-DeployStateEvent $runDir @{ event = 'COMMITTED'; verb = 'promote'; runId = $RunId; promotedHash = $deployedHash }
         }
         $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $true; recovered = $recovered; staged = $staged; deployed = $deployed; orig = $origPath; bytes = (Get-Item $deployed).Length; md5 = (Get-FileHash $deployed -Algorithm MD5).Hash
           sourceHash = [string]$mf.sourceHash; origHash = $origHash; deployedHash = $deployedHash; promotedHash = $deployedHash; deployedBeforeHash = $deployedHashNow; promoteAt = (Get-Date).ToString('o')
-          concurrencyBoundary = 'single-writer deploy window: promote/restore hold the agent runtime named mutex across the whole guard+swap sequence (check-then-act: every hash guard runs inside the mutex immediately before File.Replace); a crashed swap is recovered by hash identity against the PREPARED/COMMITTED deploy log, never re-swapped blindly'; mutex = $cfg.MutexName }
+          concurrencyBoundary = 'single-writer deploy window: promote/restore hold the agent runtime named mutex across the whole guard+swap sequence (check-then-act: every hash guard runs inside the mutex immediately before File.Replace); a crashed or commit-lost swap is recovered by hash identity against the PREPARED/SWAPPED/COMMITTED deploy log, never re-swapped blindly; recovery covers process crash (killed host), not power loss (the deploy-state log and commit artifacts are OS-buffered, not fsynced)'; mutex = $cfg.MutexName }
         WriteAtomic "$runDir\promote.json" ($obj | ConvertTo-Json -Depth 4)
       } catch {
         $rcP = 1
-        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $false; error = $_.Exception.Message; deployedHashAtFail = $deployedHashNow
-          nextActions = @('re-run -Verb modify (new RunId) on the current deployed state and require ok=true before promote', 'inspect -Verb inspect_template -Target <sourceCpt> for real cell coordinates') }
+        $err = '' + $_.Exception.Message
+        # P1-2a: record which side of the swap the failure landed on. Best-effort: the authoritative
+        #   diagnosis is the promote.json ok=false below - a failed diagnostic write here must not mask it.
+        try {
+          Add-DeployStateEvent $runDir @{ event = $(if ($swapDone -or $recovered) { 'FAILED_AFTER_SWAP' } else { 'FAILED_BEFORE_SWAP' }); verb = 'promote'; runId = $RunId; error = $err; deployedHashAtFail = $deployedHashNow }
+        } catch { }
+        $obj = [ordered]@{ tool = 'promote'; runId = $RunId; ok = $false; error = $err; deployedHashAtFail = $deployedHashNow
+          nextActions = @('same-RunId retry: re-run -Verb promote with this RunId - a deployed file already carrying this run''s staged bytes with the PREPARED record present completes the commit; a not-swapped deployed file re-runs the full guard chain; anything else refuses with the actual deployed hash', 'or run -Verb restore with this RunId to undo this run''s uncommitted swapped promote (staged original back over the staged bytes)', 'or re-run -Verb modify (new RunId) on the current deployed state and require ok=true before promote', 'inspect -Verb inspect_template -Target <sourceCpt> for real cell coordinates') }
         WriteAtomic "$runDir\promote.json" ($obj | ConvertTo-Json -Depth 4)
       }
       @{ rc = $rcP }
     }
-    $r = Invoke-UnderMutex $body $artFile
+    $r = Invoke-UnderMutex $body $artFile $true
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }
@@ -481,28 +517,61 @@ switch ($inner) {
   }
   'restore' {
     # Phase-3 spec B: undo a promote - put this run's staged .orig.cpt back over the deployed source.
-    # Fail-closed chain: patch.json PRESENT (RESTORE_NO_PATCH) -> a SUCCESSFUL promote.json for THIS runId
-    # carrying deployedHash+origHash (RESTORE_NO_PROMOTE: restore only undoes its own successful promote)
+    # Fail-closed chain: patch.json PRESENT (RESTORE_NO_PATCH) -> the promote STATE judged by the
+    # deploy-state record + the actual deployed hash (P1-2b, not just promote.json existence/ok):
+    #   a committed promote (ok=true with deployedHash+origHash) is undone by its recorded hash chain;
+    #   an ok=false promote is undone ONLY as the recognizable swapped-uncommitted state (a PREPARED
+    #   promote record matching the patch manifest sourceHash - the deployed file then carries this
+    #   run's staged bytes); any other ok=false state refuses (RESTORE_NO_PROMOTE), so does an
+    #   unreadable promote.json (RESTORE_NO_PROMOTE: cannot confirm what was committed)
     # -> stagingDir BOUND to this RunId (STAGING_RUNID_MISMATCH)
-    # -> staged .orig.cpt present and hash-equal to promote-time origHash (STAGING_ORIG_CHANGED)
-    # -> deployed file present and hash-equal to promote-time deployedHash (else DEPLOYED_CHANGED: the
-    # deployed artifact changed after promote - restoring would clobber it; a PREPARED-backed "already
-    # swapped" state completes the commit instead, 3.1-3 recovery) -> ATOMIC swap (original
+    # -> staged .orig.cpt present and hash-equal to the expected orig hash (STAGING_ORIG_CHANGED)
+    # -> deployed file present and hash-equal to the expected deployed hash (else DEPLOYED_CHANGED: the
+    # deployed artifact changed - restoring would clobber it; a PREPARED-backed "already swapped"
+    # state completes the commit instead, 3.1-3 recovery) -> ATOMIC swap (original
     # preserved on failure) -> post-swap SHA-256 verify vs the original -> restore.json records the hash
     # chain. A refusal NEVER touches the deployed file (guards all run before the swap).
     $body = {
       $rcP = 0
       $deployedHashNow = $null
+      $swapDone = $false      # P1-2a: catch records FAILED_BEFORE_SWAP vs FAILED_AFTER_SWAP by this flag
+      $recovered = $false
+      $undoUncommitted = $false
       try {
         if (-not (Test-Path "$runDir\patch.json")) { throw 'RESTORE_NO_PATCH: patch.json missing in this run (restore undoes THIS run modify)' }
         $pj = [System.IO.File]::ReadAllText("$runDir\patch.json", [System.Text.Encoding]::UTF8) | ConvertFrom-Json
         if (-not $pj.patch) { throw 'patch.json missing patch path (source identity)' }
         $prPath = "$runDir\promote.json"
-        if (-not (Test-Path $prPath)) { throw 'RESTORE_NO_PROMOTE: no promote.json in this run (restore only undoes a SUCCESSFUL promote of the SAME runId)' }
+        if (-not (Test-Path $prPath)) { throw 'RESTORE_NO_PROMOTE: no promote.json in this run (restore only undoes a promote of the SAME runId)' }
         $pr = [System.IO.File]::ReadAllText($prPath, [System.Text.Encoding]::UTF8) | ConvertFrom-Json
-        if ($pr.ok -ne $true) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok!=true (promote failed or was refused)' }
-        if (-not $pr.deployedHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no deployedHash (promote predates the guard; re-run modify+promote with a new RunId)' }
-        if (-not $pr.origHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no origHash (promote predates the guard; re-run modify+promote with a new RunId)' }
+        # P1-2b (backlog P1x2 fix 2): judge the promote STATE, not promote.json existence/ok alone.
+        #   ok=true = committed promote (restore undoes it by the recorded hash chain, as before).
+        #   ok=false = the promote left an EXPLICIT UNFINISHED state; undo is possible ONLY for the
+        #   recognizable swapped-uncommitted promote - a PREPARED promote record on the deploy-state
+        #   log whose sourceHash matches this run's patch manifest (the staged-hash expectation then
+        #   comes from that record, and the restore grounds from manifest.sourceHash). Any other
+        #   ok=false state (guard refusal, no swap, no evidence) refuses fail-closed; an unreadable
+        #   artifact refuses too (cannot confirm what was committed).
+        $expectDeployed = $null
+        $origExpect = $null
+        if ($pr -and ($pr.ok -eq $true)) {
+          if (-not $pr.deployedHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no deployedHash (promote predates the guard; re-run modify+promote with a new RunId)' }
+          if (-not $pr.origHash) { throw 'RESTORE_NO_PROMOTE: promote.json carries no origHash (promote predates the guard; re-run modify+promote with a new RunId)' }
+          $expectDeployed = [string]$pr.deployedHash
+          $origExpect = [string]$pr.origHash
+        } elseif ($pr -and ($pr.ok -eq $false)) {
+          if (-not $pj.manifest -or -not $pj.manifest.sourceHash) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok=false and patch.json carries no manifest sourceHash (cannot judge the uncommitted-promote state; refusing)' }
+          $prepEv = $null
+          foreach ($ev in (Get-DeployStateEvents $runDir)) {
+            if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'promote' -and ([string]$ev.sourceHash -eq [string]$pj.manifest.sourceHash) -and $ev.stagedHash) { $prepEv = $ev }
+          }
+          if (-not $prepEv) { throw 'RESTORE_NO_PROMOTE: this run promote.json ok=false and the deploy-state log has no PREPARED promote record (the promote never reached the swap; nothing uncommitted to undo); refusing' }
+          $expectDeployed = [string]$prepEv.stagedHash
+          $origExpect = [string]$pj.manifest.sourceHash
+          $undoUncommitted = $true
+        } else {
+          throw 'RESTORE_NO_PROMOTE: this run promote.json is unreadable or carries no ok verdict (fail-closed: cannot confirm what was committed)'
+        }
         # 3.1-2 (stage3 final check S2): same RunId binding as promote - restore reads the staged original
         #   through patch.json.stagingDir, so a stagingDir pointing at ANOTHER RunId's staging is refused.
         $stgExpected = [System.IO.Path]::GetFullPath("$runDir\staging")
@@ -517,7 +586,10 @@ switch ($inner) {
         if (-not (Test-Path $orig -PathType Leaf)) { throw "staged original missing: $orig (modify keeps it automatically)" }
         $origHashNow = Get-FileSha256 $orig
         if (-not $origHashNow) { throw "cannot read staged original: $orig" }
-        if ($origHashNow -ne [string]$pr.origHash) { throw ('STAGING_ORIG_CHANGED: staged original hash ' + $origHashNow.Substring(0, 12) + '.. != promote-time origHash ' + ([string]$pr.origHash).Substring(0, 12) + '.. (staging was modified after promote; refusing)') }
+        if ($origHashNow -ne $origExpect) {
+          $ground = $(if ($undoUncommitted) { 'modify-time sourceHash (patch manifest)' } else { 'promote-time origHash' })
+          throw ('STAGING_ORIG_CHANGED: staged original hash ' + $origHashNow.Substring(0, 12) + '.. != ' + $ground + ' ' + $origExpect.Substring(0, 12) + '.. (staging was modified; refusing)')
+        }
         $deployed = Join-Path $cfg.DeployDir ($srcRel -replace '^fineagent/', '')
         if (-not (Test-Path $deployed -PathType Leaf)) { throw "deployed source missing: $deployed" }
         $deployedHashNow = Get-FileSha256 $deployed
@@ -528,15 +600,17 @@ switch ($inner) {
         #   by hash identity against the PREPARED restore record (origHash + deployedBeforeHash both
         #   matching) and COMPLETES the commit (re-materializes restore.json). Without the PREPARED evidence
         #   the same byte state is still refused (fail-closed).
-        $recovered = $false
-        if ($deployedHashNow -ne [string]$pr.deployedHash) {
+        if ($deployedHashNow -ne $expectDeployed) {
           if ($deployedHashNow -eq $origHashNow) {
             foreach ($ev in (Get-DeployStateEvents $runDir)) {
-              if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'restore' -and ([string]$ev.origHash -eq [string]$origHashNow) -and ([string]$ev.deployedBeforeHash -eq [string]$pr.deployedHash)) { $recovered = $true }
+              if ([string]$ev.event -eq 'PREPARED' -and [string]$ev.verb -eq 'restore' -and ([string]$ev.origHash -eq [string]$origHashNow) -and ([string]$ev.deployedBeforeHash -eq $expectDeployed)) { $recovered = $true }
             }
-            if (-not $recovered) { throw ('DEPLOYED_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. equals the staged original but no PREPARED restore record exists for this RunId (not a recognizable uncommitted restore); refusing') }
+            if (-not $recovered) {
+              if ($undoUncommitted) { throw ('RESTORE_NO_PROMOTE: deployed file already equals the staged original (hash ' + $deployedHashNow.Substring(0, 12) + '..) - this run has no uncommitted swapped bytes to undo; refusing') }
+              throw ('DEPLOYED_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. equals the staged original but no PREPARED restore record exists for this RunId (not a recognizable uncommitted restore); refusing')
+            }
           } else {
-            throw ('DEPLOYED_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. != promote-time deployedHash ' + ([string]$pr.deployedHash).Substring(0, 12) + '.. (deployed artifact changed after promote; restoring would clobber it; refusing)')
+            throw ('DEPLOYED_CHANGED: deployed file hash ' + $deployedHashNow.Substring(0, 12) + '.. != expected deployed hash ' + $expectDeployed.Substring(0, 12) + ' (deployed artifact changed; restoring would clobber it; refusing)')
           }
         }
         if ($recovered) {
@@ -545,27 +619,39 @@ switch ($inner) {
           Add-DeployStateEvent $runDir @{ event = 'COMMITTED'; verb = 'restore'; runId = $RunId; restoredHash = $origHashNow; recovered = 1 }
           $restoredHash = $origHashNow
         } else {
+          # P1-2a: PREPARED is transactional - a write failure THROWS here, so restore terminates BEFORE the
+          #   swap (same rule as promote).
           Add-DeployStateEvent $runDir @{ event = 'PREPARED'; verb = 'restore'; runId = $RunId; origHash = $origHashNow; deployedBeforeHash = $deployedHashNow }
           # ATOMIC restore: same-volume temp + File.Replace; on ANY failure the deployed file is left untouched
           Replace-FileAtomic $orig $deployed | Out-Null
+          $swapDone = $true
+          Add-DeployStateEvent $runDir @{ event = 'SWAPPED'; verb = 'restore'; runId = $RunId; origHash = $origHashNow }
           $restoredHash = Get-FileSha256 $deployed
           if (-not $restoredHash) { throw 'post-replace hash mismatch: cannot hash the deployed file after the swap' }
           if ($restoredHash -ne $origHashNow) { throw 'post-replace hash mismatch (restored file may be corrupted; inspect manually and re-promote from staging)' }
+          # P1-2a: a COMMITTED write failure also throws -> explicit ok=false unfinished state; the same-RunId
+          #   restore retry completes the commit from the PREPARED restore record + actual hash.
           Add-DeployStateEvent $runDir @{ event = 'COMMITTED'; verb = 'restore'; runId = $RunId; restoredHash = $restoredHash }
         }
-        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $true; recovered = $recovered; orig = $orig; deployed = $deployed; bytes = (Get-Item $deployed).Length; md5 = (Get-FileHash $deployed -Algorithm MD5).Hash
+        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $true; recovered = $recovered; undoUncommittedPromote = $(if ($undoUncommitted) { 1 } else { 0 }); orig = $orig; deployed = $deployed; bytes = (Get-Item $deployed).Length; md5 = (Get-FileHash $deployed -Algorithm MD5).Hash
           origHash = $origHashNow; restoredHash = $restoredHash; deployedBeforeHash = $deployedHashNow; restoreAt = (Get-Date).ToString('o')
-          concurrencyBoundary = 'single-writer deploy window: promote/restore hold the agent runtime named mutex across the whole guard+swap sequence (check-then-act: every hash guard runs inside the mutex immediately before File.Replace); a crashed swap is recovered by hash identity against the PREPARED/COMMITTED deploy log, never re-swapped blindly'; mutex = $cfg.MutexName }
+          concurrencyBoundary = 'single-writer deploy window: promote/restore hold the agent runtime named mutex across the whole guard+swap sequence (check-then-act: every hash guard runs inside the mutex immediately before File.Replace); a crashed or commit-lost swap is recovered by hash identity against the PREPARED/SWAPPED/COMMITTED deploy log, never re-swapped blindly; recovery covers process crash (killed host), not power loss (the deploy-state log and commit artifacts are OS-buffered, not fsynced)'; mutex = $cfg.MutexName }
         WriteAtomic "$runDir\restore.json" ($obj | ConvertTo-Json -Depth 4)
       } catch {
         $rcP = 1
-        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $false; error = $_.Exception.Message; deployedHashAtFail = $deployedHashNow
-          nextActions = @('restore needs the SAME runId that ran modify AND a successful promote (staging .orig.cpt lives per-run)', 'check logs/agent/runs/<runId>/staging for the kept original and logs/agent/runs/<runId>/promote.json for the recorded hashes') }
+        $err = '' + $_.Exception.Message
+        # P1-2a: record which side of the swap the failure landed on. Best-effort: the authoritative
+        #   diagnosis is the restore.json ok=false below - a failed diagnostic write here must not mask it.
+        try {
+          Add-DeployStateEvent $runDir @{ event = $(if ($swapDone -or $recovered) { 'FAILED_AFTER_SWAP' } else { 'FAILED_BEFORE_SWAP' }); verb = 'restore'; runId = $RunId; error = $err; deployedHashAtFail = $deployedHashNow }
+        } catch { }
+        $obj = [ordered]@{ tool = 'restore'; runId = $RunId; ok = $false; error = $err; deployedHashAtFail = $deployedHashNow
+          nextActions = @('restore needs the SAME runId that ran modify AND either a committed promote (promote.json ok=true) or a recognizable uncommitted promote swap (PREPARED promote record on deploy_state.jsonl + deployed bytes == the recorded staged hash) - the latter is undone by re-running -Verb restore', 'check logs/agent/runs/<runId>/staging for the kept original, promote.json for the recorded hashes and deploy_state.jsonl for the swap-state trace') }
         WriteAtomic "$runDir\restore.json" ($obj | ConvertTo-Json -Depth 4)
       }
       @{ rc = $rcP }
     }
-    $r = Invoke-UnderMutex $body $artFile
+    $r = Invoke-UnderMutex $body $artFile $true
     if (-not $r.gained) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"QUEUE_TIMEOUT"}'); exit 1 }
     if ($r.dup) { Write-Output ('{"ok":false,"reason":"RUNID_EXISTS","runId":"' + $RunId + '"}'); exit 1 }
     if ($r.busy) { Write-Output ('{"ok":false,"runId":"' + $RunId + '","reason":"RUNTIME_BUSY"}'); exit 1 }

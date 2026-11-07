@@ -341,6 +341,176 @@ try {
   $c = New-Case 'R7' ('ORIG-R7' + ('x' * 400)); $h0 = Sha256 $c.deployed
   Assert-Refuse 'R7 restore: no patch.json' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'RESTORE_NO_PATCH' $h0
 
+  # ---------------- D1: PREPARED deploy-state write failure -> refuse BEFORE the swap ----------------
+  #   Backlog P1x2 counter-example 1. Injection: deploy_state.jsonl exists as a DIRECTORY -> every
+  #   Add-Content to it fails (deterministic, no code hooks). The PREPARED write must abort promote
+  #   BEFORE File.Replace: deployed bytes untouched, promote.json ok=false carrying the deploy-state
+  #   diagnosis. (On the old code the write was swallowed with -ErrorAction SilentlyContinue and the
+  #   swap went through with no recovery evidence on record.)
+  $c = New-Case 'D1' ('ORIG-D1' + ('x' * 400)); $h0 = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D1' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath (Sha256 $c.deployed)
+  Write-PatchJson $c $mf
+  New-Item -ItemType Directory -Force -Path (Join-Path $c.runDir 'deploy_state.jsonl') | Out-Null
+  $inv = Invoke-Agent 'promote' $c.rid
+  $pr = Read-Json (Join-Path $c.runDir 'promote.json')
+  $h1 = Sha256 $c.deployed
+  if ($inv.rc -ne 1) { Bad 'D1 promote: PREPARED write failure aborts before swap' ("exit=$($inv.rc) (expected 1; old code swapped anyway) out=$($inv.text)") }
+  elseif (-not $pr -or $pr.ok -ne $false) { Bad 'D1 promote: PREPARED write failure aborts before swap' ('promote.json ok!=' + $pr.ok) }
+  elseif (([string]$pr.error) -notlike '*deploy_state.jsonl write failed*') { Bad 'D1 promote: PREPARED write failure aborts before swap' ('no deploy-state diagnosis in: ' + $pr.error) }
+  elseif ($h1 -ne $h0) { Bad 'D1 promote: PREPARED write failure aborts before swap' 'deployed file was swapped despite the PREPARED write failure' }
+  else { Ok 'D1 promote: PREPARED write failure aborts before swap' }
+
+  # ---------------- D2: same-RunId promote retry after a lost commit record completes the commit ----------------
+  #   Backlog P1x2 counter-example 2 (retry leg). Deterministic stand-in for "swap + verify ok but the
+  #   commit write failed": run a real promote, then rewrite promote.json to ok=false exactly as the
+  #   failure catch leaves it. The retry must recognize PREPARED + deployed==staged by hash and
+  #   COMPLETE the commit (recovered=1), not deadlock on RUNID_EXISTS.
+  $c = New-Case 'D2' ('ORIG-D2' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D2' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D2 promote: retry completes lost commit' "pre-step promote rc=$($inv.rc)" }
+  else {
+    $stagedHash = Sha256 $c.patchedPath
+    [System.IO.File]::WriteAllText((Join-Path $c.runDir 'promote.json'), ('{"tool":"promote","runId":"' + $c.rid + '","ok":false,"error":"post-replace hash mismatch (simulated commit-record loss)"}'), (New-Object System.Text.UTF8Encoding($false)))
+    $inv2 = Invoke-Agent 'promote' $c.rid
+    $pr2 = Read-Json (Join-Path $c.runDir 'promote.json')
+    if ($inv2.rc -ne 0) { Bad 'D2 promote: retry completes lost commit' ("retry exit=$($inv2.rc) out=$($inv2.text)") }
+    elseif (-not $pr2 -or $pr2.ok -ne $true) { Bad 'D2 promote: retry completes lost commit' ('retry promote.json ok!=' + $pr2.ok) }
+    elseif ($pr2.recovered -ne 1) { Bad 'D2 promote: retry completes lost commit' ('recovered!=' + $pr2.recovered) }
+    elseif ((Sha256 $c.deployed) -ne $stagedHash) { Bad 'D2 promote: retry completes lost commit' 'deployed bytes changed by the retry' }
+    else { Ok 'D2 promote: retry completes lost commit' }
+  }
+
+  # ---------------- D3: restore undoes an UNCOMMITTED swapped promote (ok=false + PREPARED record) ----------------
+  #   Backlog P1x2 counter-example 2 (restore leg): after a swap whose commit record was lost, restore
+  #   must be able to undo by the deploy-state record + actual deployed hash, putting the staged
+  #   original back. Old code refused RESTORE_NO_PROMOTE (ok!==true) -> deadlock.
+  $c = New-Case 'D3' ('ORIG-D3' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D3' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D3 restore: undo uncommitted swapped promote' "pre-step promote rc=$($inv.rc)" }
+  else {
+    [System.IO.File]::WriteAllText((Join-Path $c.runDir 'promote.json'), ('{"tool":"promote","runId":"' + $c.rid + '","ok":false,"error":"post-replace hash mismatch (simulated commit-record loss)"}'), (New-Object System.Text.UTF8Encoding($false)))
+    $inv2 = Invoke-Agent 'restore' $c.rid
+    $rs = Read-Json (Join-Path $c.runDir 'restore.json')
+    $origHash = Sha256 $c.origPath
+    if ($inv2.rc -ne 0) { Bad 'D3 restore: undo uncommitted swapped promote' ("restore exit=$($inv2.rc) out=$($inv2.text)") }
+    elseif (-not $rs -or $rs.ok -ne $true) { Bad 'D3 restore: undo uncommitted swapped promote' ('restore.json ok!=' + $rs.ok) }
+    elseif ($rs.undoUncommittedPromote -ne 1) { Bad 'D3 restore: undo uncommitted swapped promote' ('undoUncommittedPromote!=' + $rs.undoUncommittedPromote) }
+    elseif ((Sha256 $c.deployed) -ne $origHash) { Bad 'D3 restore: undo uncommitted swapped promote' 'deployed bytes are not the staged original after the undo' }
+    else { Ok 'D3 restore: undo uncommitted swapped promote' }
+  }
+
+  # ---------------- D4: restore with promote ok=false but NO recognizable uncommitted swap -> refuse ----------------
+  #   Guard pin for the undo path's evidence bar: promote refused BEFORE the swap (render MISSING ->
+  #   ok=false, no PREPARED promote record ever written) -> restore must refuse RESTORE_NO_PROMOTE and
+  #   keep the deployed bytes; the byte state alone never justifies an undo.
+  $c = New-Case 'D4' ('ORIG-D4' + ('x' * 400)); $h0 = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D4' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath (Sha256 $c.deployed); $mf.Remove('render')
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 1) { Bad 'D4 restore: ok=false without uncommitted swap' "pre-step promote rc=$($inv.rc)" }
+  else {
+    Assert-Refuse 'D4 restore: ok=false without uncommitted swap' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'RESTORE_NO_PROMOTE' $h0
+  }
+
+  # ---------------- D5: same-RunId restore retry after a lost restore commit record ----------------
+  #   A restore whose swap + verify succeeded but whose restore.json was left ok=false (or lost) must
+  #   re-enter and COMPLETE the commit from the PREPARED restore record + actual hash (recovered=1).
+  $c = New-Case 'D5' ('ORIG-D5' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D5' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D5 restore: retry completes lost restore commit' "pre-step promote rc=$($inv.rc)" }
+  else {
+    $inv2 = Invoke-Agent 'restore' $c.rid
+    if ($inv2.rc -ne 0) { Bad 'D5 restore: retry completes lost restore commit' "pre-step restore rc=$($inv2.rc)" }
+    else {
+      [System.IO.File]::WriteAllText((Join-Path $c.runDir 'restore.json'), ('{"tool":"restore","runId":"' + $c.rid + '","ok":false,"error":"simulated restore commit-record loss"}'), (New-Object System.Text.UTF8Encoding($false)))
+      $inv3 = Invoke-Agent 'restore' $c.rid
+      $rs = Read-Json (Join-Path $c.runDir 'restore.json')
+      $origHash = Sha256 $c.origPath
+      if ($inv3.rc -ne 0) { Bad 'D5 restore: retry completes lost restore commit' ("retry exit=$($inv3.rc) out=$($inv3.text)") }
+      elseif (-not $rs -or $rs.ok -ne $true) { Bad 'D5 restore: retry completes lost restore commit' ('retry restore.json ok!=' + $rs.ok) }
+      elseif ($rs.recovered -ne 1) { Bad 'D5 restore: retry completes lost restore commit' ('recovered!=' + $rs.recovered) }
+      elseif ((Sha256 $c.deployed) -ne $origHash) { Bad 'D5 restore: retry completes lost restore commit' 'deployed bytes are not the staged original after the retry' }
+      else { Ok 'D5 restore: retry completes lost restore commit' }
+    }
+  }
+
+  # ---------------- D6: same-RunId promote retry after a guard refusal re-refuses ACCURATELY ----------------
+  #   Re-entry on ok=false must re-run the FULL guard chain, not bypass it: a SOURCE_CHANGED refusal
+  #   retried with the same RunId refuses SOURCE_CHANGED again (fresh diagnosis, external bytes kept),
+  #   never RUNID_EXISTS and never a swap.
+  $c = New-Case 'D6' ('ORIG-D6' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  [System.IO.File]::WriteAllText($c.deployed, ('EXTERNAL-EDIT-D6' + ('z' * 400)), (New-Object System.Text.UTF8Encoding($false)))
+  $h0 = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D6' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 1) { Bad 'D6 promote: retry after guard refusal re-refuses' "first promote rc=$($inv.rc) (expected SOURCE_CHANGED refusal)" }
+  else {
+    $inv2 = Invoke-Agent 'promote' $c.rid
+    $pr2 = Read-Json (Join-Path $c.runDir 'promote.json')
+    if ($inv2.rc -ne 1) { Bad 'D6 promote: retry after guard refusal re-refuses' ("retry exit=$($inv2.rc)") }
+    elseif ($inv2.text -match 'RUNID_EXISTS') { Bad 'D6 promote: retry after guard refusal re-refuses' ('retry deadlocked on RUNID_EXISTS instead of re-judging: ' + $inv2.text) }
+    elseif (-not $pr2 -or $pr2.ok -ne $false) { Bad 'D6 promote: retry after guard refusal re-refuses' ('retry promote.json ok!=' + $pr2.ok) }
+    elseif (([string]$pr2.error) -notlike '*SOURCE_CHANGED*') { Bad 'D6 promote: retry after guard refusal re-refuses' ('retry error not SOURCE_CHANGED: ' + $pr2.error) }
+    elseif ((Sha256 $c.deployed) -ne $h0) { Bad 'D6 promote: retry after guard refusal re-refuses' 'external bytes clobbered by the retry' }
+    else { Ok 'D6 promote: retry after guard refusal re-refuses' }
+  }
+
+  # ---------------- D7: same-RunId promote retry after a transient swap failure succeeds ----------------
+  #   P16 state retried: the first promote failed on a locked target (ok=false, PREPARED on record,
+  #   deployed untouched); once the lock is released the retry must complete the normal swap.
+  $c = New-Case 'D7' ('ORIG-D7' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D7' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $lockFs = [System.IO.File]::Open($c.deployed, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+  try { $inv = Invoke-Agent 'promote' $c.rid } finally { $lockFs.Close() }
+  if ($inv.rc -ne 1) { Bad 'D7 promote: retry after transient swap failure' "first promote rc=$($inv.rc) (expected locked-target refusal)" }
+  else {
+    $stagedHash = Sha256 $c.patchedPath
+    $inv2 = Invoke-Agent 'promote' $c.rid
+    $pr2 = Read-Json (Join-Path $c.runDir 'promote.json')
+    if ($inv2.rc -ne 0) { Bad 'D7 promote: retry after transient swap failure' ("retry exit=$($inv2.rc) out=$($inv2.text)") }
+    elseif (-not $pr2 -or $pr2.ok -ne $true) { Bad 'D7 promote: retry after transient swap failure' ('retry promote.json ok!=' + $pr2.ok) }
+    elseif ((Sha256 $c.deployed) -ne $stagedHash) { Bad 'D7 promote: retry after transient swap failure' 'deployed bytes are not the staged patched bytes after the retry' }
+    else { Ok 'D7 promote: retry after transient swap failure' }
+  }
+
+  # ---------------- D8: restore undo REQUIRES the PREPARED evidence, not the byte state alone ----------------
+  #   promote ok=false AND the deployed file happens to carry the staged bytes, but deploy_state.jsonl
+  #   is gone -> no recognizable uncommitted promote -> restore must refuse (fail-closed) and keep the
+  #   deployed bytes.
+  $c = New-Case 'D8' ('ORIG-D8' + ('x' * 400))
+  $srcHash = Sha256 $c.deployed
+  Set-Patched $c ('PATCHED-D8' + ('y' * 400))
+  $mf = New-Manifest ('fineagent/' + $c.cptName) $c.patchedPath $srcHash
+  Write-PatchJson $c $mf
+  $inv = Invoke-Agent 'promote' $c.rid
+  if ($inv.rc -ne 0) { Bad 'D8 restore: undo requires PREPARED evidence' "pre-step promote rc=$($inv.rc)" }
+  else {
+    $stagedHash = Sha256 $c.patchedPath
+    [System.IO.File]::WriteAllText((Join-Path $c.runDir 'promote.json'), ('{"tool":"promote","runId":"' + $c.rid + '","ok":false,"error":"post-replace hash mismatch (simulated commit-record loss)"}'), (New-Object System.Text.UTF8Encoding($false)))
+    Remove-Item -LiteralPath (Join-Path $c.runDir 'deploy_state.jsonl') -Force
+    Assert-Refuse 'D8 restore: undo requires PREPARED evidence' $c 'restore' (Invoke-Agent 'restore' $c.rid) 'RESTORE_NO_PROMOTE' $stagedHash
+  }
+
   # ---------------- X1: Replace-FileAtomic unit - success swaps bytes, leaves no temp ----------------
   if (-not (Test-Path $deployHelper)) { Bad 'X1 Replace-FileAtomic success' '_deploy.ps1 missing' }
   else {
@@ -391,6 +561,16 @@ try {
   if ($m) { Bad 'X4 hash mismatch guard fires' 'mismatched hashes wrongly accepted' }
   elseif (-not $m2) { Bad 'X4 hash mismatch guard fires' 'equal hashes wrongly rejected' }
   else { Ok 'X4 hash mismatch guard fires' }
+
+  # ---------------- X5: static wiring - five-state deploy log + loud deploy-state writes (backlog P1x2) ----------------
+  $dh = $null
+  if (Test-Path $deployHelper) { $dh = [System.IO.File]::ReadAllText($deployHelper) }
+  if (-not $dh) { Bad 'X5 static: deploy-state writes fail loudly' '_deploy.ps1 missing/unreadable' }
+  elseif ($dh -match 'Add-Content[^\r\n]*SilentlyContinue') { Bad 'X5 static: deploy-state writes fail loudly' 'Add-Content with SilentlyContinue found in _deploy.ps1 (PREPARED write failures must not be swallowed)' }
+  else { Ok 'X5 static: deploy-state writes fail loudly' }
+  if (-not $txt) { Bad 'X5 static: five-state deploy log wired' 'fr_agent.ps1 text unavailable' }
+  elseif ($txt -notmatch 'SWAPPED' -or $txt -notmatch 'FAILED_AFTER_SWAP' -or $txt -notmatch 'FAILED_BEFORE_SWAP') { Bad 'X5 static: five-state deploy log wired' 'SWAPPED/FAILED_BEFORE_SWAP/FAILED_AFTER_SWAP events missing in fr_agent.ps1' }
+  else { Ok 'X5 static: five-state deploy log wired' }
 }
 finally {
   foreach ($k in $prev.Keys) { [System.Environment]::SetEnvironmentVariable($k, $prev[$k]) }

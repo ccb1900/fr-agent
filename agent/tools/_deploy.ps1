@@ -47,7 +47,19 @@ function Compare-ManifestVerdict($Emb, $Disk) {
 function Add-DeployStateEvent([string]$RunDir, [hashtable]$Fields) {
   $e = @{ v = 1; at = (Get-Date).ToString('o') }
   foreach ($k in $Fields.Keys) { $e[$k] = $Fields[$k] }
-  Add-Content -Path (Join-Path $RunDir 'deploy_state.jsonl') -Value ($e | ConvertTo-Json -Compress -Depth 4) -Encoding ASCII -ErrorAction SilentlyContinue
+  # P1-2a (backlog P1x2 fix 1): a deploy-state write failure must fail the caller LOUDLY, never be
+  #   swallowed. PREPARED is the crash-recovery evidence: writing it with -ErrorAction SilentlyContinue
+  #   and proceeding to File.Replace left a swapped deployed file with no recovery trail when the disk
+  #   was full / locked / read-only. Main-flow callers (promote/restore) treat every event write as
+  #   transactional: PREPARED failure aborts BEFORE the swap, COMMITTED failure leaves the explicit
+  #   ok=false unfinished state the same-RunId retry then completes. The failure catch writes its
+  #   FAILED_* diagnostic best-effort around this function so it can never mask the original error.
+  try {
+    Add-Content -Path (Join-Path $RunDir 'deploy_state.jsonl') -Value ($e | ConvertTo-Json -Compress -Depth 4) -Encoding ASCII -ErrorAction Stop
+  } catch {
+    throw ('deploy_state.jsonl write failed: ' + $_.Exception.Message)
+  }
+  return $true
 }
 function Get-DeployStateEvents([string]$RunDir) {
   $out = New-Object System.Collections.Generic.List[object]

@@ -162,12 +162,11 @@
 
 - 2026-11-07 收口轮进展（位移映射 P2 项）：单行数据块位移规律已真引擎探针确认（probes/probe_coord_map_expand.js，n=3：块上位移 0、数据块起点恒为模板块行、块下 grid_row = template_row + (N − k)，k=1=模板数据块行数；N=10 的 +9 复现阶段3任务⑤单点观察）；多行数据块/合并单元格/列位移仍未测——解锁行数回归需先泛化规律并按反例先行变更，保守拒绝维持（S7b 不变）。
 
-### P1×2: 部署事务状态机收口（外部评审 fb16935 轮，2026-11-07）
+### ~~P1×2: 部署事务状态机收口（外部评审 fb16935 轮，2026-11-07）~~（完成 2026-11-07，commit 见 night-shift-log）
 - 证据①：agent/tools/_deploy.ps1 Add-DeployStateEvent 用 -ErrorAction SilentlyContinue 吞掉 deploy_state.jsonl 写失败——PREPARED 写失败后仍继续 File.Replace，进程在 COMMITTED/promote.json 前退出则崩溃恢复保证失效（磁盘满/权限/占用均可触发）。
 - 证据②：fr_agent.ps1 promote 入口 RUNID_EXISTS 只看 promote.json 是否存在；替换成功但后续验证失败的 promote.json(ok=false) 同时堵死同 RunId 重试与 restore（RESTORE_NO_PROMOTE 要求 ok===true），与 PREPARED/COMMITTED 恢复机制冲突。
-- 修改范围：_deploy.ps1 写入失败显式失败（PREPARED 失败→替换前终止并留诊断；COMMITTED 失败→留明确未完成态）；状态机细化为 PREPARED/SWAPPED/COMMITTED/FAILED_BEFORE_SWAP/FAILED_AFTER_SWAP，同 RunId 重试与 restore 按「状态+实际部署 SHA-256」判定，而非仅 promote.json 存在性；明确持久化口径（进程崩溃恢复 vs 断电恢复需 fsync 级语义，如实声明支持范围）。
-- 验收标准：反例矩阵（PREPARED 写失败注入/替换后验证失败/同 RunId 重试/restore 遇 ok=false）逐例先红后绿；正常 promote/restore 与 30 例矩阵零回归；真实 E2E 过；基线 MD5 不变。
-- 优先级：P1（破坏刚建立的 fail-closed 保证）。外部依赖：无。
+- 完成：`Add-DeployStateEvent` 写失败即抛（PREPARED 失败=换件前终止，COMMITTED 失败=显式 ok=false 未完成态）；deploy_state.jsonl 五态（PREPARED/SWAPPED/COMMITTED/FAILED_BEFORE_SWAP/FAILED_AFTER_SWAP）；promote/restore 的 RunId 登记改由**已提交产物**认领（ok=false 放行重入、门与 Mutex 内同规、引擎 verbs 不变），重试/restore 按 deploy_state 记录+实际部署件 SHA-256 裁决；restore 新增 undo 未提交换件路径（须 PREPARED promote 记录证据，restore.json 记 undoUncommittedPromote=1，矩阵 D8 钉「证据闸」）；持久化口径如实声明（进程崩溃恢复、非断电级）。
+- 验收达成：反例矩阵逐例先红后绿（改前实测 8 红：D1/D2/D3/D5/D6/D7/X5×2；改后 40/40 全 PASS，既有 30 例零回归）；静态门 failures=0；集成门全链 GREEN（failures=0 skips=0，含 S9d 矩阵）；真实 E2E PASS（ale20261107174522-03410d）；三铁证 MD5 不变（CBEB42E3…/6161F402…/A8EF39AB…）。
 
 ### 主线转向：报表能力覆盖扩张（评审 2026-11-07 定调，状态机收口后为主工作）
 - 证据：评审明确「不能让项目最后变成部署安全做得很好、但只会创建几种固定报表的工具」；8 任务验证暴露 ③日期筛选 ④多Sheet修改 ⑤公式坐标映射 ⑥热力图接入 四类修改能力缺口；coverage missing 清单持续可用。

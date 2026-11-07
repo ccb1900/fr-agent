@@ -1593,3 +1593,28 @@ backlog 新增：regression.js 扩展位移映射（模板格→执行栅格坐�
 - 集成门输出经 tail -20 截留：末 10 条 IT PASS 与聚合结论（failures=0 skips=0）在手，23 条 IT 逐条 transcript 未保留——聚合判定以脚本自身 rc=0 + INTEGRATION END 行为准。
 - 冒烟只覆盖零引擎 verb 面；三引擎入口的跨 CWD 面由「整只 e2e 从 TEMP 真跑」度量（本轮已跑，runId 见上），未把引擎 verb 塞进每跑冒烟（引擎冒烟依赖 FineDB 健康，会毁掉秒级冒烟的稳定性）；该口径已写入 e2e 头注与 run.ps1 注释。
 - 引擎负门（run-engine-negative-tests.ps1）本轮未跑（本轮改动不触 lib/ir/object/cpt 与引擎语义，集成门已覆盖 run.ps1 变更面；fast_baseline 三铁证完好）。
+
+## 2026-11-07（P1×2 部署事务状态机收口：五态 deploy log + 已提交产物判据 + restore undo 未提交换件）
+
+### 背景与证据（本轮逐行复核 + 反例先行实测）
+- backlog fb16935 轮 P1×2（本轮读码复核属实并先红后绿）：① agent/tools/_deploy.ps1 Add-DeployStateEvent 用 `-ErrorAction SilentlyContinue` 追加 deploy_state.jsonl——PREPARED 写失败（磁盘满/权限/占用）后 fr_agent.ps1 仍执行 File.Replace，3.1-3 崩溃恢复赖以判定的证据丢失；② fr_agent.ps1 promote 入口 RUNID_EXISTS 只看 promote.json 存在性，替换成功但后验/提交失败的 promote.json(ok=false) 同时堵死同 RunId 重试与 restore（RESTORE_NO_PROMOTE 要求 ok===true）——部署件已是新字节却无任何工具路径能 commit 或回滚。
+- 反例先行（改码前基线实测，`powershell -File scripts/run-promote-restore-tests.ps1`，pass=32 fail=8）：D1 exit=0（旧码 PREPARED 写失败照换件）；D2/D5/D6/D7 retry 全部 `RUNID_EXISTS` 死锁（exit=1，非重判）；D3 restore 对未提交换件态拒绝；X5 静态两项红（SilentlyContinue 在案、SWAPPED/FAILED_* 缺失）；既有 30 例全 PASS（零回归基线），真实部署目录篡改证据 308 文件 MD5 比对=零改动。
+
+### 实施（最小改动：_deploy.ps1 一处 + fr_agent.ps1 五处，不动 Runtime 冻结面、不动引擎 verbs 判据）
+- `_deploy.ps1` Add-DeployStateEvent：写失败即抛（try/Add-Content -ErrorAction Stop/catch throw 明确诊断 `deploy_state.jsonl write failed: ...`）——主流程事件事务化：PREPARED 失败=换件前终止（D1）、COMMITTED 失败=显式 ok=false 未完成态（由重试补完成）。
+- fr_agent.ps1 promote/restore 体：deploy log 五态 `PREPARED → SWAPPED → COMMITTED` + 失败 catch 写 `FAILED_BEFORE_SWAP/FAILED_AFTER_SWAP`（catch 内 best-effort，诊断权威面=ok=false 产物，不掩原始错误）；promote.json/restore.json 的 `concurrencyBoundary` 补持久化口径（恢复覆盖进程崩溃、非断电级，OS 缓冲写无 fsync）。
+- fr_agent.ps1 RunId 判据（fix ②）：新增 `Test-ArtifactCommitted`（不可读=true fail-closed）；门与 `Invoke-UnderMutex`（新参 DupCheckCommittedOnly，promote/restore 传 true）对 deploy verbs 改按**已提交产物**判重——ok=false 放行重入并完整重跑守卫链；引擎 verbs（compile/patch/inspect）维持产物存在性判据不变（r22e 跨污染守卫未动）。
+- fr_agent.ps1 restore 体：promote 状态三路判定——ok=true 走原记录链；ok=false 仅在 deploy_state 有匹配 patch manifest sourceHash 的 PREPARED promote 记录时放行 **undo 未提交换件**（restore.json 记 `undoUncommittedPromote=1`，期望哈希取自该记录 stagedHash、orig 期望=manifest.sourceHash）；其余 ok=false 与不可读 promote.json 一律 RESTORE_NO_PROMOTE；恢复分支与 DEPLOYED_CHANGED 判定改用统一 $expectDeployed（undo 路径下=PREPARED.stagedHash），undo 路径下 deployed 已==orig 时给精确「无未提交字节可撤销」拒绝。nextActions 同步新出口（同 RunId 重试/undo/新 RunId modify）。
+
+### 验证结果（全部本轮真跑）
+- 矩阵转绿：`scripts/run-promote-restore-tests.ps1` 40/40 PASS（新增 D1–D8+X5×2 全绿；D1 换件前终止+诊断、D2/D5 重试补提交 recovered=1、D3 undo undoUncommittedPromote=1、D4/D8 守卫钉、D6 守卫拒绝重入再拒不 RUNID_EXISTS、D7 锁定失败重试成功、X5 静态两项），既有 30 例零回归，篡改证据零改动。
+- 静态门 `verify/check_ps1_static.ps1`：failures=0（fr_agent.ps1/_deploy.ps1/run-promote-restore-tests.ps1 PARSE+ASCII+无硬编路径 PASS）。
+- 集成门 `scripts/run-integration-tests.ps1`：INTEGRATION GATE GREEN（INTEGRATION END failures=0 skips=0，S1–S28 全量故障注入真跑，含 S9d 本矩阵）。
+- 真实 E2E `scripts/run-agent-lifecycle-e2e.ps1`：PASS exit=0（runId=ale20261107174522-03410d，discover+理解+create→truth-grid→preview→modify→promote→restore→baseline-restore+payload 审计+负控；promote/restore 哈希链在案）。
+- 三铁证：demo_api.cpt=CBEB42E3CE48E46E362B9AE80168026F / demo_template_final.cpt=6161F402B340321B4ABF68B68E301828 / 销售明细_api.png=A8EF39AB648D5F00DDAE0481D0313110，逐字节完好；java 残留=0。
+
+### 未验证事项/边界（如实）
+- 「替换后哈希复核失败」（换后字节≠staged）本身黑盒仍不可确定性注入（NTFS File.Replace 原子，矩阵头注既有口径）；其状态面由确定性等价注入覆盖：ok=false+PREPARED+部署件=staged 字节（D2/D3/D8）与 ok=false+部署件=外部字节（D6 走 SOURCE_CHANGED 重判）。换后复核失败的直接后果（catch→FAILED_AFTER_SWAP+ok=false）与后续出口（重试补提交/restore undo/准确拒绝）均已被上述用例钉住。
+- D2/D3/D5/D8 的「提交记录丢失」用重写 promote/restore.json ok=false 模拟（真实触发=COMMITTED/promote.json 写失败，同属 Add-DeployStateEvent/WriteAtomic 写失败族，状态面等价）；D1 的 PREPARED 写失败用 deploy_state.jsonl 置为目录注入（黑盒、无代码钩子）。
+- 断电级（fsync）语义未实现也未声称——按 backlog 要求如实声明支持范围=进程崩溃恢复（promote.json concurrencyBoundary 字段+runtime-supervisor.md §7+agent-tools.md 均已写明）。
+- 引擎负门（run-engine-negative-tests.ps1）本轮未跑：改动面=agent/tools PS 层与矩阵/文档，不触 lib/ir/object/cpt 与引擎语义；集成门+E2E 已覆盖。
