@@ -548,9 +548,13 @@ check('vcombo 合法 groups 零误报', errsOf(chartIR('vcombo', { groups: [
   { plot: 'column', dataset: 'd', category: '机型', values: ['产量'] },
   { plot: 'line', dataset: 'd', category: '机型', values: ['产量'] } ] })).length === 0);
 check('vcombo 缺 groups REQUIRED', codeAt(chartIR('vcombo', { groups: null }), 'REQUIRED', 'sheets[0].blocks[1]'));
-check('vcombo group.plot 非白名单', codeAt(chartIR('vcombo', { groups: [{ plot: 'pie', dataset: 'd', category: '机型', value: '产量' }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].groups[0].plot'));
+check('vcombo group.plot 非白名单', codeAt(chartIR('vcombo', { groups: [{ plot: 'radar', dataset: 'd', category: '机型', value: '产量' }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].groups[0].plot'));
 check('vcombo group.category 未知列', codeAt(chartIR('vcombo', { groups: [{ plot: 'column', dataset: 'd', category: 'nope', value: '产量' }] }), 'UNKNOWN_REF', 'sheets[0].blocks[1].groups[0].category'));
 check('vcombo group.value 未知列', codeAt(chartIR('vcombo', { groups: [{ plot: 'line', dataset: 'd', category: '机型', value: 'nope' }] }), 'UNKNOWN_REF', 'sheets[0].blocks[1].groups[0].value'));
+check('vcombo area plot 合法', errsOf(chartIR('vcombo', { groups: [{ plot: 'area', dataset: 'd', category: '机型', values: ['产量'] }] })).length === 0);
+check('vcombo bubble 缺 x/y REQUIRED', codeAt(chartIR('vcombo', { groups: [{ plot: 'bubble', dataset: 'd' }] }), 'REQUIRED', 'sheets[0].blocks[1].groups[0]'));
+check('vcombo pie 缺 value REQUIRED', codeAt(chartIR('vcombo', { groups: [{ plot: 'pie', dataset: 'd', category: '机型' }] }), 'REQUIRED', 'sheets[0].blocks[1].groups[0]'));
+check('vcombo stacked 非布尔 INVALID_TYPE', codeAt(chartIR('vcombo', { stacked: 'yes', groups: [{ plot: 'column', dataset: 'd', category: '机型', values: ['产量'] }] }), 'INVALID_TYPE', 'sheets[0].blocks[1].stacked'));
 
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

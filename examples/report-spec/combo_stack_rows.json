@@ -1,0 +1,23 @@
+{
+  "specVersion": "1",
+  "report": { "name": "堆积柱+折线 rows 自检" },
+  "outName": "combo_stack_rows_selftest",
+  "dimensions": [ { "field": "month", "label": "月份", "widthPt": 120 } ],
+  "metrics": [
+    { "field": "A", "label": "A", "aggregation": "sum", "dataType": "number", "widthPt": 90, "format": "#,##0" },
+    { "field": "B", "label": "B", "aggregation": "sum", "dataType": "number", "widthPt": 90, "format": "#,##0" },
+    { "field": "Total", "label": "合计", "aggregation": "sum", "dataType": "number", "widthPt": 90, "format": "#,##0" }
+  ],
+  "dataset": { "rows": [ ["1月", 10, 5, 15], ["2月", 20, 8, 28], ["3月", 15, 12, 27], ["4月", 30, 10, 40] ] },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vcombo", "title": "堆积柱+折线", "heightPt": 340, "stacked": true,
+      "groups": [
+        { "plot": "column", "category": "month", "values": ["A", "B"] },
+        { "plot": "line", "category": "month", "values": ["Total"] }
+      ]
+    }
+  }
+}

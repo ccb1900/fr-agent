@@ -645,12 +645,35 @@ check('多Sheet 名 __proto__ 重复仍拒', codeAt(msSpec(function (rs) { rs.ex
   check('vcombo spec 零误报', errsOf(comboSpec()).length === 0);
   check('vcombo 顶层 category 拒（写了不生效）', codeAt(comboSpec(function (r) { r.presentation.chart.category = 'd'; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart.category'));
   check('vcombo 缺 groups REQUIRED', codeAt(comboSpec(function (r) { delete r.presentation.chart.groups; }), 'REQUIRED', 'presentation.chart.groups'));
-  check('vcombo group.plot 非白名单', codeAt(comboSpec(function (r) { r.presentation.chart.groups[0].plot = 'pie'; }), 'INVALID_ENUM', 'presentation.chart.groups[0].plot'));
+  check('vcombo group.plot 非白名单', codeAt(comboSpec(function (r) { r.presentation.chart.groups[0].plot = 'radar'; }), 'INVALID_ENUM', 'presentation.chart.groups[0].plot'));
   var c = null;
   try { c = SpecCompiler.compile(comboSpec()); } catch (e) { check('vcombo compile 不抛: ' + e, false); }
   var cb = c && c.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
   check('vcombo compile 发射 groups（2 组、dataset=ds1）且 IR 零误报',
     !!(cb && cb.kind === 'vcombo' && cb.groups && cb.groups.length === 2 && cb.groups[0].dataset === 'ds1' && cb.groups[1].plot === 'line') && Ir.validate(c).length === 0);
+})();
+
+// 2026-11-08 组合图扩展样式：stacked 布尔、bubble x/y 编译、非 vcombo 拒 stacked
+(function () {
+  function cs(f) {
+    var rs = { specVersion: '1', report: { name: 't' }, outName: 'vcombo2',
+      dimensions: [{ field: 'd', label: 'D', widthPt: 120 }],
+      metrics: [{ field: 'm', label: 'M', aggregation: 'sum', dataType: 'number', widthPt: 100 },
+                { field: 'm2', label: 'M2', aggregation: 'sum', dataType: 'number', widthPt: 100 }],
+      dataset: { rows: [['a', 1, 10], ['b', 2, 20]] },
+      presentation: { type: 'table', chart: { kind: 'vcombo', stacked: true, groups: [
+        { plot: 'column', category: 'd', values: ['m', 'm2'] },
+        { plot: 'line', category: 'd', values: ['m'] } ] } } };
+    if (f) f(rs); return rs;
+  }
+  check('vcombo stacked spec 零误报', errsOf(cs()).length === 0);
+  check('vcombo stacked 非布尔拒', codeAt(cs(function (r) { r.presentation.chart.stacked = 1; }), 'INVALID_TYPE', 'presentation.chart.stacked'));
+  check('非 vcombo 写 stacked 拒', codeAt(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm', stacked: true }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart.stacked'));
+  check('vcombo bubble group x 缺失拒', codeAt(cs(function (r) { r.presentation.chart.groups = [{ plot: 'bubble', y: 'm' }]; }), 'REQUIRED', 'presentation.chart.groups[0].x'));
+  var c = null;
+  try { c = SpecCompiler.compile(cs()); } catch (e) { check('vcombo stacked compile 不抛: ' + e, false); }
+  var cb = c && c.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
+  check('vcombo stacked compile 发射 stacked=true 且 IR 零误报', !!(cb && cb.stacked === true && cb.groups.length === 2) && Ir.validate(c).length === 0);
 })();
 
 print('SELFTEST END, failures=' + FAILS);

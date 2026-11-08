@@ -2031,3 +2031,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：carrier `reports/test_combo.js` ①独立双数据集：柱 10/20/15/30 + 线 5/8/12/18，类目轴 1-4 月+双图例；②同数据集判别臂：线 25-28 贴顶、柱不变 → 线系列数据真实参与渲染。ReportSpec rows `examples/report-spec/combo_rows.json` 经 `fr_agent create`+`validate` PASS（runId=combo_rows_002；PNG 表体+合计 106+组合图）。fast_ir_contract +5 / fast_report_spec +5 断言入册。
 - 账本：jar 面 VanChartCustomPlot supported、legacy CustomPlot/GanttPlot 归 base（54 类=30 supported/21 base/3 unsupported；named=222 resolved）；manifest `chart.vcombo` 四层 verified+agentAvailable=true（91 项/67 承诺/24 unavailable）；closure 表 10 行 DONE。
 - 回归：fast 20 GREEN；scan ok=118 bad=0；基线 CBEB42E3/6161F402/A8EF39AB。scope 诚实边界=column|line 组合；面积/饼/气泡/雷达组合样式未承诺。
+
+### 第 37 轮 组合图扩展样式：area/stacked/bubble/pie（2026-11-08）
+- 目标：把官方 doc/Chart/Combination 全部样式纳入 vcombo（不只 column|line）。
+- 一手：10 份语料扫描=styles{column_line,stack_column_line,column_area,custom}、plots{column,line,area,bubble,pie}、defs{MoreName,OneValue,BubbleTableDefinition}；对象图 map key=COLUMN/LINE/AREA/BUBBLE/PIE。
+- 实施：object 按 groups plot 选子 plot 类（VanChartColumnPlot/LinePlot/AreaPlot/BubblePlot/PiePlot4VanChart）与 map 值类（MoreName / OneValue(seriesName='',category,value,Sum) / BubbleTableDefinition）；style 推导（column_line/column_area/stack_column_line/custom）；stacked=true 时 column 子 plot 挂 AttrSeriesStackAndAxis(stacked=true,stackID)+VanChartPlotType.STACK。
+- 踩坑修正：只设 CustomStyle.STACK_COLUMN_LINE 时柱仍并排（一臂 PNG 实证）→ 子 plot stack 条件才是真开关；IR 原 `else` 误绑到 stacked 判定导致 groups=null 时 TypeError（fast_ir_contract 抓出）→ 已修。
+- 验证：五 arms 真引擎 PASS+PNG：column+line（含判别臂）、柱+面积带、堆积柱 A+B（15/28/27/40）+Total 线、柱+气泡（4 泡大小 25/8/12/28）、柱+饼（4 扇区+图例）。ReportSpec rows：combo_rows_002、combo_stack_rows_001 均 fr_agent create+validate PASS。fast_ir_contract/fast_report_spec 增 stacked/bubble/pie/area 断言。
+- 账本：manifest chart.vcombo 证据扩到五臂+两 rows runId；scope=column/line/area/bubble(数值x)/pie+stacked；agentAvailable=true 不变（91/67）。
+- 边界：bubble 文本类目 x 不出点（须数值 x）；组合饼位置=引擎默认叠放；其他 CustomPlotType（radar/gauge 类）未承诺。

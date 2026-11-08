@@ -52,7 +52,7 @@ var SimpleWork = J('com.fr.workspace.simple.SimpleWork');
 SimpleWork.supply(J('java.lang.Class').forName('com.fr.base.operator.common.CommonOperator'), new (J('com.fr.env.operator.CommonOperatorImpl'))());
 SimpleWork.checkIn('D:/software/FineReport_11.0/webapps/webroot/WEB-INF');
 module.start();
-var FILES = ['doc/Chart/Combination/柱形-折线组合图.cpt'];
+var FILES = ['doc/Chart/Combination/柱形-折线组合图.cpt','doc/Chart/Combination/柱形-饼组合图.cpt','doc/Chart/Combination/柱形-气泡组合图.cpt','doc/Chart/Combination/堆积柱形-折线组合图.cpt','doc/Chart/Combination/柱形-面积组合图.cpt'];
 for (var fi = 0; fi < FILES.length; fi++) {
   print('##### FILE ' + FILES[fi]);
   var wb = J('com.fr.io.TemplateWorkBookIO').readTemplateWorkBook(FILES[fi]);
@@ -61,7 +61,7 @@ for (var fi = 0; fi < FILES.length; fi++) {
     var ce = sh.getCellElement(c, r); if (!ce) continue;
     var v = ce.getValue(); if (!v || String(v.getClass().getName()).indexOf('ChartCollection') < 0) continue;
     var chart = v.getChart(0);
-    print('cell ' + c + ',' + r + ' chart=' + chart.getClass().getName() + ' plot=' + chart.getPlot().getClass().getName());
+    print('cell ' + c + ',' + r + ' chart=' + chart.getClass().getName() + ' plot=' + chart.getPlot().getClass().getName()); try { print('  style=' + chart.getPlot().getCustomStyle().getStyle()); } catch (eS0) {}
     var d = chart.getFilterDefinition(); print('DEF ' + d.getClass().getName());
     var gp = chart.getPlot();
     ['getCustomStyle', 'getCustomPlotList', 'getPlotList', 'getCustomDefinition', 'getCustomPlotType', 'getStyle', 'getPlotType'].forEach(function (mn) {
