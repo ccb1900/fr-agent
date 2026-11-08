@@ -115,6 +115,14 @@ check('I1.1 sql 路 presentation.type 越词表→INVALID_ENUM', codeAt(mutSql(f
 check('I1.1 presentation 未知键→UNSUPPORTED_CAPABILITY（写了不生效故拒）', codeAt(mutSql(function (r) { r.presentation.foo = 1; }), 'UNSUPPORTED_CAPABILITY', 'presentation.foo'));
 check('I1.1 sql 路 chart 合法形状零误报', errsOf(JSON.parse(src('examples/report-spec/daily_chart.sql.json'))).length === 0);
 check('I1.1 sql 路 chart.value 缺失→REQUIRED', codeAt(mutSql(function (r) { r.presentation.chart = { kind: 'bar', category: 'bizDate' }; }), 'REQUIRED', 'presentation.chart.value'));
+// 2026-11-08（G3 业务验收）：compileSql 已发射 detail.conditions → sql 路 conditions 放开；cells 仍拒（无编译面）
+check('sql 路 conditions 合法零误报（compileSql 已发射 detail.conditions）', errsOf(mutSql(function (r) {
+  r.dimensions = ['bizDate'];
+  r.metrics = ['planned'];
+  r.presentation.conditions = [{ column: 1, when: { formula: '=B2<100' }, then: { color: 16711680, bold: true } }];
+})).length === 0);
+check('sql 路 cells 仍拒（无编译面，写了不生效故拒）', codeAt(mutSql(function (r) { r.presentation.cells = [{ c: 0, rowSpan: 2 }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.cells'));
+check('sql 路 total 仍拒（未验证的编译面，保持明确拒绝）', codeAt(mutSql(function (r) { r.presentation.total = { label: 'T' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
 check('I1.1 rows 路 presentation.chart 零误报（2026-11-07 消除 SQL-only 限制）', errsOf(mut(function (r) { r.presentation.chart = { kind: 'bar', category: 'd', value: 'm' }; })).length === 0);
 // r8 A2：表头文案/列宽覆盖 + 脚注（迁移旧报表用；未知键/坏类型明确拒）
 check('r8-A2 footnote 非字符串→INVALID_TYPE', codeAt(mutSql(function (r) { r.presentation.footnote = 123; }), 'INVALID_TYPE', 'presentation.footnote'));
@@ -269,8 +277,10 @@ check('B6 params reg 零误报', errsOf(baseRowsSpec(function (rs) { rs.params =
 })();
 
 // ===== 审查轮1（2026-11-06）：P1/P2 负项 =====
-// P1-A：sql 路 conditions/cells/total 不发射 → 明确拒（不再绿着丢）
-check('审查1 sql 路 conditions 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.conditions = [{ when: { column: 'a', op: '<', value: 1 }, then: { bg: 1 } }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.conditions'));
+// P1-A：sql 路 cells/total 不发射 → 明确拒（不再绿着丢）。2026-11-08（G3）：conditions 已由
+//   compileSql 发射到 detail.conditions，旧"conditions 拒"口径与实际编译面不符 → 改为放行断言
+//   （正向覆盖见上文 'sql 路 conditions 合法零误报'；形状闸仍在 IR checkConditions）。
+check('审查1 sql 路 conditions 放行（compileSql 发射 detail.conditions，2026-11-08 G3 口径）', errsOf(baseSqlSpec(function (rs) { rs.presentation.conditions = [{ column: 1, when: { formula: '=B2<100' }, then: { color: 16711680 } }]; })).length === 0);
 check('审查1 sql 路 cells 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.cells = [{ c: 0, text: 'x' }]; }), 'UNSUPPORTED_CAPABILITY', 'presentation.cells'));
 check('审查1 sql 路 total 拒', codeAt(baseSqlSpec(function (rs) { rs.presentation.total = { label: '合计' }; }), 'UNSUPPORTED_CAPABILITY', 'presentation.total'));
 // P2：presentation.cells 绝对 r 必撞块游标 → 前置拒
