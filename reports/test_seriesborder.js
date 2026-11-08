@@ -1,13 +1,12 @@
-// reports/test_seriesborder.js — seriesBorder 渲染判别载体（2026-11-08）
-//   目标：验证 chart.seriesBorder 是否真的在 PNG 上画出柱缘框。判别设计：高对比红(0xFF0000)、
-//   粗线(style=3)、alpha=1.0；柱体默认蓝，PNG 出现红色像素才算画出（属性存在不算）。
-//   **2026-11-08 三次挂载实验全阴性**（像素判定，sampled red=0）：
-//     ① DefaultAttr.addDataSeriesCondition(AttrBorder)             —— 0 红像素
-//     ② ConditionAttrList 命名 ConditionAttr + CATEGORY_INDEX + AttrBorderWithAlpha —— 0
-//     ③ 同上挂载 + AttrBorderWithWidth(setLineWidth(3))             —— 0
-//   结论：本版引擎的 data-series 条件通道不画柱缘描边（官方语料 AttrBorder 均属 GI 图框；
-//   AttrBorderWithWidth 在 240 demo 语料零命中）。渲染维持 pending，agentAvailable=false。
-//   本载体保留为可复现实验：将来换引擎/找到正确宿主时重跑并看红色像素。
+// reports/test_seriesborder.js — seriesBorder 渲染判别载体（2026-11-08，已达成）
+//   判别设计：高对比红(0xFF0000)、style=1；柱体默认蓝，PNG 出现红色像素才算画出（属性存在不算）。
+//   实验轨迹（证据驱动，最终达成）：
+//     ① DefaultAttr+AttrBorder，style=3 → 0 像素（style 越界）
+//     ② 命名条件 + AttrBorderWithAlpha      → 0 像素（WithAlpha 引擎不画）
+//     ③ AttrBorderWithWidth                  → 0 像素（该类非柱缘宿主）
+//     ④ **DefaultAttr+AttrBorder，style=1（官方 lineStyle 一手：563×0/134×1）→ red=596 像素，达成**
+//   结论：AttrBorder(color,style 0|1) 走 DefaultAttr 系列条件通道可渲染；alpha 通道不画（IR 已明确拒）。
+//   账本：manifest chart.seriesBorder rendering=verified / agentAvailable=true；官方 551 处同构语料。
 var SPEC = {
   outName: '能力自检_系列边框',
   allowNoFormula: true,
@@ -15,9 +14,9 @@ var SPEC = {
     sheets: [{
       name: 'sheet1', widthsPt: [700],
       blocks: [
-        { type: 'cells', heightPt: 28, items: [{ c: 0, span: 1, text: 'seriesBorder visual: red style=3 alpha=1' }] },
+        { type: 'cells', heightPt: 28, items: [{ c: 0, span: 1, text: 'seriesBorder visual: red style=1' }] },
         { type: 'chart', kind: 'vbar', dataset: 'ds', category: '机型', values: ['产量'], heightPt: 300,
-          seriesBorder: { color: 0xFF0000, style: 3, alpha: 1.0 } }
+          seriesBorder: { color: 0xFF0000, style: 1 } }
       ]
     }],
     datasets: [{

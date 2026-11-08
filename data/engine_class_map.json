@@ -21,7 +21,7 @@
     "chart.trendLine": { "class": "com.fr.plugin.chart.base.VanChartAttrTrendLine", "module": "lib/object.js" },
     "chart.axisYUnit": { "class": "com.fr.base.Formula", "module": "lib/object.js" },
     "chart.hotTooltip": { "class": "com.fr.chart.base.AttrContents", "module": "lib/object.js" },
-    "chart.seriesBorder": { "class": "com.fr.plugin.chart.base.AttrBorderWithAlpha", "module": "lib/object.js" },
+    "chart.seriesBorder": { "class": "com.fr.chart.base.AttrBorder", "module": "lib/object.js" },
     "chart.effect": { "class": "com.fr.plugin.chart.base.AttrEffect", "module": "lib/object.js" },
     "chart.areaFill": { "class": "com.fr.plugin.chart.base.AttrAreaSeriesFillColorBackground", "module": "lib/object.js" },
     "chart.seriesImage": { "class": "com.fr.plugin.chart.base.AttrSeriesImageBackground", "module": "lib/object.js" },

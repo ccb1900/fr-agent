@@ -529,6 +529,11 @@ check('批I mapTooltip payload 未知键拒', codeAt(chartIR('vmap', { mapToolti
   check('批I mapTooltip muti 非布拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapTooltip = { areaTooltip: { muti: 'false' } }; }), 'INVALID_TYPE', P + '.mapTooltip.areaTooltip.muti'));
   check('批I mapTooltip richText.content 非串拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].mapTooltip = { pointTooltip: { richText: { content: 5 } } }; }), 'INVALID_TYPE', P + '.mapTooltip.pointTooltip.richText.content'));
   check('批I mapLabel 合法形态零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].mapLabel = { areaLabel: { enable: true, fontPt: 12, bold: false, color: 0x333333 } }; ir.sheets[0].blocks[3].mapTooltip = { areaTooltip: { muti: true, format: '#,##0', richText: { content: 'x', auto: false } } }; })).length === 0);
+  // 2026-11-08 seriesBorder 渲染实证后的词表闸：AttrBorder color+style 0|1 可用；alpha 通道引擎不画→拒
+  check('seriesBorder style 0 合法零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 0 }; })).length === 0);
+  check('seriesBorder style 1 合法零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 1 }; })).length === 0);
+  check('seriesBorder style=3 拒（官方语料仅 0/1；其他值引擎不画）', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 3 }; }), 'INVALID_ENUM', P + '.seriesBorder.style'));
+  check('seriesBorder alpha 拒（AttrBorderWithAlpha 引擎不画，写了不生效）', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 1, alpha: 1 }; }), 'INVALID_ENUM', P + '.seriesBorder.alpha'));
 })();
 
 print('SELFTEST END, failures=' + FAILS);

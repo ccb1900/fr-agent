@@ -7,6 +7,6 @@ var SPEC = {
     { type: 'header', columns: [{ label: '线', name: 'line', type: 'text' }], heightPt: 20 },
     { type: 'detail', dataset: 'd', columns: [{ name: 'line', type: 'text' }], heightPt: 20 },
     { type: 'chart', kind: 'vbar', dataset: 'd', category: 'line', value: 'n', span: 1, heightPt: 320,
-      seriesBorder: { color: 0xFF0000, style: 1, alpha: 1.0 } }
+      seriesBorder: { color: 0xFF0000, style: 1 } }
   ] }], datasets: [{ name: 'd', columns: [{ name: 'line', type: 'text' }, { name: 'n', type: 'number' }], rows: [['A', 100], ['B', 200]] }] }
 };

@@ -39,7 +39,7 @@ var SPEC = {
           stack: { stacked: true, stackId: 'S1' },
           tooltip: { muti: false, formats: { series: true, value: '#,##0', percent: true }, richText: { content: '系列 ${SERIES} 值 ${VALUE}', auto: true } },
           label: { enable: true, position: 2 },
-          seriesBorder: { color: 0x3355AA, style: 1, alpha: 0.9 },
+          seriesBorder: { color: 0x3355AA, style: 1 },
           alpha: 0.9, heightPt: 240
         },
         {
