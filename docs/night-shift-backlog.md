@@ -177,6 +177,7 @@
 ### P3: vpie 标签/汇总渲染未达成（2026-11-08 升级为序列化墙）
 - 真实证据：test_vanchart vpie 臂配置 `label {enable:true, position:2, summary:{format}}` → 真引擎 PNG 饼图无任何标签文字；2026-11-08 四次挂载实验（命名 ConditionAttr+ListCondition / 类目条件 CATEGORY_INDEX / ConditionCollection DefaultAttr（官方 基础饼图.cpt 挂法）/ position 0）PNG 目检均无标签。官方语料一手：`PieCategoryLabelContent` 用于 `gaugeValueLabel`（仪表值标签）；饼图 labelDetail 内容是 `AttrTooltipContent` + value/percent/category/series format 开关（活对象反射一手 probe_labelcontent_api）。
 - **2026-11-08 后续两次实现尝试均失败**：⑤新建 AttrTooltipContent 挂 value/percent/category → cpt 导出期 CHART SERIALIZED 门失败（`<O t="CC">` 缺失，ChartCollection 整体被丢）⑥复用 detail 自带 content 只翻转 percent（补 CoreDecimalFormat）→ 同样失败。结论：本版 headless 构建对 AttrTooltipContent 的 writeXML 不可用——**这是序列化/引擎墙，不是接线问题**；实现代码已回滚。
+- **2026-11-08 第三次复核（隔离实验，关键）**：同代码 vbar + label.percent 开关 → CHART SERIALIZED 通过（AttrTooltipContent 类路径本身可用）；vpie 三条路线（复用 content+percent / 显式 new content / 官方 richText `${SERIES}:${PERCENT}`）均 CHART SERIALIZED 失败 → **墙在 vpie 的 label content 写路径**（非类本身、非挂载：命名 ConditionAttr 与官方条件属性4 同构仍失败）。代码再次回滚。
 - 用户影响：饼图无法展示分类/数值/百分比标签；`label.summary` 当前"写了不生效"（仅序列化）。
 - 修改范围（若未来版本解锁）：以 AttrTooltipContent 开关重实现并 PNG 实证；在此之前 `label.summary` 应改为 IR 明确拒（避免写了不生效）——需一次专门小批（含负例与载体），本轮未做以免半成品。
 - 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见且 cpt 保留 ChartCollection；`label.summary` 要么渲染达成要么 IR 明确拒；fast/scan/基线全绿。

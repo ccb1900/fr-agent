@@ -1774,3 +1774,18 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 账本：chart.seriesBorder rendering pending→**verified**、agentAvailable=true（四层全 verified）；证据改为达成记录+官方语料一手；"引擎墙"旧结论作废并在证据里写明。
 - 验证：载体 reports/test_seriesborder.js 真引擎 failures=0 且红边 596px；基线待回补；fast/scan 待跑。
 - 验证（最终）：默认管线 failures=0 且 demo_api.cpt MD5=CBEB42E3；fast 18/18 GREEN（含 fast_ir_contract +4、capability_gate_consistency 72/51/21 口径、layer_coherence 51/51）；scan ok=90 bad=0（两个旧载体 alpha 字段按新契约移除）；引擎负门 GREEN；层门全量 sweep：render 51 / agent 51。
+
+### 第 12 轮 标签边框新能力（用户指定：先做标签边框，再处理 vpie）
+- 官方一手：全量 corpus **268/268 处 `<AttrBorderWithShape>` 位于 `labelDetail`**，lineStyle 全 0、shapeType 全 `RectangularMarker`；活对象反射=AttrLabelDetail.setBorder(AttrBorderWithShape)，setter=setBorderColor/setBorderStyle/setShape(MarkerType)/setAutoColor。
+- 实施：IR `chart.label.border`（keys=color|style|shape；style 仅 0|1；shape 仅 'rect'；未知键/类型拒）→ object 构造 AttrBorderWithShape 挂 labelDetail.setBorder；fast_ir_contract +4。
+- 首跑像素红=0 但图片显示**白色圆角标签框**——根因=AttrBorderWithShape 默认 `autoColor=true` 忽略自定义色；`setAutoColor(false)` 后 **PNG 红框 244 像素**达成。
+- 载体：reports/test_labelborder.js（vbar label enable + border red/style1/rect）。账本新增 `chart.labelBorder` 四层 verified、agentAvailable=true（72→73 项 / 51→52 承诺 / 21 未承诺）；engine_class_map 锚 AttrBorderWithShape（jar inventory 重建，resolved=182/missing=0）；层门新增 planner/spec 合同。
+
+### 第 13 轮 vpie 标签内容（用户指定：标签边框之后处理）——三次新路线均序列化墙
+- 隔离实验（关键）：同代码下 **vbar + label.percent 开关 → 管道全 PASS（CHART SERIALIZED 通过）**；仅 vpie 失败 → AttrTooltipContent 路径本身可用，问题在 vpie 的 label content 写路径。
+- vpie 三次新路线（每次真引擎）：
+  ① 复用 detail 自带 content + setPercentFormat（补 CoreDecimalFormat）→ CHART SERIALIZED 失败（ChartCollection 丢失）
+  ② 显式 new AttrTooltipContent + setContent + percent → 同样失败
+  ③ 官方 demo 实际用法 label.richText（${SERIES}: ${PERCENT}，PieCategoryLabelContent+richTextAttr）→ 同样失败
+- 结论：本版 headless 的 vpie 标签内容写路径（AttrTooltipContent/PieCategoryLabelContent 的 writeXML）修改即丢 ChartCollection——序列化墙确认；代码已回滚（AL 开关键与 object 分支移除，不留半成品），backlog P3 保留并补"vbar 隔离实验"证据（排除 AttrTooltipContent 类本身的问题）。
+- 未验证：该墙是否与 vpie 的 label 挂载/条件集组合有关（官方 demo 用命名 ConditionAttr 条件属性4，与本实现同构；仍失败）。
