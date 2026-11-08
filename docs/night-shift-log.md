@@ -2040,3 +2040,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：五 arms 真引擎 PASS+PNG：column+line（含判别臂）、柱+面积带、堆积柱 A+B（15/28/27/40）+Total 线、柱+气泡（4 泡大小 25/8/12/28）、柱+饼（4 扇区+图例）。ReportSpec rows：combo_rows_002、combo_stack_rows_001 均 fr_agent create+validate PASS。fast_ir_contract/fast_report_spec 增 stacked/bubble/pie/area 断言。
 - 账本：manifest chart.vcombo 证据扩到五臂+两 rows runId；scope=column/line/area/bubble(数值x)/pie+stacked；agentAvailable=true 不变（91/67）。
 - 边界：bubble 文本类目 x 不出点（须数值 x）；组合饼位置=引擎默认叠放；其他 CustomPlotType（radar/gauge 类）未承诺。
+
+### 第 38 轮 仪表主题变体 MeterBlue/SimpleMeter（2026-11-08）
+- 一手：两变体均 `extends MeterPlot`、仅无参构造、零新增 setter → 不是独立图族，是主题子类。
+- 实施：`meter.theme=blue|simple` 键（object 按 theme 选 plot 类；IR 校验 blue|simple；SpecValidator CHART_KEYS/负项；SpecCompiler rows+sql 透传；非 meter 写 theme 拒）。
+- 验证：`reports/test_meter_blue.js` / `reports/test_meter_simple.js` 真引擎 EXE+PNG，均渲染数值 80、主题可区分；但 Blue 带引擎内置 share 徽标痕迹、Simple 带默认占位文案 Fine-Engine_Chart_Meter_Yuan → 不升 rendering、不承诺。
+- 账本：manifest 新增 chart.meterBlue/chart.simpleMeter（construction/serialization=verified，rendering/regression=pending，agentAvailable=false）→ 93 项/67 承诺/26 未承诺；jar MeterBlue/SimpleMeter 转 base（54 类=30 supported/23 base/1 unsupported；唯一 unsupported=VanChartDrillMapPlot）。
+- 回归：fast 20 GREEN；基线 CBEB42E3。诚实边界：主题“能渲染”≠“可交付”（水印/占位未清）。

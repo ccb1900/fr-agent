@@ -1,12 +1,12 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T18:55:28.9011991+08:00",
+    "generatedAt":  "2026-11-08T19:07:58.7953151+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  3,
-                   "base":  21,
+                   "unsupported":  1,
+                   "base":  23,
                    "supported":  30
                },
     "licenseCounts":  {
@@ -167,11 +167,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MeterBluePlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "blue theme variant not separately wired/tested (MeterPlot/SimpleMeterPlot cover the family core)"
+                        "reason":  "blue theme variant of MeterPlot, wired via meter.theme=blue + carrier test_meter_blue (renders 80, engine share badge artifact -\u003e not promised)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MeterPlot",
@@ -231,11 +231,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.SimpleMeterPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "simple variant not separately wired/tested; carrier covers MeterPlot family core"
+                        "reason":  "simple theme variant of MeterPlot, wired via meter.theme=simple + carrier test_meter_simple (renders 80, default unit placeholder artifact -\u003e not promised)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.StockPlot",

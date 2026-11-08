@@ -241,16 +241,16 @@
       "cap": "chart.meter"
     },
     "com.fr.chart.chartattr.MeterBluePlot": {
-      "status": "unsupported",
+      "status": "base",
       "license": "basic",
       "family": "legacy",
-      "reason": "blue theme variant not separately wired/tested (MeterPlot/SimpleMeterPlot cover the family core)"
+      "reason": "blue theme variant of MeterPlot, wired via meter.theme=blue + carrier test_meter_blue (renders 80, engine share badge artifact -> not promised)"
     },
     "com.fr.chart.chartattr.SimpleMeterPlot": {
-      "status": "unsupported",
+      "status": "base",
       "license": "basic",
       "family": "legacy",
-      "reason": "simple variant not separately wired/tested; carrier covers MeterPlot family core"
+      "reason": "simple theme variant of MeterPlot, wired via meter.theme=simple + carrier test_meter_simple (renders 80, default unit placeholder artifact -> not promised)"
     },
     "com.fr.chart.chartattr.RadarPlot": {
       "status": "base",
