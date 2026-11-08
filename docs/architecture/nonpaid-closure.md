@@ -18,7 +18,7 @@
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | WordCloudTableDefinition(wordName/wordValue) | **DONE（chart.vwordcloud；runId=wordcloud_e2e_002）** |
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
-| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable 可空表；mark/progress 可 null) | 待做：条形语义未对齐，rawIR 已见网格但 bars 不显示；下一步按官方字段逐一对 | |
+| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable + TimeAxis/ProcessAxis + processList)；**三轮 rawIR 试错**：①NPE（无 geoUrl/axis 类）→ 加 TimeAxis/ProcessAxis 修复 NPE → execute PASS → ②无 rawIR 词表 → IR 补 → ③渲染「图形没有数据」= web 渲染需 div 层（与 drillmap 一致） | **serialization-only**（与 tooltip/hyperlink 等 web 交互相责统一口径） | |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
