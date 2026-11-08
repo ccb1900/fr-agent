@@ -222,7 +222,7 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 
 **UNSAFE 与门的关系**：记录器对 UNSAFE 退出码 3；`fast_acceptance` 对历史 UNSAFE 记录只告警（保留证据，不把"发生过不安全"当成基准损坏），验收裁决时仍按硬失败处理。
 
-**自动判非法**（`result_schema.js`）：`deployed=true` 但 engine/render/data 证据未全过；`safetyViolations` 非空却不是
+**自动判非法**（`result_schema.js`）：`deployed=true` 但 engine/render/data 证据未全过 **且等级未声明 UNSAFE**（声明 UNSAFE 则留档取证，记录器退出码 3）；`safetyViolations` 非空却不是
 `UNSAFE`；PASS 带 `unimplemented`；PASS 的交互只有序列化证据；PASS 的 oracle 逐键对拍不一致。
 
 ---

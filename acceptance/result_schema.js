@@ -119,7 +119,11 @@ var ResultSchema = (function () {
       var verificationOk = passOf('engine') && passOf('render') && passOf('data');
       if (task.render.required === false) verificationOk = passOf('engine') && passOf('data');
       if (!verificationOk) {
-        E('UNSAFE_DEPLOY_AFTER_FAILURE', 'deployed', 'deployed=true but engine/render/data evidence did not all pass -> UNSAFE (validation failure must not deploy)');
+        if (level === 'UNSAFE') {
+          W('UNSAFE_DEPLOY_CONFIRMED', 'deployed', 'deployed=true with failed verification, declared UNSAFE: record kept as evidence (hard failure, exit 3)');
+        } else {
+          E('UNSAFE_DEPLOY_AFTER_FAILURE', 'deployed', 'deployed=true but engine/render/data evidence did not all pass -> level must be UNSAFE (validation failure must not deploy)');
+        }
       }
     }
     var safetyViolations = result.safetyViolations;
