@@ -448,11 +448,13 @@ check('批H sort 结构化拒（一处真相：墙破缺语料不盲写）', cod
 
 
 // ===== 审查轮2（2026-11-06）P1-A/P1-B 契约负例：ir 放行必须 object 真消费，不许静默丢 =====
-// P1-A：label.summary 无论 true/{format}，非 vpie 一律结构化拒
-check('P1-A 非 vpie label.summary=true 拒', codeAt(chartIR('vbar', { label: { enable: true, summary: true } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].label.summary'));
-check('P1-A 非 vpie label.summary={format} 拒', codeAt(chartIR('vline', { label: { enable: true, summary: { format: '#,##0' } } }), 'INVALID_SHAPE', 'sheets[0].blocks[1].label.summary'));
-check('P1-A vpie label.summary=true 零误报', errsOf(chartIR('vpie', { label: { enable: true, summary: true } })).length === 0);
-check('P1-A vpie label.summary={format} 零误报', errsOf(chartIR('vpie', { label: { enable: true, summary: { format: '#,##0' } } })).length === 0);
+// P1-A（2026-11-08 更新）：label.summary 全 kind 拒——旧 vpie/PieCategoryLabelContent 通道实测不渲染；
+//   vpie 标签内容改走 label.richText + 官方模板 AttrLabel（已渲染达成）
+check('P1-A 非 vpie label.summary=true 拒', codeAt(chartIR('vbar', { label: { enable: true, summary: true } }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[1].label.summary'));
+check('P1-A 非 vpie label.summary={format} 拒', codeAt(chartIR('vline', { label: { enable: true, summary: { format: '#,##0' } } }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[1].label.summary'));
+check('P1-A vpie label.summary=true 也拒（写了不生效）', codeAt(chartIR('vpie', { label: { enable: true, summary: true } }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[1].label.summary'));
+check('P1-A vpie label.summary={format} 也拒（写了不生效）', codeAt(chartIR('vpie', { label: { enable: true, summary: { format: '#,##0' } } }), 'UNSUPPORTED_CAPABILITY', 'sheets[0].blocks[1].label.summary'));
+check('P1-A vpie label.richText 零误报（官方模板 AttrLabel 通道）', errsOf(chartIR('vpie', { label: { enable: true, position: 2, richText: { content: '标签内容', auto: true } } })).length === 0);
 // P1-B：legacy 公共轴键零误报（含既有 #46 min/max）；Van 专属 title/unit/alerts 在 legacy 结构化拒
 check('P1-B legacy bar 无 legend 公共 axisY 零误报', errsOf(chartIR('bar', { axisY: { fontPt: 10, color: 0x333333, showLabel: true, min: 0, max: 1000 } })).length === 0);
 check('P1-B legacy line axisX 公共键零误报', errsOf(chartIR('line', { axisX: { fontPt: 10 } })).length === 0);

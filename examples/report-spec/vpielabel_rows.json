@@ -1,0 +1,18 @@
+{
+  "specVersion": "1",
+  "report": { "name": "vpie 标签内容（richText）" },
+  "outName": "能力自检_vpie标签",
+  "dimensions": [ { "field": "line", "label": "生产线", "widthPt": 160 } ],
+  "metrics": [ { "field": "planned", "label": "计划", "aggregation": "sum", "dataType": "number", "widthPt": 120, "format": "#,##0" } ],
+  "dataset": { "rows": [["A线", 80], ["B线", 40], ["C线", 150]] },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vpie",
+      "category": "line",
+      "value": "planned",
+      "label": { "enable": true, "position": 2, "richText": { "content": "标签内容", "auto": true } }
+    }
+  }
+}

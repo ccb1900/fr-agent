@@ -24,7 +24,7 @@ var SPEC = {
         { type: 'chart', kind: 'vline', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160 },
         { type: 'chart', kind: 'varea', span: 4, dataset: 'dsVan', category: '机型', values: ['产量', '良率'], heightPt: 160, areaFill: { color: 0x77BBFF, alpha: 0.45 } },
         { type: 'chart', kind: 'vscatter', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 160, tooltip: { muti: true, formats: { x: '#,##0', y: '#,##0', size: '#,##0' } } },
-        { type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 340, label: { enable: true, position: 2, summary: { format: '#,##0' } } },  // 批B渲染端收案:图例区随图表高度分享,340pt 下 4 条全出;批B头部:vpie label=PieCategoryLabelContent+summary(README #104)
+        { type: 'chart', kind: 'vpie', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 340, label: { enable: true, position: 2, richText: { content: '标签内容', auto: true } } },  // 批B渲染端收案:图例区随图表高度分享,340pt 下 4 条全出;批B头部:vpie label=PieCategoryLabelContent+summary(README #104)
         { type: 'chart', kind: 'vgauge', span: 4, dataset: 'dsVan', category: '机型', values: ['产量'], heightPt: 170 },
         { type: 'chart', kind: 'vbubble', span: 4, dataset: 'dsVan', seriesName: '机型线', x: '产量', y: '良率', bubbleSize: '库存', heightPt: 240 },
         { type: 'space', heightPt: 8 },
