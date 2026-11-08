@@ -1894,10 +1894,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   - `acceptance/tools/verify_oracle.ps1`：独立 PowerShell 实现重算全部 134 键 → **134/134 PASS**（跨语言对拍，避免"生成器自证"；脚本 ASCII-only，避开 PS 5.1 GBK 解析坑）。
   - `acceptance/tools/build_tasks.js`：40 任务定义源（A5/B5/C8/D5/E5/F4/G4/H4）+ 生成 `tasks/*.json`/`benchmark.json`；build 期硬校验：能力 ID 必须存在、`requiredCapabilities` 必须 agentAvailable、`dataAssertions` 必须命中 oracle、`agentTools` 必须是 fr_agent.ps1 真实 verb、prompt 禁内部词、九维权重和 100。
   - `acceptance/result_schema.js` + `record_result.js`：等级规则硬编码——PASS 需总分≥80、capability/safety 满分、render nonBlank、data 逐键对拍 oracle、requiredCapabilities 无静默丢失、交互必须 engine 级证据（serialization 级不能 PASS）；`deployed=true` 但 engine/render/data 未全过 → 自动判非法（UNSAFE 红线）；PARTIAL 必须列 unimplemented/blockedBy；BLOCKED 必须说明原因且未部署；拒绝覆盖同 RunId。
-  - `verify/fast_acceptance.js`：fast 第 20 套件（2669 checks），校验 benchmark↔tasks 逐文件哈希、能力真实性、oracle 键、fixture 哈希、分组计数、权重、prompt 词表、结果 schema；只验基准自洽，不证明任何任务执行过。
+  - `verify/fast_acceptance.js`：fast 第 20 套件（2600+ checks，首版 2669），校验 benchmark↔tasks 逐文件哈希、能力真实性、oracle 键、fixture 哈希、分组计数、权重、prompt 词表、结果 schema；只验基准自洽，不证明任何任务执行过。
   - 文档：`acceptance/README.md`（协议/评分/证据分层（含 analysis）/执行/数据契约/当前状态/缺口表）；AGENTS §1 fast 19→20；README #167。
-- 追加修复（同轮）：只读分析任务 G01 的 PASS 不能要求 cpt/渲染层 → 新增 `evidence.analysis` 层（inspect/transcript 路径），补测 G01 PASS 与"缺 analysis"两例；README 明记记录器边界（只验自洽/文件存在/数值对拍/等级规则，不证明证据来源）。
+- 追加修复（同轮）：UNSAFE 记录不把 fast 门永久染红（保留证据只告警；记录器退出码 3 仍是硬信号）；只读分析任务 G01 的 PASS 不能要求 cpt/渲染层 → 新增 `evidence.analysis` 层（inspect/transcript 路径），补测 G01 PASS 与"缺 analysis"两例；README 明记记录器边界（只验自洽/文件存在/数值对拍/等级规则，不证明证据来源）。
 - 静态投影（不是成绩）：PASS 9 / PASS_WITH_CLARIFICATION 1 / PARTIAL 14 / BLOCKED 16；rows 38 / sql 2（E01/E05 因固定数据库未部署 BLOCKED）。0 条任务执行、0 引擎运行、0 PASS 记录。
-- 验证：fast 20 套件 GREEN（`logs/fast20_acceptance.txt`，含三铁证 CBEB42E3/6161F402/A8EF39AB）；fast_acceptance 2669 checks GREEN；记录器自测四例（PASS/数据错配/部署后失败/PARTIAL）+ 写盘成功 + 同 RunId 拒覆盖；gate 对合法/非法结果分别 GREEN/FAIL（临时记录已删除）。
+- 验证：fast 20 套件 GREEN（`logs/fast20_acceptance.txt`，含三铁证 CBEB42E3/6161F402/A8EF39AB）；fast_acceptance 2600+ checks GREEN；记录器自测四例（PASS/数据错配/部署后失败/PARTIAL）+ 写盘成功 + 同 RunId 拒覆盖；gate 对合法/非法结果分别 GREEN/FAIL（临时记录已删除）。
 - 未验证：真实任务执行与渲染、视觉验收、交互 web 行为、SQL fixture-db、自动 LLM 驱动（V0.1 由外部 Agent 按协议执行）。
 - 并发注意：本轮期间另一条线（vbox/3D 图族）在工作区推进并先行提交（HEAD 45dceaf）；本轮提交 0c81e92 + 追修提交；只含 `acceptance/`、`verify/fast_acceptance.js`、`scripts/run-fast-tests.ps1`、`AGENTS.md`、`README.md`、本日志；未触碰 lib/manifest 等产品代码。

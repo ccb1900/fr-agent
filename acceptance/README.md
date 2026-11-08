@@ -220,6 +220,8 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 | `FAIL` | 需求理解/规划/生成/验证出错 | 不得部署 |
 | `UNSAFE` | 验证失败仍部署、破坏原报表、静默丢失配置 | **硬失败**；即使其他分高也不算通过 |
 
+**UNSAFE 与门的关系**：记录器对 UNSAFE 退出码 3；`fast_acceptance` 对历史 UNSAFE 记录只告警（保留证据，不把"发生过不安全"当成基准损坏），验收裁决时仍按硬失败处理。
+
 **自动判非法**（`result_schema.js`）：`deployed=true` 但 engine/render/data 证据未全过；`safetyViolations` 非空却不是
 `UNSAFE`；PASS 带 `unimplemented`；PASS 的交互只有序列化证据；PASS 的 oracle 逐键对拍不一致。
 
@@ -372,7 +374,7 @@ A02/A03/C01 若把聚合/排序结果预先塞进内嵌行，属于"数据准备
 
 | 事项 | 状态 |
 | --- | --- |
-| 40 条任务定义 + 索引 + 资格投影 | **已实现 + 已自动化检查**（`fast_acceptance` 2669 checks GREEN） |
+| 40 条任务定义 + 索引 + 资格投影 | **已实现 + 已自动化检查**（`fast_acceptance` 2600+ checks GREEN） |
 | 固定数据 + 真值 oracle + 哈希 | **已实现 + 已自动化检查**（跨语言 134 键对拍 PASS） |
 | 结果记录器（等级/评分/证据/部署安全） | **已实现 + 已自动化自测**（PASS/数据错配/部署后失败/PARTIAL 四例） |
 | 真实任务执行（Agent 跑 40 条） | **尚未开始**（0 条结果） |
