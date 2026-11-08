@@ -1725,3 +1725,14 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 反射一手（probes/probe_seriesborder_api.js）：AttrBorder/WithAlpha/WithWidth/WithShape 全部 extends DataSeriesCondition；WithWidth 只有无参 ctor+setLineWidth；240 demo 语料 AttrBorder 均属 GI 图框（`<GI><AttrBorder>`），AttrBorderWithWidth 零命中。
 - 结论：本版引擎 data-series 条件通道不画柱缘描边——三次假设均阴性，按三轮规则停止；生产代码回滚到原实现（不留未验证改动），manifest `chart.seriesBorder.rendering` 维持 pending、agentAvailable=false，证据补三次像素阴性+重开条件（找到官方 seriesBorder 语料或系列级宿主 API）。
 - 验证：scan 覆盖新载体；fast_manifest_evidence 通过；基线回补 CBEB42E3。
+
+### 第 7 轮 vpie 标签/汇总视觉复核（四次实验，判否入账）
+- 目标：把 AGENTS §6 "vpie summary 视觉 pending" 判清（渲染达成 / 挂错槽 / 选错类）。
+- 实验（test_vanchart vpie 臂，真引擎 render 后 PNG 目检）：
+  1. 命名 ConditionAttr + 恒真 ListCondition（现实现）→ 饼图无任何标签文字
+  2. 命名 ConditionAttr + ChartCommonCondition(CATEGORY_INDEX>=0) → 无
+  3. ConditionCollection DefaultAttr（官方 基础饼图.cpt 的 AttrLabel 挂法）→ 无
+  4. label position 0（对齐官方 XML）→ 无
+- 官方语料一手：`PieCategoryLabelContent` 出现在 `<gaugeValueLabel class="...AttrLabelDetail">`（仪表值标签）；饼图 `labelDetail` 内容是 `AttrToolTipContent` + value/percent/category/series format 开关。
+- 结论：现行 `label.summary → PieCategoryLabelContent` 的 vpie 选型疑错（该类是 gauge 值标签），饼图标签/汇总视觉未达成；manifest chart.label 证据补四次阴性+官方结构一手，维持"仅序列化、不承诺渲染"；不升层、不虚报。生产代码回滚。backlog 新增 P3（改 AttrToolTipContent 开关或以正确宿主重实现）。
+- 验证：基线默认 spec 回补 CBEB42E3；fast_manifest_evidence 通过；scan 不变。

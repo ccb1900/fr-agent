@@ -173,3 +173,10 @@
 - 修改范围：按 coverage/inventory 缺口，依「真引擎探针→Object→CPT→IR→ReportSpec→Planner→Agent E2E」分层接线；优先服务「创建+修改」两条产品路径的能力（修改路径当前明显弱于创建路径）。
 - 验收标准：每能力五态如实（Engine/Object/CPT/IR/ReportSpec/Planner/Agent/E2E 逐层），agentAvailable 按真实链路证据；每项反例先行+载体 PNG/CPT；门禁全绿；不为接线而虚高账本。
 - 优先级：P1（产品主线）。外部依赖：无（F8 写库/凭据仍需用户授权，维持不做）。
+
+### P3: vpie 标签/汇总渲染未达成（class 选型疑错，2026-11-08）
+- 真实证据：test_vanchart vpie 臂配置 `label {enable:true, position:2, summary:{format}}` → 真引擎 PNG 饼图无任何标签文字；2026-11-08 四次挂载实验（命名 ConditionAttr+ListCondition / 类目条件 CATEGORY_INDEX / ConditionCollection DefaultAttr（官方 基础饼图.cpt 挂法）/ position 0）PNG 目检均无标签。官方语料一手：`PieCategoryLabelContent` 用于 `gaugeValueLabel`（仪表值标签）；饼图 labelDetail 内容是 `AttrToolTipContent` + value/percent/category/series format 开关。
+- 用户影响：饼图无法展示分类/数值/百分比标签；`label.summary` 当前"写了不生效"（仅序列化）。
+- 修改范围：lib/object.js vpie label 分支改用 AttrToolTipContent 开关（或找到正确 summary 宿主）；lib/ir.js 的 `label.summary` 闸同步（若确认无 summary 槽则结构化拒，不静默）。
+- 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见；`label.summary` 要么渲染达成要么 IR 明确拒；manifest chart.label 证据同步；fast/scan/基线全绿。
+- 外部依赖：无。优先级：P3（视觉低价值，不阻塞产品主线）。
