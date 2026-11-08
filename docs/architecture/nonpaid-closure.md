@@ -71,3 +71,6 @@
 - 审查人（子 agent 或自审清单）只读：`git diff`、`docs/night-shift-log.md`、本文件、门输出。
 - 审查问题：①有没有把未验证写成已闭环？②付费项有没有被排期？③账本数字与门输出是否一致？④基线/门是否真跑过？⑤下一项是否可直续？
 - 审查不通过 → 回到对应项继续，不得以"已记录"代替闭环。
+## 6.3 drillmap 二轮结果（2026-11-08）
+- 找到 NPE 根因：pl 需 `setGeoUrl`（引擎 map 解析无 map◤ 源就 NPE）→ 加上后 **execute 一次通过**；render 输出 uniqueColors=2（空白），即 **chardata 可建/引擎可跑/setGeoUrl 需要，但**底层 map 图不含区县图层**。
+- 结论：drillmap 定义结构已建成（`DrillMapDefinition(bg+layers)` + `setFromBottomData(false)/setBottomDataDefinition/setEachLayerDataDefinitionList`），但地图渲染需要 web 端 div/layer init。**serialization-only** 与 tooltip/hyperlink 等 web 交互相责统一口径。
