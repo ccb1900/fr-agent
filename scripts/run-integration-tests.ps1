@@ -16,6 +16,14 @@ Write-Output "== promote/restore deploy-safety matrix"
 & "$ROOT\scripts\run-promote-restore-tests.ps1"
 if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "PROMOTE-RESTORE MATRIX FAIL" }
 
+# Render-level regression on the object path (4 engine cycles, ~80s): default spec + baseline MD5,
+# legacy chart family, Van chart family + cells blocks + decorations, default spec again to restore the
+# baseline artifact. The default spec alone does NOT cover cells/Van/decoration paths (2026-11-08: three
+# refactor regressions passed the default spec and were only caught by reports/test_vanchart.js).
+Write-Output "== render regression (default + legacy chart + van chart)"
+& "$ROOT\scripts\run-render-regression.ps1"
+if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "RENDER REGRESSION FAIL" }
+
 Write-Output "== runtime supervisor integration (current scenario set S1..S28, full chain)"
 & "$ROOT\verify\integration_runtime.ps1"
 if ($LASTEXITCODE -ne 0) { $fail = 1; Write-Output "INTEGRATION GATE FAIL" }
