@@ -72,7 +72,7 @@
 1. **planner 合同覆盖 47/72**：25 项没有合同 = 装饰类（mapLabel/tooltip 变体）、工具/运行时族、以及 spec 表面不承载的族。要提升不是硬凑绿，而是逐族补"输入意图 → 发射路径"的合同（先写载体，再开合同）。
 2. **ir 词表 32/72**：40 项 UNKNOWN 中大多数是 product/write/template/agent 族——它们的入口本就不在 IR 词表（write 走 ReportWriteAttr 序列化、template 走 patch ops、agent 走工具链）。这些已由 tool/jar/object/cpt 层背书。
 3. **spec 表面 26/72**：46 项 UNKNOWN 同上（res ReportSpec 只承载表/图/参数/合计/多 sheet 这批）。
-4. **render 50/72**：22 项 BLOCKED 是 web 交互/静态 PNG 不可见——这是**已定性**的（与官方语料同规则），不是缺陷；其中 seriesBorder 的渲染仍未达成（维持 pending，写明重开条件）。
+4. **render 50/72**：22 项 BLOCKED 是 web 交互/静态 PNG 不可见——这是**已定性**的（与官方语料同规则），不是缺陷；其中 seriesBorder 经 2026-11-08 三次挂载实验（像素判定 sampled red=0）确认为本版引擎 data-series 通道不画柱缘描边（维持 pending、agentAvailable=false，非"已证墙"）。
 5. **jar 锚定 62/65 verified**：3 项 agent.* 是 runtime/tool 层，设计上无引擎类（map.none 记录原因）。
 
 ## 6. 机器门清单（本文引用的证据）

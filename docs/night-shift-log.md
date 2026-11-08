@@ -1714,3 +1714,14 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 ### 第 5 轮小项收口（同日）
 - IR 词表映射：`$irTok` 默认取叶名（条件族 condition.formula/column/list 此前漏判 UNKNOWN）；`Ir.capabilities().sheet` 补 headerFooter（IR 校验+object 均支持，广告面缺列）；ir 层 PASS 44→48。
 - 两个真引擎 create 载体（mapdeco/hotdeco）自动进 scan（ok=89）；create 按管线惯例回写仓库根 demo_api.cpt，按纪律最后默认 spec 回补后才跑 fast——首次 fast 因时序在回补前执行而 baseline 失败，回补后 FAST GREEN（记录该 sequencing 纪律）。
+
+### 第 6 轮 seriesBorder 渲染攻坚（三次挂载实验，阴性收口）
+- 目标：判断 seriesBorder 是"挂错槽"（像 seriesImage 那样可修）还是引擎墙。
+- 判别载体：`reports/test_seriesborder.js`（vbar + 红 0xFF0000/style=3/alpha=1；柱默认蓝，PNG 采样出现红像素才算画出）。
+- 实验（每次真引擎 render 后按像素判定，采样步长 2）：
+  1. DefaultAttr.addDataSeriesCondition(AttrBorder) → deployed cpt AttrBorderWithAlpha=1，**sampled red=0**
+  2. ConditionAttrList 命名 ConditionAttr + ChartCommonCondition(CATEGORY_INDEX) + AttrBorderWithAlpha → cpt ConditionAttrList=2/seriesBorder=2，**sampled red=0**
+  3. 同挂载 + AttrBorderWithWidth（setLineWidth=3；probe 反射=无参 ctor+setLineWidth）→ cpt AttrBorderWithWidth=1/lineWidth=1，**sampled red=0**
+- 反射一手（probes/probe_seriesborder_api.js）：AttrBorder/WithAlpha/WithWidth/WithShape 全部 extends DataSeriesCondition；WithWidth 只有无参 ctor+setLineWidth；240 demo 语料 AttrBorder 均属 GI 图框（`<GI><AttrBorder>`），AttrBorderWithWidth 零命中。
+- 结论：本版引擎 data-series 条件通道不画柱缘描边——三次假设均阴性，按三轮规则停止；生产代码回滚到原实现（不留未验证改动），manifest `chart.seriesBorder.rendering` 维持 pending、agentAvailable=false，证据补三次像素阴性+重开条件（找到官方 seriesBorder 语料或系列级宿主 API）。
+- 验证：scan 覆盖新载体；fast_manifest_evidence 通过；基线回补 CBEB42E3。
