@@ -26,7 +26,7 @@
 | license | basic 54 / paid 0 / unknown 0 | 54 类全部只在 `fine-report-engine-11.0.jar`；与付费 FVS/extended/mobile 插件 jar 零交集 |
 | family | current 15 / base 16 / legacy 16 / van 7 | supported 20=current 15 + legacy 5（3D/环形）；base 19=16 抽象 + 3 legacy concrete；unsupported 15=legacy 8 + van 7 |
 
-### supported（12）↔ 能力 ↔ IR 词表
+### supported（20）↔ 能力 ↔ IR 词表
 
 | jar 类 | 能力 |
 | --- | --- |
@@ -53,7 +53,7 @@
 
 机器断言：`Ir.capabilities().chart` 的 20 个 kind（legacy 8 + van 12）**逐一**有 engine_class_map 精确条目、类在 supported 清单、且在 jar inventory 可解析——词表与引擎类面 1:1 对上。
 
-### unsupported（22 类 = 14 个当前图族）— 核心 jar 存在但未接入
+### unsupported（15 类 = 11 个当前图族）— 核心 jar 存在但未接入
 
 **7 个 Van 当前族（有官方 `doc/Chart` 语料，非付费插件）**：custom/组合（36）、drillmap（12）、gantt（15）、multipie（5）、structure（6）、treemap（2）、wordcloud（3）。
 
@@ -64,14 +64,14 @@
 ### 付费口径审计（回答"付费内容不做"）
 
 - 政策（coverage.md 2026-11-05 终口径）：基本授权可做；额外收费不做（FVS 大屏 14 包、`com.fr.extended.chart.*`、移动端）。
-- 机器证据：54 类全部只在核心 `fine-report-engine-11.0.jar`；逐类在**全部**安装 jar（含 `WEB-INF/plugins`）里定位，26 个 unsupported 无一出现在 `plugin-com.fr.plugin.bigScreen.v11` / `com.fr.extended.chart.*` / 移动端 jar；扫描根本身也不含付费插件 jar。
+- 机器证据：54 类全部只在核心 `fine-report-engine-11.0.jar`；逐类在**全部**安装 jar（含 `WEB-INF/plugins`）里定位，15 个 unsupported 无一出现在 `plugin-com.fr.plugin.bigScreen.v11` / `com.fr.extended.chart.*` / 移动端 jar；扫描根本身也不含付费插件 jar。
 - 机器门：`fast_jar_surface` 断言 ①扫描面无付费前缀类 ②每类有 license/family ③supported/unsupported 均不得标 `paid` ④账本带 paidPrefixes 政策。**"付费=排除"，不会作为"未来缺口"排期**。
 - 诚实边界：core jar 内部的运行时 license gate 未独立审计；本口径按项目既定"付费=FVS/extended/mobile 插件族"执行。
 
 ## 3. 与层间一致性门的关系
 
-- `fast_layer_coherence`：账本 73 项 / 承诺 52 项，I1/I2/jar 锚定不变量全绿（能力→类→jar）。
-- `fast_jar_surface`（新）：54 个绘图类必须**全部有定性**（unclassified/stale 为空）；supported 12 类与 IR 词表 12 kinds 互相对上；unsupported 每类有原因。
+- `fast_layer_coherence`：账本 81 项 / 承诺 60 项，I1/I2/jar 锚定不变量全绿（能力→类→jar）。
+- `fast_jar_surface`（新）：54 个绘图类必须**全部有定性**（unclassified/stale 为空）；supported 20 类与 IR 词表 20 kinds 互相对上；unsupported 每类有原因。
 - 两层一起回答"全过程是否协调"：能力承诺（Agent 面）→ 词表（IR/Spec）→ 对象构造（Object）→ 序列化（CPT）→ jar 物理类面，均能双向追溯。
 
 ## 4. 诚实边界（"付费之外都闭环了吗" = 没有）

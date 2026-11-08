@@ -1,6 +1,7 @@
 # 非付费能力闭环清单（2026-11-08 起，用户："付费之外的能力全部闭环，未闭环不得停止"）
 
 > 定义：**闭环 = 构造 → 序列化 → 真实渲染/交互 → Agent plan→create 证据 → 账本状态一致**，五态标注不混写。
+> 注意：图种"闭环"指上述四段证据成立；**产品版式**（SQL 路图区偏小、图例截断）列为 P2 独立项（§4.1），不以图种闭环掩盖。
 > 付费排除口径：FVS bigScreen 14 包 / `com.fr.extended.chart.*` / 移动端；不实现、不排期。
 > 当前基线：81 项账本 / 60 项 Agent 可用 / jar 面 54 Plot 类（20 supported、19 base、15 unsupported=11 图族）。
 > 进度以本文件与 `docs/night-shift-log.md` 为准；每完成一项更新状态并做一次独立审查。
@@ -11,7 +12,7 @@
 |---|---|---|---|---|---|
 | 1 | 雷达 radar | VanChartRadarPlot | doc/NewRadarChart 24 | MoreNameCDDefinition | **DONE（chart.vradar，agentAvailable；runId=radar_e2e_001）** |
 | 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | **DONE（chart.vfunnel，agentAvailable；runId=funnel_e2e_001）** |
-| 3 | 箱线 box | VanChartBoxPlot | doc 3 | VanBoxTableDefinition detailed | **DONE（chart.vbox，agentAvailable；runId=box_e2e_001）** |
+| 3 | 箱线 box | VanChartBoxPlot | doc 3 | VanBoxTableDefinition detailed | **DONE（chart.vbox，单系列 scope；runId=box_e2e_001）** |
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | 待探针 | 待做 |
 | 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | 待探针 | 待做 |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | 待探针 | 待做 |
@@ -20,7 +21,7 @@
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | 待探针（起止/分类） | 待做 |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName | **DONE（chart.bar3d/pie3d/area3d/donut3d；runId 各 _e2e_002）** |
-| 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+MoreName | **DONE（chart.donut；runId=donut_e2e_002）** |
+| 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+MoreName | **DONE（chart.donut，多环形态；runId=donut_e2e_003）** |
 | 13 | 仪表 meter | Meter/MeterBlue/SimpleMeter | 0（legacy） | 待探针 | 待做 |
 | 14 | 区间 range | RangePlot | 0（legacy） | 待探针 | 待做 |
 | 15 | 股价 stock | StockPlot | 0（legacy） | 待探针 | 待做 |
@@ -57,6 +58,13 @@
 7. manifest 四层 + engine_class_map + jar inventory 锚定。
 8. jar 面分类更新（supported/legacy 归位），fast_jar_surface GREEN。
 9. 默认基线 CBEB42E3 + fast 19 + scan + 引擎负门；文档/README/日志同步。
+
+## 4.1 已知产品边界（审查发现，不阻塞图种闭环但需后续处理）
+
+- **SQL 路图表格子偏小/图例截断**：`生产日报*_api.png` 中图区约 180-280px 宽，图例出现 `plann...`/日期截断；旧图同样存在（非本批引入）。根因疑为 SQL 路 chart cell 固定布局/页面分页，待专项 P2。
+- **box 多系列无 spec 入口**：rawIR 3 箱 carrier 有，ReportSpec `presentation.chart` 无 `values` 键；Agent scope=单 value 列（每 category 一箱）。
+- **donut 经典单环分段**：当前 Donut2D/Donut3D 为多环（每系列一环），经典单环分段未承诺。
+- **golden 全生命周期**：本批图种用 plan→plan2spec→create→validate 链路；golden（含 preview/modify/promote/restore）需在收尾重跑并回填新 runId。
 
 ## 5. 独立审查协议（每次停止前）
 

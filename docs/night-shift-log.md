@@ -1861,7 +1861,7 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 实施：object.js VK 增 `vradar`（VanChartRadarPlot）；IR `CHART_KINDS`/`capabilities.chart.vanChart` 增 vradar；ReportSpec rows/sql 两路 supported 列表 + spec_validator fallback + 编译器测试；planner 合同（`fast_planner` vradar 直通）；engine_class_map 增 chart.vradar→VanChartRadarPlot（module=lib/object.js）；jar 面 VanChartRadarPlot 转 supported、legacy RadarPlot 归 base（supported 13/base 17/unsupported 24=15 图族）。
 - 验证：`reports/test_radar.js` 真引擎 failures=0，PNG 目检 5 轴 A-E + 蓝色多边面 + 图例「时速」+ 标题（292 色）；SQL 真库 plan→plan2spec→create→validate 全链 PASS（runId=radar_e2e_001，表体 33531/26531 真值不变，部署 cpt+PNG 309 色，雷达图在表体下方渲染）。manifest chart.vradar 四层 verified + agentAvailable=true（74 项/53 承诺）。
 - 门修复：`fast_layer_coherence` I2 入口检查共享 `/g` 正则未复位 lastIndex，命中后后续能力从错误偏移匹配 → chart.vradar 假阴性；已加 `re.lastIndex=0`（门自身缺陷，非账本问题）。`fast_capability_gate_consistency` totals 硬编码 73/52 → 74/53。
-- 回归：fast 19 套件 GREEN（`logs/fast19_radar2.txt`，COHERENCE caps=74/agent=53；JAR-SURFACE supported=13/unsupported=24）；scan ok=97 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
+- 回归：fast 19 套件 GREEN（`logs/fast19_radar2.txt`，COHERENCE caps=74/agent=53；当轮 JAR-SURFACE=13 supported/16 base/25 unsupported；随后将 legacy RadarPlot 归 base，最终 13 supported/17 base/24 unsupported）；scan ok=97 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
 - 下一项：按同法做 Van 漏斗/箱线（官方 doc 语料、MoreName 或 OneValue 绑定），再做 Gantt/组合/树图/词云/结构/钻取/多层饼；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。
 
 ### 第 23 轮 非付费图族闭环第 2 个：chart.vfunnel 漏斗图（2026-11-08）
@@ -1875,17 +1875,32 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 ### 第 24 轮 非付费图族闭环第 3 个：chart.vbox 箱线图（2026-11-08）
 - 结构一手：官方 `doc/Chart/BoxPlot/分组箱型图.cpt` = `VanChartBoxPlot` + `VanBoxTableDefinition(detailed=true)` + `detailedDefinition=VanBoxMoreNameCDDefinition(category+ChartSummaryColumn[])` + `resultDefinition=VanBoxTableResultDefinition`（占位 `categoryName/seriesName/median="无"` + 五标签）。javap 确认 setDetailed/setDetailedDefinition/setResultDefinition 方法面。
 - 实施：object VK 增 vbox + 专用分支（plot/definition 双 setDetailed(true)；resultDefinition 按官方占位值初始化）；IR CHART_KINDS/vanChart、ReportSpec 两路、spec_validator、planner 合同同步；engine_class_map/jar inventory 锚定；jar 面 VanChartBoxPlot 转 supported（supported 15/base 18/unsupported 21=13 图族）。
-- 数据形态踩坑（三轮内）：①3 组 × 7 样本 × 1 列 → 3 箱但须线按 fence 画；②3 系列 × 7 不同分类 → 退化成折线；③最终=1 组 × 3 系列 × 7 样本 → 3 箱并排，Q1/Q3 与数据一致（A 10-20、B 22-30、C 9-25），须线为 1.5×IQR fence（A 0-32、B 10-42、C 0-49），与官方箱线视觉语法一致。
+- 数据形态踩坑（三轮内）：①3 组 × 7 样本 × 1 列 → 3 箱但须线按 fence 画；②3 系列 × 7 不同分类 → 退化成折线；③最终=1 组 × 3 系列 × 7 样本 → 3 箱并排，Q1/Q3 目检=12/20、22/30、9/25（与 7 样本分位一致），须线为 1.5×IQR fence 端点（A 0-32、B 10-42、C 0-49），fence 语义未逐点对官方统计文档核。
 - 验证：`reports/test_box.js` 真引擎 failures=0，PNG 3 箱并排；SQL 真库 plan→plan2spec→create→validate PASS（runId=box_e2e_001，表体 33531/26531 真值不变，箱线图在表体下方渲染）。manifest chart.vbox 四层 verified/agentAvailable=true（76 项/55 承诺）。fast 19 GREEN（`logs/fast19_box.txt`，caps=76/agent=55；supported=15/unsupported=21）；scan ok=99；基线 CBEB42E3 回补。
 - 未验证/边界：须线语义按引擎 1.5×IQR fence（未逐点对官方统计文档核）；箱线 summary 模式（resultDefinition 直接给 min/q1/median/q3/max）未接。
 - 下一项：多层饼/树图/词云（Van 当前族，官方 doc 语料）或甘特；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。
 
 ### 第 25 轮 非付费图族闭环第 4 批：legacy 3D/环形 5 类（2026-11-08）
+
 - 结构一手：legacy `Chart(plot)` + `MoreNameCDDefinition(category/values)` 路径已支持 bar/pie/line；3D/环形类是同一 legacy 引擎（Bar3DPlot/Pie3DPlot/Area3DPlot/Donut2DPlot/Donut3DPlot），无 Van 专属数据定义。
 - 实施：object TK 增 5 类；IR `capabilities.chart.legacy` 3→8、CHART_KINDS 同步；ReportSpec 两路/validator/planner/engine_map 同步；jar 面 5 类 supported、DonutPlot 归 base（54 类=20 supported/19 base/15 unsupported=11 图族）。
-- 验证：5 个 carrier 真引擎 PNG 目检——bar3d 3D 柱体+图例、pie3d 3D 饼+四段图例、area3d 3D 面积带、donut 同心环、donut3d 3D 同心环，均标题/图例正常；SQL 真库 5 个 plan→plan2spec→create→validate PASS（runIds=bar3d/pie3d/area3d/donut/donut3d `_e2e_002`，表体 33531/26531 真值不变）。manifest 5 项四层 verified/agentAvailable=true（81 项/60 承诺）。fast 19 GREEN（`logs/fast19_legacy3d.txt`，caps=81/agent=60；supported=20/unsupported=15）；scan ok=104；基线 CBEB42E3 回补。
-- 诚实边界：donut/Donut2DPlot 当前渲染为同心环（每分类一环、单系列同色），经典单环分段未实现；3D 视角/旋转属性未接。
+- 验证：5 个 carrier 真引擎 PNG 目检——bar3d 3D 柱体+图例、pie3d 3D 饼+四段图例、area3d 3D 面积带、donut 多环（每系列一环、A-D 各色）、donut3d 3D 多环，均标题/图例正常；SQL 真库 5 个 plan→plan2spec→create→validate PASS（runIds=bar3d/pie3d/area3d/donut/donut3d `_e2e_002`，表体 33531/26531 真值不变）。manifest 5 项四层 verified/agentAvailable=true（81 项/60 承诺）。fast 19 GREEN（`logs/fast19_legacy3d.txt`，caps=81/agent=60；supported=20/unsupported=15）；scan ok=104；基线 CBEB42E3 回补。
+- 诚实边界：donut/Donut3D 当前为多环形态（每系列一环、各系列不同色，OneValueCDDefinition）；经典单环分段不是 Donut2DPlot 现有模式，未承诺；3D 视角/旋转属性未接。
 - 下一项：多层饼/树图/词云/结构图（Van 当前族）或甘特/钻取地图；legacy 仪表/区间/股价/GIS 继续。
+
+### 第 26 轮 独立审查修复（2026-11-08）
+- 独立审查（子 agent）对 85ae7d5..45dceaf 打分：发现 9 个 FAIL，逐项修复：
+  1. radar 回归日志数字写错（13/24）→ 改为当轮实际 13/16/25 + 后续 legacy RadarPlot 归 base 的最终值。
+  2. jar-surface-analysis.md 旧数字（supported 12/unsupported 22/26 类/73 项/12 kinds）→ 全部同步 20/15/15 类/81 项/20 kinds。
+  3. 81 项层扫描只是 74 行+单项投影 → 实跑 `logs/r21_sweep.txt`：CAPS=81 ERR=0（probe 74/7、jar 72/6/3、render 60/21、ir 56/25、spec 47/34、planner 61/20、agent 60/21、manifest 81），文档改为引用真实产物。
+  4. layer-coherence 的 golden e2e 旧 runId 冒充"本轮复跑"→ 实跑 `run-golden-e2e.ps1` 新 runId=ge_review_20261108 PASS，文档回填。
+  5. donut/donut3d 同心环同色却标 DONE → object 改 OneValueCDDefinition（每系列一环、A-D 各色，类别成为系列），重跑 E2E runIds=donut_e2e_003/donut3d_e2e_003；manifest/README/closure 明确 scope=多环形态，经典单环分段不承诺。
+  6. box Q1/Q3 写 10-20 与像素 12/20 不符 → 修正为 12/20、22/30、9/25；须线 fence 语义明确"未逐点对官方文档核"；Agent scope 明确=单 value 列（ReportSpec 无 values 键），rawIR 多系列 3 箱无 spec 入口。
+  7. donut/donut3d 的 make_api 门新增 OneValue 分流（旧门只认 MoreName，会误杀）。
+  8. spec_validator 旧错误文案"v1 只 bar|pie|line|v*"→ 改为当前词表说明。
+  9. SQL 路图区偏小/图例截断列为 P2 产品边界（§4.1），不以图种闭环掩盖。
+- 回归：fast 20 套件 GREEN（`logs/fast_review_fixes.txt`，含另一个会话的 acceptance 套件；我们的 19 个核心套件仍全绿）；scan ok=104；基线 CBEB42E3；81 项层扫描 ERR=0；golden 全链 PASS。
+- 未闭环：SQL 路图表版式 P2；box 多系列 spec 入口；donut 经典单环分段（不承诺）；剩余 11 图族。
 
 ### 第 26 轮 Agent 验收基准 V0.1（用户提案：40 任务/8 组，2026-11-08）
 - 目标：把"40 条报表任务"落成可执行验收规格，而不是提示词清单。先做尺子：任务定义、固定数据、真值 oracle、结果记录器、完整性门；**不伪造执行结果**。

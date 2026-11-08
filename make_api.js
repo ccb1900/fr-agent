@@ -341,7 +341,7 @@ try {
   var catChart = null;
   chartBlocks.forEach(function (b) {
     // OneValue 派（vpie/vgauge/vfunnel）与 x/y 派不走 MoreNameCDDefinition/CategoryName 形态
-    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel') return;
+    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d') return;
     if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
   });
   if (catChart) {
@@ -372,7 +372,7 @@ try {
   // OneValue 派（vpie/vgauge/vfunnel）：官方形态=OneValueCDDefinition seriesName/valueName（CategoryName 空），
   //   不是 MoreNameCDDefinition/CategoryName——旧门在单图 vpie/vgauge 上同样会假阴性（2026-11-08 漏斗暴露）。
   chartBlocks.forEach(function (cb, ix) {
-    if (cb.kind !== 'vpie' && cb.kind !== 'vgauge' && cb.kind !== 'vfunnel') return;
+    if (cb.kind !== 'vpie' && cb.kind !== 'vgauge' && cb.kind !== 'vfunnel' && cb.kind !== 'donut' && cb.kind !== 'donut3d') return;
     var tag = cb.kind + '#' + (ix + 1);
     var val = cb.value || (cb.values && cb.values[0]);
     check('CHART SERIALIZED (onevalue ' + tag + ')', /<O t="CC">/.test(xmlText)

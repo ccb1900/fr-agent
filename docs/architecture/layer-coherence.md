@@ -36,7 +36,7 @@
 
 ## 3. 81 项能力 × 11 层分布（机器扫描）
 
-数据文件：`logs/layer_sweep.csv`（每项一行，逐层 PASS/BLOCKED/UNKNOWN）。本轮汇总见 `logs/r20b_sweep.txt`（2026-11-08，74 项全量复跑）+ `chart.vfunnel`/`chart.vbox`/`chart.bar3d` 单项层门（各 10 PASS/1 UNKNOWN）：
+数据文件：`logs/layer_sweep.csv`（每项一行，逐层 PASS/BLOCKED/UNKNOWN）。本轮汇总见 `logs/r21_sweep.txt`（2026-11-08，81 项全量复跑，CAPS=81 ERR=0）：
 
 | 层 | PASS | BLOCKED | UNKNOWN | 说明 |
 | --- | --- | --- | --- | --- |
@@ -90,4 +90,4 @@ scripts\build_jar_inventory.ps1
 
 **五态标注**：以上 I1/I2/I4/I5 已自动化测试并真实运行（nashorn 真实执行 plan()，真实 jar 扫描）；I3 的 jar 存在性是真实扫描，但"类被调用"仅静态字面量断言，不是运行期堆栈证明——运行期证明由各 carrier 的引擎 failures=0 与部署 cpt 承担（见 manifest evidence）。
 
-**全链实测（2026-11-08，本轮变更后复跑）**：`scripts/run-golden-e2e.ps1` PASS（runId=ge20261108053139-20f321），链路=plan→plan2spec→create→validate（含逐格真值 grid）→preview→modify（diffClean）→promote→restore→baseline-restore；即自然语言意图→ReportSpec→IR→Object→CPT→引擎渲染→回读验证整条链在本轮改动后仍闭合。
+**全链实测（2026-11-08 13:31，本批收尾复跑）**：`scripts/run-golden-e2e.ps1` PASS（runId=ge_review_20261108），链路=plan→plan2spec→create→validate（含逐格真值 grid）→preview→modify（diffClean）→promote→restore→baseline-restore；新增图种（vradar/vfunnel/vbox/bar3d/pie3d/area3d/donut/donut3d）另有各自 plan→plan2spec→create→validate 链路证据。
