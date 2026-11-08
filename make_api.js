@@ -333,20 +333,40 @@ try {
   // 图表结构断言（v3.2 图表族：t="CC" 缩写格 + MoreNameCDDefinition 命名引用绑定；v3.3 多系列取 values[0]）
   //   v4.2 Van 序列化形态（能力自检_VanChart_api.cpt 一手）：系列名不落 CDATA，落 valueName="名" 属性
   //   （MoreName/VanChartOneValue 同属性化）——断言两形态都认，legacy CDATA 不受扰。
-  var chartBlock = null;
-  (IR.sheets[0].blocks || []).forEach(function (b) { if (b.type === 'chart') chartBlock = b; });
-  if (chartBlock) {
+  var chartBlocks = (IR.sheets[0].blocks || []).filter(function (b) { return b.type === 'chart'; });
+  // 2026-11-08 修复（chart.bubbleAttr 渲染专项暴露）：旧门只取最后一个 chart 且假定 category/value 形态
+  //   （MoreNameCDDefinition+CategoryName）；x/y 图（vscatter/vbubble）合法形态是 BubbleTableDefinition201109
+  //   bubbleX/bubbleY/bubbleSize（官方 doc/Chart/Bubble/普通气泡图.cpt 一手：无 MoreNameCDDefinition）。
+  //   现按 kind 分流：category/value 图保留原断言；x/y 图逐块断言 x/y/size 与数据集。
+  var catChart = null;
+  chartBlocks.forEach(function (b) {
+    if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
+  });
+  if (catChart) {
     // 系列名序列化三形态（一手证据）：内嵌 legacy=CDATA[名]、Van=valueName="名"、SQL 数据集 legacy chart=ChartSummaryColumn name/customName="名"（I5.3-C）
     var nameIn = function (v) { return xmlText.indexOf('CDATA[' + v) >= 0 || xmlText.indexOf('valueName="' + v + '"') >= 0 || xmlText.indexOf('name="' + v + '"') >= 0 || xmlText.indexOf('customName="' + v + '"') >= 0; };
-    var firstVal = (chartBlock.values && chartBlock.values.length) ? chartBlock.values[0] : chartBlock.value;
+    var firstVal = (catChart.values && catChart.values.length) ? catChart.values[0] : catChart.value;
     check('CHART SERIALIZED', /<O t="CC">/.test(xmlText)
       && /MoreNameCDDefinition/.test(xmlText)
       && /NameTableData/.test(xmlText)
-      && xmlText.indexOf('CDATA[' + chartBlock.dataset) >= 0);
-    check('CHART DEF CATE "' + chartBlock.category + '"', new RegExp('CategoryName value="' + chartBlock.category + '"').test(xmlText));
+      && xmlText.indexOf('CDATA[' + catChart.dataset) >= 0);
+    check('CHART DEF CATE "' + catChart.category + '"', new RegExp('CategoryName value="' + catChart.category + '"').test(xmlText));
     check('CHART DEF VALUE "' + firstVal + '"', nameIn(firstVal));
-    if (chartBlock.values && chartBlock.values.length > 1) check('CHART MULTI-SERIES N=' + chartBlock.values.length, nameIn(chartBlock.values[chartBlock.values.length - 1]));
+    if (catChart.values && catChart.values.length > 1) check('CHART MULTI-SERIES N=' + catChart.values.length, nameIn(catChart.values[catChart.values.length - 1]));
   }
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vscatter' && cb.kind !== 'vbubble') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    check('CHART SERIALIZED (x/y ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /BubbleTableDefinition/.test(xmlText)
+      && /NameTableData/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset) >= 0
+      && xmlText.indexOf('bubbleX="' + cb.x + '"') >= 0
+      && xmlText.indexOf('bubbleY="' + cb.y + '"') >= 0
+      && (cb.bubbleSize == null || xmlText.indexOf('bubbleSize="' + cb.bubbleSize + '"') >= 0));
+    check('CHART DEF X/Y ' + tag + ' "' + cb.x + '/' + cb.y + '"', xmlText.indexOf('bubbleX="' + cb.x + '"') >= 0 && xmlText.indexOf('bubbleY="' + cb.y + '"') >= 0);
+    if (cb.seriesName != null) check('CHART DEF SERIES ' + tag + ' "' + cb.seriesName + '"', xmlText.indexOf('seriesName="' + cb.seriesName + '"') >= 0);
+  });
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);
   var sw2 = new (J('java.io.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);
