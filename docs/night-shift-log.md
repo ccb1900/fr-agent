@@ -1924,3 +1924,24 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 未验证：真实任务执行与渲染、视觉验收、交互 web 行为、SQL fixture-db、自动 LLM 驱动（V0.1 由外部 Agent 按协议执行）。
 - 并发注意：本轮期间另一条线（vbox/3D 图族）在工作区推进并先行提交（HEAD 45dceaf）；本轮四个提交=0c81e92（主实现）/fe1e805（analysis 证据层）/d2ab9d0（UNSAFE 不染红 fast 门）/79b14ff（UNSAFE 可取证）；只含 `acceptance/`、`verify/fast_acceptance.js`、`scripts/run-fast-tests.ps1`、`AGENTS.md`、`README.md`、本日志；未触碰 lib/manifest 等产品代码。
 - 收尾复核（代码基线 79b14ff）：fast 20 套件 rc=0、20 PASS/0 FAIL（`logs/fast20_acceptance_head79b14.txt`）；oracle 跨语言 134/134（`logs/oracle_final.txt`）；记录器补充自测（A01 PASS、H04 修改类 PASS、C07 交互 serialization 级 PASS 被拒、B02 BLOCKED、UNSAFE 可写盘 exit 3、G01 analysis 层）；工作区干净。
+
+### 第 27 轮 Agent 验收基准复核（用户："审查当前实现，是否与上一轮诉求一致"，2026-11-08）
+- 审查方法：不只看 `acceptance/README.md`；直接读 40 个生成任务、`benchmark.json`、fixture/oracle、`fr_agent.ps1` 的 modify/validate 实现，逐条对照用户提案。
+- 发现并修复（commit `3cf24e7`）：
+  1. **事实错误**：README 写 G+H 占 12/40（实际 8/40）；fixture 是 12 省份却被写成 10（README §10 + C06 渲染断言）。已改为 12，并新增 `longTermRegression` 标记 **10 条**（G01–G04 + H01–H04 + E04 + F04），build 期校验 >=10，满足"至少 10 个修改/组合/异常任务"。
+  2. **结构偏差**：任务缺提案里的 `acceptance` 四标志；已加 `requireAgentExecution/requireEngineRender/requireVisualEvidence/requireNoSilentDrop` 并与 `render.required` 机器对齐。新增 `wave` 执行批次：V0.1 11 / V0.2 12 / V0.3 9 / V0.4 4 / V0.5 4（原落地表未点名的 B02–B05 归入 V0.2 布局批，否则会漏 4 条）。
+  3. **协议错误**：README 修改链写成 `modify → validate`；实际 `validate` 读 create 的 `compile.json`，而 modify 只写 `patch.json`。已改为检查 `patch.json` 的 `diffClean/execution.pass/render.pass` 后再 promote，并明确 validate 不适用于修改链。
+  4. **证据缺口**：记录器原缺"Agent 是否真的执行了 / 卡在哪层 / 修了几轮"。已加 `evidence.plan`（PASS 必填，防手写 spec 冒充 Agent 执行）、`failureStage`（非 PASS 必填，`requirement|semantic|planning|capability|ir|object|engine|data|interaction|safety`）、`attempts`（H04 的 PASS 需 >=2 轮，首轮 fail、末轮 pass）。
+- 仍不一致/未做（诚实，不包装）：
+  - 无自动 LLM/Agent 驱动与重试编排；H04 的故障注入仍由验收执行者提供（schema 只校验两轮证据）。
+  - 工具调用/对话全文只有可选 `transcript` 层，未强制；部署决策只有 `deployed` 布尔，未单独记录理由。
+  - oracle 是机器生成 + PowerShell 独立重算（134/134），不是逐项人工手算；仅做算术抽查（如 8×2280=18240）。
+  - 空值用空字符串表达（非 JSON null）；`inventory.closing` 预置在 fixture，A05 用 `dataContract=report-computes` 禁止直接展示，但该禁令无机器强制。
+  - `weights` 的 N/A 维度是整块并入（interaction→render / safety），不是严格按比例分摊；README §6 已写明。
+  - SQL fixture-db、视觉验收、web 交互验证、40 条真实执行仍未做（0 执行/0 PASS）。
+- 验证（截至本轮）：
+  - `verify/fast_acceptance.js` 单跑 GREEN：3002 checks，waves 11/12/9/4/4，longTerm=10，fixture 哈希/oracle 键/能力 ID 全对拍。
+  - 记录器补测：A01 PASS、H04 PASS（两轮 attempts）、缺 `plan` 被拒、BLOCKED 缺 `failureStage` 被拒、H04 单轮 PASS 被拒、C07 交互 serialization 级 PASS 被拒、UNSAFE 可写盘 exit 3。
+  - oracle 跨语言 134/134（`logs/oracle_review.txt`）。
+  - **全 20 套件本轮两次未拿到绿色（环境并发，非 acceptance 回归）**：第一次 `fast_contracts.js` rc=-1（进程被杀，疑似另一线 run.ps1 kill-all；单跑 rc=0）；第二次 19 PASS/1 FAIL，`fast_baseline.js` 因 `demo_api.cpt=0B1B43BC…`（另一线 make_api 产物，默认 spec 未回补）失败；`fast_acceptance` 两次均 GREEN。基线恢复需另一线收敛后复跑，不在本重复原。
+- 代码基线：commit `3cf24e7`（复核修复）；未触碰 lib/manifest/报表产物。
