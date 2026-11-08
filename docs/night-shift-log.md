@@ -1998,3 +1998,8 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - RangePlot 零官方语料；`probe_chartdata_builder.js` 反射 RangePlot.defaultChartData=RANGEDATA/ScatterTableDefinition 类；object TK 增 range，close 路用 ScatterTableDefinition(category/低/高)；IR/ReportSpec/Planner 增 range 词表/spec 校验/Compiler sql+rows/layer gate planner 合同；carrier reports/test_range.js 真引擎 failures=0，PNG 4 个区间带（每行低/高带）+图例。
 - RangePlot 入 supported（26 supported/19 base/9 unsupported=5 图族）；manifest `chart.range` 四层 verified/agentAvailable=true（87/66）。
 - fast 20 GREEN（`logs/fast_range2.txt`，caps=87/agent=66；supported=26/unsupported=9）；scan ok=110；基线 CBEB42E3。
+
+### 第 33 轮（session 3）treemap/gantt serialization 收盘
+- gantt 三轮（carrier→NPE→TimeAxis/ProcessAxis→EXE PASS→render web div），treemap ctor 169 色顶块；drillmap serialization-only（execute PASS 但 web div rendering）。
+- 这些代码未 push 到 lib（git reset 到 066efc8 range-green 门）；stashed 拷贝留着（`git stash show`）。不进 agentAvailable（serialization-only 口径）。
+- 恢复 fast 20 GREEN。剩 5 个的下轮一手：gantt web div、treemap nested 渲染驱动、drillmap layerMap/ZoomLevel、custom D1 line render、GIS legacy GisMapPlot 构造。
