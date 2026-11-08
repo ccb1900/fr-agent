@@ -196,3 +196,8 @@
 - 修改范围：判断 decision 视图/无头部署是否限制 hyperlink，或在生产 FR 服务器复验；必要时对齐官方 hyperlink 的 Features/target 配置。
 - 验收标准：web 点击后新报表打开（URL/tab 可验证）或明确环境归因。
 - 外部依赖：无。优先级：P3。
+
+### P3: 自定义 AttrTooltip 的 web 悬停未验证（2026-11-08）
+- 证据：G4 载体 cpt 内 AttrTooltipRichText 内容正确（"自定义提示 系列=${SERIES} 值=${VALUE}"），web 端 vbar 以 SVG 渲染，两次坐标悬停未在 SVG/DOM 取到提示文本；G3 legacy bar 的默认 tooltip 悬停可见。
+- 范围：确认 VanChart SVG 下 tooltip 触发元素/坐标或改用 canvas 渲染；验收=悬停出现含"自定义提示"的浮层。
+- 优先级 P3；外部依赖：无（frserver+test/test）。

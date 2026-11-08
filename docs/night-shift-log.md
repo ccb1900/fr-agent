@@ -1814,3 +1814,9 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 自定义工具栏：能力自检_填报章 web 端出现序列化的 **提交** 按钮（ToolBarManager/Submit）与"保存为常用参数组合"；未点提交（F8 未授权）→ write.toolbarButtons web 可见性有实证、点击未验证。
 - 超链：销售明细_超链 的 ReportletHyperlink 序列化与官方 比例信息查询.cpt 同构；web 三次点击（getByText/JS el.click/坐标 cua.click）均未导航 → 未验证（不是已证明损坏），backlog P3。
 - 收尾：停服、默认 spec 回补基线 CBEB42E3；证据 docs/architecture/web-verification.md + logs/webverify/。
+
+### 第 17 轮 web 验证第三轮（自定义 tooltip G4）
+- 载体：verify/fixtures/golden/g4_tooltip_intent.json（SQL 真库 + vbar + tooltip richText「自定义提示 系列=${SERIES} 值=${VALUE}」）；真引擎 e2e PASS（runId=ge20261108103120-f5d5ab，逐格真值/合计/modify/基线回补）。
+- 首跑 IR 拒：tooltip 仅 Van 图（kind=v*）支持；bar 改 vbar 后过。
+- 部署 cpt 含 AttrTooltipRichText 自定义内容（逐字节）；web 端 SVG 图表渲染，两次悬停未取到自定义提示文本 → **自定义 AttrTooltip web 悬停未验证**（非已证损坏）。G3 legacy bar 默认 tooltip 悬停此前已实测。
+- 收尾：停服、基线 CBEB42E3；证据 docs/architecture/web-verification.md。

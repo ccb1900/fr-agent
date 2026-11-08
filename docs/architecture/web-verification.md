@@ -45,3 +45,11 @@
    同构；但 web 端三次点击尝试（getByText / JS el.click / 坐标 cua.click）均未导航，
    新标签/新 URL 均无。→ web 点击行为**未验证**（不是已证明损坏），需判断是否
    decision 视图/无头部署对 hyperlink 的限制；backlog P3。
+
+## 第三轮（2026-11-08，自定义 tooltip G4）
+7. G4 载体（verify/fixtures/golden/g4_tooltip_intent.json：SQL+vbar+tooltip richText
+   "自定义提示 系列=${SERIES} 值=${VALUE}"）真引擎 e2e PASS（runId=ge20261108103120-f5d5ab）：
+   部署 cpt 含 AttrTooltipRichText 自定义内容（逐字节确认）；web 端 SVG 图表渲染，
+   两次悬停（坐标 95/680、105/700）未在 SVG/DOM 取到"自定义提示"文本 →
+   **自定义 AttrTooltip 的 web 悬停仍未验证**（不是已证明损坏）；G3 legacy bar 的
+   默认 tooltip 悬停此前已实测可见。
