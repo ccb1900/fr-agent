@@ -341,7 +341,7 @@ try {
   var catChart = null;
   chartBlocks.forEach(function (b) {
     // OneValue 派（vpie/vgauge/vfunnel）与 x/y 派不走 MoreNameCDDefinition/CategoryName 形态
-    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d' || b.kind === 'vmultipie' || b.kind === 'vstructure' || b.kind === 'meter' || b.kind === 'vtreemap') return;
+    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d' || b.kind === 'vmultipie' || b.kind === 'vstructure' || b.kind === 'meter' || b.kind === 'vtreemap' || b.kind === 'gismap') return;
     if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
   });
   if (catChart) {
@@ -403,6 +403,18 @@ try {
       && xmlText.indexOf('parentid="' + cb.parentId + '"') >= 0
       && xmlText.indexOf('nodename="' + cb.nodeName + '"') >= 0
       && xmlText.indexOf('nodevalue="' + cb.nodeValue + '"') >= 0);
+  });
+  // legacy GIS 地图：GisMapPlot + GisMapTableDefinition（address/addressName/lnglatOrder + TittleValue SeriesDefinition）
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'gismap') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    var gval = cb.value || (cb.values && cb.values[0]);
+    check('CHART SERIALIZED (gismap ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /GisMapPlot/.test(xmlText) && /GisMapTableDefinition/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset) >= 0
+      && xmlText.indexOf('address="' + cb.address + '"') >= 0
+      && (cb.addressName == null || xmlText.indexOf('addressName="' + cb.addressName + '"') >= 0)
+      && xmlText.indexOf('CDATA[' + gval + ']') >= 0);
   });
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);

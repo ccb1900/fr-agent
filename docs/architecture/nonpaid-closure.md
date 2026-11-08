@@ -25,7 +25,7 @@
 | 13 | 仪表 meter | MeterPlot/SimpleMeterPlot/MeterBluePlot | 0（legacy） | MeterTableDefinition(name/value/targetValue/meterType/custom) | **DONE（chart.meter，单 needle 80 PNG；多 needle 重叠为官方多值不解决）** |
 | 14 | 区间 range | RangePlot | 0（legacy） | ScatterTableDefinition(低/高)+setFilterDefinition；carrier `reports/test_range.js` | **DONE（chart.range；PNG 4 区间带+图例；官方 0 语料，样式未手调）** |
 | 15 | 股价 stock | StockPlot | 0（legacy） | StockTableDefinition(OHLC; StockLabel 不换文本) | **DONE（chart.stock；rows runId=stock_rows_001；官方 0 语料，形态=裸 K 柱）** |
-| 16 | GIS 地图 | GisMapPlot | 0（legacy） | 待探针（区别于 vmap） | 待做 |
+| 16 | GIS 地图 | GisMapPlot | 0（legacy） | probe `probes/probe_gismap.js` 一手：GisMapTableDefinition(setAddress/addressName/addressType/lnglatOrder/addTittleValue)；carrier `reports/test_gismap.js` | **serialization-only**（静态 PNG=引擎内置 `gisMap.png` 固定示例图；单点 vs 三点像素恒等 → 数据不参与静态渲染，真地图需 web+key/网络） |
 
 > 注：legacy Funnel/Gantt/Custom 类与其 Van 族合并；legacy RadarPlot 已归 base（当前族由 vradar 覆盖）。
 
@@ -83,4 +83,4 @@
 | gantt | `probe_gantt_official` 读官方对象图 | `reports/test_gantt.js` 真引擎 EXE PASS（firstProcess/processList/linkTable/TimeAxis/ProcessAxis 全序列化） | **serialization-only**（PNG「图形没有数据」=web div 层） |
 | treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | `reports/test_treemap.js` 真引擎 EXE PASS；顶层 blocks 渲染，嵌套子块未出（web 层） | **serialization-only**（TreeMapIndependentVanChart 存在） |
 | custom | D1 三轮 log | 线系列渲染官方一致不显示 | 引擎硬墙；需官方条件块语料再重开 |
-| GIS | `probe_chartdata_builder` + `GisMapTableDefinition` | legacy 独立类（与 VanChartMapPlot 不同家族） | 沿 setGisType/setAddressType/setAddress 路径 |
+| GIS | `probes/probe_gismap.js` + carrier `reports/test_gismap.js` | 构造/序列化 PASS；静态渲染=内置 gisMap.png 固定示例图（数据不参与） | **serialization-only**（真地图需 web+百度/谷歌 key/网络，外部依赖未授权） |

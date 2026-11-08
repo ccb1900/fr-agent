@@ -1,22 +1,22 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T18:21:19.5826812+08:00",
+    "generatedAt":  "2026-11-08T18:45:43.5995790+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  7,
+                   "unsupported":  6,
                    "base":  19,
-                   "supported":  28
+                   "supported":  29
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  23,
+                         "current":  24,
                          "base":  16,
                          "van":  2,
-                         "legacy":  13
+                         "legacy":  12
                      },
     "licensePolicy":  {
                           "paidPrefixes":  [
@@ -143,11 +143,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GisMapPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "GisMap legacy variant differs from VanChartMapPlot family core; Van map/vdrill covered"
+                        "family":  "current",
+                        "cap":  "chart.gismap",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.LinePlot",

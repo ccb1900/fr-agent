@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T18:17:58.8127204+08:00",
+    "generatedAt":  "2026-11-08T18:45:41.4719977+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,7 +661,7 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  214,
+    "namedCount":  217,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
@@ -672,6 +672,7 @@
                      "com.fr.plugin.chart.base.format.AttrTooltipValueFormat":  "fine-report-engine-11.0.jar",
                      "com.fr.base.iofile.attr.WatermarkAttr":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.CellExpandAttr":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.GisMapTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.write.ImportExcelData":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartdata.MeterTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.base.background.ColorBackground":  "fine-core-11.0.jar",
@@ -695,13 +696,14 @@
                      "com.fr.data.impl.NameTableData":  "fine-core-11.0.jar",
                      "com.fr.form.ui.TreeComboBoxEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.VanChartAttrTrendLine":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.base.AttrMarkerAlpha":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.SeriesDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.base.present.FormulaPresent":  "fine-core-11.0.jar",
                      "com.fr.form.ui.ComboCheckBox":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrSeriesImageBackground":  "fine-report-engine-11.0.jar",
                      "com.fr.write.config.ColumnConfig":  "fine-report-engine-11.0.jar",
                      "com.fr.js.NameJavaScript":  "fine-report-engine-11.0.jar",
                      "com.fr.base.background.ImageBackground":  "fine-core-11.0.jar",
+                     "com.fr.chart.chartattr.GisMapPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrEffect":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.gantt.attr.GanttProcessAxis":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartattr.Bar3DPlot":  "fine-report-engine-11.0.jar",
@@ -827,6 +829,7 @@
                      "com.fr.report.web.button.NewPrint":  "fine-report-engine-11.0.jar",
                      "com.fr.data.impl.FormulaDictionary":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.heatmap.VanChartHeatMapPlot":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.base.AttrMarkerAlpha":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.area.VanChartAreaPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.data.impl.CustomDictionary":  "fine-core-11.0.jar",
                      "com.fr.report.write.ReportWriteAttr":  "fine-report-engine-11.0.jar",

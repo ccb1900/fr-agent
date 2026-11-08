@@ -2013,3 +2013,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：fast 20 套件 GREEN；scan `ok=115 bad=0 skipped=1`（skip=rebuild_basicA 历史缺 sproduct_dump.txt）；基线三件 MD5 PASS（demo_api CBEB42E3 / v2 6161F402 / 销售明细 A8EF39AB）。
 - 未验证：gantt/treemap/drillmap 的 web div 渲染仍未驱动（serialization-only 边界，不承诺静态 PNG）；legacy GIS GisMapPlot 仍待探针；custom D1 线系列渲染=引擎硬墙未解。
 - 代码基线：本条 commit（账本 89 项/66 agentAvailable；jar 面 28 supported/19 base/7 unsupported）。
+
+### 第 35 轮 legacy GIS 地图（GisMapPlot）探针定案：serialization-only（2026-11-08）
+- 目标：收掉剩余图族里最后两个非付费 legacy 类之一（GIS），按探针先行判断可闭环层位。
+- 代码证据：官方 reportlets 零 GisMapPlot 语料（`grep -i gismap` 仅命中 FRDemo 表名）。新探针 `probes/probe_gismap.js` 反射一手：GisMapPlot extends Plot，setGisType/setAddressType/setBaiduKey/setGoogleKey；数据=GisMapTableDefinition（setAddress/setAddressName/setAddressType/setLnglatOrder/addTittleValue(SeriesDefinition)）；关联类 GisMapChartData/GisMapReportDefinition/GisMapIndependentChart/GISLayerType/GaoDeGisType。
+- 实施：object 增 gismap 分支（plot 选项 + GisMapTableDefinition）；IR legacy 词表/CHART_KINDS/REQUIRED/列引用；make_api 专用序列化门。carrier `reports/test_gismap.js` 真引擎 EXE+序列化 PASS（XML 一手含 GisMapPlot/GisMapTableDefinition/AddressAndName/SeriesDefinition）。
+- 渲染判据（像素级、判别性）：日志一手 `[Static Resource] Read data from path /com/fr/chart/chartglyph/gisMap.png`；单点广州（经纬度）vs 地址三点（北京/上海/广州）两臂，全图仅 2139 px 不同且 bbox 全在标题框内（x266-489,y55-132），地图+红点完全恒等 → 静态 PNG=内置固定示例图、数据不参与。真地图需 web 端+百度/谷歌 key/网络（外部服务依赖）。
+- 结论：`chart.gismap` serialization-only（construction/serialization=verified、rendering=serialization-only、regressionScope=serialization、agentAvailable=false）。jar 面 GisMapPlot 转 supported（54 类=29 supported/19 base/6 unsupported）；清单 217 类 resolved=217 missing=0；manifest 90/66/24。
+- 验证：fast 20 GREEN；scan ok=116 bad=0 skipped=1；基线三件 MD5 PASS（CBEB42E3/6161F402/A8EF39AB）。
+- 未验证：带 key/网络的 web 真地图渲染（缺授权凭据，不擅自接第三方服务）；gantt/treemap/drillmap 的 web div 渲染同样保持 serialization-only。
