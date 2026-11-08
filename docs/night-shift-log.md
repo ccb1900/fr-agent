@@ -1969,3 +1969,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   - `fast_acceptance` 3003 checks GREEN；无真实结果写入 `acceptance/results/`。
 - 未验证/暂停：真实任务执行、渲染、Agent 驱动全部未开始（用户指令）；`dataExecution` 只能挡"自报契约不符"的明显形态，字段是否真来自该执行仍需证据包人工复核；工具调用 transcript 仍为可选层。
 - 代码基线：`8fd2dae`（本地提交，未 push）；工作区另有 wordcloud 会话的未提交改动，未触碰。
+
+### 第 28 轮 非付费图族闭环第 6 个：chart.vwordcloud 词云（2026-11-08）
+- 结构一手：官方 `doc/Chart/WorldCloud/WordCloud.cpt` = VanChartWordCloudPlot + WordCloudTableDefinition(name/wordname/wordvalue/NoneFunction)；javap setWordName/setWordValue/setDataFunction。注意：NewStructureFrame 语料里的 wordcloud plot 挂 StructureTableDefinition 会渲染“图形没有数据”，真正数据定义是 WordCloudTableDefinition（首版踩坑已记）。
+- 实施：object VK 增 vwordcloud + 专用分支；IR/ReportSpec/Planner 增 wordName/wordValue 词表（CHART_KEYS、validator 分支、SpecCompiler 发射、layer gate planner 合同用 wordName/wordValue）；jar 面 VanChartWordCloudPlot 转 supported（22 supported/19 base/13 unsupported=9 图族）。
+- 验证：`reports/test_wordcloud.js` 真引擎 failures=0，PNG 词云（报表/数据/帆软/分析/图表/大屏 按值大小）+图例+标题（594 色）；SQL 真库 plan→plan2spec→create→validate PASS（runId=wordcloud_e2e_002，wordName=machine/wordValue=planned，表体 33531/26531 真值不变）；manifest chart.vwordcloud 四层 verified/agentAvailable=true（83 项/62 承诺）。
+- 边界：structure 仍只出层级+数值、节点名未出，不接；treemap 只出顶层矩形，不接。
+- 回归：fast 20 套件 GREEN（`logs/fast_wordcloud.txt`，caps=83/agent=62；supported=22/unsupported=13）；scan ok=106；基线 CBEB42E3；层扫描 81 项+multipie/vwordcloud 单项门，83 项全量待下轮复跑。

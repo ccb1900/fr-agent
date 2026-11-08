@@ -130,7 +130,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return typeof r.chart === 'object' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
@@ -441,6 +441,20 @@ check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentati
   var ie = Ir.validate(c);
   if (ie.length) print('VMULTIPIE IR ERRS: ' + JSON.stringify(ie));
   check('vmultipie compile 发射 levels[]/value 且 IR 零误报', !!(cb && cb.kind === 'vmultipie' && cb.levels && cb.levels.length === 2 && ie.length === 0));
+})();
+// 2026-11-08 词云：vwordcloud spec 路 wordName/wordValue 编译 + IR 零误报
+(function () {
+  var deps = { model: { dimensions: [{ name: 'd', label: 'D' }], metrics: [{ name: 'm', label: 'M' }] },
+    SqlBuilder: { build: function () { return { sql: 'SELECT 1', baseAliases: [{ alias: 'd', role: 'dimension' }, { alias: 'm', role: 'metric' }] }; } } };
+  var rs = { specVersion: '1', report: { name: 't' }, outName: 'vwordcloud',
+    dataset: { kind: 'sql', connection: 'C', entity: 'E', dimensions: ['d'], metrics: ['m'], dateRange: { from: '2026-01-01', to: '2026-01-02' } },
+    presentation: { type: 'table', chart: { kind: 'vwordcloud', wordName: 'd', wordValue: 'm' } } };
+  var c = null;
+  try { c = SpecCompiler.compile(rs, deps); } catch (e) { check('vwordcloud compile 不抛: ' + e, false); return; }
+  var cb = null; c.sheets[0].blocks.forEach(function (b) { if (b.type === 'chart') cb = b; });
+  var ie = Ir.validate(c);
+  if (ie.length) print('VWORDCLOUD IR ERRS: ' + JSON.stringify(ie));
+  check('vwordcloud compile 发射 wordName/wordValue 且 IR 零误报', !!(cb && cb.kind === 'vwordcloud' && cb.wordName === 'd' && cb.wordValue === 'm' && ie.length === 0));
 })();
 check('审查2 bar 带 x/y 拒', (function () {
   var es = errsOf(baseSqlSpec(function (rs) { rs.presentation.chart.x = 'planned'; }));

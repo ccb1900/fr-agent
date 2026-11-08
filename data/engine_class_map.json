@@ -18,6 +18,7 @@
     "chart.vfunnel": { "class": "com.fr.plugin.chart.funnel.VanChartFunnelPlot", "module": "lib/object.js" },
     "chart.vbox": { "class": "com.fr.plugin.chart.box.VanChartBoxPlot", "module": "lib/object.js" },
     "chart.vmultipie": { "class": "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot", "module": "lib/object.js" },
+    "chart.vwordcloud": { "class": "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot", "module": "lib/object.js" },
     "chart.bar3d": { "class": "com.fr.chart.chartattr.Bar3DPlot", "module": "lib/object.js" },
     "chart.pie3d": { "class": "com.fr.chart.chartattr.Pie3DPlot", "module": "lib/object.js" },
     "chart.area3d": { "class": "com.fr.chart.chartattr.Area3DPlot", "module": "lib/object.js" },

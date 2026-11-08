@@ -331,10 +331,10 @@
       "family": "van"
     },
     "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot": {
-      "status": "unsupported",
-      "reason": "word cloud family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vwordcloud"
     }
   }
 }

@@ -106,6 +106,8 @@ check('vbox 直通（2026-11-08 箱线图）→ ready 且 spec 带 vbox', rchtB.
 });
 var rmp = plan({ outName: 'mp', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vmultipie', levels: ['bizTime'], value: 'rowNo' } });
 check('vmultipie 直通（levels/value）→ ready 且 spec 带 vmultipie', rmp.status === 'ready' && rmp.reportSpec.presentation.chart.kind === 'vmultipie');
+var rwc = plan({ outName: 'wc', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vwordcloud', wordName: 'bizTime', wordValue: 'rowNo' } });
+check('vwordcloud 直通（wordName/wordValue）→ ready 且 spec 带 vwordcloud', rwc.status === 'ready' && rwc.reportSpec.presentation.chart.kind === 'vwordcloud');
 // —— C6 同口径扩展（2026-11-07 B段复审）：rows 路 intent.filters/intent.chart 被能力墙丢掉时
 //    不得 ready（与 metrics 同理：数据范围/报表结构悄悄变窄比失败更危险）。此前仅 warning 仍 ready。
 check('C6 同口径: rows 路 intent.filters 被丢 → 不得 ready', rfil.status !== 'ready' && rfil.reportSpec === null);

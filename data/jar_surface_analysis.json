@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T14:03:43.4996546+08:00",
+    "generatedAt":  "2026-11-08T14:20:23.2442833+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  14,
+                   "unsupported":  13,
                    "base":  19,
-                   "supported":  21
+                   "supported":  22
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  16,
+                         "current":  17,
                          "base":  16,
-                         "van":  6,
+                         "van":  5,
                          "legacy":  16
                      },
     "licensePolicy":  {
@@ -455,11 +455,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "word cloud family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vwordcloud",
+                        "reason":  ""
                     }
                 ],
     "unclassified":  [

@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T14:03:41.2096582+08:00",
+    "generatedAt":  "2026-11-08T14:20:21.0516920+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,7 +661,7 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  195,
+    "namedCount":  197,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
@@ -745,7 +745,7 @@
                      "com.fr.chart.chartattr.Legend":  "fine-report-engine-11.0.jar",
                      "com.fr.base.CellBorderStyle":  "fine-core-11.0.jar",
                      "com.fr.report.web.ToolBarManager":  "fine-report-engine-11.0.jar",
-                     "com.fr.report.web.WebView":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.wordcloud.data.WordCloudTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.web.ChartHyperRelateCellLink":  "fine-report-engine-11.0.jar",
                      "com.fr.data.impl.DBTableData":  "fine-core-11.0.jar",
                      "com.fr.data.impl.NameDatabaseConnection":  "fine-core-11.0.jar",
@@ -758,6 +758,7 @@
                      "com.fr.plugin.chart.base.format.AttrTooltipAreaNameFormat":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.container.WAbsoluteLayout":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.CheckBoxGroup":  "fine-report-engine-11.0.jar",
+                     "com.fr.report.web.WebView":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.IframeEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartattr.Donut3DPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.attr.AttrMapTooltip":  "fine-report-engine-11.0.jar",
@@ -816,6 +817,7 @@
                      "com.fr.report.write.ReportWriteAttr":  "fine-report-engine-11.0.jar",
                      "com.fr.js.ParameterJavaScript":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.gauge.VanChartGaugePlot":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.data.VanMapDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.web.attr.ReportWebAttr":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.Label":  "fine-report-engine-11.0.jar",
