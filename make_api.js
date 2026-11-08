@@ -431,6 +431,28 @@ if (rb) {
     }
   } catch (eLoc) { stamp('VAN LOCALE FAIL: ' + eLoc); RR.diag('VAN LOCALE FAIL: ' + eLoc); FAILS++; }
   try { var osP = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.png'); new (J('com.fr.io.exporter.ImageExporter'))().export(osP, rb); osP.close(); stamp('PNG DONE'); } catch (e) { stamp('PNG FAIL: ' + e); RR.diag('PNG FAIL: ' + e); FAILS++; }
+  // 2026-11-08 P0（Van title 空图事故后补）：出图段不能只看"PNG 有字节"——整图空白也曾 ALL PASS。
+  //   有 chart 块时抽样 PNG：uniqueColors<8 且 chromatic<100 ⇒ 判失败（纯黑白/空图）；正常图表 unique 数百。
+  if (typeof chartBlocks !== 'undefined' && chartBlocks.length) {
+    try {
+      var pngPath = outDir + '/' + name + '.png';
+      if (Files.exists(J('java.nio.file.Paths').get(pngPath))) {
+        var pngImg = J('javax.imageio.ImageIO').read(new (J('java.io.File'))(pngPath));
+        if (!pngImg) throw new Error('PNG unreadable');
+        var pw = pngImg.getWidth(), ph = pngImg.getHeight(), ucol = {}, chroma = 0;
+        for (var py = 0; py < ph; py += 2) {
+          for (var px = 0; px < pw; px += 2) {
+            var prgb = pngImg.getRGB(px, py);
+            var rr = (prgb >> 16) & 255, gg = (prgb >> 8) & 255, bb = prgb & 255;
+            ucol[rr + ',' + gg + ',' + bb] = 1;
+            if (Math.max(rr, gg, bb) - Math.min(rr, gg, bb) > 12) chroma++;
+          }
+        }
+        var ucn = Object.keys(ucol).length;
+        check('CHART RENDER NONBLANK (uniqueColors=' + ucn + ' chromatic=' + chroma + ')', ucn >= 8 || chroma >= 100);
+      }
+    } catch (ePng) { FAILS++; stamp('CHART RENDER CHECK FAIL: ' + ePng); RR.diag('CHART RENDER CHECK FAIL: ' + ePng); }
+  }
   try { var osD = new (J('java.io.FileOutputStream'))(outDir + '/' + name + '.pdf'); new (J('com.fr.io.exporter.PDFExporter'))().export(osD, rb); osD.close(); stamp('PDF DONE'); } catch (e) { stamp('PDF FAIL: ' + e); RR.diag('PDF FAIL: ' + e); FAILS++; }
   try { if (loc0 != null) J('com.fr.general.GeneralContext').setLocale(loc0); } catch (eL) { }
 }
