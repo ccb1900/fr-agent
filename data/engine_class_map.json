@@ -22,6 +22,7 @@
     "chart.vstructure": { "class": "com.fr.plugin.chart.structure.VanChartStructurePlot", "module": "lib/object.js" },
     "chart.meter": { "class": "com.fr.chart.chartattr.MeterPlot", "module": "lib/object.js" },
     "chart.stock": { "class": "com.fr.chart.chartattr.StockPlot", "module": "lib/object.js" },
+    "chart.range": { "class": "com.fr.chart.chartattr.RangePlot", "module": "lib/object.js" },
     "chart.bar3d": { "class": "com.fr.chart.chartattr.Bar3DPlot", "module": "lib/object.js" },
     "chart.pie3d": { "class": "com.fr.chart.chartattr.Pie3DPlot", "module": "lib/object.js" },
     "chart.area3d": { "class": "com.fr.chart.chartattr.Area3DPlot", "module": "lib/object.js" },

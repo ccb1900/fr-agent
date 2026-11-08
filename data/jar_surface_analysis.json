@@ -1,22 +1,22 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T16:12:56.2227018+08:00",
+    "generatedAt":  "2026-11-08T16:44:00.5992877+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  10,
+                   "unsupported":  9,
                    "base":  19,
-                   "supported":  25
+                   "supported":  26
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  20,
+                         "current":  21,
                          "base":  16,
                          "van":  4,
-                         "legacy":  14
+                         "legacy":  13
                      },
     "licensePolicy":  {
                           "paidPrefixes":  [
@@ -215,11 +215,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RangePlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "range chart family not wired"
+                        "family":  "current",
+                        "cap":  "chart.range",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RectanglePlot",

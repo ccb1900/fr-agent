@@ -130,7 +130,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|meter|stock');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|meter|stock|range');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return typeof r.chart === 'object' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
@@ -485,6 +485,16 @@ check('D2 vmap spec 零误报', errsOf(baseSqlSpec(function (rs) { rs.presentati
   if (ie.length) print('STOCK ROWS IR ERRS: ' + JSON.stringify(ie));
   var cb=null; ir.sheets[0].blocks.forEach(function(b){ if(b.type==='chart') cb=b; });
   check('stock rows compile 发射 OHLC 且 IR 零误报', !!(cb && cb.kind==='stock' && cb.openString==='open' && ie.length===0));
+})();
+// 2026-11-08 区间：range spec/rows 路 low/high 编译 + IR 零误报（真引擎 PNG 4 个区间带）
+(function () {
+  var rs = { specVersion: '1', report: { name: 't' }, outName: 'range_rows', dimensions: [{field:'cat',label:'类别'}], metrics: [{field:'low',label:'低',aggregation:'sum',dataType:'number'},{field:'high',label:'高',aggregation:'sum',dataType:'number'}], dataset: { rows: [['A',10,20],['B',15,30]] },
+    presentation: { type: 'table', showTotal: true, chart: { kind: 'range', category: 'cat', value: 'low' } } };
+  var ir = SpecCompiler.compile(rs, {});
+  var ie = Ir.validate(ir);
+  if (ie.length) print('RANGE ROWS IR ERRS: ' + JSON.stringify(ie));
+  var cb=null; ir.sheets[0].blocks.forEach(function(b){ if(b.type==='chart') cb=b; });
+  check('range rows compile 发射 low 且 IR 零误报', !!(cb && cb.kind==='range' && cb.value==='low' && ie.length===0));
 })();
 check('审查2 bar 带 x/y 拒', (function () {
   var es = errsOf(baseSqlSpec(function (rs) { rs.presentation.chart.x = 'planned'; }));

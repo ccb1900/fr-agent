@@ -259,10 +259,10 @@
       "family": "legacy"
     },
     "com.fr.chart.chartattr.RangePlot": {
-      "status": "unsupported",
-      "reason": "range chart family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "current",
+      "cap": "chart.range"
     },
     "com.fr.chart.chartattr.StockPlot": {
       "status": "supported",

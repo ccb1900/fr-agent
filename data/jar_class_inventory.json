@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T16:12:54.0165902+08:00",
+    "generatedAt":  "2026-11-08T16:43:58.4143168+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,7 +661,7 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  204,
+    "namedCount":  206,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
@@ -715,7 +715,7 @@
                      "com.fr.form.ui.RadioGroup":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.structure.data.StructureTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.page.Last":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.multilayer.data.MultiPieValueDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartattr.RangePlot":  "fine-report-engine-11.0.jar",
                      "com.fr.base.Margin":  "fine-core-11.0.jar",
                      "com.fr.general.FRFont":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.type.MapMarkerType":  "fine-report-engine-11.0.jar",
@@ -744,6 +744,7 @@
                      "com.fr.base.present.DictPresent":  "fine-core-11.0.jar",
                      "com.fr.chart.base.AttrLineStyle":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartglyph.ConditionCollection":  "fine-report-engine-11.0.jar",
+                     "com.fr.report.web.button.write.ShowCellValue":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.group.FunctionGrouper":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.highlight.HighlightGroup":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartattr.Legend":  "fine-report-engine-11.0.jar",
@@ -766,7 +767,7 @@
                      "com.fr.form.ui.IframeEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartattr.Donut3DPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.attr.AttrMapTooltip":  "fine-report-engine-11.0.jar",
-                     "com.fr.chart.chartdata.MoreNameCDDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.ScatterTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.radar.VanChartRadarPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.form.main.parameter.FormParameterUI":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.Print":  "fine-report-engine-11.0.jar",
@@ -777,6 +778,7 @@
                      "com.fr.chart.chartattr.Area3DPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.ViewCenter":  "fine-report-engine-11.0.jar",
                      "com.fr.data.condition.FormulaCondition":  "fine-core-11.0.jar",
+                     "com.fr.plugin.chart.multilayer.data.MultiPieValueDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.stable.ParameterProvider":  "fine-core-11.0.jar",
                      "com.fr.chart.chartattr.Chart":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.group.DSColumn":  "fine-report-engine-11.0.jar",
@@ -866,7 +868,7 @@
                      "com.fr.data.util.function.SumFunction":  "fine-core-11.0.jar",
                      "com.fr.base.PaperSize":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.type.MapType":  "fine-report-engine-11.0.jar",
-                     "com.fr.report.web.button.write.ShowCellValue":  "fine-report-engine-11.0.jar"
+                     "com.fr.chart.chartdata.MoreNameCDDefinition":  "fine-report-engine-11.0.jar"
                  },
     "missing":  [
 
