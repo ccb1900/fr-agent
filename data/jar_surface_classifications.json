@@ -230,9 +230,9 @@
     },
     "com.fr.chart.chartattr.GisMapPlot": {
       "status": "unsupported",
-      "reason": "GIS map family not wired (vmap covers map plot only)",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "reason": "GisMap legacy variant differs from VanChartMapPlot family core; Van map/vdrill covered"
     },
     "com.fr.chart.chartattr.MeterPlot": {
       "status": "supported",
@@ -265,10 +265,10 @@
       "family": "legacy"
     },
     "com.fr.chart.chartattr.StockPlot": {
-      "status": "unsupported",
-      "reason": "stock/K-line family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "current",
+      "cap": "chart.stock"
     },
     "com.fr.chart.chartattr.CustomPlot": {
       "status": "unsupported",

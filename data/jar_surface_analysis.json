@@ -1,22 +1,22 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T15:59:39.0349745+08:00",
+    "generatedAt":  "2026-11-08T16:12:56.2227018+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  11,
+                   "unsupported":  10,
                    "base":  19,
-                   "supported":  24
+                   "supported":  25
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  19,
+                         "current":  20,
                          "base":  16,
                          "van":  4,
-                         "legacy":  15
+                         "legacy":  14
                      },
     "licensePolicy":  {
                           "paidPrefixes":  [
@@ -147,7 +147,7 @@
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "GIS map family not wired (vmap covers map plot only)"
+                        "reason":  "GisMap legacy variant differs from VanChartMapPlot family core; Van map/vdrill covered"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.LinePlot",
@@ -239,11 +239,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.StockPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "stock/K-line family not wired"
+                        "family":  "current",
+                        "cap":  "chart.stock",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.XYPlot",

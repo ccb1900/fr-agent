@@ -1,0 +1,34 @@
+{
+  "specVersion": "1",
+  "report": { "name": "K线股票 rows 自检" },
+  "outName": "能力自检_K线",
+  "dimensions": [ { "field": "date", "label": "日期", "widthPt": 100 } ],
+  "metrics": [
+    { "field": "open", "label": "开", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" },
+    { "field": "high", "label": "高", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" },
+    { "field": "low", "label": "低", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" },
+    { "field": "close", "label": "收", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" }
+  ],
+  "dataset": {
+    "rows": [
+      ["2026-01-01", 10, 20, 5, 15],
+      ["2026-01-02", 15, 25, 10, 20],
+      ["2026-01-03", 20, 30, 15, 25],
+      ["2026-01-04", 22, 35, 20, 28]
+    ]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "stock",
+      "cateTime": "date",
+      "openString": "open",
+      "highString": "high",
+      "lowString": "low",
+      "closeString": "close",
+      "title": "K线",
+      "heightPt": 300
+    }
+  }
+}

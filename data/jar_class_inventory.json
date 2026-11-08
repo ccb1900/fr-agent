@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T15:57:06.8111740+08:00",
+    "generatedAt":  "2026-11-08T16:12:54.0165902+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,12 +661,13 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  201,
+    "namedCount":  204,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.io.exporter.ImageExporter":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.page.PageNavi":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.StockLabel":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.type.VanChartPlotType":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.format.AttrTooltipValueFormat":  "fine-report-engine-11.0.jar",
                      "com.fr.base.iofile.attr.WatermarkAttr":  "fine-report-engine-11.0.jar",
@@ -729,7 +730,7 @@
                      "com.fr.form.ui.TextEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.report.stable.ReportSettings":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrSeriesStackAndAxis":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.box.data.VanBoxTableDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.StockTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.report.write.BuiltInSQLSubmiter":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.RichText":  "fine-report-engine-11.0.jar",
                      "com.fr.general.data.TableDataColumn":  "fine-core-11.0.jar",
@@ -800,6 +801,7 @@
                      "com.fr.report.web.button.FlashPrint":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.write.DeleteRowButton":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.WebPage":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.box.data.VanBoxTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.attr.VanChartTitle":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.group.CustomGrouper":  "fine-report-engine-11.0.jar",
                      "com.fr.base.Formula":  "fine-core-11.0.jar",
@@ -860,6 +862,7 @@
                      "com.fr.form.ui.ComboBox":  "fine-report-engine-11.0.jar",
                      "com.fr.js.ReportletHyperlink":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.FloatElement":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartattr.StockPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.data.util.function.SumFunction":  "fine-core-11.0.jar",
                      "com.fr.base.PaperSize":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.type.MapType":  "fine-report-engine-11.0.jar",

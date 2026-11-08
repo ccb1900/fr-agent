@@ -117,7 +117,14 @@ for (var i = 0; i < CK.length; i++) {
   var chart = (k === 'vscatter' || k === 'vbubble')
     ? { kind: k, x: 'rowNo', y: 'rowNo' }
     : (k === 'vmultipie' ? { kind: k, levels: ['bizTime'], value: 'rowNo' } : (k === 'vwordcloud' ? { kind: k, wordName: 'bizTime', wordValue: 'rowNo' } : (k === 'vstructure' ? { kind: k, nodeId: 'bizTime', parentId: 'bizTime', nodeName: 'bizTime', nodeValue: 'rowNo' } : { kind: k, category: 'bizTime', value: 'rowNo' })));
-  C['chart.' + k] = { intent: baseRows({ showTotal: false, chart: chart }), expect: 'presentation.chart.kind', eq: k };
+  C['chart.' + k] = (function(){
+      if (k === 'stock') {
+        var sc2 = { kind:k, cateTime:'bizDate', openString:'planned', highString:'done', lowString:'completionRate', closeString:'planned' };
+        var it2 = { outName:'gps2', reportName:'gps2', dataset:{ kind:'sql', entity:'Machine', connection:'main', dimensions:['bizDate'], metrics:[{term:'planned'},{term:'done'},{term:'completionRate'}] }, presentation:{ showTotal:false, chart:sc2 } };
+        return { intent: it2, expect: 'presentation.chart.kind', eq: k };
+      }
+      return { intent: baseRows({ showTotal: false, chart: chart }), expect: 'presentation.chart.kind', eq: k };
+    })();
 }
 var DECO = { 'chart.tooltip': { tooltip: { fmt: 'N0' } }, 'chart.label': { label: { show: true } }, 'chart.stack': { stack: true }, 'chart.trendLine': { trend: { show: true } }, 'chart.conditionalSeries': { conditions: [{ column: 1, when: { formula: '=B2<60' }, then: { style: { color: '0xFF0000' } } }] }, 'chart.axisYUnit': { axisY: { unit: 'pc' } }, 'chart.marker': { marker: { shape: 'circle' } }, 'chart.lineStyle': { lineStyle: { dashed: true } }, 'chart.areaFill': { alpha: 0.5 }, 'chart.effect': { alpha: 0.5 }, 'chart.seriesBorder': { border: { color: '0xFF0000' } }, 'chart.seriesImage': { bg: { image: 'assets/map/x.png' } }, 'chart.bubbleAttr': { marker: { size: 4 } } };
 for (var dn in DECO) { var d = DECO[dn]; for (var dk in d) C[dn] = { intent: baseRows({ showTotal: false, chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo' } }), expect: 'presentation.chart.' + dk, eq: undefined, patchChart: (function (kk, vv) { return function (ch) { ch[kk] = vv; }; })(dk, d[dk]) }; }
