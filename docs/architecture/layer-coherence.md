@@ -9,7 +9,7 @@
 | 不变量 | 含义 | 机器门 | 现状 |
 | --- | --- | --- | --- |
 | I1 承诺有实现 | `agentAvailable=true` ⇒ construction/serialization 均 verified | fast_layer_coherence | **72/72 成立**（0 违反） |
-| I2 承诺有入口 | `agentAvailable=true` ⇒ 证据点到磁盘上存在的可执行载体（probe/carrier/fast/spec/integration） | fast_layer_coherence + 层门 probe/tool | **50/50 成立**（0 违反） |
+| I2 承诺有入口 | `agentAvailable=true` ⇒ 证据点到磁盘上存在的可执行载体（probe/carrier/fast/spec/integration） | fast_layer_coherence + 层门 probe/tool | **51/51 成立**（0 违反） |
 | I3 入口有引擎锚 | construction=verified ⇒ 锚到核心 jar 物理存在的类（`data/engine_class_map.json` → `data/jar_class_inventory.json`） | fast_layer_coherence + 层门 jar | **62/65 锚定，3 项为 runtime/tool 层（设计上无引擎类）** |
 | I4 Planner 真合同 | planner 层判定来自真实 `ReportPlanner.plan()` 输入→输出断言，且三条负控必被拒 | 层门 selftest | **自测 PASS；47/72 有合同，25 项明确 UNKNOWN** |
 | I5 账本不撒谎 | agentAvailable 能力不得有任何层 rejected/pending；jar 清单 missing 为空 | fast_layer_coherence | **成立** |
@@ -45,11 +45,11 @@
 | jar | 63 | 6 | 3 | 62 个 verified 有引擎锚 + databaseDict(pending 但已锚) = 63 PASS；6 BLOCKED = 设计内无类；3 UNKNOWN = agent.* runtime 层 |
 | object | 65 | 7 | 0 | 7 项 pending/rejected |
 | cpt | 65 | 7 | 0 | 同上 |
-| render | 50 | 22 | 0 | 22 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
+| render | 51 | 21 | 0 | 21 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
 | ir | 48 | 0 | 24 | UNKNOWN = 词表无该 token（write/template/agent 族 + validator-only 键） |
 | spec | 38 | 0 | 34 | PASS = 可执行合同（plan→SpecValidator→SpecCompiler→Ir.validate）或表面精确成员 |
 | planner | 52 | 0 | 20 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
-| agent | 50 | 22 | 0 | 22 项未承诺（manifest 分类见下） |
+| agent | 51 | 21 | 0 | 21 项未承诺（manifest 分类见下） |
 | manifest | 72 | 0 | 0 | 全部条目在账本且有证据 |
 
 **怎么读 UNKNOWN**：UNKNOWN 不是"没做"，是"这一层不是该能力的入口，或者本门没有合同可验证"。
@@ -72,7 +72,7 @@
 1. **planner 合同覆盖 47/72**：25 项没有合同 = 装饰类（mapLabel/tooltip 变体）、工具/运行时族、以及 spec 表面不承载的族。要提升不是硬凑绿，而是逐族补"输入意图 → 发射路径"的合同（先写载体，再开合同）。
 2. **ir 词表 32/72**：40 项 UNKNOWN 中大多数是 product/write/template/agent 族——它们的入口本就不在 IR 词表（write 走 ReportWriteAttr 序列化、template 走 patch ops、agent 走工具链）。这些已由 tool/jar/object/cpt 层背书。
 3. **spec 表面 26/72**：46 项 UNKNOWN 同上（res ReportSpec 只承载表/图/参数/合计/多 sheet 这批）。
-4. **render 50/72**：22 项 BLOCKED 是 web 交互/静态 PNG 不可见——这是**已定性**的（与官方语料同规则），不是缺陷；其中 seriesBorder 经 2026-11-08 三次挂载实验（像素判定 sampled red=0）确认为本版引擎 data-series 通道不画柱缘描边（维持 pending、agentAvailable=false，非"已证墙"）。
+4. **render 51/72**：21 项 BLOCKED 是 web 交互/静态 PNG 不可见——这是**已定性**的（与官方语料同规则），不是缺陷。seriesBorder 已于 2026-11-08 反转达成（旧载体 style=3 越界+alpha 通道误判；官方 551 处 AttrBorder 语料 + PNG 红边 596 像素，IR 闸 style 0|1、alpha 拒）。
 5. **jar 锚定 62/65 verified**：3 项 agent.* 是 runtime/tool 层，设计上无引擎类（map.none 记录原因）。
 
 ## 6. 机器门清单（本文引用的证据）

@@ -1766,3 +1766,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - planner 不承载的 write/template/agent 族：设计如此（入口在 serialization/tool 层），UNKNOWN 是诚实状态，不是"没做"。
 - F8 写库/凭据：需用户显式授权（不可逆/凭据面），尚未授权。
 - 本轮代码零改动（实验均回滚）；manifest 证据与 backlog 更新；门：基线 CBEB42E3（默认 spec 回补）、fast 18/18、scan ok=90。
+
+### 第 11 轮 seriesBorder 反转达成（用户质疑救回一个误判）
+- 用户质疑："柱缘无宿主？你不是在 demo cpt 得到的柱缘吗？"——质疑成立。复盘：①官方 551 处 `<AttrBorder>` 就在 ConditionCollection DefaultAttr AttrList（BarChartOfPicture.cpt 等），lineStyle 只有 0/1；②我此前载体用 style=3（越界）+ AttrBorderWithAlpha（该通道引擎不画）→ 三次阴性被我误读成"无宿主/引擎墙"；③probe_border_hosts.js 穷举 2416 个 chart 类/105 个 Border 宿主方法，含 VanChartBarDataPoint.setBorder/ColorInfo.setSeriesAttrBorder——"无宿主"作废。
+- 修复与达成：清空既定假设后按官方形态 `AttrBorder(color, style=1)` 走 DefaultAttr 通道 → 真引擎 failures=0，**PNG 红边 596 像素**（首次达成）。
+- 代码收口：IR 闸 style 仅 0|1（官方语料 563×0/134×1）、alpha 键明确拒（AttrBorderWithAlpha 不画，写了不生效）；object 只用 AttrBorder；fast_ir_contract +4（0/1 合法、3 拒、alpha 拒）。
+- 账本：chart.seriesBorder rendering pending→**verified**、agentAvailable=true（四层全 verified）；证据改为达成记录+官方语料一手；"引擎墙"旧结论作废并在证据里写明。
+- 验证：载体 reports/test_seriesborder.js 真引擎 failures=0 且红边 596px；基线待回补；fast/scan 待跑。
+- 验证（最终）：默认管线 failures=0 且 demo_api.cpt MD5=CBEB42E3；fast 18/18 GREEN（含 fast_ir_contract +4、capability_gate_consistency 72/51/21 口径、layer_coherence 51/51）；scan ok=90 bad=0（两个旧载体 alpha 字段按新契约移除）；引擎负门 GREEN；层门全量 sweep：render 51 / agent 51。
