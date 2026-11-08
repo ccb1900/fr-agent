@@ -1,13 +1,13 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T12:31:43.3727837+08:00",
+    "generatedAt":  "2026-11-08T12:44:28.5935877+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  21,
-                   "base":  18,
-                   "supported":  15
+                   "unsupported":  15,
+                   "base":  19,
+                   "supported":  20
                },
     "licenseCounts":  {
                           "basic":  54
@@ -31,11 +31,11 @@
     "classes":  [
                     {
                         "class":  "com.fr.chart.chartattr.Area3DPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
                         "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "3D chart family not wired (core engine, not a paid plugin family)"
+                        "cap":  "chart.area3d",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.AreaPlot",
@@ -55,11 +55,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Bar3DPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
                         "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "3D chart family not wired"
+                        "cap":  "chart.bar3d",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.BarPlot",
@@ -103,27 +103,27 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Donut2DPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
                         "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "donut family not wired (2D)"
+                        "cap":  "chart.donut",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Donut3DPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
                         "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "3D chart family not wired"
+                        "cap":  "chart.donut3d",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.DonutPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "donut family base/concrete not wired"
+                        "reason":  "donut base/abstract; concrete Donut2DPlot/Donut3DPlot supported"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.FunnelPlot",
@@ -183,11 +183,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Pie3DPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
                         "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "3D chart family not wired"
+                        "cap":  "chart.pie3d",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.PiePlot",

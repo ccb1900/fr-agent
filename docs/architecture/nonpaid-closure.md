@@ -2,10 +2,10 @@
 
 > 定义：**闭环 = 构造 → 序列化 → 真实渲染/交互 → Agent plan→create 证据 → 账本状态一致**，五态标注不混写。
 > 付费排除口径：FVS bigScreen 14 包 / `com.fr.extended.chart.*` / 移动端；不实现、不排期。
-> 当前基线：76 项账本 / 55 项 Agent 可用 / jar 面 54 Plot 类（15 supported、18 base、21 unsupported=13 图族）。
+> 当前基线：81 项账本 / 60 项 Agent 可用 / jar 面 54 Plot 类（20 supported、19 base、15 unsupported=11 图族）。
 > 进度以本文件与 `docs/night-shift-log.md` 为准；每完成一项更新状态并做一次独立审查。
 
-## 1. 图族闭环（13 个待办，按可行性排序）
+## 1. 图族闭环（11 个待办，按可行性排序）
 
 | # | 图族 | 类 | 官方语料 | 数据绑定形态 | 状态 |
 |---|---|---|---|---|---|
@@ -19,8 +19,8 @@
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | 待探针（起止/分类） | 待做 |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
-| 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | 待探针 | 待做 |
-| 12 | 环形 donut | Donut2D/Donut | 0（legacy） | 待探针 | 待做 |
+| 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName | **DONE（chart.bar3d/pie3d/area3d/donut3d；runId 各 _e2e_002）** |
+| 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+MoreName | **DONE（chart.donut；runId=donut_e2e_002）** |
 | 13 | 仪表 meter | Meter/MeterBlue/SimpleMeter | 0（legacy） | 待探针 | 待做 |
 | 14 | 区间 range | RangePlot | 0（legacy） | 待探针 | 待做 |
 | 15 | 股价 stock | StockPlot | 0（legacy） | 待探针 | 待做 |

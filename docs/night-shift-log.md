@@ -1879,3 +1879,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：`reports/test_box.js` 真引擎 failures=0，PNG 3 箱并排；SQL 真库 plan→plan2spec→create→validate PASS（runId=box_e2e_001，表体 33531/26531 真值不变，箱线图在表体下方渲染）。manifest chart.vbox 四层 verified/agentAvailable=true（76 项/55 承诺）。fast 19 GREEN（`logs/fast19_box.txt`，caps=76/agent=55；supported=15/unsupported=21）；scan ok=99；基线 CBEB42E3 回补。
 - 未验证/边界：须线语义按引擎 1.5×IQR fence（未逐点对官方统计文档核）；箱线 summary 模式（resultDefinition 直接给 min/q1/median/q3/max）未接。
 - 下一项：多层饼/树图/词云（Van 当前族，官方 doc 语料）或甘特；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。
+
+### 第 25 轮 非付费图族闭环第 4 批：legacy 3D/环形 5 类（2026-11-08）
+- 结构一手：legacy `Chart(plot)` + `MoreNameCDDefinition(category/values)` 路径已支持 bar/pie/line；3D/环形类是同一 legacy 引擎（Bar3DPlot/Pie3DPlot/Area3DPlot/Donut2DPlot/Donut3DPlot），无 Van 专属数据定义。
+- 实施：object TK 增 5 类；IR `capabilities.chart.legacy` 3→8、CHART_KINDS 同步；ReportSpec 两路/validator/planner/engine_map 同步；jar 面 5 类 supported、DonutPlot 归 base（54 类=20 supported/19 base/15 unsupported=11 图族）。
+- 验证：5 个 carrier 真引擎 PNG 目检——bar3d 3D 柱体+图例、pie3d 3D 饼+四段图例、area3d 3D 面积带、donut 同心环、donut3d 3D 同心环，均标题/图例正常；SQL 真库 5 个 plan→plan2spec→create→validate PASS（runIds=bar3d/pie3d/area3d/donut/donut3d `_e2e_002`，表体 33531/26531 真值不变）。manifest 5 项四层 verified/agentAvailable=true（81 项/60 承诺）。fast 19 GREEN（`logs/fast19_legacy3d.txt`，caps=81/agent=60；supported=20/unsupported=15）；scan ok=104；基线 CBEB42E3 回补。
+- 诚实边界：donut/Donut2DPlot 当前渲染为同心环（每分类一环、单系列同色），经典单环分段未实现；3D 视角/旋转属性未接。
+- 下一项：多层饼/树图/词云/结构图（Van 当前族）或甘特/钻取地图；legacy 仪表/区间/股价/GIS 继续。

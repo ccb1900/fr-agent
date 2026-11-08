@@ -181,40 +181,40 @@
       "family": "current"
     },
     "com.fr.chart.chartattr.Area3DPlot": {
-      "status": "unsupported",
-      "reason": "3D chart family not wired (core engine, not a paid plugin family)",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "cap": "chart.area3d"
     },
     "com.fr.chart.chartattr.Bar3DPlot": {
-      "status": "unsupported",
-      "reason": "3D chart family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "cap": "chart.bar3d"
     },
     "com.fr.chart.chartattr.Pie3DPlot": {
-      "status": "unsupported",
-      "reason": "3D chart family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "cap": "chart.pie3d"
     },
     "com.fr.chart.chartattr.Donut3DPlot": {
-      "status": "unsupported",
-      "reason": "3D chart family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "cap": "chart.donut3d"
     },
     "com.fr.chart.chartattr.Donut2DPlot": {
-      "status": "unsupported",
-      "reason": "donut family not wired (2D)",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "cap": "chart.donut"
     },
     "com.fr.chart.chartattr.DonutPlot": {
-      "status": "unsupported",
-      "reason": "donut family base/concrete not wired",
+      "status": "base",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "reason": "donut base/abstract; concrete Donut2DPlot/Donut3DPlot supported"
     },
     "com.fr.chart.chartattr.FunnelPlot": {
       "status": "base",

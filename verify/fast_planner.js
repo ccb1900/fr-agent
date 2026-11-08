@@ -100,6 +100,10 @@ var rchtF = plan({ outName: 'chf', dimensions: ['bizTime'], metrics: [{ term: 'r
 check('vfunnel 直通（2026-11-08 漏斗图）→ ready 且 spec 带 vfunnel', rchtF.status === 'ready' && rchtF.reportSpec.presentation.chart.kind === 'vfunnel');
 var rchtB = plan({ outName: 'chb', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vbox', category: 'bizTime', value: 'rowNo' } });
 check('vbox 直通（2026-11-08 箱线图）→ ready 且 spec 带 vbox', rchtB.status === 'ready' && rchtB.reportSpec.presentation.chart.kind === 'vbox');
+['bar3d', 'pie3d', 'area3d', 'donut', 'donut3d'].forEach(function (k) {
+  var r = plan({ outName: 'legacy_' + k, dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: k, category: 'bizTime', value: 'rowNo' } });
+  check('legacy ' + k + ' 直通 → ready 且 spec 带 ' + k, r.status === 'ready' && r.reportSpec.presentation.chart.kind === k);
+});
 // —— C6 同口径扩展（2026-11-07 B段复审）：rows 路 intent.filters/intent.chart 被能力墙丢掉时
 //    不得 ready（与 metrics 同理：数据范围/报表结构悄悄变窄比失败更危险）。此前仅 warning 仍 ready。
 check('C6 同口径: rows 路 intent.filters 被丢 → 不得 ready', rfil.status !== 'ready' && rfil.reportSpec === null);
