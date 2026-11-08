@@ -4,6 +4,7 @@
   "group": "G",
   "groupName": "修改与维护",
   "difficulty": "intermediate",
+  "wave": "V0.4",
   "prompt": "在现有销售报表中增加利润率列，不改变其他列的顺序、样式和原有计算逻辑。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -61,6 +62,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "修改范围控制是核心；预期 PARTIAL，不允许整表重生成。",
   "weights": {
     "requirement": 10,

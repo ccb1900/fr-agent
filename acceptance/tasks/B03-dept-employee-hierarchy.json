@@ -4,6 +4,7 @@
   "group": "B",
   "groupName": "布局与组件",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "创建一个部门人员报表，部门作为父级分组，员工作为子级明细，支持展开查看。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -57,6 +58,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

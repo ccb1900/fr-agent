@@ -4,6 +4,7 @@
   "group": "E",
   "groupName": "参数与交互",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "创建一个较长的订单明细查询，支持分页浏览，并保持查询条件。",
   "fixture": "sales",
   "datasetPath": "sql",
@@ -60,6 +61,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

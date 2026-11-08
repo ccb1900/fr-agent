@@ -4,6 +4,7 @@
   "group": "A",
   "groupName": "基础报表与数据",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建销售汇总表，按区域统计销售额、订单数和客户数，销售额从高到低排序。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -63,6 +64,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "rows 路只能保证销售额求和；订单数/客户数需要预聚合（本任务 dataContract 禁止）→ 预期 PARTIAL。SQL 变体待 fixture-db。",
   "weights": {
     "requirement": 10,

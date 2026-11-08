@@ -77,7 +77,7 @@
     "interaction": 10,
     "safety": 5
   },
-  "weightsNote": "不适用维度按比例并入：无交互→render=30/interaction=0；修改类→safety=15/interaction=0；纯分析→五维各20。每个任务自带 weights，和恒 100。",
+  "weightsNote": "不适用维度整块并入：无交互→render=30/interaction=0；修改类→safety=15/interaction=0；纯分析→需求/语义/规划/能力各20。每个任务自带 weights，和恒 100（README §6）。",
   "resultLevels": [
     "PASS",
     "PASS_WITH_CLARIFICATION",
@@ -87,6 +87,8 @@
     "UNSAFE"
   ],
   "evidenceTiers": {
+    "plan": "Agent 执行证据（plan.json / patch.json），不是手写 spec",
+    "transcript": "可选：工具调用/对话全文",
     "specValid": "SpecValidator 通过（只证明语法/词表）",
     "irValid": "Ir.validate 通过（只证明 IR 形状）",
     "cptSerialized": "CPT 字节生成且图表/结构断言通过（只证明序列化）",
@@ -194,6 +196,70 @@
         "G04"
       ]
     },
+    "longTermRegression": [
+      "E04",
+      "F04",
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "H01",
+      "H02",
+      "H03",
+      "H04"
+    ],
+    "waves": {
+      "V0.1": [
+        "A01",
+        "A02",
+        "A03",
+        "A04",
+        "A05",
+        "B01",
+        "C01",
+        "C02",
+        "C03",
+        "D01",
+        "D02"
+      ],
+      "V0.2": [
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "C04",
+        "C05",
+        "C06",
+        "C07",
+        "C08",
+        "D03",
+        "D04",
+        "D05"
+      ],
+      "V0.3": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05",
+        "F01",
+        "F02",
+        "F03",
+        "F04"
+      ],
+      "V0.4": [
+        "G01",
+        "G02",
+        "G03",
+        "G04"
+      ],
+      "V0.5": [
+        "H01",
+        "H02",
+        "H03",
+        "H04"
+      ]
+    },
     "blockedReasonCounts": {
       "capability-gap": 14,
       "external-data": 2,
@@ -202,7 +268,8 @@
     "counts": {
       "total": 40,
       "runnableNow": 38,
-      "externalData": 2
+      "externalData": 2,
+      "longTermRegression": 10
     }
   },
   "tasks": [
@@ -212,6 +279,7 @@
       "group": "A",
       "groupName": "基础报表与数据",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/A01-sales-detail.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -222,7 +290,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "86fc0464c673c9b8162ab71da63e01500d134ed7066df8c41c786ddfe43e7ea4"
+      "longTermRegression": false,
+      "sha256": "82b259a0938d761a36ed766d106e9fc3ce050d0b659af8d0612d1f0a1b563b1d"
     },
     {
       "id": "A02",
@@ -230,6 +299,7 @@
       "group": "A",
       "groupName": "基础报表与数据",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/A02-sales-summary.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -243,7 +313,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "02c82985061596869432fbf1fa6b34d719b5415a3ec4d7cbad31b7598023ef38"
+      "longTermRegression": false,
+      "sha256": "33ab2c542000d0bc8d582bad4e5f9a49559f70a0bcdfd8090a97a5e05a199303"
     },
     {
       "id": "A03",
@@ -251,6 +322,7 @@
       "group": "A",
       "groupName": "基础报表与数据",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/A03-product-top10.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -262,7 +334,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "8a60cca1310ac7735e1ffee6700fef9897f2b5277704b3d0b51ff7c7027e8105"
+      "longTermRegression": false,
+      "sha256": "8bbedc145ca64ef0b93ac631d94c169640876f63faa6cee87b36391c9ff884ed"
     },
     {
       "id": "A04",
@@ -270,6 +343,7 @@
       "group": "A",
       "groupName": "基础报表与数据",
       "difficulty": "intermediate",
+      "wave": "V0.1",
       "path": "acceptance/tasks/A04-dept-sales-subtotal.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -278,7 +352,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "760477c11d82c5a1916fedee9985eea34f6e84446824892063e7d6f5fabe4c84"
+      "longTermRegression": false,
+      "sha256": "b8f32e5f1d907157c0e1e20d1035041de6a82e48e148a9df553170e712a9c6db"
     },
     {
       "id": "A05",
@@ -286,6 +361,7 @@
       "group": "A",
       "groupName": "基础报表与数据",
       "difficulty": "intermediate",
+      "wave": "V0.1",
       "path": "acceptance/tasks/A05-inventory-report.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -298,7 +374,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "1720638cd0e0e6d52c77e8c57c678c0211f1ca8f07f5d968dfcf756d15e450b4"
+      "longTermRegression": false,
+      "sha256": "05e58f4833d043f893f1420668a9579327cbaa254812248548b9b38a80b41ef2"
     },
     {
       "id": "B01",
@@ -306,6 +383,7 @@
       "group": "B",
       "groupName": "布局与组件",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/B01-monthly-sales-layout.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -318,7 +396,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "0a1416c657c8a04adc122c9a219f57096fd3b0bb875af712a8235ad44504fad6"
+      "longTermRegression": false,
+      "sha256": "7fc985230d1591cb7314c252441d0b5e43434cbfd8756efba8e4656721e6de91"
     },
     {
       "id": "B02",
@@ -326,6 +405,7 @@
       "group": "B",
       "groupName": "布局与组件",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/B02-region-month-cross.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -334,7 +414,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "c7c496729be925a64ea9ae63a8cddbe0cf40d46cc0f6a25634af79204c4a9af3"
+      "longTermRegression": false,
+      "sha256": "629beaab7d5a2717641e614d20838c25e1debabce33dec2727bbc4775cf6f654"
     },
     {
       "id": "B03",
@@ -342,6 +423,7 @@
       "group": "B",
       "groupName": "布局与组件",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/B03-dept-employee-hierarchy.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -350,7 +432,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "9b8a6d0363c2b2184442d79aa3d1dba08a612847f873d2110c2127360fe98741"
+      "longTermRegression": false,
+      "sha256": "14e7645cccd0cde5a047b000d776fbc58639cdd98d4b4cdd7af00ed8da818697"
     },
     {
       "id": "B04",
@@ -358,6 +441,7 @@
       "group": "B",
       "groupName": "布局与组件",
       "difficulty": "advanced",
+      "wave": "V0.2",
       "path": "acceptance/tasks/B04-ops-dashboard.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -366,7 +450,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "26ab5bc8a8475cc545756b596583c2a265d623f596a7d99f98f4113f16fbfdc7"
+      "longTermRegression": false,
+      "sha256": "21163ac89c1b217ea30a3a6580c2335eec69a73323ef079af1917d49084a1985"
     },
     {
       "id": "B05",
@@ -374,6 +459,7 @@
       "group": "B",
       "groupName": "布局与组件",
       "difficulty": "advanced",
+      "wave": "V0.2",
       "path": "acceptance/tasks/B05-multi-region-layout.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -382,7 +468,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "d124731be89dc6cccc8304e4c71af29c2c78041a0887370863ac35d0c222b7c6"
+      "longTermRegression": false,
+      "sha256": "d66919c82f96b0e5f685e064444ca48d0ec6305c07f4e0d460785f242da8c80d"
     },
     {
       "id": "C01",
@@ -390,6 +477,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/C01-sales-bar-ranked.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -402,7 +490,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "6756a0aa6bda4c20914464a303f08244ee3a15a49f972df0973482958d385cfc"
+      "longTermRegression": false,
+      "sha256": "5a83fbc03178ee6d15f78c442251e98da2c3e1318e9db3bb7526e53723975f69"
     },
     {
       "id": "C02",
@@ -410,6 +499,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/C02-monthly-trend-line.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -420,7 +510,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "b338ee5c984ce357d5d5fcc4b9a74016fb75258787224edfb800bbfd0a0bd177"
+      "longTermRegression": false,
+      "sha256": "a81a8a5b3fb2f6516460fbb9ed373941905893686094db16c941a72e1821a194"
     },
     {
       "id": "C03",
@@ -428,6 +519,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/C03-product-share-pie.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -440,7 +532,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "572257adc160b3f3e4f1dff4f77685d45a1e8a735eac44fb4ed26f06f7d2c5df"
+      "longTermRegression": false,
+      "sha256": "54363a79e60a9442cc8882f08f52d81733c126ff06243d128dca11158ad07e57"
     },
     {
       "id": "C04",
@@ -448,6 +541,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "advanced",
+      "wave": "V0.2",
       "path": "acceptance/tasks/C04-sales-profit-combo.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -456,7 +550,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "22c07c0727fea41b4c24677453363b1268d73156039c2cb2bef70308e86092a4"
+      "longTermRegression": false,
+      "sha256": "4affc455c4eb2033d57d4b2b2e936629b81e9f7fce3fb80547a0969824156a61"
     },
     {
       "id": "C05",
@@ -464,6 +559,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/C05-sales-profit-bubble.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -474,7 +570,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "bbd5f1daf5ff3d44a0356bdb13d5dddd67a707e14fd489dd1b94efb60bf32ea7"
+      "longTermRegression": false,
+      "sha256": "c02939dbb2fa96bb00d22ee5d1211f4b31d9195dae0f7b6336d406a5e216f0c8"
     },
     {
       "id": "C06",
@@ -482,6 +579,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/C06-province-sales-map.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -492,7 +590,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "b2b9828e6c228e15cbab4d8c2e67c5ce44029383b913218808b774bc600a4e0b"
+      "longTermRegression": false,
+      "sha256": "b1cca3350a0163a85dcc9ce578f69534afdffc43600db236962ff2a5855ac1e4"
     },
     {
       "id": "C07",
@@ -500,6 +599,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "advanced",
+      "wave": "V0.2",
       "path": "acceptance/tasks/C07-province-heatmap.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -513,7 +613,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "f1f9f9c831b3973a112800e940ea0a8fbad2a98f4c5acbd9ca8e7f54083d6812"
+      "longTermRegression": false,
+      "sha256": "afbec6fcee2b843b6606faa2c850bdfa34b3f968a82338353b05854977956317"
     },
     {
       "id": "C08",
@@ -521,6 +622,7 @@
       "group": "C",
       "groupName": "图表能力",
       "difficulty": "advanced",
+      "wave": "V0.2",
       "path": "acceptance/tasks/C08-region-map-detail.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -535,7 +637,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "17432ef4905033278188f05ca41e22f6228ff5e2b51a930b88ed9d18e30e558d"
+      "longTermRegression": false,
+      "sha256": "e28a2ed47f6f2a23c5e563bbd45ee006e75174082a372afc5d96884e62438725"
     },
     {
       "id": "D01",
@@ -543,6 +646,7 @@
       "group": "D",
       "groupName": "样式与格式",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/D01-formal-report-style.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -553,7 +657,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "7f01e06c2c9e72dfa2b9250d11aa4fbfe04746f805db4830416ae3b301494df0"
+      "longTermRegression": false,
+      "sha256": "0b3a81a5e8c710189a9378c6f2e05e4fd1608f511e979977ea781152b7ac9040"
     },
     {
       "id": "D02",
@@ -561,6 +666,7 @@
       "group": "D",
       "groupName": "样式与格式",
       "difficulty": "basic",
+      "wave": "V0.1",
       "path": "acceptance/tasks/D02-number-formats.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -573,7 +679,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "a9404b10ab57e6d68229c2034fcae6b6c54e81fc42eda54c00c449409f983b17"
+      "longTermRegression": false,
+      "sha256": "8d37d096d3d3b101a5db7569b4784bc0f161d6cb18a768341d0092876dad4900"
     },
     {
       "id": "D03",
@@ -581,6 +688,7 @@
       "group": "D",
       "groupName": "样式与格式",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/D03-conditional-red-green.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -592,7 +700,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "a7f82e8c3f89074bf0f5e1d4c132bcc6dd55d686c6b10f07fa8ecccff86bcebc"
+      "longTermRegression": false,
+      "sha256": "5281be88f05b5a10baa65a7034f51d242b78bbc9105eb8fdfddb805775c4fa91"
     },
     {
       "id": "D04",
@@ -600,6 +709,7 @@
       "group": "D",
       "groupName": "样式与格式",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/D04-table-borders.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -610,7 +720,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "97c803e33ccae7dc4e30526e6d83ae926221d48bee521bcca40f7cdc53bb0f9e"
+      "longTermRegression": false,
+      "sha256": "1df7b876ff3aae500381624cd6fc9f8c683004dba846b16152d30415eec07b0c"
     },
     {
       "id": "D05",
@@ -618,6 +729,7 @@
       "group": "D",
       "groupName": "样式与格式",
       "difficulty": "intermediate",
+      "wave": "V0.2",
       "path": "acceptance/tasks/D05-zebra-total-highlight.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -631,7 +743,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "07163bde9ee22120b6c0ef589ab8126ad995b87f427e6af098e26bace47534ff"
+      "longTermRegression": false,
+      "sha256": "9adb48e35af9b2c8befee755cc4df1b09a721558e552d57cf6fbecdc5a2e0c9b"
     },
     {
       "id": "E01",
@@ -639,6 +752,7 @@
       "group": "E",
       "groupName": "参数与交互",
       "difficulty": "intermediate",
+      "wave": "V0.3",
       "path": "acceptance/tasks/E01-date-range-query.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "sql",
@@ -651,7 +765,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "308b6ac9dc2e5e78df7031485dccedb8f3d8984f0c65549f0427544021d376b8"
+      "longTermRegression": false,
+      "sha256": "cc1e27bdb6743ed57da3ec5be5e255a76a5bed439c7870972445f748bea280de"
     },
     {
       "id": "E02",
@@ -659,6 +774,7 @@
       "group": "E",
       "groupName": "参数与交互",
       "difficulty": "intermediate",
+      "wave": "V0.3",
       "path": "acceptance/tasks/E02-region-filter.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -671,7 +787,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "c3db224dfd74f7ec5e8d5f14d7347b8a4772489b0111d66d02072d2508ede46d"
+      "longTermRegression": false,
+      "sha256": "00d0812b308388bb49aeed6d29a0244b58135dedb4a53c2018d5a686295db480"
     },
     {
       "id": "E03",
@@ -679,6 +796,7 @@
       "group": "E",
       "groupName": "参数与交互",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/E03-province-city-cascade.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -687,7 +805,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "3e8d551de27ea7e192b452bca2284731614e0adb60e63579824d38cb7c5c0452"
+      "longTermRegression": false,
+      "sha256": "66ff621cb24a988cff5608ee61c833f3ba2f1d4a915adc43c55621907766db36"
     },
     {
       "id": "E04",
@@ -695,6 +814,7 @@
       "group": "E",
       "groupName": "参数与交互",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/E04-region-drill-link.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -706,7 +826,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "baa5a84c65fd7553aba0dd4113382e2570b53aeeb5d8a3f9341371a117b83eb4"
+      "longTermRegression": true,
+      "sha256": "54ec4aeb364f14beb74ee4afbfa6d729e10ccf384c4226c5684770a1ad46d7c1"
     },
     {
       "id": "E05",
@@ -714,6 +835,7 @@
       "group": "E",
       "groupName": "参数与交互",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/E05-paged-orders.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "sql",
@@ -724,7 +846,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "5c595c426386d000ca8dfd28713fd545e45c67304396230b2f17ef39ba0ca92b"
+      "longTermRegression": false,
+      "sha256": "203ca51d810fd0e9b1ea273fbb73962f0c065f7f5355b8adab6cd9bb15ac48e5"
     },
     {
       "id": "F01",
@@ -732,6 +855,7 @@
       "group": "F",
       "groupName": "复杂分析",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/F01-month-over-month.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -740,7 +864,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "feead8ab3e1f4e788b56247ae261f48375b5ddffccc02c7540ad3a3a0a0f46a4"
+      "longTermRegression": false,
+      "sha256": "24c250895fb6b1d4191f6776cf8a8d19050155c1cc54e91aa2a47650cb9c8d73"
     },
     {
       "id": "F02",
@@ -748,6 +873,7 @@
       "group": "F",
       "groupName": "复杂分析",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/F02-year-over-year.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -756,7 +882,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "085de3b03359c68bd0d831f33d62269d956977a8beb140f01a68120995ba83ed"
+      "longTermRegression": false,
+      "sha256": "104ae6cefcfd14ec42c249cc7dcc545bad216ab925f45c7947cac25d1d730c45"
     },
     {
       "id": "F03",
@@ -764,6 +891,7 @@
       "group": "F",
       "groupName": "复杂分析",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/F03-sales-rank-change.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -772,7 +900,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "5c813795d7dad34dca26bab3861293aa19084fc06f109aaa10530ae88688614b"
+      "longTermRegression": false,
+      "sha256": "7c440db671b6521ac5d564b726f891113b204ca7836ab0d5f42179acc28deeb4"
     },
     {
       "id": "F04",
@@ -780,6 +909,7 @@
       "group": "F",
       "groupName": "复杂分析",
       "difficulty": "advanced",
+      "wave": "V0.3",
       "path": "acceptance/tasks/F04-ops-analysis-suite.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -788,7 +918,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "308bb147822b72d6fac9e9b598cc71d0ace303fa7eefda48e017fb248490ebb0"
+      "longTermRegression": true,
+      "sha256": "a38c2e97ad5db0777610e3c6fedf1d1ce3b92d70e37a4551962d8b72133b0543"
     },
     {
       "id": "G01",
@@ -796,6 +927,7 @@
       "group": "G",
       "groupName": "修改与维护",
       "difficulty": "basic",
+      "wave": "V0.4",
       "path": "acceptance/tasks/G01-analyze-existing-report.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -804,7 +936,8 @@
       "renderRequired": false,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "0ab2ca671fd22506c8184c015fe3667ba877dbeec574d68215cb7cdc526d4c8d"
+      "longTermRegression": true,
+      "sha256": "197475f8a180165cabb02a4b8f5eff6361557aba924e5913b4d9e91ee0362c00"
     },
     {
       "id": "G02",
@@ -812,6 +945,7 @@
       "group": "G",
       "groupName": "修改与维护",
       "difficulty": "intermediate",
+      "wave": "V0.4",
       "path": "acceptance/tasks/G02-add-profit-column.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -825,7 +959,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": true,
-      "sha256": "48e75127428462c7361b0825c88e282819574a8e8bedd45678ac8b2ab1c78519"
+      "longTermRegression": true,
+      "sha256": "a3de296dd5b2b5d227d9b8dc862237a10ac3e3efbf8b54919b56399931630460"
     },
     {
       "id": "G03",
@@ -833,6 +968,7 @@
       "group": "G",
       "groupName": "修改与维护",
       "difficulty": "advanced",
+      "wave": "V0.4",
       "path": "acceptance/tasks/G03-bar-to-combo.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -841,7 +977,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": true,
-      "sha256": "fc1bf47ac6fc79860cf68dbbc7e2093d2cd0c22288fb58076d4b19fe1ef8dfcc"
+      "longTermRegression": true,
+      "sha256": "2c71e17217820abb73b37e29bcc3c1fbc7af4caaef7ac488860ccc62eaaa6520"
     },
     {
       "id": "G04",
@@ -849,6 +986,7 @@
       "group": "G",
       "groupName": "修改与维护",
       "difficulty": "intermediate",
+      "wave": "V0.4",
       "path": "acceptance/tasks/G04-bulk-header-color.json",
       "expectedLevel": "BLOCKED",
       "datasetPath": "rows",
@@ -857,7 +995,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": true,
-      "sha256": "bd00ca573dfce8b5f823d11e64989145e4af5dfd1ddadbd86a3e69b2cee49379"
+      "longTermRegression": true,
+      "sha256": "55c68767cc872b75ce6c5ae67eaa43100404f2e6ba8af14d3c6f4dfe214e02fc"
     },
     {
       "id": "H01",
@@ -865,6 +1004,7 @@
       "group": "H",
       "groupName": "自主规划与恢复",
       "difficulty": "intermediate",
+      "wave": "V0.5",
       "path": "acceptance/tasks/H01-clarify-period.json",
       "expectedLevel": "PASS_WITH_CLARIFICATION",
       "datasetPath": "rows",
@@ -875,7 +1015,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "9c2d3100f90d5529ed6d92b3ec2349688db82d42609cf271ee1fe58812ade377"
+      "longTermRegression": true,
+      "sha256": "f7e6fcd5f627614cfc584571d3faf8f4336b166980458ed55838c7a87aa58813"
     },
     {
       "id": "H02",
@@ -883,6 +1024,7 @@
       "group": "H",
       "groupName": "自主规划与恢复",
       "difficulty": "intermediate",
+      "wave": "V0.5",
       "path": "acceptance/tasks/H02-map-without-geo.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -893,7 +1035,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "7cfd8d12548cf21bc7afdd53940479752d6ac9182eac175bb35b0d4e58a192e5"
+      "longTermRegression": true,
+      "sha256": "06273cdebc2650e4b233e02a85cc687339cfa85e03304d4b14239c5aa1798901"
     },
     {
       "id": "H03",
@@ -901,6 +1044,7 @@
       "group": "H",
       "groupName": "自主规划与恢复",
       "difficulty": "advanced",
+      "wave": "V0.5",
       "path": "acceptance/tasks/H03-partial-dashboard.json",
       "expectedLevel": "PARTIAL",
       "datasetPath": "rows",
@@ -914,7 +1058,8 @@
       "renderRequired": true,
       "interactionRequired": true,
       "modificationRequired": false,
-      "sha256": "c7109e935f883a51354451520a1ab4d629c1ec0f6b6ca9a8ca466a34326cce1e"
+      "longTermRegression": true,
+      "sha256": "ab6d3e0935e00661749b3f1edc333a215d8534feee6e5a8da08d9de5ec3b906d"
     },
     {
       "id": "H04",
@@ -922,6 +1067,7 @@
       "group": "H",
       "groupName": "自主规划与恢复",
       "difficulty": "advanced",
+      "wave": "V0.5",
       "path": "acceptance/tasks/H04-repair-before-deploy.json",
       "expectedLevel": "PASS",
       "datasetPath": "rows",
@@ -932,7 +1078,8 @@
       "renderRequired": true,
       "interactionRequired": false,
       "modificationRequired": false,
-      "sha256": "4492ec911c33543f2340fffd4b8a0b12d05408178c793bb0a2a2a0a2beed47d9"
+      "longTermRegression": true,
+      "sha256": "5d29ea0a23400888c9c4224df416e28b8bb21ed411df2d3121388a2c09e5d72c"
     }
   ]
 }

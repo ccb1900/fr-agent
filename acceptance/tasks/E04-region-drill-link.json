@@ -4,6 +4,7 @@
   "group": "E",
   "groupName": "参数与交互",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "点击销售汇总中的某个区域，可以跳转到该区域的销售明细报表。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -55,6 +56,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "只能给序列化证据；跳转行为未验证 → PARTIAL。",
   "weights": {
     "requirement": 10,

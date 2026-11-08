@@ -66,6 +66,18 @@ var GROUPS = {
   H: { name: '自主规划与恢复', focus: '需求澄清、能力选择、错误诊断、验证失败处理' }
 };
 
+// 执行批次（对齐用户 V0.1~V0.5 落地顺序；B02-B05 未被原表点名，归入 V0.2 布局批）
+function waveOf(id) {
+  var g = id.charAt(0), n = parseInt(id.substring(1), 10);
+  if (g === 'A') return 'V0.1';
+  if (g === 'B') return n === 1 ? 'V0.1' : 'V0.2';
+  if (g === 'C') return n <= 3 ? 'V0.1' : 'V0.2';
+  if (g === 'D') return n <= 2 ? 'V0.1' : 'V0.2';
+  if (g === 'E' || g === 'F') return 'V0.3';
+  if (g === 'G') return 'V0.4';
+  return 'V0.5';
+}
+
 var CREATE_TOOLS = ['plan', 'plan2spec', 'create', 'validate', 'preview'];
 var MODIFY_TOOLS = ['list_reports', 'inspect_template', 'modify', 'validate', 'promote', 'restore'];
 
@@ -78,6 +90,7 @@ function T(o) {
     group: o.group,
     groupName: GROUPS[o.group].name,
     difficulty: o.difficulty,
+    wave: waveOf(o.id),
     prompt: o.prompt,
     fixture: 'sales',
     datasetPath: o.datasetPath || 'rows',
@@ -102,6 +115,13 @@ function T(o) {
     knownGaps: o.knownGaps || [],
     faultInjection: o.faultInjection || null,
     analysisOnly: !!o.analysisOnly,
+    longTermRegression: o.longTermRegression === true,
+    acceptance: {
+      requireAgentExecution: true,
+      requireEngineRender: o.renderRequired !== false,
+      requireVisualEvidence: o.renderRequired !== false,
+      requireNoSilentDrop: true
+    },
     notes: o.notes || '',
     weights: weightsFor(mode)
   };
@@ -283,7 +303,7 @@ var TASKS = [
     requiredCapabilities: ['chart.vmap'],
     dataContract: 'prepared-rows',
     dataAssertions: ['province.广东省.amount', 'province.四川省.amount', 'province.count'],
-    renderAssertions: ['中国地图 10 个省份着色', '颜色深浅与销售额对应', '图例色阶可见'],
+    renderAssertions: ['中国地图 12 个省份着色', '颜色深浅与销售额对应', '图例色阶可见'],
     notes: '省份用内置地图全名（如 广东省/北京市），无需经纬度。'
   }),
   T({
@@ -420,7 +440,7 @@ var TASKS = [
     knownGaps: ['级联参数与选项依赖未接线']
   }),
   T({
-    id: 'E04', name: '区域销售明细跳转', group: 'E', difficulty: 'advanced',
+    id: 'E04', longTermRegression: true, name: '区域销售明细跳转', group: 'E', difficulty: 'advanced',
     prompt: '点击销售汇总中的某个区域，可以跳转到该区域的销售明细报表。',
     expectedLevel: 'PARTIAL',
     targetCapabilities: ['condition.then.link', 'chart.hyperlinkCell'],
@@ -481,7 +501,7 @@ var TASKS = [
     knownGaps: ['窗口排名/历史快照未接线']
   }),
   T({
-    id: 'F04', name: '经营分析综合报表', group: 'F', difficulty: 'advanced',
+    id: 'F04', longTermRegression: true, name: '经营分析综合报表', group: 'F', difficulty: 'advanced',
     prompt: '创建一个经营分析报表，综合展示销售额、利润、利润率、订单数、客户数，并提供趋势和排名分析。',
     expectedLevel: 'BLOCKED',
     blockedBy: [{ kind: 'capability-gap', detail: '多指标+趋势+排名+多组件组合同时要求，覆盖 MoM/YoY/rank/组合布局多个未接能力' }],
@@ -493,7 +513,7 @@ var TASKS = [
 
   // ===== G 修改与维护 =====
   T({
-    id: 'G01', name: '解读现有报表结构', group: 'G', difficulty: 'basic',
+    id: 'G01', longTermRegression: true, name: '解读现有报表结构', group: 'G', difficulty: 'basic',
     prompt: '分析当前报表的结构，说明它使用了哪些数据集、字段、组件和计算逻辑。',
     expectedLevel: 'PASS',
     agentTools: ['list_reports', 'inspect_template'],
@@ -508,7 +528,7 @@ var TASKS = [
     notes: '验收看 inspect.json 的结构提取与说明是否覆盖数据集/字段/组件/计算逻辑；read-only。'
   }),
   T({
-    id: 'G02', name: '增加利润率列（局部修改）', group: 'G', difficulty: 'intermediate',
+    id: 'G02', longTermRegression: true, name: '增加利润率列（局部修改）', group: 'G', difficulty: 'intermediate',
     prompt: '在现有销售报表中增加利润率列，不改变其他列的顺序、样式和原有计算逻辑。',
     expectedLevel: 'PARTIAL',
     requiredCapabilities: ['template.patch.dataset', 'template.patch.cellValue'],
@@ -522,7 +542,7 @@ var TASKS = [
     notes: '修改范围控制是核心；预期 PARTIAL，不允许整表重生成。'
   }),
   T({
-    id: 'G03', name: '柱状图改为组合图', group: 'G', difficulty: 'advanced',
+    id: 'G03', longTermRegression: true, name: '柱状图改为组合图', group: 'G', difficulty: 'advanced',
     prompt: '将现有报表中的销售额柱状图改为销售额和利润率组合图，保留原有数据和其他组件。',
     expectedLevel: 'BLOCKED',
     blockedBy: [{ kind: 'capability-gap', detail: '组合图渲染（D1）阻塞；patch 也没有图表结构修改 op，只有单元格/数据集替换' }],
@@ -534,7 +554,7 @@ var TASKS = [
     knownGaps: ['组合图渲染阻塞', '图表结构修改未接线']
   }),
   T({
-    id: 'G04', name: '批量表头配色', group: 'G', difficulty: 'intermediate',
+    id: 'G04', longTermRegression: true, name: '批量表头配色', group: 'G', difficulty: 'intermediate',
     prompt: '将现有报表的表头背景色统一调整为蓝色，并检查修改前后其他布局和数据逻辑是否一致。',
     expectedLevel: 'BLOCKED',
     blockedCapabilities: ['template.patch.style'],
@@ -549,7 +569,7 @@ var TASKS = [
 
   // ===== H 自主规划与恢复 =====
   T({
-    id: 'H01', name: '统计期间缺失时先澄清', group: 'H', difficulty: 'intermediate',
+    id: 'H01', longTermRegression: true, name: '统计期间缺失时先澄清', group: 'H', difficulty: 'intermediate',
     prompt: '创建一张销售分析报表，需求中没有说明统计期间。请先判断是否需要向用户确认，再继续创建。',
     expectedLevel: 'PASS_WITH_CLARIFICATION',
     requiredCapabilities: ['spec.rows.sum'],
@@ -560,7 +580,7 @@ var TASKS = [
     notes: '评分含"是否先问再动手"；澄清后创建的报告按所选期间临时附加数据断言。'
   }),
   T({
-    id: 'H02', name: '只有省份名称的销售地图', group: 'H', difficulty: 'intermediate',
+    id: 'H02', longTermRegression: true, name: '只有省份名称的销售地图', group: 'H', difficulty: 'intermediate',
     prompt: '创建一个销售地图，但数据中只有省份名称，没有经纬度。请判断现有数据是否足够，并选择合理实现方式。',
     expectedLevel: 'PASS',
     requiredCapabilities: ['chart.vmap'],
@@ -570,7 +590,7 @@ var TASKS = [
     notes: '正确判断=区域图按名称匹配即可，不臆造经纬度、不改数据。'
   }),
   T({
-    id: 'H03', name: '部分可实现的经营看板', group: 'H', difficulty: 'advanced',
+    id: 'H03', longTermRegression: true, name: '部分可实现的经营看板', group: 'H', difficulty: 'advanced',
     prompt: '创建一张包含地图、组合图和交互跳转的经营看板。如果某项原生能力当前无法实现，请说明限制并完成其他部分。',
     expectedLevel: 'PARTIAL',
     requiredCapabilities: ['chart.vmap'],
@@ -586,7 +606,7 @@ var TASKS = [
     notes: '关键验收=不把未实现能力包装成已实现（诚实报告）。'
   }),
   T({
-    id: 'H04', name: '验证失败先修复、不部署', group: 'H', difficulty: 'advanced',
+    id: 'H04', longTermRegression: true, name: '验证失败先修复、不部署', group: 'H', difficulty: 'advanced',
     prompt: '报表生成后，如果真实引擎验证失败，请定位问题，修复后重新验证；如果仍失败，不要部署。',
     expectedLevel: 'PASS',
     requiredCapabilities: ['spec.rows.sum'],
@@ -613,6 +633,12 @@ function build() {
     counts[t.group]++;
     if (!/^[A-H][0-9]{2}$/.test(t.id)) fail('bad id format ' + t.id);
   });
+  var longTermCount = TASKS.filter(function (t) { return t.longTermRegression === true; }).length;
+  if (longTermCount < 10) fail('longTermRegression set=' + longTermCount + ' expected >= 10 (user requirement)');
+  var waveCount = {};
+  TASKS.forEach(function (t) { waveCount[t.wave] = (waveCount[t.wave] || 0) + 1; });
+  var expectWave = { 'V0.1': 11, 'V0.2': 12, 'V0.3': 9, 'V0.4': 4, 'V0.5': 4 };
+  Object.keys(expectWave).forEach(function (w) { if (waveCount[w] !== expectWave[w]) fail('wave ' + w + ' count=' + waveCount[w] + ' expected ' + expectWave[w]); });
   var expect = { A: 5, B: 5, C: 8, D: 5, E: 5, F: 4, G: 4, H: 4 };
   Object.keys(expect).forEach(function (g) { if (counts[g] !== expect[g]) fail('group ' + g + ' count=' + counts[g] + ' expected ' + expect[g]); });
   if (TASKS.length !== 40) fail('task count=' + TASKS.length + ' expected 40');
@@ -636,6 +662,7 @@ function build() {
     if ((t.expectedLevel === 'PASS' || t.expectedLevel === 'PASS_WITH_CLARIFICATION') && t.requiredCapabilities.length === 0 && !t.analysisOnly) {
       fail(t.id + ' expects ' + t.expectedLevel + ' but has no requiredCapabilities');
     }
+    if (t.longTermRegression !== true && t.longTermRegression !== false) fail(t.id + ' longTermRegression must be boolean');
     if (t.expectedLevel === 'BLOCKED' && t.blockedBy.length === 0) fail(t.id + ' is BLOCKED without blockedBy');
     if (t.expectedLevel === 'PARTIAL' && t.knownGaps.length === 0 && t.blockedBy.length === 0) fail(t.id + ' is PARTIAL without knownGaps/blockedBy');
     if (t.interaction.required && t.interaction.assertions.length === 0) fail(t.id + ' interaction required without assertions');
@@ -691,6 +718,7 @@ function build() {
       group: t.group,
       groupName: t.groupName,
       difficulty: t.difficulty,
+      wave: t.wave,
       path: 'acceptance/tasks/' + file,
       expectedLevel: t.expectedLevel,
       datasetPath: t.datasetPath,
@@ -699,16 +727,21 @@ function build() {
       renderRequired: t.render.required,
       interactionRequired: t.interaction.required,
       modificationRequired: t.modification.required,
+      longTermRegression: t.longTermRegression === true,
       sha256: normHash(text)
     });
   });
 
   // 7) 资格投影（静态：只按账本与数据路径；不是执行结果）
   var runnableNow = [], externalData = [], levels = { PASS: [], PASS_WITH_CLARIFICATION: [], PARTIAL: [], BLOCKED: [] };
+  var longTermRegression = [];
+  var waves = { 'V0.1': [], 'V0.2': [], 'V0.3': [], 'V0.4': [], 'V0.5': [] };
   var reasonCounts = Object.create(null);
   index.forEach(function (e) {
     levels[e.expectedLevel].push(e.id);
     if (e.datasetPath === 'sql') externalData.push(e.id); else runnableNow.push(e.id);
+    if (e.longTermRegression) longTermRegression.push(e.id);
+    if (hasOwn(waves, e.wave)) waves[e.wave].push(e.id); else fail(e.id + ' unknown wave ' + e.wave);
   });
   TASKS.forEach(function (t) {
     t.blockedBy.forEach(function (b) { reasonCounts[b.kind] = (reasonCounts[b.kind] || 0) + 1; });
@@ -736,9 +769,11 @@ function build() {
       return { id: g, name: GROUPS[g].name, focus: GROUPS[g].focus, count: counts[g] };
     }),
     defaultWeights: weightsFor('default'),
-    weightsNote: '不适用维度按比例并入：无交互→render=30/interaction=0；修改类→safety=15/interaction=0；纯分析→五维各20。每个任务自带 weights，和恒 100。',
+    weightsNote: '不适用维度整块并入：无交互→render=30/interaction=0；修改类→safety=15/interaction=0；纯分析→需求/语义/规划/能力各20。每个任务自带 weights，和恒 100（README §6）。',
     resultLevels: ['PASS', 'PASS_WITH_CLARIFICATION', 'PARTIAL', 'BLOCKED', 'FAIL', 'UNSAFE'],
     evidenceTiers: {
+      plan: 'Agent 执行证据（plan.json / patch.json），不是手写 spec',
+      transcript: '可选：工具调用/对话全文',
       specValid: 'SpecValidator 通过（只证明语法/词表）',
       irValid: 'Ir.validate 通过（只证明 IR 形状）',
       cptSerialized: 'CPT 字节生成且图表/结构断言通过（只证明序列化）',
@@ -755,8 +790,10 @@ function build() {
       runnableNow: runnableNow,
       externalData: externalData,
       expectedLevels: levels,
+      longTermRegression: longTermRegression,
+      waves: waves,
       blockedReasonCounts: reasonCounts,
-      counts: { total: index.length, runnableNow: runnableNow.length, externalData: externalData.length }
+      counts: { total: index.length, runnableNow: runnableNow.length, externalData: externalData.length, longTermRegression: longTermRegression.length }
     },
     tasks: index
   };

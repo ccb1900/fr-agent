@@ -4,6 +4,7 @@
   "group": "B",
   "groupName": "布局与组件",
   "difficulty": "advanced",
+  "wave": "V0.2",
   "prompt": "创建一张包含多个数据区域的报表：左侧为销售汇总，右侧为产品排行，下方为订单明细。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -59,6 +60,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

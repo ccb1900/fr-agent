@@ -4,6 +4,7 @@
   "group": "F",
   "groupName": "复杂分析",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "创建月度销售分析，展示本月销售额、上月销售额、环比增长率。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -57,6 +58,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

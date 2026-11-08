@@ -4,6 +4,7 @@
   "group": "F",
   "groupName": "复杂分析",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "创建销售人员绩效排名，按销售额排名，同时展示排名变化。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -56,6 +57,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

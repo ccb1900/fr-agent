@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建近 12 个月销售额趋势折线图，按月份升序展示。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -53,6 +54,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "月度聚合行是图表的输入数据（固定数据的自然粒度）；月份顺序由输入行顺序保证。",
   "weights": {
     "requirement": 10,

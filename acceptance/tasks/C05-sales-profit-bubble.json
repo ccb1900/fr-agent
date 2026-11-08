@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "创建销售额与利润率的气泡图，横轴为销售额，纵轴为利润率，气泡大小代表订单数。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -54,6 +55,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "x/y/size 是 vscatter/vbubble 的官方数据定义（BubbleTableDefinition201109）；区域级三指标用预聚合行是图表输入的正常形态。",
   "weights": {
     "requirement": 10,

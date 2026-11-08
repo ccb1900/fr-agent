@@ -4,6 +4,7 @@
   "group": "E",
   "groupName": "参数与交互",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "创建一个联动查询，先选择省份，再选择该省份下的城市，最后展示城市销售数据。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -56,6 +57,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

@@ -4,6 +4,7 @@
   "group": "D",
   "groupName": "样式与格式",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建一张正式的经营报表，标题居中加粗，表头使用深色背景和白色文字，明细采用统一字体。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -54,6 +55,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "标题/字体统一可部分达成；表头深色底白字当前不可承诺。",
   "weights": {
     "requirement": 10,

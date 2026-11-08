@@ -4,6 +4,7 @@
   "group": "B",
   "groupName": "布局与组件",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建一个标准的月度销售报表，上方显示标题和统计期间，下方显示明细，最后显示总计。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -55,6 +56,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "标题/统计期间走页眉；报表本体是明细+总计。",
   "weights": {
     "requirement": 10,

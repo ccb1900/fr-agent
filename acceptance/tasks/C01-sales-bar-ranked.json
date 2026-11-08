@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建各区域销售额柱状图，按销售额降序排列。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -59,6 +60,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "图表本身可渲染；\"降序\"在当前 rows 路不可承诺 → 预期 PARTIAL。",
   "weights": {
     "requirement": 10,

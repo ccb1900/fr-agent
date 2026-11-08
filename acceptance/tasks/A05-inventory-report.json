@@ -4,6 +4,7 @@
   "group": "A",
   "groupName": "基础报表与数据",
   "difficulty": "intermediate",
+  "wave": "V0.1",
   "prompt": "创建一张库存报表，展示产品、仓库、期初库存、入库、出库、期末库存，并计算库存变化。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -59,6 +60,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "固定数据带 closing 列，但本任务 dataContract=report-computes，禁止直接展示预置期末列。",
   "weights": {
     "requirement": 10,

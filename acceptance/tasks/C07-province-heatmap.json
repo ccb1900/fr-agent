@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "advanced",
+  "wave": "V0.2",
   "prompt": "创建全国销售热力图，按省份显示销售强度，并显示对应数值提示。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -58,6 +59,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "热力渲染可证；\"数值提示\"只能给序列化证据 → PARTIAL。",
   "weights": {
     "requirement": 10,

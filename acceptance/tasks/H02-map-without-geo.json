@@ -4,6 +4,7 @@
   "group": "H",
   "groupName": "自主规划与恢复",
   "difficulty": "intermediate",
+  "wave": "V0.5",
   "prompt": "创建一个销售地图，但数据中只有省份名称，没有经纬度。请判断现有数据是否足够，并选择合理实现方式。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -52,6 +53,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "正确判断=区域图按名称匹配即可，不臆造经纬度、不改数据。",
   "weights": {
     "requirement": 10,

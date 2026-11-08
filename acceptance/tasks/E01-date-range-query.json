@@ -4,6 +4,7 @@
   "group": "E",
   "groupName": "参数与交互",
   "difficulty": "intermediate",
+  "wave": "V0.3",
   "prompt": "创建一个销售查询报表，用户可以选择开始日期和结束日期，查询对应期间的数据。",
   "fixture": "sales",
   "datasetPath": "sql",
@@ -62,6 +63,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

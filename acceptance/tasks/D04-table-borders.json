@@ -4,6 +4,7 @@
   "group": "D",
   "groupName": "样式与格式",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "表格增加外边框、内部横线和表头底边框，明细区域不显示多余的竖线。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -54,6 +55,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "当前只能做到\"条件粗边框\"局部效果，边框布局不可承诺。",
   "weights": {
     "requirement": 10,

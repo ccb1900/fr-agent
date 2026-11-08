@@ -4,6 +4,7 @@
   "group": "G",
   "groupName": "修改与维护",
   "difficulty": "intermediate",
+  "wave": "V0.4",
   "prompt": "将现有报表的表头背景色统一调整为蓝色，并检查修改前后其他布局和数据逻辑是否一致。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -62,6 +63,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

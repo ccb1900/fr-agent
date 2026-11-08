@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "advanced",
+  "wave": "V0.2",
   "prompt": "创建销售区域地图，地图上显示区域名称和销售额，鼠标悬停时展示区域详细信息。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -59,6 +60,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "标签有渲染证据（AttrMapLabel）；悬停详情只有序列化证据 → PARTIAL。",
   "weights": {
     "requirement": 10,

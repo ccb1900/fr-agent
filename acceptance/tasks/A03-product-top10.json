@@ -4,6 +4,7 @@
   "group": "A",
   "groupName": "基础报表与数据",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建产品销售排行，展示销售额前 10 名产品，并增加合计行。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -60,6 +61,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "不允许把 Top10 结果预先算好塞进内嵌行（dataContract=report-aggregates）；因此当前不是 PARTIAL 而是 BLOCKED。",
   "weights": {
     "requirement": 10,

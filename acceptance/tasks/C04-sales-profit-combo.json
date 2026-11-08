@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "advanced",
+  "wave": "V0.2",
   "prompt": "创建月度销售额和利润率组合图，销售额用柱状图，利润率用折线图，并使用次坐标轴。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -58,6 +59,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

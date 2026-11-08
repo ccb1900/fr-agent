@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "创建各省份销售额地图，使用区域颜色深浅表达销售额。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -30,7 +31,7 @@
   "render": {
     "required": true,
     "assertions": [
-      "中国地图 10 个省份着色",
+      "中国地图 12 个省份着色",
       "颜色深浅与销售额对应",
       "图例色阶可见"
     ]
@@ -53,6 +54,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "省份用内置地图全名（如 广东省/北京市），无需经纬度。",
   "weights": {
     "requirement": 10,

@@ -4,6 +4,7 @@
   "group": "A",
   "groupName": "基础报表与数据",
   "difficulty": "intermediate",
+  "wave": "V0.1",
   "prompt": "创建员工销售统计，按部门分组，每个部门展示员工销售额及部门小计。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -60,6 +61,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

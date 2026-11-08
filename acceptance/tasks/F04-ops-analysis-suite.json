@@ -4,6 +4,7 @@
   "group": "F",
   "groupName": "复杂分析",
   "difficulty": "advanced",
+  "wave": "V0.3",
   "prompt": "创建一个经营分析报表，综合展示销售额、利润、利润率、订单数、客户数，并提供趋势和排名分析。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -61,6 +62,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

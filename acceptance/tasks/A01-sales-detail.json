@@ -4,6 +4,7 @@
   "group": "A",
   "groupName": "基础报表与数据",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建一张销售明细表，展示订单日期、订单编号、客户、产品、数量、单价、金额，金额等于数量乘以单价。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -56,6 +57,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "明细表不聚合；金额在固定数据里已有同值列，验收只看逐行数值，不强制\"公式列\"实现。",
   "weights": {
     "requirement": 10,

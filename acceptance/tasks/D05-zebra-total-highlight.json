@@ -4,6 +4,7 @@
   "group": "D",
   "groupName": "样式与格式",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "创建斑马纹明细表，奇偶行采用不同背景色，合计行突出显示。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -56,6 +57,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "合计行突出可用 total.sumCols 的 bg/bold；斑马纹属未验证公式形态 → PARTIAL。",
   "weights": {
     "requirement": 10,

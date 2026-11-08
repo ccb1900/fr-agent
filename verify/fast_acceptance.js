@@ -65,7 +65,7 @@ check('taskModelDoc present', String(bench.taskModelDoc || '') === 'acceptance/R
 check('capability ledger source pinned', String((bench.capabilityLedger || {}).source) === 'application/capability_manifest.js');
 check('fixture manifest path pinned', String((bench.fixture || {}).manifest) === 'acceptance/fixtures/sales/manifest.json');
 check('result levels complete', isArr(bench.resultLevels) && bench.resultLevels.length === 6);
-check('evidence tiers documented', isObj(bench.evidenceTiers) && hasOwn(bench.evidenceTiers, 'specValid') && hasOwn(bench.evidenceTiers, 'interaction') && hasOwn(bench.evidenceTiers, 'analysis') && hasOwn(bench.evidenceTiers, 'note'));
+check('evidence tiers documented', isObj(bench.evidenceTiers) && hasOwn(bench.evidenceTiers, 'specValid') && hasOwn(bench.evidenceTiers, 'interaction') && hasOwn(bench.evidenceTiers, 'analysis') && hasOwn(bench.evidenceTiers, 'plan') && hasOwn(bench.evidenceTiers, 'note'));
 
 // ---- ② 任务文件/哈希/能力/真值键/工具/提示词/权重 ----
 var tasks = bench.tasks;
@@ -73,7 +73,8 @@ check('tasks is an array', isArr(tasks));
 check('40 tasks', isArr(tasks) && tasks.length === 40);
 var byId = Object.create(null);
 var expectedLevels = { PASS: [], PASS_WITH_CLARIFICATION: [], PARTIAL: [], BLOCKED: [] };
-var runnable = [], external = [], groupCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0, H: 0 };
+var runnable = [], external = [], longTerm = [], groupCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0, G: 0, H: 0 };
+var waveCounts = { 'V0.1': 0, 'V0.2': 0, 'V0.3': 0, 'V0.4': 0, 'V0.5': 0 };
 var oracle = null, fixtureManifest = null;
 try { oracle = JSON.parse(readText(ROOT + '/acceptance/fixtures/sales/expected.json')).keys; } catch (e) { oracle = null; }
 try { fixtureManifest = JSON.parse(readText(ROOT + '/acceptance/fixtures/sales/manifest.json')); } catch (e) { fixtureManifest = null; }
@@ -108,8 +109,20 @@ if (isArr(tasks)) {
     check('task ' + id + ' fixture pinned', t.fixture === 'sales');
     check('task ' + id + ' datasetPath rows|sql', t.datasetPath === 'rows' || t.datasetPath === 'sql');
     check('task ' + id + ' expectedLevel vocabulary', hasOwn(expectedLevels, t.expectedLevel));
+    check('task ' + id + ' wave vocabulary', hasOwn(waveCounts, t.wave));
+    if (hasOwn(waveCounts, t.wave)) waveCounts[t.wave]++;
+    check('task ' + id + ' index wave matches file', entry.wave === t.wave);
     if (hasOwn(expectedLevels, t.expectedLevel)) expectedLevels[t.expectedLevel].push(id);
     if (t.datasetPath === 'sql') external.push(id); else runnable.push(id);
+    check('task ' + id + ' longTermRegression boolean', t.longTermRegression === true || t.longTermRegression === false);
+    if (t.longTermRegression === true) longTerm.push(id);
+    check('task ' + id + ' acceptance object', isObj(t.acceptance));
+    if (isObj(t.acceptance)) {
+      check('task ' + id + ' requireAgentExecution true', t.acceptance.requireAgentExecution === true);
+      check('task ' + id + ' requireNoSilentDrop true', t.acceptance.requireNoSilentDrop === true);
+      check('task ' + id + ' requireEngineRender matches render.required', t.acceptance.requireEngineRender === t.render.required);
+      check('task ' + id + ' requireVisualEvidence matches render.required', t.acceptance.requireVisualEvidence === t.render.required);
+    }
     check('task ' + id + ' prompt non-empty', isStr(t.prompt));
     BANNED.forEach(function (w) {
       var re = new RegExp('(^|[^A-Za-z])' + w + '([^A-Za-z]|$)', 'i');
@@ -168,6 +181,11 @@ var expectedGroup = { A: 5, B: 5, C: 8, D: 5, E: 5, F: 4, G: 4, H: 4 };
 Object.keys(expectedGroup).forEach(function (g) {
   check('group ' + g + ' count ' + expectedGroup[g], groupCounts[g] === expectedGroup[g]);
 });
+check('long-term regression set >= 10 (user requirement)', longTerm.length >= 10);
+var expectedWave = { 'V0.1': 11, 'V0.2': 12, 'V0.3': 9, 'V0.4': 4, 'V0.5': 4 };
+Object.keys(expectedWave).forEach(function (w) {
+  check('wave ' + w + ' count ' + expectedWave[w], waveCounts[w] === expectedWave[w]);
+});
 check('benchmark groups match tasks', isArr(bench.groups) && bench.groups.length === 8);
 if (isArr(bench.groups)) bench.groups.forEach(function (g) {
   check('benchmark group ' + g.id + ' count matches', g.count === groupCounts[g.id]);
@@ -187,6 +205,12 @@ check('eligibility counts total', isObj(bench.eligibility) && bench.eligibility.
 if (isObj(bench.eligibility)) {
   check('eligibility runnableNow matches', isArr(bench.eligibility.runnableNow) && bench.eligibility.runnableNow.length === runnable.length);
   check('eligibility externalData matches', isArr(bench.eligibility.externalData) && bench.eligibility.externalData.length === external.length);
+  check('eligibility longTermRegression matches', isArr(bench.eligibility.longTermRegression) && bench.eligibility.longTermRegression.length === longTerm.length);
+  check('eligibility longTermRegression count', bench.eligibility.counts && bench.eligibility.counts.longTermRegression === longTerm.length);
+  check('eligibility waves present', isObj(bench.eligibility.waves));
+  if (isObj(bench.eligibility.waves)) Object.keys(expectedWave).forEach(function (w) {
+    check('eligibility wave ' + w + ' count', isArr(bench.eligibility.waves[w]) && bench.eligibility.waves[w].length === waveCounts[w]);
+  });
   ['PASS', 'PASS_WITH_CLARIFICATION', 'PARTIAL', 'BLOCKED'].forEach(function (lv) {
     check('eligibility level ' + lv + ' matches', isArr(bench.eligibility.expectedLevels[lv]) && bench.eligibility.expectedLevels[lv].length === expectedLevels[lv].length);
   });
@@ -283,7 +307,7 @@ if (levelCounts.UNSAFE > 0) {
 // ---- 汇总 ----
 print('SUMMARY acceptance: tasks=' + (isArr(tasks) ? tasks.length : 0) + ' checks=' + CHECKS + ' fails=' + FAILS + ' warnings=' + WARNINGS +
   ' runnableNow=' + runnable.length + ' externalData=' + external.length +
-  ' results=' + results.length + ' levels=' + JSON.stringify(levelCounts));
+  ' results=' + results.length + ' levels=' + JSON.stringify(levelCounts) + ' longTerm=' + longTerm.length);
 if (FAILS > 0) { print('FAST-ACCEPTANCE FAIL'); System.exit(1); }
 print('FAST-ACCEPTANCE GREEN');
 System.exit(0);

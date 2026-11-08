@@ -4,6 +4,7 @@
   "group": "C",
   "groupName": "图表能力",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "创建各产品销售额占比饼图，显示产品名称和占比。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -57,6 +58,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "产品名称/扇区可证；\"占比数值\"当前不能承诺 → PARTIAL。",
   "weights": {
     "requirement": 10,

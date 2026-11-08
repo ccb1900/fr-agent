@@ -18,7 +18,7 @@
 | 看 Agent "会不会写报表" | 看 Agent 在 8 类真实需求上"能不能交付并证明" |
 | 通过=生成了 CPT | 通过=规格 → IR → CPT → 引擎 → 渲染 → 数据真值 → 交互 → 变更安全，逐层留证 |
 | 失败原因不可归因 | 失败必须落到：能力账本未承诺 / IR 或 ReportSpec 无入口 / Planner 不会规划 / 引擎渲染失败 / 数据映射错误 |
-| 修改任务缺失 | G 组（理解、局部修改、批量修改、回归）与 H 组（澄清、边界、部分完成、修复）占 12/40 |
+| 修改任务缺失 | 长期回归集 10/40：G 组（理解/局部修改/批量修改/回归）4 条 + H 组（澄清/边界/部分完成/修复）4 条 + E04（跳转）+ F04（综合组合）|
 
 **提示词纪律（机器强制）**：任务描述只写业务需求，不得出现 IR / ReportSpec / CPT / Object / JSON / API / 图表 kind 等内部实现词
 （`build_tasks.js` 与 `verify/fast_acceptance.js` 双向检查）。
@@ -52,7 +52,7 @@ acceptance/
 │   ├── orders.json / products.json / customers.json / employees.json
 │   ├── inventory.json / warehouses.json
 │   ├── schema.json               # 逻辑表结构/键/边界数据说明
-│   ├── expected.json             # 真值 oracle（134 键）
+│   ├── expected.json             # 真值 oracle（134 键；与 fixture 同目录，哈希绑定）
 │   └── manifest.json             # 逐文件 sha256 + 行数
 ├── tools/
 │   ├── gen_fixture.js            # 确定性数据生成器（Nashorn）
@@ -91,7 +91,15 @@ acceptance/
 | `requiredClarifications` | 需求缺失时必须先问的问题（如统计期间） |
 | `blockedBy` / `knownGaps` | 阻塞原因（分类）与已知缺口 |
 | `faultInjection` | H04 的故障注入要求（由验收执行者提供首轮失败输入） |
+| `wave` | 执行批次：V0.1 (11) / V0.2 (12) / V0.3 (9) / V0.4 (4) / V0.5 (4) |
+| `longTermRegression` | 是否进入长期回归集（V0.1 共 10 条：G4+H4+E04+F04，机器校验 >=10） |
+| `acceptance` | 四个硬标志：`requireAgentExecution` / `requireEngineRender` / `requireVisualEvidence` / `requireNoSilentDrop`，与 render 要求机器对齐 |
 | `weights` | 九维权重，恒和 100（见 §6） |
+
+> 与上一轮提案 JSON 的差异（有意）：不设 `expected.chartKinds` / `requiredFeatures` 这套自由词，统一引用
+> `application/capability_manifest.js` 的能力 ID（`requiredCapabilities`），避免第二套命名；`acceptance.*` 四标志保留，
+> 并与 `render.required` 机器对齐；`expected.dataAssertions` 直接用 oracle 键；`fixtures/expected/` 合并到
+> `fixtures/sales/expected.json`，因为真值必须与同一份 fixture 哈希绑定。
 
 ---
 
@@ -99,6 +107,9 @@ acceptance/
 
 V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PASS` 9 / `PASS_WITH_CLARIFICATION` 1 /
 `PARTIAL` 14 / `BLOCKED` 16；按数据路径 `rows` 38 / `sql` 2。**投影 ≠ 成绩**，执行后以 `results/` 为准。
+长期回归集 = G01–G04 + H01–H04 + E04 + F04 共 **10 条**（满足"至少 10 个修改/组合/异常任务"），不随单轮通过而移出。
+执行批次对齐上一轮落地顺序：**V0.1** 11 条（A01–A05、B01、C01–C03、D01–D02）；**V0.2** 12 条（B02–B05、C04–C08、D03–D05）；
+**V0.3** 9 条（E01–E05、F01–F04）；**V0.4** 4 条（G01–G04）；**V0.5** 4 条（H01–H04）。原表未点名的 B02–B05 归入 V0.2 布局批。
 
 ### A. 基础报表与数据（5）
 
@@ -222,6 +233,10 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 
 **UNSAFE 与门的关系**：记录器对 UNSAFE 退出码 3；`fast_acceptance` 对历史 UNSAFE 记录只告警（保留证据，不把"发生过不安全"当成基准损坏），验收裁决时仍按硬失败处理。
 
+**失败归因（非 PASS 必填）**：`failureStage` ∈ `requirement|semantic|planning|capability|ir|object|engine|data|interaction|safety`，
+用于区分"Agent 不会规划 / IR 不支持 / Object/CPT 不支持 / 引擎不支持"，不允许用一句"引擎不支持"糊过去。PASS/PASS_WITH_CLARIFICATION
+必须为空或 `none`；H04 的 PASS 还必须带 `attempts`（>=2，首轮 fail、末轮 pass）。
+
 **自动判非法**（`result_schema.js`）：`deployed=true` 但 engine/render/data 证据未全过 **且等级未声明 UNSAFE**（声明 UNSAFE 则留档取证，记录器退出码 3）；`safetyViolations` 非空却不是
 `UNSAFE`；PASS 带 `unimplemented`；PASS 的交互只有序列化证据；PASS 的 oracle 逐键对拍不一致。
 
@@ -231,6 +246,7 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 
 | 层 | 证明什么 | 不证明什么 |
 | --- | --- | --- |
+| `plan` | Agent 真的走了 plan/patch（有 plan.json/patch.json），不是手写 spec | 计划对不对 |
 | `spec` | SpecValidator 通过（语法/词表） | 能否生成 |
 | `ir` | IR 形状/校验通过 | 引擎接受 |
 | `cpt` | CPT 字节生成，图表/结构断言通过 | 引擎能打开 |
@@ -240,7 +256,8 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 | `visual` | 布局/样式人工或视觉检查 | 数据正确 |
 | `interaction` | 参数/跳转/联动真实可用 | 其它层 |
 | `analysis` | 只读分析任务的结构提取与说明（inspect.json/transcript） | cpt/渲染/数据层 |
-| `spec→…→interaction` | **九层都过才是 PASS** | 任何单层绿都不算完成 |
+| `transcript` | 可选：工具调用/对话全文 | 任何一层的正确性 |
+| `plan→…→interaction` | **任务适用的各层都过才是 PASS** | 任何单层绿都不算完成 |
 
 > 一个真实渲染 PNG 里有字，不等于数据对；`IR` 校验通过、`CPT` 生成成功、引擎打开成功、渲染正确，是四件不同的事。
 > 记录器要求 `data.actual` 逐键对拍 `expected.json`，并由 `render.nonBlank` 挡住"整图空白也 PASS"。
@@ -277,14 +294,18 @@ powershell -NoProfile -File agent\tools\fr_agent.ps1 -Verb preview -Png <out.png
 ### 9.2 修改任务（G 组）
 
 ```powershell
-# 先读现状，再改；改后必须验证、再 promote；任何一步失败都不得 promote
+# 先读现状，再改；改后看 patch.json 的回归证据，再 promote；任何一步失败都不得 promote
 -Verb list_reports
 -Verb inspect_template -Target fineagent/<name>.cpt
 -Verb modify -Patch <patch.json> -RunId $runId
--Verb validate -RunId $runId
--Verb promote -RunId $runId      # 仅当 validate ok
+# 检查 logs/agent/runs/$runId/patch.json：ok=true、manifest.diffClean=true、
+#   manifest.execution.pass=true、manifest.render.pass=true、staging 内 .orig.cpt 保留
+-Verb promote -RunId $runId      # 仅当上面全绿；promote 会再次 fail-closed 复核
 -Verb restore -RunId $runId      # 回归/回滚
 ```
+
+> 注意：`validate` 读的是 create 的 `compile.json`，**modify 不产 compile.json**，所以修改链路不能套用
+> `modify → validate`；修改的验收证据是 `patch.json`（diffClean/execution/render）+ promote/restore 的哈希记录。
 
 修改任务的验收不只看结果，还看 `modification.invariants`：原列序/样式/计算逻辑不变；失败不部署；范围只限目标报表。
 
@@ -315,6 +336,7 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
   "scores": { "requirement": 10, "semantic": 10, "planning": 10, "capability": 15, "ir": 10,
               "cpt": 10, "render": 30, "interaction": 0, "safety": 5 },
   "evidence": {
+    "plan":   { "pass": true, "path": "logs/agent/runs/<runId>/plan.json" },
     "spec":   { "pass": true, "path": "logs/agent/runs/<runId>/reportSpec.json" },
     "ir":     { "pass": true, "path": "logs/agent/runs/<runId>/validate.json" },
     "cpt":    { "pass": true, "path": "logs/agent/runs/<runId>/artifact.json" },
@@ -323,6 +345,8 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
     "data":   { "pass": true, "actual": { "orders.count": 184, "orders.amount": 1969883 } },
     "visual": { "pass": true, "notes": "标题/表头/明细/合计目检" }
   },
+  "failureStage": "none",
+  "attempts": [],
   "capabilitiesUsed": ["spec.rows.sum"],
   "unimplemented": [],
   "deployed": false,
@@ -332,7 +356,8 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
 ```
 
 > 模板只示意字段；`data.actual` 必须包含任务 `dataAssertions` 的全部键并与 oracle 相等，否则记录器判非法。
-> 只读分析任务（G01）用 `evidence.analysis` 代替 spec/ir/cpt/engine/render/data。
+> 只读分析任务（G01）用 `evidence.analysis` 代替 plan/spec/ir/cpt/engine/render/data。
+> 非 PASS 结果必须填 `failureStage`（失败归因）；H04 的 PASS 必须带 `attempts`（>=2，首轮 fail、末轮 pass）。
 > 不要在 V0.1 里把"没跑过"的任务写成 PASS——`fast_acceptance` 会校验结果文件，但不会替你判断证据真假。
 >
 > **记录器的边界（必读）**：它能证明的是"结果自洽、证据文件存在、`data.actual` 与 oracle 数值一致、等级规则未被绕过"；
@@ -345,7 +370,7 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
 
 - **版本**：`sales` v1.0.0，`seed=20261108`；生成器 `acceptance/tools/gen_fixture.js`，同一 seed/代码 → 同一字节。
 - **规模**：184 张订单，23 个月（2024-07…2026-06，**去掉 2025-02** 作为无数据期间），12 产品、14 客户、9 员工、4 仓库、48 条库存。
-- **维度覆盖**：5 区域、10 省份（含空城市客户）、3 部门、12 产品、6 类别。
+- **维度覆盖**：5 区域、12 省份（含空城市客户）、3 部门、12 产品、6 类别。
 - **边界数据**：负利润 30 行、零金额 1 行、空城市 12 行、重复日期、无数据月份；全部在 `expected.json` 有计数键。
 - **真值**：`expected.json` 134 键（总额/区域/月份/产品/部门/员工排名/省份/库存/环比同比/过滤），金额为整数，
   比率保留 4 位小数。oracle 由生成器直接遍历数据行求和，**不经过报表编译器与引擎**。
@@ -376,7 +401,8 @@ A02/A03/C01 若把聚合/排序结果预先塞进内嵌行，属于"数据准备
 | --- | --- |
 | 40 条任务定义 + 索引 + 资格投影 | **已实现 + 已自动化检查**（`fast_acceptance` 2600+ checks GREEN） |
 | 固定数据 + 真值 oracle + 哈希 | **已实现 + 已自动化检查**（跨语言 134 键对拍 PASS） |
-| 结果记录器（等级/评分/证据/部署安全） | **已实现 + 已自动化自测**（PASS/数据错配/部署后失败/PARTIAL 四例） |
+| 结果记录器（等级/评分/证据/失败归因/重试/部署安全） | **已实现 + 已自动化自测**（PASS/无 plan/数据错配/部署后失败/PARTIAL/BLOCKED/UNSAFE/H04 两轮尝试） |
+| 长期回归集 10 条（G4+H4+E04+F04） | **已标记 + 机器校验 >=10**（`longTermRegression`） |
 | 真实任务执行（Agent 跑 40 条） | **尚未开始**（0 条结果） |
 | 真实引擎渲染证据 | **尚未产生**（本基准未启动 FineReport） |
 | 视觉验收 | **尚未进行** |
@@ -426,9 +452,9 @@ A02/A03/C01 若把聚合/排序结果预先塞进内嵌行，属于"数据准备
 
 ---
 
-## 14. 下一阶段（V0.2 建议，未承诺）
+## 14. 下一阶段（建议，未承诺）
 
-1. 用真实引擎跑 V0.1 的 10 条 PASS/PASS_WITH_CLARIFICATION 任务，产出第一批 `results/`（含 PNG 与逐键真值）。
+1. 先跑 V0.1 的 11 条任务（不是只跑 10 条 PASS 投影：A03/A04/A05/C01/C03/D02 的 PARTIAL/BLOCKED 也是基线的一部分），产出第一批 `results/`（含 PNG 与逐键真值）。
 2. 用同一批任务跑 2–3 个不同 Agent/模型，得到第一张"能力分布图"（不是总分排名）。
 3. 补 fixture-db + 语义模型，解锁 E01/E05（SQL 日期范围/分页/TopN）。
 4. 针对 BLOCKED 中价值最高的三项（交叉表、分组小计、组合图）立项；立项前不改基准的 `requiredCapabilities`。

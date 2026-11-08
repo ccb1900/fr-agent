@@ -4,6 +4,7 @@
   "group": "D",
   "groupName": "样式与格式",
   "difficulty": "basic",
+  "wave": "V0.1",
   "prompt": "销售额使用千分位格式并保留两位小数，利润率使用百分比格式。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -55,6 +56,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "金额格式可证；逐行利润率百分比当前不可承诺 → PARTIAL。",
   "weights": {
     "requirement": 10,

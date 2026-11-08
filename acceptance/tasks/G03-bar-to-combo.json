@@ -4,6 +4,7 @@
   "group": "G",
   "groupName": "修改与维护",
   "difficulty": "advanced",
+  "wave": "V0.4",
   "prompt": "将现有报表中的销售额柱状图改为销售额和利润率组合图，保留原有数据和其他组件。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -62,6 +63,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

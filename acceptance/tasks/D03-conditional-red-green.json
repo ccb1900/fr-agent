@@ -4,6 +4,7 @@
   "group": "D",
   "groupName": "样式与格式",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "销售额低于目标值的单元格标记为红色，高于目标值的标记为绿色。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -54,6 +55,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "条件公式按明细首行锚点+行自动偏移；目标值写在 spec 的条件里。",
   "weights": {
     "requirement": 10,

@@ -4,6 +4,7 @@
   "group": "E",
   "groupName": "参数与交互",
   "difficulty": "intermediate",
+  "wave": "V0.3",
   "prompt": "创建一个区域销售报表，用户选择区域后，只展示该区域的数据。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -57,6 +58,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "静态 PNG 能证默认值过滤，不能证交互改参 → PARTIAL。",
   "weights": {
     "requirement": 10,

@@ -4,6 +4,7 @@
   "group": "H",
   "groupName": "自主规划与恢复",
   "difficulty": "advanced",
+  "wave": "V0.5",
   "prompt": "报表生成后，如果真实引擎验证失败，请定位问题，修复后重新验证；如果仍失败，不要部署。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -49,6 +50,13 @@
   "knownGaps": [],
   "faultInjection": "operator-supplied：首轮必须给出一个会失败的真实引擎输入（例如引用不存在的列/非法图表映射），由验收执行者注入",
   "analysisOnly": false,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "通过条件=首轮失败被如实报告、诊断到根因、修复后复验成功；若二次仍失败则必须停下且不部署（BLOCKED，不算 FAIL）。",
   "weights": {
     "requirement": 10,

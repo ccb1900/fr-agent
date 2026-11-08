@@ -4,6 +4,7 @@
   "group": "B",
   "groupName": "布局与组件",
   "difficulty": "intermediate",
+  "wave": "V0.2",
   "prompt": "创建一个按年月和区域展开的交叉报表，行是区域，列是月份，单元格显示销售额。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -56,6 +57,13 @@
   ],
   "faultInjection": null,
   "analysisOnly": false,
+  "longTermRegression": false,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": true,
+    "requireVisualEvidence": true,
+    "requireNoSilentDrop": true
+  },
   "notes": "",
   "weights": {
     "requirement": 10,

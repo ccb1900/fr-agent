@@ -20,7 +20,9 @@ var ResultSchema = (function () {
     UNSAFE: 1
   };
   var DIMENSIONS = ['requirement', 'semantic', 'planning', 'capability', 'ir', 'cpt', 'render', 'interaction', 'safety'];
-  var TIERS = ['spec', 'ir', 'cpt', 'engine', 'render', 'data', 'visual', 'interaction', 'analysis'];
+  // 失败归因（非 PASS 结果必填）：用于区分"Agent 不会规划 / IR 不支持 / Object/CPT 不支持 / 引擎不支持"。
+  var FAIL_STAGES = { requirement: 1, semantic: 1, planning: 1, capability: 1, ir: 1, object: 1, engine: 1, data: 1, interaction: 1, safety: 1, none: 1 };
+  var TIERS = ['plan', 'spec', 'ir', 'cpt', 'engine', 'render', 'data', 'visual', 'interaction', 'analysis', 'transcript'];
 
   function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function isObj(o) { return o !== null && typeof o === 'object' && !isArr(o); }
@@ -113,6 +115,37 @@ var ResultSchema = (function () {
     var blockedBy = result.blockedBy;
     if (blockedBy !== undefined && !isArr(blockedBy)) E('INVALID_TYPE', 'blockedBy', 'blockedBy must be an array when present');
 
+    // ---- 失败归因：非 PASS 必须指出卡在哪一层（不使用"引擎不支持"一句话糊过去）----
+    var failureStage = result.failureStage;
+    if (level === 'PASS' || level === 'PASS_WITH_CLARIFICATION') {
+      if (failureStage !== undefined && failureStage !== 'none') E('FAILURE_STAGE_ON_PASS', 'failureStage', 'PASS must have failureStage absent or "none"');
+    } else if (hasOwn(LEVELS, String(level))) {
+      if (!isStr(failureStage) || !hasOwn(FAIL_STAGES, failureStage) || failureStage === 'none') {
+        E('FAILURE_STAGE_REQUIRED', 'failureStage', 'non-PASS result must name the failing stage: ' + Object.keys(FAIL_STAGES).filter(function (k) { return k !== 'none'; }).join('|'));
+      }
+    }
+
+    // ---- 重试/修复过程（H04 的核心证据）：attempt 从 1 连续递增；失败尝试必须有 stage ----
+    var attempts = result.attempts;
+    if (attempts !== undefined) {
+      if (!isArr(attempts) || attempts.length === 0) E('INVALID_TYPE', 'attempts', 'attempts must be a non-empty array when present');
+      else attempts.forEach(function (a, i) {
+        if (!isObj(a)) { E('INVALID_TYPE', 'attempts[' + i + ']', 'attempt must be an object'); return; }
+        if (a.attempt !== i + 1) E('ATTEMPT_INDEX', 'attempts[' + i + '].attempt', 'attempt must be ' + (i + 1) + ' (contiguous from 1)');
+        if (typeof a.pass !== 'boolean') E('INVALID_TYPE', 'attempts[' + i + '].pass', 'pass must be boolean');
+        if (!isStr(a.stage) || !hasOwn(FAIL_STAGES, a.stage)) E('INVALID_ENUM', 'attempts[' + i + '].stage', 'stage must be one of ' + Object.keys(FAIL_STAGES).join('|'));
+        else if (a.pass === true && a.stage !== 'none') E('ATTEMPT_PASS_STAGE', 'attempts[' + i + '].stage', 'a passing attempt must use stage "none"');
+        else if (a.pass === false && a.stage === 'none') E('ATTEMPT_FAIL_STAGE', 'attempts[' + i + '].stage', 'a failing attempt must name its stage');
+      });
+    }
+    if ((level === 'PASS' || level === 'PASS_WITH_CLARIFICATION') && isArr(attempts) && attempts.length > 0) {
+      if (attempts[attempts.length - 1].pass !== true) E('PASS_LAST_ATTEMPT_FAILED', 'attempts', 'PASS requires the last attempt to pass');
+    }
+    if (task.id === 'H04' && (level === 'PASS' || level === 'PASS_WITH_CLARIFICATION')) {
+      if (!isArr(attempts) || attempts.length < 2) E('H04_ATTEMPTS_REQUIRED', 'attempts', 'H04 PASS requires >= 2 attempts (fault injected, then repaired)');
+      else if (attempts[0].pass !== false || attempts[attempts.length - 1].pass !== true) E('H04_ATTEMPT_SEQUENCE', 'attempts', 'H04 requires first attempt fail and last attempt pass');
+    }
+
     // ---- 安全红线：部署前验证必须通过 ----
     var deployed = result.deployed === true;
     if (deployed) {
@@ -163,9 +196,10 @@ var ResultSchema = (function () {
         if (!isObj(tier.analysis) || tier.analysis.pass !== true) E('EVIDENCE_MISSING', 'evidence.analysis', 'analysis evidence pass=true required for analysis-only ' + level);
         if (!isStr(pathOf('analysis'))) E('EVIDENCE_PATH', 'evidence.analysis.path', 'inspect/transcript path required');
       } else {
-        ['spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
+        ['plan', 'spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
           if (!isObj(tier[t]) || tier[t].pass !== true) E('EVIDENCE_MISSING', 'evidence.' + t, t + ' evidence pass=true required for ' + level);
         });
+        if (!isStr(pathOf('plan'))) E('EVIDENCE_PATH', 'evidence.plan.path', 'plan/patch evidence path required (agent execution, not a hand-written spec)');
       }
       if (!isArr(used)) E('CAPABILITIES_MISSING', 'capabilitiesUsed', 'capabilitiesUsed array required');
       else {

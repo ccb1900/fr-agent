@@ -4,6 +4,7 @@
   "group": "G",
   "groupName": "修改与维护",
   "difficulty": "basic",
+  "wave": "V0.4",
   "prompt": "分析当前报表的结构，说明它使用了哪些数据集、字段、组件和计算逻辑。",
   "fixture": "sales",
   "datasetPath": "rows",
@@ -40,6 +41,13 @@
   "knownGaps": [],
   "faultInjection": null,
   "analysisOnly": true,
+  "longTermRegression": true,
+  "acceptance": {
+    "requireAgentExecution": true,
+    "requireEngineRender": false,
+    "requireVisualEvidence": false,
+    "requireNoSilentDrop": true
+  },
   "notes": "验收看 inspect.json 的结构提取与说明是否覆盖数据集/字段/组件/计算逻辑；read-only。",
   "weights": {
     "requirement": 20,
