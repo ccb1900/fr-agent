@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T12:17:28.9962114+08:00",
+    "generatedAt":  "2026-11-08T12:31:43.3727837+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  22,
+                   "unsupported":  21,
                    "base":  18,
-                   "supported":  14
+                   "supported":  15
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  14,
+                         "current":  15,
                          "base":  16,
-                         "van":  8,
+                         "van":  7,
                          "legacy":  16
                      },
     "licensePolicy":  {
@@ -319,11 +319,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.box.VanChartBoxPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "box plot family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vbox",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.bubble.VanChartBubblePlot",

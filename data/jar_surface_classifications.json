@@ -277,10 +277,10 @@
       "family": "legacy"
     },
     "com.fr.plugin.chart.box.VanChartBoxPlot": {
-      "status": "unsupported",
-      "reason": "box plot family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vbox"
     },
     "com.fr.plugin.chart.custom.VanChartCustomPlot": {
       "status": "unsupported",

@@ -16,6 +16,7 @@
     "chart.vheatmap": { "class": "com.fr.plugin.chart.heatmap.VanChartHeatMapPlot", "module": "lib/object.js" },
     "chart.vradar": { "class": "com.fr.plugin.chart.radar.VanChartRadarPlot", "module": "lib/object.js" },
     "chart.vfunnel": { "class": "com.fr.plugin.chart.funnel.VanChartFunnelPlot", "module": "lib/object.js" },
+    "chart.vbox": { "class": "com.fr.plugin.chart.box.VanChartBoxPlot", "module": "lib/object.js" },
     "chart.tooltip": { "class": "com.fr.plugin.chart.base.AttrTooltip", "module": "lib/object.js" },
     "chart.label": { "class": "com.fr.plugin.chart.base.AttrLabel", "module": "lib/object.js" },
     "chart.stack": { "class": "com.fr.plugin.chart.base.AttrSeriesStackAndAxis", "module": "lib/object.js" },

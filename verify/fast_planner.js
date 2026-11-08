@@ -98,6 +98,8 @@ var rchtR = plan({ outName: 'chr', dimensions: ['bizTime'], metrics: [{ term: 'r
 check('vradar 直通（2026-11-08 雷达图）→ ready 且 spec 带 vradar', rchtR.status === 'ready' && rchtR.reportSpec.presentation.chart.kind === 'vradar');
 var rchtF = plan({ outName: 'chf', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vfunnel', category: 'bizTime', value: 'rowNo' } });
 check('vfunnel 直通（2026-11-08 漏斗图）→ ready 且 spec 带 vfunnel', rchtF.status === 'ready' && rchtF.reportSpec.presentation.chart.kind === 'vfunnel');
+var rchtB = plan({ outName: 'chb', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vbox', category: 'bizTime', value: 'rowNo' } });
+check('vbox 直通（2026-11-08 箱线图）→ ready 且 spec 带 vbox', rchtB.status === 'ready' && rchtB.reportSpec.presentation.chart.kind === 'vbox');
 // —— C6 同口径扩展（2026-11-07 B段复审）：rows 路 intent.filters/intent.chart 被能力墙丢掉时
 //    不得 ready（与 metrics 同理：数据范围/报表结构悄悄变窄比失败更危险）。此前仅 warning 仍 ready。
 check('C6 同口径: rows 路 intent.filters 被丢 → 不得 ready', rfil.status !== 'ready' && rfil.reportSpec === null);

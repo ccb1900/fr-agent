@@ -1871,3 +1871,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：`reports/test_funnel.js` 真引擎 failures=0，PNG 目检 5 段漏斗 + 5 条图例（420pt 高度全出）+ 标题；SQL 真库 plan→plan2spec→create→validate PASS（runId=funnel_e2e_001，表体 33531/26531 真值不变，漏斗图在表体下方渲染）。manifest chart.vfunnel 四层 verified/agentAvailable=true（75 项/54 承诺）。
 - 回归：fast 19 套件 GREEN（`logs/fast19_funnel.txt`，COHERENCE caps=75/agent=54；JAR-SURFACE supported=14/unsupported=22）；scan ok=98 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
 - 下一项：箱线 box（官方 doc 3 语料，先探针 Box 数据定义），或先做高价值树图/多层饼。
+
+### 第 24 轮 非付费图族闭环第 3 个：chart.vbox 箱线图（2026-11-08）
+- 结构一手：官方 `doc/Chart/BoxPlot/分组箱型图.cpt` = `VanChartBoxPlot` + `VanBoxTableDefinition(detailed=true)` + `detailedDefinition=VanBoxMoreNameCDDefinition(category+ChartSummaryColumn[])` + `resultDefinition=VanBoxTableResultDefinition`（占位 `categoryName/seriesName/median="无"` + 五标签）。javap 确认 setDetailed/setDetailedDefinition/setResultDefinition 方法面。
+- 实施：object VK 增 vbox + 专用分支（plot/definition 双 setDetailed(true)；resultDefinition 按官方占位值初始化）；IR CHART_KINDS/vanChart、ReportSpec 两路、spec_validator、planner 合同同步；engine_class_map/jar inventory 锚定；jar 面 VanChartBoxPlot 转 supported（supported 15/base 18/unsupported 21=13 图族）。
+- 数据形态踩坑（三轮内）：①3 组 × 7 样本 × 1 列 → 3 箱但须线按 fence 画；②3 系列 × 7 不同分类 → 退化成折线；③最终=1 组 × 3 系列 × 7 样本 → 3 箱并排，Q1/Q3 与数据一致（A 10-20、B 22-30、C 9-25），须线为 1.5×IQR fence（A 0-32、B 10-42、C 0-49），与官方箱线视觉语法一致。
+- 验证：`reports/test_box.js` 真引擎 failures=0，PNG 3 箱并排；SQL 真库 plan→plan2spec→create→validate PASS（runId=box_e2e_001，表体 33531/26531 真值不变，箱线图在表体下方渲染）。manifest chart.vbox 四层 verified/agentAvailable=true（76 项/55 承诺）。fast 19 GREEN（`logs/fast19_box.txt`，caps=76/agent=55；supported=15/unsupported=21）；scan ok=99；基线 CBEB42E3 回补。
+- 未验证/边界：须线语义按引擎 1.5×IQR fence（未逐点对官方统计文档核）；箱线 summary 模式（resultDefinition 直接给 min/q1/median/q3/max）未接。
+- 下一项：多层饼/树图/词云（Van 当前族，官方 doc 语料）或甘特；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。
