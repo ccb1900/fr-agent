@@ -182,3 +182,10 @@
 - 修改范围（若未来版本解锁）：以 AttrTooltipContent 开关重实现并 PNG 实证；在此之前 `label.summary` 应改为 IR 明确拒（避免写了不生效）——需一次专门小批（含负例与载体），本轮未做以免半成品。
 - 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见且 cpt 保留 ChartCollection；`label.summary` 要么渲染达成要么 IR 明确拒；fast/scan/基线全绿。
 - 外部依赖：无。优先级：P3（视觉低价值，不阻塞产品主线）。
+
+### P1: 内嵌 rows 数据集的图表在 web 端不初始化（2026-11-08 web 验证发现）
+- 真实证据（logs/webverify/evidence.md + rows_chart_web_blank.png）：frserver 8705 + 浏览器登录后打开 `能力自检_rows图表_api.cpt`——表格 A线80/B线40/C线150/合计270 正常，图表区域 canvas 300×150、getImageData 采样 painted=0（完全空白）；同一服务器 SQL 路 G3 柱图正常渲染（非环境问题）；官方内嵌图 cpt（国旗柱形图等）同为 `MoreNameCDDefinition + NameTableData + ChartSummaryColumn NoneFunction` 形状；Van 改 SumFunction 实验 web 仍空白且 headless 只显示单类目 → 已回滚。
+- 用户影响：Agent 用 rows 内嵌数据创建的图表报表，在 web 端图表空白（headless PNG 正确）——面向终端用户可见的产品缺陷。
+- 修改范围：定位 chart 节点/ChartDefinition 序列化与官方差异（可用同服务器打开官方 cpt 对照 canvas），或抓 web 端 chart JS 错误；修复后 web + headless 双验证。
+- 验收标准：rows 内嵌柱图在 frserver web 端 canvas painted>0 且与 headless PNG 数据一致；官方 cpt 对照不回归；fast/scan/基线全绿。
+- 外部依赖：无（可用 frserver + test/test）。优先级：P1（产品主路可见缺陷）。

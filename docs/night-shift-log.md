@@ -1801,3 +1801,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 阻塞：报告页 `decision/view/report?viewlet=...` 302→/login，需 FR 账号密码；已向用户请求。
   未登录前不改任何账本（webInteraction 维持 serialization-only），待凭据后做浏览器级
   tooltip/超链/工具栏验证并留证据。
+
+### 第 15 轮 web 交互验证第一轮（frserver + test/test，用户授权）
+- 环境：scripts/frserver.ps1 start（Tomcat 8705）→ 浏览器自动化登录 test/test → 打开已部署报表；验证后 stop、基线回补 CBEB42E3。
+- 已验证：①G3（SQL 路）web 整页：表体 10 行/合计 33531:26531/完成率<75 三行红字/底部柱图/原生工具栏；②tooltip 悬停实测（2026-09-16 / planned: 5333 浮层，截图 logs/webverify/g3_tooltip.png）。
+- 发现真实缺陷：内嵌 rows 图 web 端 canvas 300×150 painted=0（表格正常、SQL 路正常、官方内嵌图同形状）；SumFunction 实验无效已回滚 → backlog P1。
+- 未完成：自定义 AttrTooltip web 悬停、自定义工具栏可见性/点击、超链钻取点击；submit 写库未授权 F8。
+- 证据：logs/webverify/{evidence.md,g3_web_page.png,g3_tooltip.png,rows_chart_web_blank.png}。
