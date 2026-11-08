@@ -37,6 +37,22 @@ check('supported 图类都有能力名', supported.every(function (c) { return c
 check('supported 图类都在核心 jar 可解析', supported.every(function (c) { return !!inv.resolved[c['class']]; }), JSON.stringify(supported.filter(function (c) { return !inv.resolved[c['class']]; })));
 check('unsupported 图类都写明原因', unsupported.every(function (c) { return c.reason && c.reason.length > 0; }), JSON.stringify(unsupported.filter(function (c) { return !c.reason; })));
 
+// 付费口径（2026-11-08 用户追问）：付费族=FVS bigScreen 14 包 / com.fr.extended.chart.* / 移动端；
+//   扫描根不含付费插件 jar，且每个类必须有 license/family 定性。付费类不得出现在 supported/unsupported
+//   （付费=排除，不是"未来缺口"）。
+var PAID = /^(com\.fr\.plugin\.bigScreen\.|com\.fr\.extended\.chart\.|com\.fr\.report\.mobile\.|com\.fr\.form\.ui\.mobile\.)/;
+var licCounts = {}, famCounts = {};
+classes.forEach(function (c) {
+  licCounts[c.license || 'missing'] = (licCounts[c.license || 'missing'] || 0) + 1;
+  famCounts[c.family || 'missing'] = (famCounts[c.family || 'missing'] || 0) + 1;
+});
+check('付费口径：扫描面无付费插件前缀类', classes.every(function (c) { return !PAID.test(c['class']); }), classes.filter(function (c) { return PAID.test(c['class']); }).map(function (c) { return c['class']; }).join(', '));
+check('付费口径：每类都有 license 定性（basic|paid|unknown）', classes.every(function (c) { return c.license === 'basic' || c.license === 'paid' || c.license === 'unknown'; }), JSON.stringify(licCounts));
+check('付费口径：每类都有 family 定性（current|base|legacy|van）', classes.every(function (c) { return c.family === 'current' || c.family === 'base' || c.family === 'legacy' || c.family === 'van'; }), JSON.stringify(famCounts));
+check('付费口径：supported 类不得标 paid', supported.every(function (c) { return c.license !== 'paid'; }), JSON.stringify(supported.filter(function (c) { return c.license === 'paid'; })));
+check('付费口径：unsupported 类不得标 paid（付费=排除，不是未来缺口）', unsupported.every(function (c) { return c.license !== 'paid'; }), JSON.stringify(unsupported.filter(function (c) { return c.license === 'paid'; })));
+check('付费口径：账本带 paidPrefixes 政策', !!(clsMap.licensePolicy && Array.isArray(clsMap.licensePolicy.paidPrefixes) && clsMap.licensePolicy.paidPrefixes.length >= 4), JSON.stringify(clsMap.licensePolicy || null));
+
 // 能力词表 <-> 引擎类面：Ir 的每个 chart kind 都要有精确 map 条目，且类在 supported 清单里
 var kinds = (ic.chart.legacy || []).concat(ic.chart.vanChart || []);
 var kindProblems = [];
@@ -60,6 +76,6 @@ check('supported 图类都有能力映射（无孤立类）', orphan.length === 
 var tableNames = Object.keys(clsMap.classes || {});
 check('分类表条目数与 jar 面类数一致', tableNames.length === total, 'table=' + tableNames.length + ' surface=' + total);
 
-print('JAR-SURFACE SUMMARY plots=' + total + ' supported=' + supported.length + ' base=' + base.length + ' unsupported=' + unsupported.length + ' kinds=' + kinds.length);
+print('JAR-SURFACE SUMMARY plots=' + total + ' supported=' + supported.length + ' base=' + base.length + ' unsupported=' + unsupported.length + ' kinds=' + kinds.length + ' license=' + JSON.stringify(licCounts) + ' family=' + JSON.stringify(famCounts));
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS ? 1 : 0);

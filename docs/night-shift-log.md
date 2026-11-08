@@ -1846,3 +1846,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 候选复核（不升层）：`examples/report-spec/cells_extras.json` 真引擎 PNG 目检，`presentation.cells` 的 rich 文本格「【结论】」粗体段+正文行可见；但 formula/link/barcode 等 item 形态各有独立能力账本、未逐形态目检，`spec.rows.cells` rendering 保持 pending（只入证据）。
 - 验证：默认基线 demo_api.cpt=CBEB42E3；fast 19 套件 GREEN（`logs/fast19_titlefix.txt`、`logs/fast19_bubbleattr.txt`、`logs/fast19_blankgate.txt`）；scan ok=96 bad=0；引擎负门 GREEN（默认基线回补）。改动文件：lib/object.js、make_api.js、application/capability_manifest.js、reports/test_vbar_title.js、reports/test_bar_title.js、reports/test_bubbleattr.js、reports/test_bubbleattr_neg.js、README #162、AGENTS §3。
 - 未验证：shadow 的 web canvas 渲染（静态 PNG 已证无差异）；`chart.title` 仍未入 manifest 能力账本（IR 键存在但无独立 capability 条目）。
+
+### 第 21 轮 付费口径审计（用户："符合付费内容不做的要求么？付费之外都闭环了吗"）
+- 目标：不靠口头保证，把"26 个未接图族是否付费"做成机器账。
+- 证据：①26 个 unsupported 类逐个在**全部**安装 jar（含 WEB-INF/plugins）里定位，全部只在 `fine-report-engine-11.0.jar`，无一出现在 `plugin-com.fr.plugin.bigScreen.v11` / `com.fr.extended.chart.*` / 移动端 jar；②官方 1684 张 cpt 语料：10 个 Van 当前族有 doc/Chart 用例（radar 24、gantt 15、custom 36、drillmap 12、structure 6、funnel 5、multipie 5、box 3、wordcloud 3、treemap 2），16 个 legacy 类零命中；③项目付费排除清单（FVS 14 包 / extended.chart / mobile）与 26 类零交集。
+- 账本：`data/jar_surface_classifications.json` 每类新增 `license`/`family`；顶层 `licensePolicy`（paidPrefixes+审计+运行时 license gate 未独立审计的 caveat）。分布：license basic 54 / paid 0 / unknown 0；family current 12 / base 16 / legacy 16 / van 10。26 类合并为 **16 个当前图族**。
+- 门：`verify/fast_jar_surface.js` 新增 6 条付费口径断言（无付费前缀、license/family 完整、supported/unsupported 均不得 paid、账本带 paidPrefixes）；`scripts/build_jar_surface.ps1` 输出 license/family 计数。单跑 16 条 CHECK 全 PASS，SUMMARY license={"basic":54} family={"legacy":16,"base":16,"current":12,"van":10}。
+- 结论：**付费不做=符合**（没有实现任何付费族，付费族不会被排期；仅核心 jar 的运行时 license gate 未独立审计）。**付费之外没有全闭环**：16 图族未接、21 项能力未承诺（webInteraction 12 / unverifiedRendering 2 / notImplemented 4 / rejected 3）、coverage partial 21；noncore 44 为付费/移动端排除。归属闭环（unattributed=0）≠能力闭环。
+- 未验证：core jar 内部运行时 license gate；16 图族的具体实现成本未逐族估算。

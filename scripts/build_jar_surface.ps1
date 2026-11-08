@@ -42,13 +42,21 @@ foreach ($p in $clsMap.classes.PSObject.Properties) { $table[$p.Name] = $p.Value
 $entries = @()
 $unclassified = @()
 $counts = @{ supported = 0; base = 0; unsupported = 0 }
+$licCounts = @{}
+$famCounts = @{}
 foreach ($cn in $plots) {
   if (-not $table.ContainsKey($cn)) { $unclassified += $cn; continue }
   $rec = $table[$cn]
   $st = '' + $rec.status
   if (-not $counts.ContainsKey($st)) { $counts[$st] = 0 }
   $counts[$st]++
-  $entries += [ordered]@{ class = $cn; status = $st; cap = $(if ($rec.cap) { '' + $rec.cap } else { '' }); reason = $(if ($rec.reason) { '' + $rec.reason } else { '' }) }
+  $lic = $(if ($rec.license) { '' + $rec.license } else { 'unknown' })
+  $fam = $(if ($rec.family) { '' + $rec.family } else { 'unknown' })
+  if (-not $licCounts.ContainsKey($lic)) { $licCounts[$lic] = 0 }
+  $licCounts[$lic]++
+  if (-not $famCounts.ContainsKey($fam)) { $famCounts[$fam] = 0 }
+  $famCounts[$fam]++
+  $entries += [ordered]@{ class = $cn; status = $st; license = $lic; family = $fam; cap = $(if ($rec.cap) { '' + $rec.cap } else { '' }); reason = $(if ($rec.reason) { '' + $rec.reason } else { '' }) }
 }
 $stale = @()
 foreach ($cn in $table.Keys) { if (-not $seen.ContainsKey($cn)) { $stale += $cn } }
@@ -60,13 +68,16 @@ $out = [ordered]@{
   coreJars = $jarCount
   plotClassCount = $plots.Count
   counts = $counts
+  licenseCounts = $licCounts
+  familyCounts = $famCounts
+  licensePolicy = $clsMap.licensePolicy
   classes = $entries
   unclassified = $unclassified
   stale = $stale
-  note = 'Core-jar chart plot classes only (designer/UI/paid-plugin jars excluded by scan roots). supported=wired to a capability; base=abstract/base class; unsupported=concrete family not wired, reason recorded. unclassified/stale must be empty.'
+  note = 'Core-jar chart plot classes only (designer/UI/paid-plugin jars excluded by scan roots). supported=wired to a capability; base=abstract/base class; unsupported=concrete family not wired, reason recorded. license/family classify each entry against the paid-exclusion policy. unclassified/stale must be empty.'
 }
 [System.IO.File]::WriteAllText($outPath, ($out | ConvertTo-Json -Depth 6), (New-Object System.Text.UTF8Encoding($false)))
-Write-Output ('JAR-SURFACE jars=' + $jarCount + ' plots=' + $plots.Count + ' supported=' + $counts['supported'] + ' base=' + $counts['base'] + ' unsupported=' + $counts['unsupported'] + ' unclassified=' + $unclassified.Count + ' stale=' + $stale.Count)
+Write-Output ('JAR-SURFACE jars=' + $jarCount + ' plots=' + $plots.Count + ' supported=' + $counts['supported'] + ' base=' + $counts['base'] + ' unsupported=' + $counts['unsupported'] + ' unclassified=' + $unclassified.Count + ' stale=' + $stale.Count + ' license=' + (($licCounts.GetEnumerator() | Sort-Object Name | ForEach-Object { $_.Name + ':' + $_.Value }) -join ',') + ' family=' + (($famCounts.GetEnumerator() | Sort-Object Name | ForEach-Object { $_.Name + ':' + $_.Value }) -join ','))
 if ($unclassified.Count -gt 0) {
   Write-Output 'UNCLASSIFIED plot classes (accounting blind spot):'
   $unclassified | ForEach-Object { Write-Output ('  ' + $_) }

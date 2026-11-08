@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T11:05:17.5458876+08:00",
+    "generatedAt":  "2026-11-08T11:50:12.8243238+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
@@ -9,328 +9,455 @@
                    "base":  16,
                    "supported":  12
                },
+    "licenseCounts":  {
+                          "basic":  54
+                      },
+    "familyCounts":  {
+                         "current":  12,
+                         "base":  16,
+                         "van":  10,
+                         "legacy":  16
+                     },
+    "licensePolicy":  {
+                          "paidPrefixes":  [
+                                               "com.fr.plugin.bigScreen.",
+                                               "com.fr.extended.chart.",
+                                               "com.fr.report.mobile.",
+                                               "com.fr.form.ui.mobile."
+                                           ],
+                          "audit":  "all 54 scanned classes live in fine-report-engine-11.0.jar; none matches paidPrefixes; paid plugin jars are outside the scan roots",
+                          "caveat":  "core-jar runtime license gating is not independently audited; paid classification follows project policy (FVS 14 packages / com.fr.extended.chart.* / mobile)"
+                      },
     "classes":  [
                     {
                         "class":  "com.fr.chart.chartattr.Area3DPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
-                        "reason":  "3D chart family not wired (core jar, not a free-basic promise)"
+                        "reason":  "3D chart family not wired (core engine, not a paid plugin family)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.AreaPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "legacy area base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Bar2DPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.bar",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Bar3DPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "3D chart family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.BarPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "legacy bar base (Bar2DPlot is the concrete one we use)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.BubblePlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "legacy bubble base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.CategoryPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "category plot base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.ChartsPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "multi-chart container base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.CustomPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "legacy custom plot not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Donut2DPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "donut family not wired (2D)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Donut3DPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "3D chart family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.DonutPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "donut family base/concrete not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.FunnelPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "funnel family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GanttPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "gantt family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GisMapPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "GIS map family not wired (vmap covers map plot only)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.LinePlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.line",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MapPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "legacy map base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MeterBluePlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "legacy meter variant not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MeterPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "legacy meter/仪表盘 variant not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Pie3DPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "3D chart family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.PiePlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.pie",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Plot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "abstract plot base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RadarPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "radar family not wired (legacy)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RangePlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "range chart family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RectanglePlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "rectangle plot base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.SimpleMeterPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "legacy meter variant not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.StockPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "legacy",
                         "cap":  "",
                         "reason":  "stock/K-line family not wired"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.XYPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "XY plot base"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.XYScatterPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "legacy scatter base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.area.VanChartAreaPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.varea",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.plot.VanChartAxisPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van axis plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.plot.VanChartLabelPositionPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van label-position plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.plot.VanChartPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van chart plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.plot.VanChartPositionPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van position plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.plot.VanChartRectanglePlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van rectangle plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.attr.radius.VanChartRadiusPlot",
                         "status":  "base",
+                        "license":  "basic",
+                        "family":  "base",
                         "cap":  "",
                         "reason":  "van radius plot base"
                     },
                     {
                         "class":  "com.fr.plugin.chart.box.VanChartBoxPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "box plot family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.bubble.VanChartBubblePlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vbubble",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.column.VanChartColumnPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vbar",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.custom.VanChartCustomPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "van custom/combination-plot not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.drillmap.VanChartDrillMapPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "drill map family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.funnel.VanChartFunnelPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "van funnel family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.gantt.VanChartGanttPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "van gantt family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.gauge.VanChartGaugePlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vgauge",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.heatmap.VanChartHeatMapPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vheatmap",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.line.VanChartLinePlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vline",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.map.VanChartMapPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vmap",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "multi-layer pie not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.PiePlot4VanChart",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vpie",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.radar.VanChartRadarPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "van radar family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.scatter.VanChartScatterPlot",
                         "status":  "supported",
+                        "license":  "basic",
+                        "family":  "current",
                         "cap":  "chart.vscatter",
                         "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.structure.VanChartStructurePlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "structure/organization chart not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.treemap.VanChartTreeMapPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "treemap family not wired"
                     },
                     {
                         "class":  "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot",
                         "status":  "unsupported",
+                        "license":  "basic",
+                        "family":  "van",
                         "cap":  "",
                         "reason":  "word cloud family not wired"
                     }
@@ -341,5 +468,5 @@
     "stale":  [
 
               ],
-    "note":  "Core-jar chart plot classes only (designer/UI/paid-plugin jars excluded by scan roots). supported=wired to a capability; base=abstract/base class; unsupported=concrete family not wired, reason recorded. unclassified/stale must be empty."
+    "note":  "Core-jar chart plot classes only (designer/UI/paid-plugin jars excluded by scan roots). supported=wired to a capability; base=abstract/base class; unsupported=concrete family not wired, reason recorded. license/family classify each entry against the paid-exclusion policy. unclassified/stale must be empty."
 }
