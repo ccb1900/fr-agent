@@ -183,9 +183,16 @@
 - 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见且 cpt 保留 ChartCollection；`label.summary` 要么渲染达成要么 IR 明确拒；fast/scan/基线全绿。
 - 外部依赖：无。优先级：P3（视觉低价值，不阻塞产品主线）。
 
-### P1: 内嵌 rows 数据集的图表在 web 端不初始化（2026-11-08 web 验证发现）
-- 真实证据（logs/webverify/evidence.md + rows_chart_web_blank.png）：frserver 8705 + 浏览器登录后打开 `能力自检_rows图表_api.cpt`——表格 A线80/B线40/C线150/合计270 正常，图表区域 canvas 300×150、getImageData 采样 painted=0（完全空白）；同一服务器 SQL 路 G3 柱图正常渲染（非环境问题）；官方内嵌图 cpt（国旗柱形图等）同为 `MoreNameCDDefinition + NameTableData + ChartSummaryColumn NoneFunction` 形状；Van 改 SumFunction 实验 web 仍空白且 headless 只显示单类目 → 已回滚。
-- 用户影响：Agent 用 rows 内嵌数据创建的图表报表，在 web 端图表空白（headless PNG 正确）——面向终端用户可见的产品缺陷。
-- 修改范围：定位 chart 节点/ChartDefinition 序列化与官方差异（可用同服务器打开官方 cpt 对照 canvas），或抓 web 端 chart JS 错误；修复后 web + headless 双验证。
-- 验收标准：rows 内嵌柱图在 frserver web 端 canvas painted>0 且与 headless PNG 数据一致；官方 cpt 对照不回归；fast/scan/基线全绿。
-- 外部依赖：无（可用 frserver + test/test）。优先级：P1（产品主路可见缺陷）。
+### P2: 无头 Tomcat（frserver）下内嵌数据图表不渲染——官方语料同样（环境调查，非我们的序列化缺陷）
+- 真实证据（logs/webverify/evidence.md + rows_chart_web_blank.png）：frserver 8705 + 浏览器登录后打开 `能力自检_rows图表_api.cpt`——表格正常、图表 canvas 300×150 painted=0；**同一服务器打开官方 `demo/chart/ColumnChart/国旗柱形图.cpt`（内嵌数据）同样 canvas 空白**；SQL 路 G3 柱图正常。官方与本项目内嵌图序列化形状同为 `MoreNameCDDefinition + NameTableData + ChartSummaryColumn NoneFunction`；Van 改 SumFunction 实验 web 仍空白且 headless 只显示单类目 → 已回滚。
+- 用户影响：仅影响"用 frserver 无头 Tomcat 自建 web 预览"场景；生产 FineReport 服务器（designer 内置/标准部署）未验证。不是本项目产物缺陷（官方 corpus 同样表现）。
+- 修改范围：调查该 Tomcat 部署是否缺少 designer-server 设置（系统属性/插件资源/会话缓存）导致内嵌图 web 数据链路不可用；若确认为部署差异，文档写明用 frserver 验证图表 web 的局限。
+- 验收标准：至少给出官方 cpt 在该部署下空白的归因（缺什么属性/资源）或改用官方宿主复现；不把环境限制当产物缺陷。
+- 外部依赖：无。优先级：P2（环境/验证基建，不阻塞产品链路）。
+
+### P3: 超链（ReportletHyperlink）web 点击行为未验证（2026-11-08）
+- 真实证据：销售明细_超链_api.cpt 的 hyperlink 序列化与官方 比例信息查询.cpt 同构（NameJavaScriptGroup→ReportletHyperlink→fineagent/销售明细_api.cpt，产品列 c2 r2）；web 端三次点击（getByText/JS el.click/坐标 cua.click）均未导航，无新标签/URL 变化；同期工具栏按钮可见（说明 DOM 交互面正常）。
+- 用户影响：超链在 web 预览中是否能点开尚未证实；不宣称支持也不宣称损坏。
+- 修改范围：判断 decision 视图/无头部署是否限制 hyperlink，或在生产 FR 服务器复验；必要时对齐官方 hyperlink 的 Features/target 配置。
+- 验收标准：web 点击后新报表打开（URL/tab 可验证）或明确环境归因。
+- 外部依赖：无。优先级：P3。

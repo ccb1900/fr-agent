@@ -29,3 +29,19 @@
 - 自定义工具栏按钮（能力自检_填报章：ToolBarManager/BuiltInSQLSubmiter 已序列化）web 可见性/点击；
 - 超链钻取点击（候选 cpt：销售明细_超链 / 能力自检_条件动作满血 / 能力自检_热链热提示spec）；
 - 填报提交（submit）——涉及写库，未授权 F8，不做。
+
+## 第二轮（2026-11-08，批量验证）
+
+4. **官方内嵌图对照（关键，推翻"我们的缺陷"判断）**：同一 frserver 打开官方
+   `demo/chart/ColumnChart/国旗柱形图.cpt`（内嵌数据 + MoreNameCDDefinition + NoneFunction）→
+   canvas 300×150、painted=0，与我们的 rows 图完全一致；SQL 路 G3 柱图正常。
+   → 内嵌数据图表 web 不渲染是**该无头 Tomcat 部署的环境/会话限制（官方语料同样）**，
+   不是我们的序列化缺陷；backlog 从 P1 降级为环境调查。
+5. **自定义工具栏（能力自检_填报章_api.cpt）**：web 端出现序列化的 **提交** 按钮
+   （ToolBarManager/Submit widget）与"保存为常用参数组合"参数按钮；未点击提交
+   （写库未授权 F8）。→ write.toolbarButtons 的 web 可见性有实证，点击行为未验证。
+6. **超链点击（销售明细_超链_api.cpt）**：cpt 内 `NameJavaScriptGroup/ReportletHyperlink`
+   （name=查看明细 → fineagent/销售明细_api.cpt，挂在产品列 c=2 r=2）与官方 比例信息查询.cpt
+   同构；但 web 端三次点击尝试（getByText / JS el.click / 坐标 cua.click）均未导航，
+   新标签/新 URL 均无。→ web 点击行为**未验证**（不是已证明损坏），需判断是否
+   decision 视图/无头部署对 hyperlink 的限制；backlog P3。

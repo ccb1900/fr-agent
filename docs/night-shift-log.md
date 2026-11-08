@@ -1808,3 +1808,9 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 发现真实缺陷：内嵌 rows 图 web 端 canvas 300×150 painted=0（表格正常、SQL 路正常、官方内嵌图同形状）；SumFunction 实验无效已回滚 → backlog P1。
 - 未完成：自定义 AttrTooltip web 悬停、自定义工具栏可见性/点击、超链钻取点击；submit 写库未授权 F8。
 - 证据：logs/webverify/{evidence.md,g3_web_page.png,g3_tooltip.png,rows_chart_web_blank.png}。
+
+### 第 16 轮 web 验证第二轮（批量：内嵌图官方对照 / 工具栏 / 超链）
+- 官方内嵌图对照（关键）：同一 frserver 打开官方 demo/chart/ColumnChart/国旗柱形图.cpt（内嵌数据）→ canvas 300×150 painted=0，与我们的 rows 图一致；SQL 路 G3 正常 → 内嵌图 web 不渲染=无头 Tomcat 部署环境/会话限制（官方同样），不是我们的序列化缺陷；backlog 由 P1 降为 P2 环境调查。
+- 自定义工具栏：能力自检_填报章 web 端出现序列化的 **提交** 按钮（ToolBarManager/Submit）与"保存为常用参数组合"；未点提交（F8 未授权）→ write.toolbarButtons web 可见性有实证、点击未验证。
+- 超链：销售明细_超链 的 ReportletHyperlink 序列化与官方 比例信息查询.cpt 同构；web 三次点击（getByText/JS el.click/坐标 cua.click）均未导航 → 未验证（不是已证明损坏），backlog P3。
+- 收尾：停服、默认 spec 回补基线 CBEB42E3；证据 docs/architecture/web-verification.md + logs/webverify/。
