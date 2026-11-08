@@ -16,7 +16,7 @@
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | MultiPieValueDefinition(levels) | **DONE（chart.vmultipie；runId=multipie_e2e_004）** |
 | 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels) | 待做（rawIR 只出顶层矩形；嵌套子块未达成） |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | 待探针 | 待做 |
-| 7 | 结构图 structure | VanChartStructurePlot | doc 6 | 待探针 | 待做 |
+| 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | 待做（rawIR 可出层级+数值，节点名未出） |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | 待探针（起止/分类） | 待做 |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |

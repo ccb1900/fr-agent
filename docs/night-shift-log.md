@@ -1950,6 +1950,6 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 结构一手：官方 `doc/Chart/销售情况.cpt` = VanChartMultiPiePlot + MultiPieValueDefinition(OneValueCDDefinition valueName + MultiPie Attr levelCount/LevelColumnNameList)；javap 方法面 setLevelCount/addLevelName/setValueColumnName/setDataFunction。
 - 实施：object VK 增 vmultipie（setTableData/setSeriesName/setValueColumnName/NoneFunction/setLevelCount/addLevelName）；IR CHART_KINDS + vanChart 增 vmultipie，图块校验支持 `levels[]/value` 并逐层列校验；ReportSpec CHART_KEYS 增 levels、validator 分支、SpecCompiler 发射 levels；layer gate planner 合同对 vmultipie 用 levels 输入（旧合同传 category 会误判 BLOCKED）；jar 面 VanChartMultiPiePlot 转 supported（21 supported/19 base/14 unsupported=10 图族）。
 - 验证：`reports/test_multipie.js` 真引擎 failures=0，PNG 内外双层饼（华东/华北+销售员内层）+图例+标题（chroma=8023）；SQL 真库 plan→plan2spec→create→validate PASS（runId=multipie_e2e_004，levels=[bizDate,machine]/value=planned，表体 33531/26531 真值不变，多层饼渲染）；manifest chart.vmultipie 四层 verified/agentAvailable=true（82 项/61 承诺）。
-- treemap 共用 MultiPieValueDefinition，rawIR 只出顶层矩形（嵌套子块未出）→ 不接、不计入闭环；backlog 保留。
+- treemap 共用 MultiPieValueDefinition，rawIR 只出顶层矩形（嵌套子块未出）→ 不接、不计入闭环；backlog 保留。structure（StructureTableDefinition nodeId/parentId/nodeName/nodeValue）rawIR 可出层级+数值，但节点名未出 → 也不接。
 - 门修复：`CHART RENDER NONBLANK` 收紧 chroma>=20 后 multipie 首版空白被拒，推动找到 MultiPieValueDefinition 分支/function 缺失；donut/donut3d carrier 已按 OneValue 重跑（标题+多色多环）。
-- 回归：待跑 fast 20/scan/基线；层扫描待 82 项复跑。
+- 回归：fast 20 套件 GREEN（`logs/fast_final_20261108.txt`，caps=82/agent=61；supported=21/unsupported=14）；scan ok=105；基线 CBEB42E3；层扫描 81 项+multipie 单项门（10 PASS/1 UNKNOWN），82 项全量扫描待下轮复跑。
