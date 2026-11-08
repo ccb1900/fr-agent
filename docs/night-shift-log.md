@@ -1988,3 +1988,8 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - object TK meter(MeterPlot)；IR legacy 词表 + spec 校验 + Compiler sql/rows 转齐； ReportSpec meter_rowsJson 真引擎 create/validate PASS（runId 2026-11-08 14:55）；carrier reports/test_meter.js 单 needle 80 PNG 渲染正确。多 needle 重叠为官方多值排布问题，账本仅承诺单 needle/单值图。
 - jar 面 MeterPlot 入 supported；MeterBlue/Simple 主题变体留 unsupported（蓝主题未单独 tested）。
 - fast 20 GREEN(scan ok=110，基线 CBEB42E3，engine 名类=201，resolved=201). jars 24 supported/19 base/11 unsupported=7 图族. manifest `chart.meter` 四层 verified/agentAvailable=true（85/64）。
+
+### 第 31 轮 非付费图族闭环第 9 个：chart.stock K线（2026-11-08）
+- StockPlot + StockTableDefinition(OHLC)：raw carrier `reports/test_stock.js` 真引擎 failures=0，PNG 4 根 OHLC 柱（项目甘特；官方 0 语料，未做 axisLabel 样式微调）；ReportSpec rows 例 `examples/report-spec/stock_rows.json` create+validate PASS（runId=stock_rows_001）；sql 计划 intent 三度量形态（bizDate + planned/done/completionRate，open/close 共用 planned 合法）+ spec 校验/Compiler sql/rows；layer gate planner 合同同 3 度量 ready。
+- jar 面 StockPlot 转 supported（25 supported/19 base/10 unsupported=6 图族）；manifest `chart.stock` 四层 verified/agentAvailable=true（86/65）。
+- 设备教训：`SpecValidator.CHART_KINDS_FALLBACK`（plan 不 load Ir）必须与新 kind 同步，否则 sql 意图 plan 被拒（本轮 stock 排错）；已补 meter/stock/vstructure。
