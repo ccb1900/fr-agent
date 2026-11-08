@@ -1736,3 +1736,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 官方语料一手：`PieCategoryLabelContent` 出现在 `<gaugeValueLabel class="...AttrLabelDetail">`（仪表值标签）；饼图 `labelDetail` 内容是 `AttrToolTipContent` + value/percent/category/series format 开关。
 - 结论：现行 `label.summary → PieCategoryLabelContent` 的 vpie 选型疑错（该类是 gauge 值标签），饼图标签/汇总视觉未达成；manifest chart.label 证据补四次阴性+官方结构一手，维持"仅序列化、不承诺渲染"；不升层、不虚报。生产代码回滚。backlog 新增 P3（改 AttrToolTipContent 开关或以正确宿主重实现）。
 - 验证：基线默认 spec 回补 CBEB42E3；fast_manifest_evidence 通过；scan 不变。
+
+### 第 8 轮 业务验收 G2（组合报表全链，真实库）
+- 目标：用一份组合业务报表把 SQL 真库 + 图表 + 页眉页脚 + 合计 + 修改链一次性跑通，并给 page.headerFooter 补全链证据。
+- 载体：verify/fixtures/golden/g2_intent.json（ATOM_LIVE；bizDate×machine；metrics planned/done/completionRate；dateRange 9/13-9/22；presentation.chart{bar,bizDate,planned}；sheet.headerFooter header.center/footer.right；showTotal）。
+- 首跑失败（真缺陷路径实证）：IR 明确拒 `headerFooter.header.center` 字符串形态（must be a non-empty array）→ 载体改为 `[{text,bold}]` 数组后通过；说明 IR 闸有效、载体形状须按契约。
+- 结果：run-golden-e2e 全链 PASS，runId=ge20261108081409-3c1bc7——plan→plan2spec→create→validate（逐格真值 10 day@machine 行 + 合计 33531:26531）→preview（1587×2245/44,068B）→modify（diffClean+orig 保留）→promote→restore→baseline-restore。
+- 账本：page.headerFooter 入 evidenceGrade.fullE2e（证据=本次 G2）；spec.sql.chart / chart.bar 同步入 fullE2e（G2 的 SQL 图与 legacy bar 均真实出图）。
+- 验证：基线 demo_api.cpt MD5=CBEB42E3（harness 末步 baseline-restore）；fast/scan 见下条。

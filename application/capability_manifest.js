@@ -81,7 +81,7 @@ var CapabilityManifest = (function () {
   ];
   // 页面/单元格表达力族（README #31/#73/#77/#78/#80）
   var page = [
-    cap('page.headerFooter', 'verified', 'verified', 'verified', 'verified', 'README #73 PDF 文本层逐字命中；carrier test_pagehf scan', 'cpt'),
+    cap('page.headerFooter', 'verified', 'verified', 'verified', 'verified', 'README #73 PDF 文本层逐字命中；carrier test_pagehf scan；**2026-11-08 业务验收 G2 全链**（runId=ge20261108081409-3c1bc7，Intent=verify/fixtures/golden/g2_intent.json）：SQL 真库 plan→plan2spec→create→validate(逐格真值 10 day@machine 行 + 合计 33531:26531)→preview→modify(diffClean)→promote→restore→baseline-restore 全 PASS，页眉"生产日报 G2"/页脚"机密·内部使用"随 sheet.headerFooter 进入真实报表', 'cpt', true),
     cap('page.templateMarks', 'verified', 'verified', 'verified', 'verified', 'README #73 TemplateId/Theme 序列化+roundtrip；carrier test_pagehf', 'cpt'),
     cap('page.repeatHeaderRow', 'verified', 'verified', 'verified', 'verified', 'README #31 每页重复标题条带；carrier test_closure_gaps（repeatHeaderRow 键，v2 对账器补实）', 'cpt'),
     cap('page.freezeWeb', 'pending', 'pending', 'pending', 'pending', 'README #77 240 demo 零语料'),
@@ -152,7 +152,7 @@ var CapabilityManifest = (function () {
       // 证据强度口径（2026-11-08）：agentAvailable=true 表示"可按账本承诺（四层状态+显式 override）"，
       //   不等于每项都跑过 plan→create→preview→modify→promote→restore 全链。fullE2e 名单是真正有
       //   端到端证据的项；其余为 layerEvidence（四层+回归证据）。discover 输出须带此口径，防"广告"被误读。
-      evidenceGrade: { fullE2e: ['agent.plan', 'agent.artifact.isolation', 'agent.runtime.serial', 'page.multiSheet', 'spec.rows.sum', 'spec.sql.model', 'template.patch.cellValue', 'template.patch.dataset', 'chart.vmap', 'chart.vheatmap', 'cells.rowSpan', 'spec.params.filter'], note: 'agentAvailable=可按账本承诺；fullE2e=有端到端工具链实证；未列名者=layerEvidence（四层/回归证据），不等于已跑全生命周期' },
+      evidenceGrade: { fullE2e: ['agent.plan', 'agent.artifact.isolation', 'agent.runtime.serial', 'page.multiSheet', 'page.headerFooter', 'spec.rows.sum', 'spec.sql.model', 'spec.sql.chart', 'template.patch.cellValue', 'template.patch.dataset', 'chart.vmap', 'chart.vheatmap', 'cells.rowSpan', 'spec.params.filter', 'chart.bar'], note: 'agentAvailable=可按账本承诺；fullE2e=有端到端工具链实证；未列名者=layerEvidence（四层/回归证据），不等于已跑全生命周期' },
       unavailable: unavailableCatalog(),
       chart: chart, condition: condition, write: write, page: page, product: product
     };

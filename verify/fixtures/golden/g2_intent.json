@@ -1,0 +1,28 @@
+{
+  "outName": "生产日报G2",
+  "reportName": "生产日报（业务验收 G2：图表+页眉页脚+合计）",
+  "dataset": {
+    "kind": "sql",
+    "connection": "ATOM_LIVE",
+    "entity": "InspectionRecord",
+    "dimensions": ["bizDate", "machine"],
+    "metrics": ["planned", "done", "completionRate"],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "bar",
+      "category": "bizDate",
+      "value": "planned",
+      "title": "每日计划数"
+    }
+  },
+  "sheet": {
+    "headerFooter": {
+      "header": { "center": [ { "text": "生产日报 G2（9/13-9/22）", "bold": true } ] },
+      "footer": { "right": [ { "text": "机密 · 内部使用" } ] }
+    }
+  }
+}
