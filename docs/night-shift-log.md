@@ -1953,3 +1953,19 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - treemap 共用 MultiPieValueDefinition，rawIR 只出顶层矩形（嵌套子块未出）→ 不接、不计入闭环；backlog 保留。structure（StructureTableDefinition nodeId/parentId/nodeName/nodeValue）rawIR 可出层级+数值，但节点名未出 → 也不接。
 - 门修复：`CHART RENDER NONBLANK` 收紧 chroma>=20 后 multipie 首版空白被拒，推动找到 MultiPieValueDefinition 分支/function 缺失；donut/donut3d carrier 已按 OneValue 重跑（标题+多色多环）。
 - 回归：fast 20 套件 GREEN（`logs/fast_final_20261108.txt`，caps=82/agent=61；supported=21/unsupported=14）；scan ok=105；基线 CBEB42E3；层扫描 81 项+multipie 单项门（10 PASS/1 UNKNOWN），82 项全量扫描待下轮复跑。
+
+### 第 28 轮 验收规则复核修复（用户 review 三条，2026-11-08）
+- 用户 review 结论：框架方向正确，但 (P1) G01 只读分析分支可绕过 Agent 执行证据；(P1) `dataContract` 只在任务声明层，结果层可拿预置 `closing`/预聚合冒充报表能力；(P2) PASS 证据文件关联不够强。明确要求先修三条、冻结 V0.1 定义、再跑 11 项；**本轮用户追加指令：任务先不要跑**。
+- 修复（commit `8fd2dae`）：
+  1. **Agent 执行证据**：`evidence.plan`（pass+path+runId）提升到所有 PASS 的公共门槛，`analysisOnly` 不再绕过；G01 的 plan 可指向 `inspect.json`，但必须证明 `inspect_template` 真的执行过。
+  2. **数据契约结果证据**：PASS 必须带 `dataExecution{contract,sources[],derived[]}`；`contract` 必须等于任务 `dataContract`；`report-computes`/`report-aggregates` 的 derived 必须 `computedBy="report"`，且 `derived.name` 不得出现在 `sources[].fields`（A05 直接读预置 closing、A02 无报表层聚合都会被拒）；`raw-rows` 不允许 derived。
+  3. **证据关联**：`plan/spec/ir/cpt/engine/render/data/visual` 的 `runId` 必须等于 `result.runId`（禁止拼不同运行）；`cpt`/`render` 必须带 64 位 `sha256`，记录器写盘时重算文件哈希比对；`data.path` 是数据提取文件；`visual.reviewer` 是复核记录。
+  4. **V0.1 冻结**：`benchmark.json` 增 `taskDefinitionsFrozen=true/frozenAt=2026-11-08`，fast 门校验；后续新增走新 wave，不改 40 条的 id/prompt/requiredCapabilities/dataContract。
+- 自测（纯离线，未启动引擎、未跑任何 benchmark 任务）：
+  - A01 PASS 合法；缺 plan 被拒；CPT 哈希错配被拒并打印真实哈希；evidence.runId 与 result.runId 不一致被拒。
+  - G01 PASS 需 plan+analysis；缺 plan 被拒（原 P1 路径已堵）。
+  - A05 `report-computes` 合法形态通过；`computedBy=data-prep` + `sources` 含 closing 的冒充形态被双拒。
+  - A02 `report-aggregates` 无 derived 被拒；`computedBy=report` 的聚合声明通过。
+  - `fast_acceptance` 3003 checks GREEN；无真实结果写入 `acceptance/results/`。
+- 未验证/暂停：真实任务执行、渲染、Agent 驱动全部未开始（用户指令）；`dataExecution` 只能挡"自报契约不符"的明显形态，字段是否真来自该执行仍需证据包人工复核；工具调用 transcript 仍为可选层。
+- 代码基线：`8fd2dae`（本地提交，未 push）；工作区另有 wordcloud 会话的未提交改动，未触碰。
