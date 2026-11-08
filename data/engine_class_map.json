@@ -14,6 +14,7 @@
     "chart.vgauge": { "class": "com.fr.plugin.chart.gauge.VanChartGaugePlot", "module": "lib/object.js" },
     "chart.vmap": { "class": "com.fr.plugin.chart.map.VanChartMapPlot", "module": "lib/object.js" },
     "chart.vheatmap": { "class": "com.fr.plugin.chart.heatmap.VanChartHeatMapPlot", "module": "lib/object.js" },
+    "chart.vradar": { "class": "com.fr.plugin.chart.radar.VanChartRadarPlot", "module": "lib/object.js" },
     "chart.tooltip": { "class": "com.fr.plugin.chart.base.AttrTooltip", "module": "lib/object.js" },
     "chart.label": { "class": "com.fr.plugin.chart.base.AttrLabel", "module": "lib/object.js" },
     "chart.stack": { "class": "com.fr.plugin.chart.base.AttrSeriesStackAndAxis", "module": "lib/object.js" },

@@ -73,6 +73,7 @@ caps.forEach(function (c) {
   var hit = false;
   PATTERNS.forEach(function (re) {
     var mm;
+    re.lastIndex = 0;   // 2026-11-08: /g regex is shared across capabilities; a prior hit leaves lastIndex > 0
     while ((mm = re.exec(ev)) !== null) { if (exists(mm[0])) { hit = true; break; } }
   });
   if (!hit) {

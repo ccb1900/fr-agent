@@ -94,6 +94,8 @@ var rfil = plan({ outName: 'fl', dimensions: ['bizTime'], metrics: [{ term: 'row
 check('filters 越权→deferred(I2/I3) 记录', hasWarn(rfil, /I2/));
 var rcht = plan({ outName: 'ch', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vbar', category: 'bizTime', value: 'rowNo' } });
 check('chart 直通（2026-11-07 两路支持）→ ready 且 spec 带 chart', rcht.status === 'ready' && rcht.reportSpec.presentation.chart.kind === 'vbar');
+var rchtR = plan({ outName: 'chr', dimensions: ['bizTime'], metrics: [{ term: 'rowNo' }], rows: mkRows(1), chart: { kind: 'vradar', category: 'bizTime', value: 'rowNo' } });
+check('vradar 直通（2026-11-08 雷达图）→ ready 且 spec 带 vradar', rchtR.status === 'ready' && rchtR.reportSpec.presentation.chart.kind === 'vradar');
 // —— C6 同口径扩展（2026-11-07 B段复审）：rows 路 intent.filters/intent.chart 被能力墙丢掉时
 //    不得 ready（与 metrics 同理：数据范围/报表结构悄悄变窄比失败更危险）。此前仅 warning 仍 ready。
 check('C6 同口径: rows 路 intent.filters 被丢 → 不得 ready', rfil.status !== 'ready' && rfil.reportSpec === null);

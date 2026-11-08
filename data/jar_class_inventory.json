@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T09:02:55.5732054+08:00",
+    "generatedAt":  "2026-11-08T11:58:53.1308113+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -681,7 +681,6 @@
                      "com.fr.plugin.chart.marker.type.MarkerType":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.column.VanChartColumnPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.attr.axis.VanChartAlertValue":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.base.format.AttrTooltipSummaryValueFormat":  "fine-report-engine-11.0.jar",
                      "com.fr.code.bar.core.BarcodeAttr":  "fine-core-11.0.jar",
                      "com.fr.stable.ColumnRow":  "fine-cbb-11.0.jar",
                      "com.fr.plugin.chart.base.AttrTooltip":  "fine-report-engine-11.0.jar",
@@ -752,6 +751,8 @@
                      "com.fr.form.ui.CheckBoxGroup":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.IframeEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.attr.AttrMapTooltip":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.MoreNameCDDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.radar.VanChartRadarPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.form.main.parameter.FormParameterUI":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.Print":  "fine-report-engine-11.0.jar",
                      "com.fr.data.impl.TableDataDictionary":  "fine-core-11.0.jar",
@@ -784,7 +785,7 @@
                      "com.fr.data.impl.FormulaDictionary":  "fine-core-11.0.jar",
                      "com.fr.report.web.button.write.DeleteRowButton":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.WebPage":  "fine-report-engine-11.0.jar",
-                     "com.fr.chart.chartdata.MoreNameCDDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.attr.VanChartTitle":  "fine-report-engine-11.0.jar",
                      "com.fr.base.TextFormat":  "fine-core-11.0.jar",
                      "com.fr.report.cell.cellattr.core.group.CustomGrouper":  "fine-report-engine-11.0.jar",
                      "com.fr.base.Formula":  "fine-core-11.0.jar",
@@ -795,7 +796,6 @@
                      "com.fr.plugin.chart.type.LineStyle":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.group.SummaryGrouper":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrTooltipRichText":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.pie.attr.PieCategoryLabelContent":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.NewPrint":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.FloatElement":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.heatmap.VanChartHeatMapPlot":  "fine-report-engine-11.0.jar",

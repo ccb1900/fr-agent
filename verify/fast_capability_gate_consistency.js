@@ -24,7 +24,7 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
   var segs = ['chart', 'condition', 'write', 'page', 'product'];
   var total = 0, aa = 0;
   segs.forEach(function (s) { (mf[s] || []).forEach(function (c) { total++; if (c.agentAvailable) aa++; }); });
-  check('manifest totals 与逐段计数一致（73/52/21）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 73 && aa === 52);
+  check('manifest totals 与逐段计数一致（74/53/21）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 74 && aa === 53);
   check('unavailable 覆盖全部未承诺项且分类互斥', mf.unavailable.length === total - aa && mf.unavailable.every(function (x) {
     return ['webInteraction', 'unverifiedRendering', 'notImplemented', 'rejected', 'e5Evidence'].indexOf(x.reason) >= 0;
   }));
@@ -48,8 +48,8 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
   check('Planner 非 sum 聚合仍 deferred/rejected（与 sum-only 口径一致）', pc.aggregation('avg', caps).verdict !== 'supported');
   // ReportSpec 侧必须确实能表达这些底层能力（否则"广告"没有承载）
   check('ReportSpec rows.chart 已登记', caps.datasets.rows.chart && typeof caps.datasets.rows.chart === 'object');
-  check('ReportSpec sql.chart 含 vmap/vheatmap', (function () {
-    var a = caps.datasets.sql.chart.supported || []; return a.indexOf('vmap') >= 0 && a.indexOf('vheatmap') >= 0;
+  check('ReportSpec sql.chart 含 vmap/vheatmap/vradar', (function () {
+    var a = caps.datasets.sql.chart.supported || []; return a.indexOf('vmap') >= 0 && a.indexOf('vheatmap') >= 0 && a.indexOf('vradar') >= 0;
   })());
 })();
 print('SELFTEST END, failures=' + FAILS);

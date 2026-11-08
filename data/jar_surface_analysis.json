@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T11:50:12.8243238+08:00",
+    "generatedAt":  "2026-11-08T12:04:39.3449824+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  26,
-                   "base":  16,
-                   "supported":  12
+                   "unsupported":  24,
+                   "base":  17,
+                   "supported":  13
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  12,
+                         "current":  13,
                          "base":  16,
-                         "van":  10,
+                         "van":  9,
                          "legacy":  16
                      },
     "licensePolicy":  {
@@ -207,11 +207,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RadarPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "radar family not wired (legacy)"
+                        "reason":  "legacy radar engine variant; current radar family chart.vradar uses VanChartRadarPlot"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.RangePlot",
@@ -423,11 +423,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.radar.VanChartRadarPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "van radar family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vradar",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.scatter.VanChartScatterPlot",

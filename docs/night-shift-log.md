@@ -1854,3 +1854,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 门：`verify/fast_jar_surface.js` 新增 6 条付费口径断言（无付费前缀、license/family 完整、supported/unsupported 均不得 paid、账本带 paidPrefixes）；`scripts/build_jar_surface.ps1` 输出 license/family 计数。单跑 16 条 CHECK 全 PASS，SUMMARY license={"basic":54} family={"legacy":16,"base":16,"current":12,"van":10}。
 - 结论：**付费不做=符合**（没有实现任何付费族，付费族不会被排期；仅核心 jar 的运行时 license gate 未独立审计）。**付费之外没有全闭环**：16 图族未接、21 项能力未承诺（webInteraction 12 / unverifiedRendering 2 / notImplemented 4 / rejected 3）、coverage partial 21；noncore 44 为付费/移动端排除。归属闭环（unattributed=0）≠能力闭环。
 - 未验证：core jar 内部运行时 license gate；16 图族的具体实现成本未逐族估算。
+
+### 第 22 轮 非付费图族闭环第 1 个：chart.vradar 雷达图（2026-11-08）
+- 目标：用户要求"付费之外能力全部闭环，未闭环不得停止"；先做可行性最高的 Van 雷达族（官方 doc/Chart/NewRadarChart 24 个语料）。
+- 结构一手：官方 `CustomRadar.cpt` = `Plot class=com.fr.plugin.chart.radar.VanChartRadarPlot` + `MoreNameCDDefinition(CategoryName + ChartSummaryColumn)`；与矩形派 vbar/vline 同绑定，不需要新数据定义类。
+- 实施：object.js VK 增 `vradar`（VanChartRadarPlot）；IR `CHART_KINDS`/`capabilities.chart.vanChart` 增 vradar；ReportSpec rows/sql 两路 supported 列表 + spec_validator fallback + 编译器测试；planner 合同（`fast_planner` vradar 直通）；engine_class_map 增 chart.vradar→VanChartRadarPlot（module=lib/object.js）；jar 面 VanChartRadarPlot 转 supported、legacy RadarPlot 归 base（supported 13/base 17/unsupported 24=15 图族）。
+- 验证：`reports/test_radar.js` 真引擎 failures=0，PNG 目检 5 轴 A-E + 蓝色多边面 + 图例「时速」+ 标题（292 色）；SQL 真库 plan→plan2spec→create→validate 全链 PASS（runId=radar_e2e_001，表体 33531/26531 真值不变，部署 cpt+PNG 309 色，雷达图在表体下方渲染）。manifest chart.vradar 四层 verified + agentAvailable=true（74 项/53 承诺）。
+- 门修复：`fast_layer_coherence` I2 入口检查共享 `/g` 正则未复位 lastIndex，命中后后续能力从错误偏移匹配 → chart.vradar 假阴性；已加 `re.lastIndex=0`（门自身缺陷，非账本问题）。`fast_capability_gate_consistency` totals 硬编码 73/52 → 74/53。
+- 回归：fast 19 套件 GREEN（`logs/fast19_radar2.txt`，COHERENCE caps=74/agent=53；JAR-SURFACE supported=13/unsupported=24）；scan ok=97 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
+- 下一项：按同法做 Van 漏斗/箱线（官方 doc 语料、MoreName 或 OneValue 绑定），再做 Gantt/组合/树图/词云/结构/钻取/多层饼；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。

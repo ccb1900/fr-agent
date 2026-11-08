@@ -253,8 +253,8 @@
       "family": "legacy"
     },
     "com.fr.chart.chartattr.RadarPlot": {
-      "status": "unsupported",
-      "reason": "radar family not wired (legacy)",
+      "status": "base",
+      "reason": "legacy radar engine variant; current radar family chart.vradar uses VanChartRadarPlot",
       "license": "basic",
       "family": "legacy"
     },
@@ -313,10 +313,10 @@
       "family": "van"
     },
     "com.fr.plugin.chart.radar.VanChartRadarPlot": {
-      "status": "unsupported",
-      "reason": "van radar family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vradar"
     },
     "com.fr.plugin.chart.structure.VanChartStructurePlot": {
       "status": "unsupported",
