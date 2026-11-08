@@ -750,6 +750,8 @@ function build() {
   var benchmark = {
     benchmarkVersion: '1.0.0',
     specDate: SPEC_DATE,
+    taskDefinitionsFrozen: true,
+    frozenAt: SPEC_DATE,
     purpose: 'FineReport Agent 能力验收基准：自然语言业务需求 → 需求理解/语义映射/规划/原生能力选择/生成/真实引擎验证/后续修改',
     sourceOfTruth: 'acceptance/tools/build_tasks.js（任务定义源）；tasks/*.json 与 benchmark.json 是确定性产物',
     taskModelDoc: 'acceptance/README.md',

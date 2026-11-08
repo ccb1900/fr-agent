@@ -15,6 +15,18 @@ function readText(p) {
   return String(new (J('java.lang.String'))(Files.readAllBytes(Paths.get(p)), 'UTF-8')).replace(/^\uFEFF/, '');
 }
 function writeText(p, text) { Files.write(Paths.get(p), J('java.lang.String').valueOf(text).getBytes('UTF-8')); }
+function sha256File(p) {
+  var Files2 = J('java.nio.file.Files'), Paths2 = J('java.nio.file.Paths');
+  var bytes = Files2.readAllBytes(Paths2.get(absOf(p)));
+  var md = J('java.security.MessageDigest').getInstance('SHA-256');
+  var d = md.digest(bytes);
+  var HEX = '0123456789abcdef', out = '';
+  for (var i = 0; i < d.length; i++) {
+    var b = d[i] & 0xff;
+    out += HEX.charAt((b >> 4) & 0xf) + HEX.charAt(b & 0xf);
+  }
+  return out;
+}
 function absOf(p) { return /^[A-Za-z]:[\\\/]/.test(String(p)) ? String(p) : (ROOT + '/' + String(p)); }
 function fail(msg, code) { print(JSON.stringify({ ok: false, error: msg })); System.exit(code); }
 
@@ -53,7 +65,8 @@ var verdict = ResultSchema.validate(result, task, {
   oracle: oracle,
   capabilities: capabilities,
   requireFiles: write,
-  fileExists: write ? exists : null
+  fileExists: write ? exists : null,
+  fileSha256: function (p) { try { return sha256File(p); } catch (e) { return null; } }
 });
 
 var out = {

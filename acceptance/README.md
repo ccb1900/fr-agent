@@ -110,6 +110,8 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 长期回归集 = G01–G04 + H01–H04 + E04 + F04 共 **10 条**（满足"至少 10 个修改/组合/异常任务"），不随单轮通过而移出。
 执行批次对齐上一轮落地顺序：**V0.1** 11 条（A01–A05、B01、C01–C03、D01–D02）；**V0.2** 12 条（B02–B05、C04–C08、D03–D05）；
 **V0.3** 9 条（E01–E05、F01–F04）；**V0.4** 4 条（G01–G04）；**V0.5** 4 条（H01–H04）。原表未点名的 B02–B05 归入 V0.2 布局批。
+**V0.1 任务定义已冻结（2026-11-08）**：后续新增能力走新 wave，不改现有 40 条的 id / prompt / requiredCapabilities / dataContract；
+改任务必须走 `build_tasks.js` 重建并留下 benchmark 哈希变更。
 
 ### A. 基础报表与数据（5）
 
@@ -233,6 +235,11 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 
 **UNSAFE 与门的关系**：记录器对 UNSAFE 退出码 3；`fast_acceptance` 对历史 UNSAFE 记录只告警（保留证据，不把"发生过不安全"当成基准损坏），验收裁决时仍按硬失败处理。
 
+**数据契约执行证据（PASS 必填）**：结果必须带 `dataExecution{contract,sources[],derived[]}`。`contract` 必须等于任务的
+`dataContract`；`report-computes` / `report-aggregates` 的 derived 必须 `computedBy="report"`，且 `derived.name` 不能出现在
+`sources[].fields` 里（防止直接读预置的 `closing` 或预聚合列冒充报表能力）；`raw-rows` 不允许 derived。
+记录器无法证明字段一定来自该执行，但能挡住"自报契约不符/预计算冒充"的明显形态，剩余靠证据包人工复核。
+
 **失败归因（非 PASS 必填）**：`failureStage` ∈ `requirement|semantic|planning|capability|ir|object|engine|data|interaction|safety`，
 用于区分"Agent 不会规划 / IR 不支持 / Object/CPT 不支持 / 引擎不支持"，不允许用一句"引擎不支持"糊过去。PASS/PASS_WITH_CLARIFICATION
 必须为空或 `none`；H04 的 PASS 还必须带 `attempts`（>=2，首轮 fail、末轮 pass）。
@@ -261,6 +268,10 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 
 > 一个真实渲染 PNG 里有字，不等于数据对；`IR` 校验通过、`CPT` 生成成功、引擎打开成功、渲染正确，是四件不同的事。
 > 记录器要求 `data.actual` 逐键对拍 `expected.json`，并由 `render.nonBlank` 挡住"整图空白也 PASS"。
+>
+> **PASS 的证据关联硬规则**：`plan/spec/ir/cpt/engine/render/data/visual` 都要有 `path`，且 `runId` 必须等于 `result.runId`
+> （不允许把不同运行的证据拼在一起）；`cpt`/`render` 必须带 64 位 `sha256`，记录器写盘时重算文件哈希比对；
+> `data.path` 是数据提取文件；`visual.reviewer` 是复核记录；`analysis` 只用于只读分析任务，且仍必须有 `plan`（Agent 执行）证据。
 
 ---
 
@@ -336,14 +347,23 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
   "scores": { "requirement": 10, "semantic": 10, "planning": 10, "capability": 15, "ir": 10,
               "cpt": 10, "render": 30, "interaction": 0, "safety": 5 },
   "evidence": {
-    "plan":   { "pass": true, "path": "logs/agent/runs/<runId>/plan.json" },
-    "spec":   { "pass": true, "path": "logs/agent/runs/<runId>/reportSpec.json" },
-    "ir":     { "pass": true, "path": "logs/agent/runs/<runId>/validate.json" },
-    "cpt":    { "pass": true, "path": "logs/agent/runs/<runId>/artifact.json" },
-    "engine": { "pass": true, "path": "logs/agent/runs/<runId>/validate.json" },
-    "render": { "pass": true, "nonBlank": true, "path": "<runId>.png" },
-    "data":   { "pass": true, "actual": { "orders.count": 184, "orders.amount": 1969883 } },
-    "visual": { "pass": true, "notes": "标题/表头/明细/合计目检" }
+    "plan":   { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/plan.json" },
+    "spec":   { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/reportSpec.json" },
+    "ir":     { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/validate.json" },
+    "cpt":    { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/<name>.cpt",
+                "sha256": "<64-hex>" },
+    "engine": { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/validate.json" },
+    "render": { "pass": true, "nonBlank": true, "runId": "acc20261108120000", "path": "<runId>.png",
+                "sha256": "<64-hex>" },
+    "data":   { "pass": true, "runId": "acc20261108120000", "path": "logs/agent/runs/<runId>/grid.txt",
+                "actual": { "orders.count": 184, "orders.amount": 1969883 } },
+    "visual": { "pass": true, "runId": "acc20261108120000", "reviewer": "验收人/视觉复核",
+                "notes": "标题/表头/明细/合计目检" }
+  },
+  "dataExecution": {
+    "contract": "raw-rows",
+    "sources": [ { "table": "orders", "fields": ["orderDate","orderId","customerId","productId","qty","unitPrice","amount"] } ],
+    "derived": []
   },
   "failureStage": "none",
   "attempts": [],
@@ -358,6 +378,8 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
 > 模板只示意字段；`data.actual` 必须包含任务 `dataAssertions` 的全部键并与 oracle 相等，否则记录器判非法。
 > 只读分析任务（G01）用 `evidence.analysis` 代替 plan/spec/ir/cpt/engine/render/data。
 > 非 PASS 结果必须填 `failureStage`（失败归因）；H04 的 PASS 必须带 `attempts`（>=2，首轮 fail、末轮 pass）。
+> `report-computes` 示例：`derived:[{"name":"closing","expression":"opening + inbound - outbound","computedBy":"report"}]`，
+> 且 `sources[].fields` 不含 `closing`；`report-aggregates` 的聚合项同样 `computedBy="report"`。
 > 不要在 V0.1 里把"没跑过"的任务写成 PASS——`fast_acceptance` 会校验结果文件，但不会替你判断证据真假。
 >
 > **记录器的边界（必读）**：它能证明的是"结果自洽、证据文件存在、`data.actual` 与 oracle 数值一致、等级规则未被绕过"；
@@ -403,6 +425,9 @@ A02/A03/C01 若把聚合/排序结果预先塞进内嵌行，属于"数据准备
 | 固定数据 + 真值 oracle + 哈希 | **已实现 + 已自动化检查**（跨语言 134 键对拍 PASS） |
 | 结果记录器（等级/评分/证据/失败归因/重试/部署安全） | **已实现 + 已自动化自测**（PASS/无 plan/数据错配/部署后失败/PARTIAL/BLOCKED/UNSAFE/H04 两轮尝试） |
 | 长期回归集 10 条（G4+H4+E04+F04） | **已标记 + 机器校验 >=10**（`longTermRegression`） |
+| 数据契约执行证据（`dataExecution`） | **已实现 + 自动化自检**（A05 预计算冒充、A02 无聚合声明均被拒） |
+| 证据 RunId 关联 + CPT/PNG 哈希 | **已实现 + 写盘时重算比对**（拼运行/换产物会被拒） |
+| V0.1 任务定义冻结 | **已冻结（2026-11-08）**，新增能力走新 wave |
 | 真实任务执行（Agent 跑 40 条） | **尚未开始**（0 条结果） |
 | 真实引擎渲染证据 | **尚未产生**（本基准未启动 FineReport） |
 | 视觉验收 | **尚未进行** |

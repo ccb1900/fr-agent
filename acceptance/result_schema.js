@@ -128,7 +128,7 @@ var ResultSchema = (function () {
     // ---- 重试/修复过程（H04 的核心证据）：attempt 从 1 连续递增；失败尝试必须有 stage ----
     var attempts = result.attempts;
     if (attempts !== undefined) {
-      if (!isArr(attempts) || attempts.length === 0) E('INVALID_TYPE', 'attempts', 'attempts must be a non-empty array when present');
+      if (!isArr(attempts)) E('INVALID_TYPE', 'attempts', 'attempts must be an array when present');
       else attempts.forEach(function (a, i) {
         if (!isObj(a)) { E('INVALID_TYPE', 'attempts[' + i + ']', 'attempt must be an object'); return; }
         if (a.attempt !== i + 1) E('ATTEMPT_INDEX', 'attempts[' + i + '].attempt', 'attempt must be ' + (i + 1) + ' (contiguous from 1)');
@@ -179,6 +179,35 @@ var ResultSchema = (function () {
       if (!opts.oracle && (task.dataAssertions || []).length > 0) E('ORACLE_MISSING', 'evidence.data', 'oracle not loaded; cannot verify data assertions');
     }
 
+    // ---- 数据契约（防"提前算好再交给报表展示"）----
+    function dataExecutionChecks() {
+      var de = result.dataExecution;
+      if (!isObj(de)) { E('DATA_EXECUTION_REQUIRED', 'dataExecution', 'dataExecution object required (contract/sources/derived)'); return; }
+      if (de.contract !== task.dataContract) E('DATA_CONTRACT_MISMATCH', 'dataExecution.contract', 'declared ' + de.contract + ' != task ' + task.dataContract);
+      var sources = de.sources;
+      var sourceFields = [];
+      if (!isArr(sources) || sources.length === 0) E('DATA_SOURCES_REQUIRED', 'dataExecution.sources', 'non-empty sources[] required');
+      else sources.forEach(function (src, i) {
+        if (!isObj(src) || !isStr(src.table) || !isArr(src.fields) || src.fields.length === 0) { E('DATA_SOURCE_SHAPE', 'dataExecution.sources[' + i + ']', 'source needs table + fields[]'); return; }
+        src.fields.forEach(function (f) { if (!isStr(f)) E('DATA_SOURCE_FIELD', 'dataExecution.sources[' + i + '].fields', 'field must be a string'); else sourceFields.push(f); });
+      });
+      var derived = de.derived;
+      if (derived !== undefined && !isArr(derived)) E('INVALID_TYPE', 'dataExecution.derived', 'derived must be an array when present');
+      derived = isArr(derived) ? derived : [];
+      if (task.dataContract === 'raw-rows' && derived.length > 0) E('DATA_CONTRACT_VIOLATION', 'dataExecution.derived', 'raw-rows must not carry derived fields');
+      if (task.dataContract === 'report-computes' && derived.length === 0) E('DATA_DERIVED_REQUIRED', 'dataExecution.derived', 'report-computes requires derived[] (report-layer computation)');
+      if (task.dataContract === 'report-aggregates' && derived.length === 0) E('DATA_DERIVED_REQUIRED', 'dataExecution.derived', 'report-aggregates requires derived[] (report-layer aggregation)');
+      derived.forEach(function (d, i) {
+        if (!isObj(d) || !isStr(d.name) || !isStr(d.expression) || !isStr(d.computedBy)) { E('DATA_DERIVED_SHAPE', 'dataExecution.derived[' + i + ']', 'derived needs name/expression/computedBy'); return; }
+        if (d.computedBy !== 'report' && d.computedBy !== 'data-prep') E('DATA_COMPUTED_BY', 'dataExecution.derived[' + i + '].computedBy', 'computedBy must be report|data-prep');
+        if ((task.dataContract === 'report-computes' || task.dataContract === 'report-aggregates') && d.computedBy !== 'report') {
+          E('DATA_CONTRACT_VIOLATION', 'dataExecution.derived[' + i + '].computedBy', task.dataContract + ' requires computedBy=report');
+        }
+        if (sourceFields.indexOf(d.name) >= 0) E('DATA_DERIVED_FROM_SELF', 'dataExecution.derived[' + i + '].name', 'derived field must not be listed as a source field: ' + d.name);
+      });
+      if (isObj(de) && de.preparedBy !== undefined && !isStr(de.preparedBy)) E('INVALID_TYPE', 'dataExecution.preparedBy', 'preparedBy must be a string');
+    }
+
     // ---- 等级规则 ----
     if (level === 'PASS' || level === 'PASS_WITH_CLARIFICATION') {
       if (total < 80) E('PASS_TOTAL_LOW', 'scores', 'PASS requires total >= 80 (got ' + total + ')');
@@ -191,15 +220,40 @@ var ResultSchema = (function () {
         if (!isStr(pathOf('render'))) E('EVIDENCE_PATH', 'evidence.render.path', 'rendered PNG path required');
         if (!passOf('visual')) E('EVIDENCE_MISSING', 'evidence.visual', 'visual review pass=true required');
       }
+      // Agent 执行证据：所有任务（含只读分析 G01）都必须证明 plan/patch/inspect 真的跑过。
+      if (!task.acceptance || task.acceptance.requireAgentExecution !== true || !isObj(tier.plan) || tier.plan.pass !== true) {
+        E('EVIDENCE_MISSING', 'evidence.plan', 'Agent execution evidence (plan/patch/inspect) pass=true required');
+      }
+      if (!isStr(pathOf('plan'))) E('EVIDENCE_PATH', 'evidence.plan.path', 'Agent execution trace path required');
       if (task.analysisOnly === true) {
         // 只读分析任务没有 cpt/engine/render/data 层：把"结构提取与说明"作为独立证据层。
         if (!isObj(tier.analysis) || tier.analysis.pass !== true) E('EVIDENCE_MISSING', 'evidence.analysis', 'analysis evidence pass=true required for analysis-only ' + level);
         if (!isStr(pathOf('analysis'))) E('EVIDENCE_PATH', 'evidence.analysis.path', 'inspect/transcript path required');
       } else {
-        ['plan', 'spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
+        ['spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
           if (!isObj(tier[t]) || tier[t].pass !== true) E('EVIDENCE_MISSING', 'evidence.' + t, t + ' evidence pass=true required for ' + level);
+          if (!isStr(pathOf(t))) E('EVIDENCE_PATH', 'evidence.' + t + '.path', t + ' evidence path required');
         });
-        if (!isStr(pathOf('plan'))) E('EVIDENCE_PATH', 'evidence.plan.path', 'plan/patch evidence path required (agent execution, not a hand-written spec)');
+        // 同一 RunId 关联：证据不能从不同运行拼接。
+        ['plan', 'spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
+          if (isObj(tier[t]) && tier[t].runId !== result.runId) E('EVIDENCE_RUNID', 'evidence.' + t + '.runId', 'must equal result.runId (' + result.runId + ')');
+        });
+        if (isObj(tier.render) && tier.render.runId !== result.runId) E('EVIDENCE_RUNID', 'evidence.render.runId', 'must equal result.runId (' + result.runId + ')');
+        if (isObj(tier.data) && tier.data.runId !== result.runId) E('EVIDENCE_RUNID', 'evidence.data.runId', 'must equal result.runId (' + result.runId + ')');
+        if (isObj(tier.visual) && tier.visual.runId !== result.runId) E('EVIDENCE_RUNID', 'evidence.visual.runId', 'must equal result.runId (' + result.runId + ')');
+        if (isObj(tier.visual) && !isStr(tier.visual.reviewer)) E('EVIDENCE_REVIEWER', 'evidence.visual.reviewer', 'visual review record needs a reviewer');
+        // CPT/PNG 哈希：记录器在写盘模式会重算文件哈希并对比。
+        ['cpt', 'render'].forEach(function (t) {
+          var h = tier[t] && tier[t].sha256;
+          if (!isStr(h) || !/^[0-9a-fA-F]{64}$/.test(h)) E('EVIDENCE_SHA', 'evidence.' + t + '.sha256', '64-hex sha256 required');
+          else if (opts.fileSha256 && isStr(pathOf(t))) {
+            var actualHash = opts.fileSha256(pathOf(t));
+            if (!actualHash) E('EVIDENCE_SHA_READ', 'evidence.' + t + '.sha256', 'cannot hash evidence file');
+            else if (String(actualHash).toLowerCase() !== String(h).toLowerCase()) E('EVIDENCE_SHA_MISMATCH', 'evidence.' + t + '.sha256', 'declared ' + h + ' != file ' + actualHash);
+          }
+        });
+        // 数据提取文件（actual 的来源）必须可追溯。
+        if (isObj(tier.data) && !isStr(pathOf('data'))) E('EVIDENCE_PATH', 'evidence.data.path', 'data extraction file required');
       }
       if (!isArr(used)) E('CAPABILITIES_MISSING', 'capabilitiesUsed', 'capabilitiesUsed array required');
       else {
@@ -208,7 +262,7 @@ var ResultSchema = (function () {
         });
       }
       if (isArr(unimplemented) && unimplemented.length > 0) E('PASS_WITH_UNIMPLEMENTED', 'unimplemented', 'PASS cannot carry unimplemented items');
-      if (task.analysisOnly === false) dataChecks();
+      if (task.analysisOnly === false) { dataChecks(); dataExecutionChecks(); }
       if (task.interaction.required) {
         if (!passOf('interaction')) E('EVIDENCE_MISSING', 'evidence.interaction', 'interaction evidence pass=true required');
         if (task.interaction.evidenceTier !== 'engine') E('PASS_INTERACTION_TIER', 'evidence.interaction', 'interaction evidence tier is ' + task.interaction.evidenceTier + ' (not engine) -> cannot claim PASS (use PARTIAL)');

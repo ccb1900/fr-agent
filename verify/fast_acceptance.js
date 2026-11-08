@@ -60,6 +60,7 @@ var bench = JSON.parse(readText(BENCH_PATH));
 // ---- ① 索引结构 ----
 check('benchmarkVersion present', isStr(bench.benchmarkVersion));
 check('specDate present', /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(bench.specDate)));
+check('V0.1 task definitions frozen', bench.taskDefinitionsFrozen === true && /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(String(bench.frozenAt)));
 check('sourceOfTruth names build_tasks.js', String(bench.sourceOfTruth || '').indexOf('acceptance/tools/build_tasks.js') >= 0);
 check('taskModelDoc present', String(bench.taskModelDoc || '') === 'acceptance/README.md');
 check('capability ledger source pinned', String((bench.capabilityLedger || {}).source) === 'application/capability_manifest.js');
