@@ -174,14 +174,12 @@
 - 验收标准：每能力五态如实（Engine/Object/CPT/IR/ReportSpec/Planner/Agent/E2E 逐层），agentAvailable 按真实链路证据；每项反例先行+载体 PNG/CPT；门禁全绿；不为接线而虚高账本。
 - 优先级：P1（产品主线）。外部依赖：无（F8 写库/凭据仍需用户授权，维持不做）。
 
-### P3: vpie 标签/汇总渲染未达成（2026-11-08 升级为序列化墙）
+### ~~P3: vpie 标签/汇总渲染未达成~~（**2026-11-08 已解决**，详见 night-shift-log 第 18 轮）
 - 真实证据：test_vanchart vpie 臂配置 `label {enable:true, position:2, summary:{format}}` → 真引擎 PNG 饼图无任何标签文字；2026-11-08 四次挂载实验（命名 ConditionAttr+ListCondition / 类目条件 CATEGORY_INDEX / ConditionCollection DefaultAttr（官方 基础饼图.cpt 挂法）/ position 0）PNG 目检均无标签。官方语料一手：`PieCategoryLabelContent` 用于 `gaugeValueLabel`（仪表值标签）；饼图 labelDetail 内容是 `AttrTooltipContent` + value/percent/category/series format 开关（活对象反射一手 probe_labelcontent_api）。
-- **2026-11-08 后续两次实现尝试均失败**：⑤新建 AttrTooltipContent 挂 value/percent/category → cpt 导出期 CHART SERIALIZED 门失败（`<O t="CC">` 缺失，ChartCollection 整体被丢）⑥复用 detail 自带 content 只翻转 percent（补 CoreDecimalFormat）→ 同样失败。结论：本版 headless 构建对 AttrTooltipContent 的 writeXML 不可用——**这是序列化/引擎墙，不是接线问题**；实现代码已回滚。
-- **2026-11-08 第三次复核（隔离实验，关键）**：同代码 vbar + label.percent 开关 → CHART SERIALIZED 通过（AttrTooltipContent 类路径本身可用）；vpie 三条路线（复用 content+percent / 显式 new content / 官方 richText `${SERIES}:${PERCENT}`）均 CHART SERIALIZED 失败 → **墙在 vpie 的 label content 写路径**（非类本身、非挂载：命名 ConditionAttr 与官方条件属性4 同构仍失败）。代码再次回滚。
-- 用户影响：饼图无法展示分类/数值/百分比标签；`label.summary` 当前"写了不生效"（仅序列化）。
-- 修改范围（若未来版本解锁）：以 AttrTooltipContent 开关重实现并 PNG 实证；在此之前 `label.summary` 应改为 IR 明确拒（避免写了不生效）——需一次专门小批（含负例与载体），本轮未做以免半成品。
-- 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见且 cpt 保留 ChartCollection；`label.summary` 要么渲染达成要么 IR 明确拒；fast/scan/基线全绿。
-- 外部依赖：无。优先级：P3（视觉低价值，不阻塞产品主线）。
+- **2026-11-08 后续两次实现尝试均失败**：⑤新建 AttrTooltipContent 挂 value/percent/category → cpt 导出期 CHART SERIALIZED 门失败（`<O t="CC">` 缺失，ChartCollection 整体被丢）⑥复用 detail 自带 content 只翻转 percent（补 CoreDecimalFormat）→ 同样失败。
+- **2026-11-08 第三次复核（隔离实验）**：同代码 vbar + label.percent 开关 → CHART SERIALIZED 通过；vpie 三条路线均失败 → 墙在 vpie 的 label content 写路径。
+- **解决（2026-11-08 第 18 轮）**：根因=新建对象字段不全；改为**从官方基础饼图.cpt 反序列化取 AttrLabel**（content=AttrTooltipContent 字段齐全），保留其 content、覆盖 richText 文本、vpie 挂 DefaultAttr → CHART SERIALIZED 通过、PNG 扇区渲染「标签内容」。IR 现明确拒 `label.summary`（写了不生效），vpie 标签内容入口=label.richText；载体 examples/report-spec/vpielabel_rows.json + test_vanchart vpie 臂。
+- 遗留小项（P3）：richText 里 `${SERIES}/${PERCENT}` 占位符按官方 HTML `<img data-id>` 格式才替换，纯文本会原样显示；如需动态占位需按官方富文本模板生成。
 
 ### P2: 无头 Tomcat（frserver）下内嵌数据图表不渲染——官方语料同样（环境调查，非我们的序列化缺陷）
 - 真实证据（logs/webverify/evidence.md + rows_chart_web_blank.png）：frserver 8705 + 浏览器登录后打开 `能力自检_rows图表_api.cpt`——表格正常、图表 canvas 300×150 painted=0；**同一服务器打开官方 `demo/chart/ColumnChart/国旗柱形图.cpt`（内嵌数据）同样 canvas 空白**；SQL 路 G3 柱图正常。官方与本项目内嵌图序列化形状同为 `MoreNameCDDefinition + NameTableData + ChartSummaryColumn NoneFunction`；Van 改 SumFunction 实验 web 仍空白且 headless 只显示单类目 → 已回滚。

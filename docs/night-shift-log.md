@@ -1820,3 +1820,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 首跑 IR 拒：tooltip 仅 Van 图（kind=v*）支持；bar 改 vbar 后过。
 - 部署 cpt 含 AttrTooltipRichText 自定义内容（逐字节）；web 端 SVG 图表渲染，两次悬停未取到自定义提示文本 → **自定义 AttrTooltip web 悬停未验证**（非已证损坏）。G3 legacy bar 默认 tooltip 悬停此前已实测。
 - 收尾：停服、基线 CBEB42E3；证据 docs/architecture/web-verification.md。
+
+### 第 18 轮 vpie 标签内容反转达成（用户："那就是尝试"——官方模板反序列化路线）
+- 探针一手：probes/probe_vpie_label_template.js 在 Runtime 初始化后 `TemplateWorkBookIO.readTemplateWorkBook('doc/Chart/PieChart/基础饼图.cpt')`，遍历 cell 找到 ChartCollection → plot.getConditionCollection → DefaultAttr → getConditionIterator 取到 AttrLabel（detail content=AttrTooltipContent，richText 完整）。
+- 实现：object.js vpie + label.richText 时用该模板 AttrLabel 替代 new；保留模板 content（不再换 PieCategoryLabelContent）、覆盖 richText 文本；vpie 挂 DefaultAttr（官方挂法）；模板缺失时 fail-closed throw。
+- 验证：CHART SERIALIZED 通过、pipeline failures=0、**PNG 饼图扇区渲染「标签内容」**（crop 目检）；此前"序列化墙"结论作废（根因=新建对象字段不全）。
+- 词表收口：IR 明确拒 label.summary（旧 PieCategoryLabelContent 通道不渲染，写了不生效）；fast_ir_contract 更新 5 条（summary 全 kind 拒 + vpie richText 零误报）；新载体 examples/report-spec/vpielabel_rows.json（scan ok=92）。
+- 遗留 P3：richText 占位符 `${SERIES}/${PERCENT}` 需官方 `<img data-id>` HTML 格式才替换，纯文本原样显示。
