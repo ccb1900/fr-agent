@@ -174,9 +174,10 @@
 - 验收标准：每能力五态如实（Engine/Object/CPT/IR/ReportSpec/Planner/Agent/E2E 逐层），agentAvailable 按真实链路证据；每项反例先行+载体 PNG/CPT；门禁全绿；不为接线而虚高账本。
 - 优先级：P1（产品主线）。外部依赖：无（F8 写库/凭据仍需用户授权，维持不做）。
 
-### P3: vpie 标签/汇总渲染未达成（class 选型疑错，2026-11-08）
-- 真实证据：test_vanchart vpie 臂配置 `label {enable:true, position:2, summary:{format}}` → 真引擎 PNG 饼图无任何标签文字；2026-11-08 四次挂载实验（命名 ConditionAttr+ListCondition / 类目条件 CATEGORY_INDEX / ConditionCollection DefaultAttr（官方 基础饼图.cpt 挂法）/ position 0）PNG 目检均无标签。官方语料一手：`PieCategoryLabelContent` 用于 `gaugeValueLabel`（仪表值标签）；饼图 labelDetail 内容是 `AttrToolTipContent` + value/percent/category/series format 开关。
+### P3: vpie 标签/汇总渲染未达成（2026-11-08 升级为序列化墙）
+- 真实证据：test_vanchart vpie 臂配置 `label {enable:true, position:2, summary:{format}}` → 真引擎 PNG 饼图无任何标签文字；2026-11-08 四次挂载实验（命名 ConditionAttr+ListCondition / 类目条件 CATEGORY_INDEX / ConditionCollection DefaultAttr（官方 基础饼图.cpt 挂法）/ position 0）PNG 目检均无标签。官方语料一手：`PieCategoryLabelContent` 用于 `gaugeValueLabel`（仪表值标签）；饼图 labelDetail 内容是 `AttrTooltipContent` + value/percent/category/series format 开关（活对象反射一手 probe_labelcontent_api）。
+- **2026-11-08 后续两次实现尝试均失败**：⑤新建 AttrTooltipContent 挂 value/percent/category → cpt 导出期 CHART SERIALIZED 门失败（`<O t="CC">` 缺失，ChartCollection 整体被丢）⑥复用 detail 自带 content 只翻转 percent（补 CoreDecimalFormat）→ 同样失败。结论：本版 headless 构建对 AttrTooltipContent 的 writeXML 不可用——**这是序列化/引擎墙，不是接线问题**；实现代码已回滚。
 - 用户影响：饼图无法展示分类/数值/百分比标签；`label.summary` 当前"写了不生效"（仅序列化）。
-- 修改范围：lib/object.js vpie label 分支改用 AttrToolTipContent 开关（或找到正确 summary 宿主）；lib/ir.js 的 `label.summary` 闸同步（若确认无 summary 槽则结构化拒，不静默）。
-- 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见；`label.summary` 要么渲染达成要么 IR 明确拒；manifest chart.label 证据同步；fast/scan/基线全绿。
+- 修改范围（若未来版本解锁）：以 AttrTooltipContent 开关重实现并 PNG 实证；在此之前 `label.summary` 应改为 IR 明确拒（避免写了不生效）——需一次专门小批（含负例与载体），本轮未做以免半成品。
+- 验收标准：新载体 vpie label（percent/value 开关）真引擎 PNG 目检文字可见且 cpt 保留 ChartCollection；`label.summary` 要么渲染达成要么 IR 明确拒；fast/scan/基线全绿。
 - 外部依赖：无。优先级：P3（视觉低价值，不阻塞产品主线）。

@@ -1758,3 +1758,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   - 二跑公式 `=E2<60`（锚点错，明细从 r3 起且全部完成率 67-88）→ 三跑 `=E3<75` 命中 6 行
 - 结果：run-golden-e2e 全链 PASS（runId=ge20261108082641-e5ede7；10 行逐格真值+合计 33531:26531）；部署 cpt 含 FormulaCondition/ForegroundHighlightAction；**PNG 红字 1411 像素**（条件高亮真实渲染）。
 - 账本：condition.formula / condition.then.style 入 fullE2e；spec.params.panel 保持 serialization-only（面板是 web 交互面，不能进 fullE2e 子集——fast_capability_gate_consistency 的 fullE2e⊆agentAvailable 断言首次拦下，按账本口径修正而非放宽断言）。
+
+### 第 10 轮 剩余项定性（用户追问"是做不到吗"）——三类归因 + 新一手
+- seriesBorder（柱缘描边）：probe_labelcontent_api 活对象反射一手——AttrLabelDetail 只提供 `setBorder(AttrBorderWithShape)`（**标签边框**）；Plot/GeneralInfo/VanChart 只有 setBorderStyle/Color/RoundBorder（**图框**）；全类面无柱系列描边宿主。结合此前三次挂载像素阴性 → 判定**本版引擎不提供柱缘描边（引擎能力墙）**，rendering 维持 pending、不承诺；标签边框属另一能力，若需要另行立项（backlog）。
+- vpie 标签内容：按官方结构以 AttrTooltipContent（setValueFormat/setPercentFormat…）实现两次——⑤新建 content → cpt 导出期 CHART SERIALIZED 门失败（ChartCollection 整体丢失）⑥复用 detail 自带 content 仅翻 percent 开关（补 CoreDecimalFormat）→ 同样失败。判定**本版 headless 构建 AttrTooltipContent writeXML 不可用（序列化墙）**；实现已回滚，backlog 记录"未来解锁时重实现 / 在此之前 label.summary 应 IR 明确拒"。
+- web 交互类 render BLOCKED：AGENTS §5 禁止 GUI 自动化（浏览器属用户地盘），只能做到序列化证据，不能声称渲染验证——政策边界，非能力。
+- planner 不承载的 write/template/agent 族：设计如此（入口在 serialization/tool 层），UNKNOWN 是诚实状态，不是"没做"。
+- F8 写库/凭据：需用户显式授权（不可逆/凭据面），尚未授权。
+- 本轮代码零改动（实验均回滚）；manifest 证据与 backlog 更新；门：基线 CBEB42E3（默认 spec 回补）、fast 18/18、scan ok=90。
