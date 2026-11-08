@@ -74,3 +74,13 @@
 ## 6.3 drillmap 二轮结果（2026-11-08）
 - 找到 NPE 根因：pl 需 `setGeoUrl`（引擎 map 解析无 map◤ 源就 NPE）→ 加上后 **execute 一次通过**；render 输出 uniqueColors=2（空白），即 **chardata 可建/引擎可跑/setGeoUrl 需要，但**底层 map 图不含区县图层**。
 - 结论：drillmap 定义结构已建成（`DrillMapDefinition(bg+layers)` + `setFromBottomData(false)/setBottomDataDefinition/setEachLayerDataDefinitionList`），但地图渲染需要 web 端 div/layer init。**serialization-only** 与 tooltip/hyperlink 等 web 交互相责统一口径。
+
+## 6.4 剩余 5 图族当前状态汇总（2026-11-08 本轮探针后）
+
+| 图族 | 一手证据源 | 当前阻塞点 | 下一步 |
+|---|---|---|---|
+| drillmap | 官方 XML + `probe_chartdata_builder` | `execute` 已通（加 `setGeoUrl` 后），但渲染 blank（web div 层） | **serialization-only**（与 tooltip/hyperlink 口径一致） |
+| gantt | `probe_gantt_official` 读官方对象图 | raw渲染了 grid 但 bars 需 time/process/series 三列排列 | 对齐官方 firstProcess/processList/linkID 形态 |
+| treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | raw渲染出顶层 blocks，嵌套子块未出（TreeMapPlot 渲染端差） | `{VanChartTreeMapPlot.plotStyle 或 nested box layout}` |
+| custom | D1 三轮 log | 线系列渲染官方一致不显示 | 引擎硬墙；需官方条件块语料再重开 |
+| GIS | `probe_chartdata_builder` + `GisMapTableDefinition` | legacy 独立类（与 VanChartMapPlot 不同家族） | 沿 setGisType/setAddressType/setAddress 路径 |
