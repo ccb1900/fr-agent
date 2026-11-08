@@ -4,7 +4,7 @@
 var J = function (n) { return Java.type(n); };
 var F = J('java.nio.file.Files'), P = J('java.nio.file.Paths');
 var ROOT = J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent';
-var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/cpt.js', 'lib/runresult.js',
+var FILES = ['make_api.js', 'lib/ir.js', 'lib/object.js', 'lib/object_core.js', 'lib/object_chart.js', 'lib/cpt.js', 'lib/runresult.js',
   'lib/report_spec.js', 'lib/spec_validator.js', 'lib/spec_compiler.js', 'lib/isodate.js',
   'semantic/schema/metadata.js', 'semantic/schema/relation.js', 'semantic/schema/serializer.js',
   'semantic/schema/inspector.js', 'semantic/schema/inspect_main.js',
