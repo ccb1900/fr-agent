@@ -1,0 +1,77 @@
+{
+  "id": "G03",
+  "name": "柱状图改为组合图",
+  "group": "G",
+  "groupName": "修改与维护",
+  "difficulty": "advanced",
+  "prompt": "将现有报表中的销售额柱状图改为销售额和利润率组合图，保留原有数据和其他组件。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "list_reports",
+    "inspect_template",
+    "modify",
+    "validate",
+    "promote",
+    "restore"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "month.2026-06.amount",
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "原柱图位置变成柱+线组合图",
+      "其他组件不变"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": true,
+    "invariants": [
+      "原有数据集不变",
+      "其他组件不变",
+      "失败不 promote"
+    ]
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "组合图渲染（D1）阻塞；patch 也没有图表结构修改 op，只有单元格/数据集替换"
+    }
+  ],
+  "knownGaps": [
+    "组合图渲染阻塞",
+    "图表结构修改未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 0,
+    "safety": 15
+  }
+}

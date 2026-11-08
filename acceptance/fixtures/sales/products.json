@@ -1,0 +1,86 @@
+[
+  {
+    "id": "P01",
+    "name": "典藏威士忌",
+    "category": "威士忌",
+    "price": 880,
+    "cost": 620
+  },
+  {
+    "id": "P02",
+    "name": "特调威士忌707",
+    "category": "威士忌",
+    "price": 1280,
+    "cost": 940
+  },
+  {
+    "id": "P03",
+    "name": "金标轩尼诗",
+    "category": "威士忌",
+    "price": 1580,
+    "cost": 1260
+  },
+  {
+    "id": "P04",
+    "name": "人头马X.O",
+    "category": "威士忌",
+    "price": 2280,
+    "cost": 1890
+  },
+  {
+    "id": "P05",
+    "name": "茅台1935",
+    "category": "白酒",
+    "price": 1180,
+    "cost": 980
+  },
+  {
+    "id": "P06",
+    "name": "五粮液普五",
+    "category": "白酒",
+    "price": 1099,
+    "cost": 860
+  },
+  {
+    "id": "P07",
+    "name": "国窖1573",
+    "category": "白酒",
+    "price": 980,
+    "cost": 760
+  },
+  {
+    "id": "P08",
+    "name": "拉菲传奇红",
+    "category": "葡萄酒",
+    "price": 399,
+    "cost": 260
+  },
+  {
+    "id": "P09",
+    "name": "奔富BIN389",
+    "category": "葡萄酒",
+    "price": 568,
+    "cost": 420
+  },
+  {
+    "id": "P10",
+    "name": "精酿白啤",
+    "category": "啤酒",
+    "price": 36,
+    "cost": 28
+  },
+  {
+    "id": "P11",
+    "name": "气泡水",
+    "category": "软饮",
+    "price": 8,
+    "cost": 9
+  },
+  {
+    "id": "P12",
+    "name": "品鉴礼盒",
+    "category": "礼盒",
+    "price": 199,
+    "cost": 240
+  }
+]

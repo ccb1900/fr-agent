@@ -1,0 +1,71 @@
+{
+  "id": "F03",
+  "name": "销售绩效排名与名次变化",
+  "group": "F",
+  "groupName": "复杂分析",
+  "difficulty": "advanced",
+  "prompt": "创建销售人员绩效排名，按销售额排名，同时展示排名变化。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "employee.rank",
+    "employee.rank.amounts"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "按销售额降序排名",
+      "名次变化列可见"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "窗口排名（RANK）与上期名次快照在能力账本无条目"
+    }
+  ],
+  "knownGaps": [
+    "窗口排名/历史快照未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

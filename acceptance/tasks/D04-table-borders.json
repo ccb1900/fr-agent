@@ -1,0 +1,69 @@
+{
+  "id": "D04",
+  "name": "表格边框布局",
+  "group": "D",
+  "groupName": "样式与格式",
+  "difficulty": "intermediate",
+  "prompt": "表格增加外边框、内部横线和表头底边框，明细区域不显示多余的竖线。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "condition.then.border"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.count"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "外边框四边闭合",
+      "内部只有横线",
+      "表头底边框加粗",
+      "明细无竖线"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "ReportSpec 没有表格边框布局入口；condition.then.border 只能按条件替换单元格边框（粗线），不能控制外框/内线/竖线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "当前只能做到\"条件粗边框\"局部效果，边框布局不可承诺。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

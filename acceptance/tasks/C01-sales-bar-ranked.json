@@ -1,0 +1,74 @@
+{
+  "id": "C01",
+  "name": "区域销售额柱状图",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "basic",
+  "prompt": "创建各区域销售额柱状图，按销售额降序排列。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "chart.bar"
+  ],
+  "targetCapabilities": [
+    "spec.sql.sort"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount",
+    "region.华北.amount",
+    "region.华南.amount",
+    "region.西南.amount",
+    "region.西北.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "5 根柱子、类目为区域",
+      "柱高与销售额一致",
+      "类目顺序按销售额降序"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "报表层排序无能力（cell.sort 结构化拒）；SQL ORDER BY 需固定数据入库"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "图表本身可渲染；\"降序\"在当前 rows 路不可承诺 → 预期 PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

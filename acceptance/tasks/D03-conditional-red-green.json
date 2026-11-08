@@ -1,0 +1,69 @@
+{
+  "id": "D03",
+  "name": "低于/高于目标的红绿标记",
+  "group": "D",
+  "groupName": "样式与格式",
+  "difficulty": "intermediate",
+  "prompt": "销售额低于目标值的单元格标记为红色，高于目标值的标记为绿色。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "condition.formula",
+    "spec.rows.conditions"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount",
+    "region.华北.amount",
+    "region.华南.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "低于目标的销售额为红字",
+      "高于目标的销售额为绿字",
+      "未命中条件的格保持默认色"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "条件公式按明细首行锚点+行自动偏移；目标值写在 spec 的条件里。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

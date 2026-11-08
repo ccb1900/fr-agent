@@ -1,0 +1,73 @@
+{
+  "id": "C04",
+  "name": "销售额与利润率组合图",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "advanced",
+  "prompt": "创建月度销售额和利润率组合图，销售额用柱状图，利润率用折线图，并使用次坐标轴。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "month.2026-06.amount",
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "柱=销售额",
+      "折线=利润率",
+      "次坐标轴刻度可见"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "组合图（自定义 plot 列表+双轴+系列分配）构造/序列化已探，但线系列无头渲染未达成（D1 阻塞）；能力账本无 combo 条目"
+    }
+  ],
+  "knownGaps": [
+    "组合图渲染（D1）阻塞",
+    "利润率需要派生比率"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

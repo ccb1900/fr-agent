@@ -1,0 +1,75 @@
+{
+  "id": "A04",
+  "name": "部门员工销售与部门小计",
+  "group": "A",
+  "groupName": "基础报表与数据",
+  "difficulty": "intermediate",
+  "prompt": "创建员工销售统计，按部门分组，每个部门展示员工销售额及部门小计。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "dept.销售一部.amount",
+    "dept.销售二部.amount",
+    "dept.渠道部.amount",
+    "employee.E01.amount",
+    "employee.rank"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "3 个部门分组",
+      "每个部门末尾一行小计",
+      "员工行合计等于部门小计"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "分组小计（group subtotal）在能力账本无条目；rows 路 total 只有全局合计，无法按组重复发射"
+    }
+  ],
+  "knownGaps": [
+    "分组小计/层级汇总未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

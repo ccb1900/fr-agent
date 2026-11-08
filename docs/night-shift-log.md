@@ -1886,3 +1886,17 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：5 个 carrier 真引擎 PNG 目检——bar3d 3D 柱体+图例、pie3d 3D 饼+四段图例、area3d 3D 面积带、donut 同心环、donut3d 3D 同心环，均标题/图例正常；SQL 真库 5 个 plan→plan2spec→create→validate PASS（runIds=bar3d/pie3d/area3d/donut/donut3d `_e2e_002`，表体 33531/26531 真值不变）。manifest 5 项四层 verified/agentAvailable=true（81 项/60 承诺）。fast 19 GREEN（`logs/fast19_legacy3d.txt`，caps=81/agent=60；supported=20/unsupported=15）；scan ok=104；基线 CBEB42E3 回补。
 - 诚实边界：donut/Donut2DPlot 当前渲染为同心环（每分类一环、单系列同色），经典单环分段未实现；3D 视角/旋转属性未接。
 - 下一项：多层饼/树图/词云/结构图（Van 当前族）或甘特/钻取地图；legacy 仪表/区间/股价/GIS 继续。
+
+### 第 26 轮 Agent 验收基准 V0.1（用户提案：40 任务/8 组，2026-11-08）
+- 目标：把"40 条报表任务"落成可执行验收规格，而不是提示词清单。先做尺子：任务定义、固定数据、真值 oracle、结果记录器、完整性门；**不伪造执行结果**。
+- 实施：
+  - `acceptance/tools/gen_fixture.js`：确定性固定数据（seed=20261108，Park–Miller LCG；184 订单/23 月含 2025-02 无数据/12 产品/14 客户/9 员工/4 仓库/48 库存；负利润 30、零金额 1、空城市 12、重复日期），`schema.json` + `expected.json`（134 键）+ `manifest.json`（sha256，LF 归一化，避免 CRLF 改变指纹）。
+  - `acceptance/tools/verify_oracle.ps1`：独立 PowerShell 实现重算全部 134 键 → **134/134 PASS**（跨语言对拍，避免"生成器自证"；脚本 ASCII-only，避开 PS 5.1 GBK 解析坑）。
+  - `acceptance/tools/build_tasks.js`：40 任务定义源（A5/B5/C8/D5/E5/F4/G4/H4）+ 生成 `tasks/*.json`/`benchmark.json`；build 期硬校验：能力 ID 必须存在、`requiredCapabilities` 必须 agentAvailable、`dataAssertions` 必须命中 oracle、`agentTools` 必须是 fr_agent.ps1 真实 verb、prompt 禁内部词、九维权重和 100。
+  - `acceptance/result_schema.js` + `record_result.js`：等级规则硬编码——PASS 需总分≥80、capability/safety 满分、render nonBlank、data 逐键对拍 oracle、requiredCapabilities 无静默丢失、交互必须 engine 级证据（serialization 级不能 PASS）；`deployed=true` 但 engine/render/data 未全过 → 自动判非法（UNSAFE 红线）；PARTIAL 必须列 unimplemented/blockedBy；BLOCKED 必须说明原因且未部署；拒绝覆盖同 RunId。
+  - `verify/fast_acceptance.js`：fast 第 20 套件（2669 checks），校验 benchmark↔tasks 逐文件哈希、能力真实性、oracle 键、fixture 哈希、分组计数、权重、prompt 词表、结果 schema；只验基准自洽，不证明任何任务执行过。
+  - 文档：`acceptance/README.md`（协议/评分/证据九层/执行/数据契约/当前状态/缺口表）；AGENTS §1 fast 19→20；README #167。
+- 静态投影（不是成绩）：PASS 9 / PASS_WITH_CLARIFICATION 1 / PARTIAL 14 / BLOCKED 16；rows 38 / sql 2（E01/E05 因固定数据库未部署 BLOCKED）。0 条任务执行、0 引擎运行、0 PASS 记录。
+- 验证：fast 20 套件 GREEN（`logs/fast20_acceptance.txt`，含三铁证 CBEB42E3/6161F402/A8EF39AB）；fast_acceptance 2669 checks GREEN；记录器自测四例（PASS/数据错配/部署后失败/PARTIAL）+ 写盘成功 + 同 RunId 拒覆盖；gate 对合法/非法结果分别 GREEN/FAIL（临时记录已删除）。
+- 未验证：真实任务执行与渲染、视觉验收、交互 web 行为、SQL fixture-db、自动 LLM 驱动（V0.1 由外部 Agent 按协议执行）。
+- 并发注意：本轮期间另一条线（vbox/3D 图族）在工作区推进并先行提交（HEAD 45dceaf）；本 commit 只含 `acceptance/`、`verify/fast_acceptance.js`、`scripts/run-fast-tests.ps1`、`AGENTS.md`、`README.md`、本日志；未触碰 lib/manifest 等产品代码。

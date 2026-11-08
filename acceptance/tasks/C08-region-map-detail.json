@@ -1,0 +1,74 @@
+{
+  "id": "C08",
+  "name": "区域地图标签与悬停详情",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "advanced",
+  "prompt": "创建销售区域地图，地图上显示区域名称和销售额，鼠标悬停时展示区域详细信息。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "chart.vmap",
+    "chart.mapLabel"
+  ],
+  "targetCapabilities": [
+    "chart.mapTooltip",
+    "chart.mapTooltipFormat"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "province.广东省.amount",
+    "province.北京市.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "地图标签显示省份名与数值",
+      "标签不互相遮挡"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "serialization",
+    "assertions": [
+      "悬停显示区域名称/销售额等详情"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "地图 tooltip 为 web 交互，无渲染证据；mapTooltipFormat 无 Agent 入口"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "标签有渲染证据（AttrMapLabel）；悬停详情只有序列化证据 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

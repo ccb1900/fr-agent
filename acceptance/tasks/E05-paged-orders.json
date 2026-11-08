@@ -1,0 +1,75 @@
+{
+  "id": "E05",
+  "name": "订单明细分页查询",
+  "group": "E",
+  "groupName": "参数与交互",
+  "difficulty": "advanced",
+  "prompt": "创建一个较长的订单明细查询，支持分页浏览，并保持查询条件。",
+  "fixture": "sales",
+  "datasetPath": "sql",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "spec.sql.model"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.count"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "参数面板含页码/每页条数",
+      "默认第 1 页"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "engine",
+    "assertions": [
+      "翻页后条件保持，第 2 页数据连续"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "external-data",
+      "detail": "分页只能走 SQL 分页（原生 WebPage 全量切片已废弃）；固定数据 SQL 库未部署"
+    }
+  ],
+  "knownGaps": [
+    "固定数据 SQL 库未部署",
+    "自造工具条超链翻页禁用（请求头膨胀/Tomcat 400）"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

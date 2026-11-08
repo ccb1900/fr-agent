@@ -1,0 +1,71 @@
+{
+  "id": "E03",
+  "name": "省份→城市级联参数",
+  "group": "E",
+  "groupName": "参数与交互",
+  "difficulty": "advanced",
+  "prompt": "创建一个联动查询，先选择省份，再选择该省份下的城市，最后展示城市销售数据。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "province.count"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "省份/城市两个参数控件"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "serialization",
+    "assertions": [
+      "省份变化后城市选项只保留该省城市"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "参数联动/级联选项（province→city 依赖刷新）在能力账本无条目"
+    }
+  ],
+  "knownGaps": [
+    "级联参数与选项依赖未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

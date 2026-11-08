@@ -1,0 +1,74 @@
+{
+  "id": "A05",
+  "name": "库存报表与期末库存计算",
+  "group": "A",
+  "groupName": "基础报表与数据",
+  "difficulty": "intermediate",
+  "prompt": "创建一张库存报表，展示产品、仓库、期初库存、入库、出库、期末库存，并计算库存变化。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "spec.rows.sum"
+  ],
+  "targetCapabilities": [
+    "spec.rows.cells"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-computes",
+  "dataAssertions": [
+    "inventory.opening.total",
+    "inventory.inbound.total",
+    "inventory.outbound.total",
+    "inventory.closing.total",
+    "inventory.P01.W01.closing"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "产品×仓库明细行",
+      "期末库存 = 期初 + 入库 - 出库（逐行）",
+      "库存变化列可见"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "行级计算列走 cells.formula；spec.rows.cells 的 rendering 仍为 pending（只有 rich 文本目检）"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "固定数据带 closing 列，但本任务 dataContract=report-computes，禁止直接展示预置期末列。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

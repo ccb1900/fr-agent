@@ -1,0 +1,55 @@
+{
+  "id": "G01",
+  "name": "解读现有报表结构",
+  "group": "G",
+  "groupName": "修改与维护",
+  "difficulty": "basic",
+  "prompt": "分析当前报表的结构，说明它使用了哪些数据集、字段、组件和计算逻辑。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "list_reports",
+    "inspect_template"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [],
+  "render": {
+    "required": false,
+    "assertions": []
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "read-only（不得修改/部署任何报表）"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": true,
+  "notes": "验收看 inspect.json 的结构提取与说明是否覆盖数据集/字段/组件/计算逻辑；read-only。",
+  "weights": {
+    "requirement": 20,
+    "semantic": 20,
+    "planning": 20,
+    "capability": 20,
+    "ir": 0,
+    "cpt": 0,
+    "render": 0,
+    "interaction": 0,
+    "safety": 20
+  }
+}

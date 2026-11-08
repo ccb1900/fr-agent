@@ -1,0 +1,69 @@
+{
+  "id": "D01",
+  "name": "正式经营报表样式",
+  "group": "D",
+  "groupName": "样式与格式",
+  "difficulty": "basic",
+  "prompt": "创建一张正式的经营报表，标题居中加粗，表头使用深色背景和白色文字，明细采用统一字体。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "condition.then.style"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "orders.amount",
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "标题居中加粗",
+      "表头深色底+白字",
+      "明细字体统一"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "ReportSpec 没有表头/单元格静态样式入口；condition.then.style 只能按条件改明细格，不能保证表头样式"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "标题/字体统一可部分达成；表头深色底白字当前不可承诺。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

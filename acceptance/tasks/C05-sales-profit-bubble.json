@@ -1,0 +1,69 @@
+{
+  "id": "C05",
+  "name": "销售额-利润率气泡图",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "intermediate",
+  "prompt": "创建销售额与利润率的气泡图，横轴为销售额，纵轴为利润率，气泡大小代表订单数。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "chart.vbubble"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "region.华东.amount",
+    "region.华北.amount",
+    "region.华东.orders",
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "5 个区域气泡",
+      "X=销售额、Y=利润率、大小=订单数",
+      "图例/系列名可见"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "x/y/size 是 vscatter/vbubble 的官方数据定义（BubbleTableDefinition201109）；区域级三指标用预聚合行是图表输入的正常形态。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

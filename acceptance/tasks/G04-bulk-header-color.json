@@ -1,0 +1,77 @@
+{
+  "id": "G04",
+  "name": "批量表头配色",
+  "group": "G",
+  "groupName": "修改与维护",
+  "difficulty": "intermediate",
+  "prompt": "将现有报表的表头背景色统一调整为蓝色，并检查修改前后其他布局和数据逻辑是否一致。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [
+    "template.patch.style"
+  ],
+  "alternatives": [],
+  "agentTools": [
+    "list_reports",
+    "inspect_template",
+    "modify",
+    "validate",
+    "promote",
+    "restore"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "表头背景统一为蓝色",
+      "其他区域无变化"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": true,
+    "invariants": [
+      "非表头区域样式不变",
+      "数据与布局逐格一致",
+      "失败不 promote"
+    ]
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "ledger-rejected",
+      "detail": "template.patch.style 在能力账本为 rejected（命名样式有损，README #60 明确不做）"
+    }
+  ],
+  "knownGaps": [
+    "批量样式 patch 结构化拒"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 0,
+    "safety": 15
+  }
+}

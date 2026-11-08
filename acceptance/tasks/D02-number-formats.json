@@ -1,0 +1,70 @@
+{
+  "id": "D02",
+  "name": "金额千分位与百分比格式",
+  "group": "D",
+  "groupName": "样式与格式",
+  "difficulty": "basic",
+  "prompt": "销售额使用千分位格式并保留两位小数，利润率使用百分比格式。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "spec.rows.sum"
+  ],
+  "targetCapabilities": [
+    "spec.rows.totalAgg"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "orders.amount",
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "销售额显示为 1,969,883.00 形态",
+      "利润率显示为百分数形态"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "rows 路 metric 只有 sum，行级利润率（profit/amount）不是可求和列；total.aggregate.ratio 只能用于合计格"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "金额格式可证；逐行利润率百分比当前不可承诺 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

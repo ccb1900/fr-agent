@@ -1,0 +1,71 @@
+{
+  "id": "D05",
+  "name": "斑马纹与合计行突出",
+  "group": "D",
+  "groupName": "样式与格式",
+  "difficulty": "intermediate",
+  "prompt": "创建斑马纹明细表，奇偶行采用不同背景色，合计行突出显示。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "condition.then.style",
+    "spec.rows.conditions"
+  ],
+  "targetCapabilities": [
+    "condition.formula"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.count",
+    "orders.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "奇偶行背景色交替",
+      "合计行背景/字体突出"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "行奇偶判断需要 MOD(ROW(),2) 类公式，condition.formula 已验证的是比较公式，奇偶形态未验"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "合计行突出可用 total.sumCols 的 bg/bold；斑马纹属未验证公式形态 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "id": "C07",
+  "name": "省份销售热力图",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "advanced",
+  "prompt": "创建全国销售热力图，按省份显示销售强度，并显示对应数值提示。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "chart.vheatmap"
+  ],
+  "targetCapabilities": [
+    "chart.mapTooltip",
+    "chart.tooltip"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "province.广东省.amount",
+    "province.四川省.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "热力光晕落在对应省份",
+      "色阶图例可见"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "serialization",
+    "assertions": [
+      "悬停省份显示销售额提示"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "地图 tooltip 属 web 交互：静态 PNG 不现形，能力账本 rendering=serialization-only 且 agentAvailable=false"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "热力渲染可证；\"数值提示\"只能给序列化证据 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

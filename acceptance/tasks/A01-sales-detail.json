@@ -1,0 +1,71 @@
+{
+  "id": "A01",
+  "name": "销售明细表",
+  "group": "A",
+  "groupName": "基础报表与数据",
+  "difficulty": "basic",
+  "prompt": "创建一张销售明细表，展示订单日期、订单编号、客户、产品、数量、单价、金额，金额等于数量乘以单价。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "spec.rows.sum"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.count",
+    "orders.amount",
+    "orders.row2.orderId",
+    "orders.row2.qty",
+    "orders.row2.unitPrice",
+    "orders.row2.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "表头列名与业务名称一致（订单日期/订单编号/客户/产品/数量/单价/金额）",
+      "明细行数等于订单行数（184）",
+      "金额列逐行等于数量×单价（抽查 SO202407-002 = 8×2280 = 18240）"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "明细表不聚合；金额在固定数据里已有同值列，验收只看逐行数值，不强制\"公式列\"实现。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

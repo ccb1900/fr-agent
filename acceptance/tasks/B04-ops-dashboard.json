@@ -1,0 +1,73 @@
+{
+  "id": "B04",
+  "name": "经营分析看板",
+  "group": "B",
+  "groupName": "布局与组件",
+  "difficulty": "advanced",
+  "prompt": "创建一个经营分析看板，顶部放置关键指标，中间放置趋势图，底部放置销售明细。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "orders.amount",
+    "totals.profitRate",
+    "month.2026-06.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "顶部 KPI 区",
+      "中部趋势图",
+      "底部明细区"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "同页多组件区域布局（KPI/图表/明细分区）在能力账本无条目；现有页面只有单一表格+图表顺序块"
+    }
+  ],
+  "knownGaps": [
+    "看板式多区域布局未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

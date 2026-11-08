@@ -1,0 +1,70 @@
+{
+  "id": "E04",
+  "name": "区域销售明细跳转",
+  "group": "E",
+  "groupName": "参数与交互",
+  "difficulty": "advanced",
+  "prompt": "点击销售汇总中的某个区域，可以跳转到该区域的销售明细报表。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "condition.then.link",
+    "chart.hyperlinkCell"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "汇总表区域行可见",
+      "超链配置绑定到区域列"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "serialization",
+    "assertions": [
+      "点击区域跳到明细报表，且只显示该区域数据"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "单元格超链已序列化；web 导航点击在本项目多次尝试均未验证（不是已证损坏），参数传递未证"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "只能给序列化证据；跳转行为未验证 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

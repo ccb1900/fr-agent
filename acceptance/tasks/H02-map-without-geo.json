@@ -1,0 +1,67 @@
+{
+  "id": "H02",
+  "name": "只有省份名称的销售地图",
+  "group": "H",
+  "groupName": "自主规划与恢复",
+  "difficulty": "intermediate",
+  "prompt": "创建一个销售地图，但数据中只有省份名称，没有经纬度。请判断现有数据是否足够，并选择合理实现方式。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "chart.vmap"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "province.广东省.amount",
+    "province.四川省.amount",
+    "province.count"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "用省份全名匹配内置地图着色",
+      "不需要经纬度输入"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "正确判断=区域图按名称匹配即可，不臆造经纬度、不改数据。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

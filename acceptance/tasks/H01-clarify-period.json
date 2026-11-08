@@ -1,0 +1,65 @@
+{
+  "id": "H01",
+  "name": "统计期间缺失时先澄清",
+  "group": "H",
+  "groupName": "自主规划与恢复",
+  "difficulty": "intermediate",
+  "prompt": "创建一张销售分析报表，需求中没有说明统计期间。请先判断是否需要向用户确认，再继续创建。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS_WITH_CLARIFICATION",
+  "requiredCapabilities": [
+    "spec.rows.sum"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [],
+  "render": {
+    "required": true,
+    "assertions": [
+      "按澄清后的期间渲染",
+      "标题/说明写明期间"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [
+    "统计期间（起止日期或月份范围）"
+  ],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "评分含\"是否先问再动手\"；澄清后创建的报告按所选期间临时附加数据断言。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

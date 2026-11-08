@@ -1,0 +1,937 @@
+{
+  "benchmarkVersion": "1.0.0",
+  "specDate": "2026-11-08",
+  "purpose": "FineReport Agent 能力验收基准：自然语言业务需求 → 需求理解/语义映射/规划/原生能力选择/生成/真实引擎验证/后续修改",
+  "sourceOfTruth": "acceptance/tools/build_tasks.js（任务定义源）；tasks/*.json 与 benchmark.json 是确定性产物",
+  "taskModelDoc": "acceptance/README.md",
+  "capabilityLedger": {
+    "source": "application/capability_manifest.js",
+    "note": "任务只引用账本真实能力 ID；requiredCapabilities 必须 agentAvailable=true（build 期硬校验）。不固化总数：账本会增长，基准只对它实际引用的 ID 负责"
+  },
+  "fixture": {
+    "name": "sales",
+    "version": "1.0.0",
+    "manifest": "acceptance/fixtures/sales/manifest.json",
+    "manifestSha256": "720de44fc15ad720247c6679933d63046de2fa37ab46d57c89dbf281c787cae1",
+    "oracle": "acceptance/fixtures/sales/expected.json",
+    "hashAlgorithm": "sha256 over LF-normalized UTF-8"
+  },
+  "groups": [
+    {
+      "id": "A",
+      "name": "基础报表与数据",
+      "focus": "数据集、字段、表格、聚合、排序",
+      "count": 5
+    },
+    {
+      "id": "B",
+      "name": "布局与组件",
+      "focus": "单元格、分组、交叉表、组合布局",
+      "count": 5
+    },
+    {
+      "id": "C",
+      "name": "图表能力",
+      "focus": "常规图表、组合图表、地图、气泡、热力图",
+      "count": 8
+    },
+    {
+      "id": "D",
+      "name": "样式与格式",
+      "focus": "字体、颜色、边框、条件格式、数字格式",
+      "count": 5
+    },
+    {
+      "id": "E",
+      "name": "参数与交互",
+      "focus": "参数、过滤、联动、跳转、分页",
+      "count": 5
+    },
+    {
+      "id": "F",
+      "name": "复杂分析",
+      "focus": "多维分析、同比环比、排名、趋势",
+      "count": 4
+    },
+    {
+      "id": "G",
+      "name": "修改与维护",
+      "focus": "理解已有报表、局部修改、批量修改、回归",
+      "count": 4
+    },
+    {
+      "id": "H",
+      "name": "自主规划与恢复",
+      "focus": "需求澄清、能力选择、错误诊断、验证失败处理",
+      "count": 4
+    }
+  ],
+  "defaultWeights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  },
+  "weightsNote": "不适用维度按比例并入：无交互→render=30/interaction=0；修改类→safety=15/interaction=0；纯分析→五维各20。每个任务自带 weights，和恒 100。",
+  "resultLevels": [
+    "PASS",
+    "PASS_WITH_CLARIFICATION",
+    "PARTIAL",
+    "BLOCKED",
+    "FAIL",
+    "UNSAFE"
+  ],
+  "evidenceTiers": {
+    "specValid": "SpecValidator 通过（只证明语法/词表）",
+    "irValid": "Ir.validate 通过（只证明 IR 形状）",
+    "cptSerialized": "CPT 字节生成且图表/结构断言通过（只证明序列化）",
+    "engineLoaded": "FineReport 引擎无异常打开（不代表渲染正确）",
+    "rendered": "真实渲染 PNG 有非空像素证据（非空白门）",
+    "dataTruth": "栅格逐格/聚合值与 oracle 一致",
+    "visual": "人工/视觉检查通过（布局与样式）",
+    "interaction": "参数/跳转/联动真实可用（web 行为）",
+    "note": "九种证据不得合并成一个 PASS；结果记录器按证据层级校验等级"
+  },
+  "eligibility": {
+    "note": "静态投影（只按能力账本 + 数据路径 + 外部依赖），不是执行结果；账本变化后重跑 build_tasks.js",
+    "runnableNow": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "C08",
+      "D01",
+      "D02",
+      "D03",
+      "D04",
+      "D05",
+      "E02",
+      "E03",
+      "E04",
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "G01",
+      "G02",
+      "G03",
+      "G04",
+      "H01",
+      "H02",
+      "H03",
+      "H04"
+    ],
+    "externalData": [
+      "E01",
+      "E05"
+    ],
+    "expectedLevels": {
+      "PASS": [
+        "A01",
+        "B01",
+        "C02",
+        "C05",
+        "C06",
+        "D03",
+        "G01",
+        "H02",
+        "H04"
+      ],
+      "PASS_WITH_CLARIFICATION": [
+        "H01"
+      ],
+      "PARTIAL": [
+        "A02",
+        "A05",
+        "C01",
+        "C03",
+        "C07",
+        "C08",
+        "D01",
+        "D02",
+        "D04",
+        "D05",
+        "E02",
+        "E04",
+        "G02",
+        "H03"
+      ],
+      "BLOCKED": [
+        "A03",
+        "A04",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "C04",
+        "E01",
+        "E03",
+        "E05",
+        "F01",
+        "F02",
+        "F03",
+        "F04",
+        "G03",
+        "G04"
+      ]
+    },
+    "blockedReasonCounts": {
+      "capability-gap": 14,
+      "external-data": 2,
+      "ledger-rejected": 1
+    },
+    "counts": {
+      "total": 40,
+      "runnableNow": 38,
+      "externalData": 2
+    }
+  },
+  "tasks": [
+    {
+      "id": "A01",
+      "name": "销售明细表",
+      "group": "A",
+      "groupName": "基础报表与数据",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/A01-sales-detail.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "86fc0464c673c9b8162ab71da63e01500d134ed7066df8c41c786ddfe43e7ea4"
+    },
+    {
+      "id": "A02",
+      "name": "区域销售汇总",
+      "group": "A",
+      "groupName": "基础报表与数据",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/A02-sales-summary.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [
+        "spec.sql.sort",
+        "spec.sql.model"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "02c82985061596869432fbf1fa6b34d719b5415a3ec4d7cbad31b7598023ef38"
+    },
+    {
+      "id": "A03",
+      "name": "产品销售额 Top10 与合计",
+      "group": "A",
+      "groupName": "基础报表与数据",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/A03-product-top10.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "spec.sql.topN",
+        "spec.sql.sort"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "8a60cca1310ac7735e1ffee6700fef9897f2b5277704b3d0b51ff7c7027e8105"
+    },
+    {
+      "id": "A04",
+      "name": "部门员工销售与部门小计",
+      "group": "A",
+      "groupName": "基础报表与数据",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/A04-dept-sales-subtotal.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "760477c11d82c5a1916fedee9985eea34f6e84446824892063e7d6f5fabe4c84"
+    },
+    {
+      "id": "A05",
+      "name": "库存报表与期末库存计算",
+      "group": "A",
+      "groupName": "基础报表与数据",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/A05-inventory-report.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [
+        "spec.rows.cells"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "1720638cd0e0e6d52c77e8c57c678c0211f1ca8f07f5d968dfcf756d15e450b4"
+    },
+    {
+      "id": "B01",
+      "name": "月度销售报表版式",
+      "group": "B",
+      "groupName": "布局与组件",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/B01-monthly-sales-layout.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "page.headerFooter",
+        "spec.rows.sum",
+        "spec.rows.totalAgg"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "0a1416c657c8a04adc122c9a219f57096fd3b0bb875af712a8235ad44504fad6"
+    },
+    {
+      "id": "B02",
+      "name": "区域×月份交叉报表",
+      "group": "B",
+      "groupName": "布局与组件",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/B02-region-month-cross.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "c7c496729be925a64ea9ae63a8cddbe0cf40d46cc0f6a25634af79204c4a9af3"
+    },
+    {
+      "id": "B03",
+      "name": "部门→员工层级报表",
+      "group": "B",
+      "groupName": "布局与组件",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/B03-dept-employee-hierarchy.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "9b8a6d0363c2b2184442d79aa3d1dba08a612847f873d2110c2127360fe98741"
+    },
+    {
+      "id": "B04",
+      "name": "经营分析看板",
+      "group": "B",
+      "groupName": "布局与组件",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/B04-ops-dashboard.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "26ab5bc8a8475cc545756b596583c2a265d623f596a7d99f98f4113f16fbfdc7"
+    },
+    {
+      "id": "B05",
+      "name": "多区域组合报表",
+      "group": "B",
+      "groupName": "布局与组件",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/B05-multi-region-layout.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "d124731be89dc6cccc8304e4c71af29c2c78041a0887370863ac35d0c222b7c6"
+    },
+    {
+      "id": "C01",
+      "name": "区域销售额柱状图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/C01-sales-bar-ranked.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.bar"
+      ],
+      "targetCapabilities": [
+        "spec.sql.sort"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "6756a0aa6bda4c20914464a303f08244ee3a15a49f972df0973482958d385cfc"
+    },
+    {
+      "id": "C02",
+      "name": "近 12 个月销售额趋势",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/C02-monthly-trend-line.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.line"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "b338ee5c984ce357d5d5fcc4b9a74016fb75258787224edfb800bbfd0a0bd177"
+    },
+    {
+      "id": "C03",
+      "name": "产品销售额占比饼图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/C03-product-share-pie.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vpie"
+      ],
+      "targetCapabilities": [
+        "chart.label"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "572257adc160b3f3e4f1dff4f77685d45a1e8a735eac44fb4ed26f06f7d2c5df"
+    },
+    {
+      "id": "C04",
+      "name": "销售额与利润率组合图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/C04-sales-profit-combo.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "22c07c0727fea41b4c24677453363b1268d73156039c2cb2bef70308e86092a4"
+    },
+    {
+      "id": "C05",
+      "name": "销售额-利润率气泡图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/C05-sales-profit-bubble.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vbubble"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "bbd5f1daf5ff3d44a0356bdb13d5dddd67a707e14fd489dd1b94efb60bf32ea7"
+    },
+    {
+      "id": "C06",
+      "name": "省份销售额地图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/C06-province-sales-map.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vmap"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "b2b9828e6c228e15cbab4d8c2e67c5ce44029383b913218808b774bc600a4e0b"
+    },
+    {
+      "id": "C07",
+      "name": "省份销售热力图",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/C07-province-heatmap.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vheatmap"
+      ],
+      "targetCapabilities": [
+        "chart.mapTooltip",
+        "chart.tooltip"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "f1f9f9c831b3973a112800e940ea0a8fbad2a98f4c5acbd9ca8e7f54083d6812"
+    },
+    {
+      "id": "C08",
+      "name": "区域地图标签与悬停详情",
+      "group": "C",
+      "groupName": "图表能力",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/C08-region-map-detail.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vmap",
+        "chart.mapLabel"
+      ],
+      "targetCapabilities": [
+        "chart.mapTooltip",
+        "chart.mapTooltipFormat"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "17432ef4905033278188f05ca41e22f6228ff5e2b51a930b88ed9d18e30e558d"
+    },
+    {
+      "id": "D01",
+      "name": "正式经营报表样式",
+      "group": "D",
+      "groupName": "样式与格式",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/D01-formal-report-style.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "condition.then.style"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "7f01e06c2c9e72dfa2b9250d11aa4fbfe04746f805db4830416ae3b301494df0"
+    },
+    {
+      "id": "D02",
+      "name": "金额千分位与百分比格式",
+      "group": "D",
+      "groupName": "样式与格式",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/D02-number-formats.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [
+        "spec.rows.totalAgg"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "a9404b10ab57e6d68229c2034fcae6b6c54e81fc42eda54c00c449409f983b17"
+    },
+    {
+      "id": "D03",
+      "name": "低于/高于目标的红绿标记",
+      "group": "D",
+      "groupName": "样式与格式",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/D03-conditional-red-green.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "condition.formula",
+        "spec.rows.conditions"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "a7f82e8c3f89074bf0f5e1d4c132bcc6dd55d686c6b10f07fa8ecccff86bcebc"
+    },
+    {
+      "id": "D04",
+      "name": "表格边框布局",
+      "group": "D",
+      "groupName": "样式与格式",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/D04-table-borders.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "condition.then.border"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "97c803e33ccae7dc4e30526e6d83ae926221d48bee521bcca40f7cdc53bb0f9e"
+    },
+    {
+      "id": "D05",
+      "name": "斑马纹与合计行突出",
+      "group": "D",
+      "groupName": "样式与格式",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/D05-zebra-total-highlight.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "condition.then.style",
+        "spec.rows.conditions"
+      ],
+      "targetCapabilities": [
+        "condition.formula"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "07163bde9ee22120b6c0ef589ab8126ad995b87f427e6af098e26bace47534ff"
+    },
+    {
+      "id": "E01",
+      "name": "日期范围查询",
+      "group": "E",
+      "groupName": "参数与交互",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/E01-date-range-query.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "sql",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "spec.sql.filters",
+        "spec.sql.model",
+        "spec.params.panel"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "308b6ac9dc2e5e78df7031485dccedb8f3d8984f0c65549f0427544021d376b8"
+    },
+    {
+      "id": "E02",
+      "name": "区域参数过滤",
+      "group": "E",
+      "groupName": "参数与交互",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/E02-region-filter.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.params.filter"
+      ],
+      "targetCapabilities": [
+        "spec.params.panel"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "c3db224dfd74f7ec5e8d5f14d7347b8a4772489b0111d66d02072d2508ede46d"
+    },
+    {
+      "id": "E03",
+      "name": "省份→城市级联参数",
+      "group": "E",
+      "groupName": "参数与交互",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/E03-province-city-cascade.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "3e8d551de27ea7e192b452bca2284731614e0adb60e63579824d38cb7c5c0452"
+    },
+    {
+      "id": "E04",
+      "name": "区域销售明细跳转",
+      "group": "E",
+      "groupName": "参数与交互",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/E04-region-drill-link.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "condition.then.link",
+        "chart.hyperlinkCell"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "baa5a84c65fd7553aba0dd4113382e2570b53aeeb5d8a3f9341371a117b83eb4"
+    },
+    {
+      "id": "E05",
+      "name": "订单明细分页查询",
+      "group": "E",
+      "groupName": "参数与交互",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/E05-paged-orders.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "sql",
+      "requiredCapabilities": [],
+      "targetCapabilities": [
+        "spec.sql.model"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "5c595c426386d000ca8dfd28713fd545e45c67304396230b2f17ef39ba0ca92b"
+    },
+    {
+      "id": "F01",
+      "name": "本月/上月/环比",
+      "group": "F",
+      "groupName": "复杂分析",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/F01-month-over-month.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "feead8ab3e1f4e788b56247ae261f48375b5ddffccc02c7540ad3a3a0a0f46a4"
+    },
+    {
+      "id": "F02",
+      "name": "月度同比分析",
+      "group": "F",
+      "groupName": "复杂分析",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/F02-year-over-year.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "085de3b03359c68bd0d831f33d62269d956977a8beb140f01a68120995ba83ed"
+    },
+    {
+      "id": "F03",
+      "name": "销售绩效排名与名次变化",
+      "group": "F",
+      "groupName": "复杂分析",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/F03-sales-rank-change.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "5c813795d7dad34dca26bab3861293aa19084fc06f109aaa10530ae88688614b"
+    },
+    {
+      "id": "F04",
+      "name": "经营分析综合报表",
+      "group": "F",
+      "groupName": "复杂分析",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/F04-ops-analysis-suite.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "308bb147822b72d6fac9e9b598cc71d0ace303fa7eefda48e017fb248490ebb0"
+    },
+    {
+      "id": "G01",
+      "name": "解读现有报表结构",
+      "group": "G",
+      "groupName": "修改与维护",
+      "difficulty": "basic",
+      "path": "acceptance/tasks/G01-analyze-existing-report.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": false,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "0ab2ca671fd22506c8184c015fe3667ba877dbeec574d68215cb7cdc526d4c8d"
+    },
+    {
+      "id": "G02",
+      "name": "增加利润率列（局部修改）",
+      "group": "G",
+      "groupName": "修改与维护",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/G02-add-profit-column.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "template.patch.dataset",
+        "template.patch.cellValue"
+      ],
+      "targetCapabilities": [
+        "spec.rows.cells"
+      ],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": true,
+      "sha256": "48e75127428462c7361b0825c88e282819574a8e8bedd45678ac8b2ab1c78519"
+    },
+    {
+      "id": "G03",
+      "name": "柱状图改为组合图",
+      "group": "G",
+      "groupName": "修改与维护",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/G03-bar-to-combo.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": true,
+      "sha256": "fc1bf47ac6fc79860cf68dbbc7e2093d2cd0c22288fb58076d4b19fe1ef8dfcc"
+    },
+    {
+      "id": "G04",
+      "name": "批量表头配色",
+      "group": "G",
+      "groupName": "修改与维护",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/G04-bulk-header-color.json",
+      "expectedLevel": "BLOCKED",
+      "datasetPath": "rows",
+      "requiredCapabilities": [],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": true,
+      "sha256": "bd00ca573dfce8b5f823d11e64989145e4af5dfd1ddadbd86a3e69b2cee49379"
+    },
+    {
+      "id": "H01",
+      "name": "统计期间缺失时先澄清",
+      "group": "H",
+      "groupName": "自主规划与恢复",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/H01-clarify-period.json",
+      "expectedLevel": "PASS_WITH_CLARIFICATION",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "9c2d3100f90d5529ed6d92b3ec2349688db82d42609cf271ee1fe58812ade377"
+    },
+    {
+      "id": "H02",
+      "name": "只有省份名称的销售地图",
+      "group": "H",
+      "groupName": "自主规划与恢复",
+      "difficulty": "intermediate",
+      "path": "acceptance/tasks/H02-map-without-geo.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vmap"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "7cfd8d12548cf21bc7afdd53940479752d6ac9182eac175bb35b0d4e58a192e5"
+    },
+    {
+      "id": "H03",
+      "name": "部分可实现的经营看板",
+      "group": "H",
+      "groupName": "自主规划与恢复",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/H03-partial-dashboard.json",
+      "expectedLevel": "PARTIAL",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "chart.vmap"
+      ],
+      "targetCapabilities": [
+        "chart.hyperlinkCell",
+        "condition.then.link"
+      ],
+      "renderRequired": true,
+      "interactionRequired": true,
+      "modificationRequired": false,
+      "sha256": "c7109e935f883a51354451520a1ab4d629c1ec0f6b6ca9a8ca466a34326cce1e"
+    },
+    {
+      "id": "H04",
+      "name": "验证失败先修复、不部署",
+      "group": "H",
+      "groupName": "自主规划与恢复",
+      "difficulty": "advanced",
+      "path": "acceptance/tasks/H04-repair-before-deploy.json",
+      "expectedLevel": "PASS",
+      "datasetPath": "rows",
+      "requiredCapabilities": [
+        "spec.rows.sum"
+      ],
+      "targetCapabilities": [],
+      "renderRequired": true,
+      "interactionRequired": false,
+      "modificationRequired": false,
+      "sha256": "4492ec911c33543f2340fffd4b8a0b12d05408178c793bb0a2a2a0a2beed47d9"
+    }
+  ]
+}

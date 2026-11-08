@@ -1,0 +1,256 @@
+{
+  "fixtureVersion": "1.0.0",
+  "source": "acceptance/tools/gen_fixture.js（seed=20261108）",
+  "dialect": "logical（与 FineReport 数据集无关；rows 路=JSON 行，SQL 路需建同构表）",
+  "tables": {
+    "orders": {
+      "rowCount": 184,
+      "primaryKey": [
+        "orderId"
+      ],
+      "foreignKeys": {
+        "customerId": "customers.id",
+        "productId": "products.id",
+        "employeeId": "employees.id"
+      },
+      "columns": [
+        {
+          "name": "orderId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "orderDate",
+          "type": "date",
+          "nullable": false
+        },
+        {
+          "name": "customerId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "productId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "employeeId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "region",
+          "type": "text",
+          "nullable": false,
+          "note": "denormalized from customers.region"
+        },
+        {
+          "name": "qty",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "unitPrice",
+          "type": "integer",
+          "nullable": false,
+          "note": "CNY per unit"
+        },
+        {
+          "name": "amount",
+          "type": "integer",
+          "nullable": false,
+          "note": "qty * unitPrice"
+        },
+        {
+          "name": "cost",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "profit",
+          "type": "integer",
+          "nullable": false,
+          "note": "amount - cost; negative rows exist on purpose"
+        }
+      ]
+    },
+    "products": {
+      "rowCount": 12,
+      "primaryKey": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "category",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "price",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "cost",
+          "type": "integer",
+          "nullable": false,
+          "note": "standard cost per unit"
+        }
+      ]
+    },
+    "customers": {
+      "rowCount": 14,
+      "primaryKey": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "province",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "nullable": true,
+          "note": "one row with empty city (edge case)"
+        },
+        {
+          "name": "region",
+          "type": "text",
+          "nullable": false
+        }
+      ]
+    },
+    "employees": {
+      "rowCount": 9,
+      "primaryKey": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "dept",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "region",
+          "type": "text",
+          "nullable": false
+        }
+      ]
+    },
+    "inventory": {
+      "rowCount": 48,
+      "primaryKey": [
+        "productId",
+        "warehouseId"
+      ],
+      "foreignKeys": {
+        "productId": "products.id",
+        "warehouseId": "warehouses.id"
+      },
+      "columns": [
+        {
+          "name": "productId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "warehouseId",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "opening",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "inbound",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "outbound",
+          "type": "integer",
+          "nullable": false
+        },
+        {
+          "name": "closing",
+          "type": "integer",
+          "nullable": false,
+          "note": "opening + inbound - outbound"
+        }
+      ]
+    },
+    "warehouses": {
+      "rowCount": 4,
+      "primaryKey": [
+        "id"
+      ],
+      "columns": [
+        {
+          "name": "id",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "name",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "province",
+          "type": "text",
+          "nullable": false
+        },
+        {
+          "name": "city",
+          "type": "text",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "edgeCases": {
+    "noDataMonths": [
+      "2025-02"
+    ],
+    "negativeProfitRows": 30,
+    "zeroAmountRows": 1,
+    "emptyCityRows": 12,
+    "duplicateDates": "every month has 8 orders sharing a small set of dates"
+  }
+}

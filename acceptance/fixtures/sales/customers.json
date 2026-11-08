@@ -1,0 +1,100 @@
+[
+  {
+    "id": "C01",
+    "name": "上海云商贸易",
+    "province": "上海市",
+    "city": "上海市",
+    "region": "华东"
+  },
+  {
+    "id": "C02",
+    "name": "南京金穗商贸",
+    "province": "江苏省",
+    "city": "南京市",
+    "region": "华东"
+  },
+  {
+    "id": "C03",
+    "name": "杭州西湖名品",
+    "province": "浙江省",
+    "city": "杭州市",
+    "region": "华东"
+  },
+  {
+    "id": "C04",
+    "name": "苏州观前酒行",
+    "province": "江苏省",
+    "city": "苏州市",
+    "region": "华东"
+  },
+  {
+    "id": "C05",
+    "name": "北京华贸酒业",
+    "province": "北京市",
+    "city": "北京市",
+    "region": "华北"
+  },
+  {
+    "id": "C06",
+    "name": "石家庄燕赵商行",
+    "province": "河北省",
+    "city": "石家庄市",
+    "region": "华北"
+  },
+  {
+    "id": "C07",
+    "name": "广州珠江贸易",
+    "province": "广东省",
+    "city": "广州市",
+    "region": "华南"
+  },
+  {
+    "id": "C08",
+    "name": "深圳前海优品",
+    "province": "广东省",
+    "city": "深圳市",
+    "region": "华南"
+  },
+  {
+    "id": "C09",
+    "name": "福州闽江商贸",
+    "province": "福建省",
+    "city": "福州市",
+    "region": "华南"
+  },
+  {
+    "id": "C10",
+    "name": "成都天府酒业",
+    "province": "四川省",
+    "city": "成都市",
+    "region": "西南"
+  },
+  {
+    "id": "C11",
+    "name": "重庆山城商贸",
+    "province": "重庆市",
+    "city": "重庆市",
+    "region": "西南"
+  },
+  {
+    "id": "C12",
+    "name": "西安丝路商行",
+    "province": "陕西省",
+    "city": "西安市",
+    "region": "西北"
+  },
+  {
+    "id": "C13",
+    "name": "兰州黄河商贸",
+    "province": "甘肃省",
+    "city": "兰州市",
+    "region": "西北"
+  },
+  {
+    "id": "C14",
+    "name": "昆明滇池名品",
+    "province": "云南省",
+    "city": "",
+    "region": "西南"
+  }
+]

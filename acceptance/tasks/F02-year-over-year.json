@@ -1,0 +1,73 @@
+{
+  "id": "F02",
+  "name": "月度同比分析",
+  "group": "F",
+  "groupName": "复杂分析",
+  "difficulty": "advanced",
+  "prompt": "创建年度销售分析，展示每月销售额、去年同期销售额和同比增长率。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "analysis.yoy.currentAmount",
+    "analysis.yoy.previousAmount",
+    "analysis.yoy.rate",
+    "month.2026-06.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "每月一行：本期/同期/同比",
+      "同比数值正确"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "同期对齐（YoY）需要窗口/自连接，能力账本无条目；固定数据 SQL 库也未部署"
+    }
+  ],
+  "knownGaps": [
+    "YoY 同期对齐未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

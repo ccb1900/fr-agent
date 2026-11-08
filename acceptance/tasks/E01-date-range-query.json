@@ -1,0 +1,77 @@
+{
+  "id": "E01",
+  "name": "日期范围查询",
+  "group": "E",
+  "groupName": "参数与交互",
+  "difficulty": "intermediate",
+  "prompt": "创建一个销售查询报表，用户可以选择开始日期和结束日期，查询对应期间的数据。",
+  "fixture": "sales",
+  "datasetPath": "sql",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "spec.sql.filters",
+    "spec.sql.model",
+    "spec.params.panel"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.count",
+    "month.2026-06.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "参数面板有开始/结束日期控件",
+      "默认期间结果正确"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "engine",
+    "assertions": [
+      "改开始/结束日期后重新查询，结果随期间变化"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "external-data",
+      "detail": "dateRange 只在 SQL 路存在；固定数据的 SQL 库/语义模型实体未部署（fixture-db）"
+    }
+  ],
+  "knownGaps": [
+    "固定数据 SQL 库与语义模型未建立"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

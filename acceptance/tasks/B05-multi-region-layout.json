@@ -1,0 +1,74 @@
+{
+  "id": "B05",
+  "name": "多区域组合报表",
+  "group": "B",
+  "groupName": "布局与组件",
+  "difficulty": "advanced",
+  "prompt": "创建一张包含多个数据区域的报表：左侧为销售汇总，右侧为产品排行，下方为订单明细。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [
+    "page.multiSheet"
+  ],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount",
+    "product.top10",
+    "orders.count"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "三个区域同页可见",
+      "区域间不重叠"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "同一页内的多区域布局（左右上下分区）无能力条目；page.multiSheet 只能拆成多个 sheet，不等于本需求"
+    }
+  ],
+  "knownGaps": [
+    "同页多区域布局未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

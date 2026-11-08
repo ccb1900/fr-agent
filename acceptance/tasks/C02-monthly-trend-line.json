@@ -1,0 +1,68 @@
+{
+  "id": "C02",
+  "name": "近 12 个月销售额趋势",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "basic",
+  "prompt": "创建近 12 个月销售额趋势折线图，按月份升序展示。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "chart.line"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "month.2025-07.amount",
+    "month.2026-06.amount",
+    "month.2026-05.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "12 个连续月份点",
+      "X 轴月份升序",
+      "折线随销售额变化"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "月度聚合行是图表的输入数据（固定数据的自然粒度）；月份顺序由输入行顺序保证。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

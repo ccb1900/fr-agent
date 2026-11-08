@@ -1,0 +1,72 @@
+{
+  "id": "C03",
+  "name": "产品销售额占比饼图",
+  "group": "C",
+  "groupName": "图表能力",
+  "difficulty": "basic",
+  "prompt": "创建各产品销售额占比饼图，显示产品名称和占比。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "chart.vpie"
+  ],
+  "targetCapabilities": [
+    "chart.label"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "product.P04.amount",
+    "product.top10",
+    "orders.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "扇区数量=产品数",
+      "图例显示产品名称",
+      "标签显示占比数值"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "vpie 标签 richText 可渲染，但 ${PERCENT} 占位符需要官方 img data-id 格式，纯文本会原样显示（P3）"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "产品名称/扇区可证；\"占比数值\"当前不能承诺 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

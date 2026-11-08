@@ -1,0 +1,75 @@
+{
+  "id": "A03",
+  "name": "产品销售额 Top10 与合计",
+  "group": "A",
+  "groupName": "基础报表与数据",
+  "difficulty": "basic",
+  "prompt": "创建产品销售排行，展示销售额前 10 名产品，并增加合计行。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [
+    "spec.sql.topN",
+    "spec.sql.sort"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "product.top10",
+    "product.top10.amounts",
+    "orders.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "10 行产品排行",
+      "合计行等于全部销售额"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "rows 路无 topN/sort；cell.sort 结构化拒；SQL topN 需要固定数据入库（fixture-db 未部署）"
+    }
+  ],
+  "knownGaps": [
+    "固定数据 SQL 库与语义模型实体未建立"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "不允许把 Top10 结果预先算好塞进内嵌行（dataContract=report-aggregates）；因此当前不是 PARTIAL 而是 BLOCKED。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

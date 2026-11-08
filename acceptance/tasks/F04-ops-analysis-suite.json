@@ -1,0 +1,76 @@
+{
+  "id": "F04",
+  "name": "经营分析综合报表",
+  "group": "F",
+  "groupName": "复杂分析",
+  "difficulty": "advanced",
+  "prompt": "创建一个经营分析报表，综合展示销售额、利润、利润率、订单数、客户数，并提供趋势和排名分析。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "orders.amount",
+    "orders.profit",
+    "totals.profitRate",
+    "orders.count",
+    "orders.customers",
+    "region.华东.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "五个指标全部可见",
+      "趋势图",
+      "排名表"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "多指标+趋势+排名+多组件组合同时要求，覆盖 MoM/YoY/rank/组合布局多个未接能力"
+    }
+  ],
+  "knownGaps": [
+    "多指标/趋势/排名组合未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

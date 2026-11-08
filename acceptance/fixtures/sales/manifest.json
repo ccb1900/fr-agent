@@ -1,0 +1,50 @@
+{
+  "fixtureVersion": "1.0.0",
+  "fixture": "sales",
+  "seed": 20261108,
+  "generatedBy": "acceptance/tools/gen_fixture.js",
+  "hashAlgorithm": "sha256 over LF-normalized UTF-8 text",
+  "rows": {
+    "orders": 184,
+    "products": 12,
+    "customers": 14,
+    "employees": 9,
+    "inventory": 48,
+    "warehouses": 4
+  },
+  "files": {
+    "customers.json": {
+      "bytes": 1918,
+      "sha256": "a9c82c93dc2df136e688cee0d819996f002f389c8b315d549f2a6063ef8bd140"
+    },
+    "employees.json": {
+      "bytes": 903,
+      "sha256": "30d4b4d72adddd6eb92f02debe8d410a7aabf26b8de601f594e8563fdf9e736a"
+    },
+    "expected.json": {
+      "bytes": 6124,
+      "sha256": "c0fd8147103ac92280791ac1b44be4fbc857fe0a9d359f44e9b52edfb9182045"
+    },
+    "inventory.json": {
+      "bytes": 6515,
+      "sha256": "2b63f24fbd37ea910097276566d40ef1f13c17e88e821516a9d49b290489390f"
+    },
+    "orders.json": {
+      "bytes": 48328,
+      "sha256": "803f53b144cfaef1b1df97c4eded2df25afb3bc711393ee429626e7d85faceb9"
+    },
+    "products.json": {
+      "bytes": 1401,
+      "sha256": "7759c510cb844c6e44ae9dc51d9fa4260ee03f220708188e302dd268cfb6c94f"
+    },
+    "schema.json": {
+      "bytes": 5416,
+      "sha256": "777fa974a34980c5dcbbef627065ea4558c158e50dd5755b38fe7a8a089632d2"
+    },
+    "warehouses.json": {
+      "bytes": 443,
+      "sha256": "5df0a7e7c45652cccdd398129f91c17f492c18419fb8ba748412eabcdff80133"
+    }
+  },
+  "totalBytes": 71048
+}

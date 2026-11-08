@@ -1,0 +1,78 @@
+{
+  "id": "A02",
+  "name": "区域销售汇总",
+  "group": "A",
+  "groupName": "基础报表与数据",
+  "difficulty": "basic",
+  "prompt": "创建销售汇总表，按区域统计销售额、订单数和客户数，销售额从高到低排序。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "spec.rows.sum"
+  ],
+  "targetCapabilities": [
+    "spec.sql.sort",
+    "spec.sql.model"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount",
+    "region.华北.amount",
+    "region.华南.amount",
+    "region.西南.amount",
+    "region.西北.amount",
+    "region.华东.orders",
+    "region.华东.customers"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "5 个区域各一行",
+      "销售额列与真值一致",
+      "行顺序按销售额降序"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "ReportSpec rows 路的聚合只有 sum，分组订单数/去重客户数无法在报表层表达",
+    "报表层排序：cell.sort 结构化拒；SQL ORDER BY 需要固定数据入库（fixture-db）"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "rows 路只能保证销售额求和；订单数/客户数需要预聚合（本任务 dataContract 禁止）→ 预期 PARTIAL。SQL 变体待 fixture-db。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

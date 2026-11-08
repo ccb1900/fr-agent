@@ -1,0 +1,76 @@
+{
+  "id": "G02",
+  "name": "增加利润率列（局部修改）",
+  "group": "G",
+  "groupName": "修改与维护",
+  "difficulty": "intermediate",
+  "prompt": "在现有销售报表中增加利润率列，不改变其他列的顺序、样式和原有计算逻辑。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "template.patch.dataset",
+    "template.patch.cellValue"
+  ],
+  "targetCapabilities": [
+    "spec.rows.cells"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "list_reports",
+    "inspect_template",
+    "modify",
+    "validate",
+    "promote",
+    "restore"
+  ],
+  "dataContract": "prepared-rows",
+  "dataAssertions": [
+    "totals.profitRate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "新列出现在指定位置",
+      "原有列内容/样式逐格一致"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": true,
+    "invariants": [
+      "其他列顺序不变",
+      "原有样式不变",
+      "原有计算逻辑不变",
+      "失败不 promote"
+    ]
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "patch 的 replace_dataset 能换数据集，但\"新增列+逐格公式\"组合未验证；cells.formula 渲染 pending"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "修改范围控制是核心；预期 PARTIAL，不允许整表重生成。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 0,
+    "safety": 15
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "id": "E02",
+  "name": "区域参数过滤",
+  "group": "E",
+  "groupName": "参数与交互",
+  "difficulty": "intermediate",
+  "prompt": "创建一个区域销售报表，用户选择区域后，只展示该区域的数据。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PARTIAL",
+  "requiredCapabilities": [
+    "spec.params.filter"
+  ],
+  "targetCapabilities": [
+    "spec.params.panel"
+  ],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "filter.region.华东.amount",
+    "filter.region.华东.rows"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "参数控件可见",
+      "默认区域（华东）只渲染该区域行"
+    ]
+  },
+  "interaction": {
+    "required": true,
+    "evidenceTier": "serialization",
+    "assertions": [
+      "切换区域后只显示该区域行"
+    ]
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [
+    "已验证=默认参数值执行期过滤；Web 改参后重查询未验证（能力账本明确不承诺）"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "静态 PNG 能证默认值过滤，不能证交互改参 → PARTIAL。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 20,
+    "interaction": 10,
+    "safety": 5
+  }
+}

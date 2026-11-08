@@ -1,0 +1,71 @@
+{
+  "id": "B02",
+  "name": "区域×月份交叉报表",
+  "group": "B",
+  "groupName": "布局与组件",
+  "difficulty": "intermediate",
+  "prompt": "创建一个按年月和区域展开的交叉报表，行是区域，列是月份，单元格显示销售额。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "region.华东.amount",
+    "month.2026-06.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "行=区域、列=月份",
+      "单元格=对应区域月份销售额"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "交叉表/透视（动态列维度）在能力账本无条目；rows 路只有固定列明细表"
+    }
+  ],
+  "knownGaps": [
+    "交叉表/动态列头未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

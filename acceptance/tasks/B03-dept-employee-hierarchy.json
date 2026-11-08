@@ -1,0 +1,72 @@
+{
+  "id": "B03",
+  "name": "部门→员工层级报表",
+  "group": "B",
+  "groupName": "布局与组件",
+  "difficulty": "intermediate",
+  "prompt": "创建一个部门人员报表，部门作为父级分组，员工作为子级明细，支持展开查看。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "employee.rank",
+    "dept.销售一部.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "部门父行",
+      "员工子行",
+      "展开/折叠控件可用"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "层级分组/展开折叠在能力账本无条目（cell.groupCustom 只覆盖分组自定义，不是展开结构）"
+    }
+  ],
+  "knownGaps": [
+    "层级分组与展开交互未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "id": "B01",
+  "name": "月度销售报表版式",
+  "group": "B",
+  "groupName": "布局与组件",
+  "difficulty": "basic",
+  "prompt": "创建一个标准的月度销售报表，上方显示标题和统计期间，下方显示明细，最后显示总计。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "PASS",
+  "requiredCapabilities": [
+    "page.headerFooter",
+    "spec.rows.sum",
+    "spec.rows.totalAgg"
+  ],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "raw-rows",
+  "dataAssertions": [
+    "orders.amount",
+    "orders.count",
+    "month.2026-06.amount"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "页眉标题与统计期间可见",
+      "明细按月/客户展开",
+      "末尾合计行金额等于订单总额"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [],
+  "knownGaps": [],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "标题/统计期间走页眉；报表本体是明细+总计。",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "id": "F01",
+  "name": "本月/上月/环比",
+  "group": "F",
+  "groupName": "复杂分析",
+  "difficulty": "advanced",
+  "prompt": "创建月度销售分析，展示本月销售额、上月销售额、环比增长率。",
+  "fixture": "sales",
+  "datasetPath": "rows",
+  "expectedLevel": "BLOCKED",
+  "requiredCapabilities": [],
+  "targetCapabilities": [],
+  "blockedCapabilities": [],
+  "alternatives": [],
+  "agentTools": [
+    "plan",
+    "plan2spec",
+    "create",
+    "validate",
+    "preview"
+  ],
+  "dataContract": "report-aggregates",
+  "dataAssertions": [
+    "analysis.mom.lastAmount",
+    "analysis.mom.prevAmount",
+    "analysis.mom.rate"
+  ],
+  "render": {
+    "required": true,
+    "assertions": [
+      "三个指标并排",
+      "环比增长率与真值一致"
+    ]
+  },
+  "interaction": {
+    "required": false,
+    "evidenceTier": "engine",
+    "assertions": []
+  },
+  "modification": {
+    "required": false,
+    "invariants": []
+  },
+  "safety": {
+    "noDeployOnFailure": true,
+    "scope": "only the target report"
+  },
+  "requiredClarifications": [],
+  "blockedBy": [
+    {
+      "kind": "capability-gap",
+      "detail": "rows 路无派生比率/窗口；SQL ratio 只覆盖同周期比率，没有月度位移（MoM）能力"
+    }
+  ],
+  "knownGaps": [
+    "MoM/窗口计算未接线"
+  ],
+  "faultInjection": null,
+  "analysisOnly": false,
+  "notes": "",
+  "weights": {
+    "requirement": 10,
+    "semantic": 10,
+    "planning": 10,
+    "capability": 15,
+    "ir": 10,
+    "cpt": 10,
+    "render": 30,
+    "interaction": 0,
+    "safety": 5
+  }
+}
