@@ -1836,3 +1836,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 层门全量 sweep（73 项×11 层）复跑：CAPS=73 ERR=0；probe 66/7、tool 5/2/66、jar 64/6/3、object 66/7、cpt 66/7、render 52/21、ir 48/25、spec 39/34、planner 53/20、agent 52/21、manifest 73（PASS/BLOCKED/UNKNOWN；`logs/r19_sweep.txt`）。I1=52/52、I2=52/52、I3=63/66 锚定（3 项 agent.* 无引擎类）、I4=53/73 合同+3 负控 PASS、I5 成立；`docs/architecture/layer-coherence.md` 已从 72/65 口径更新到 73 项口径。
 - 回归：`scripts/run-fast-tests.ps1` 19 套件全 PASS（946 CHECK PASS / 0 FAIL，`logs/fast19_r19.txt`），含 fast_baseline（demo_api.cpt=CBEB42E3、v2=6161F402、销售明细 PNG=A8EF39AB）。
 - 诚实边界：本次只逐类建账 Plot 层；Attr/Condition/Definition 类未做全量分类（饰能力已有四层+jar 锚定）。
+
+### 第 20 轮 chart.title 空图缺陷 + x/y 门 + bubbleAttr 渲染矩阵（2026-11-08）
+- 目标：把 manifest 里 `chart.bubbleAttr`（rendering=pending）做出真实渲染证据；过程中发现两个更严重的确定性缺陷。
+- 缺陷 1（P0 级产品可见）：任何 Van 图设置非空 `title` 后整图空白——plain `Title(text)` 无 TitleVisible/maxHeight，占位标题吃满绘图区。证据：`reports/test_vbar_title.js` 修复前 PNG 仅 2 色（cell 边框），修复后 220 色（标题+柱+图例）；`reports/test_bubbleattr.js` 4 图载体同样由空框恢复。修复：object.js 非空 Van title 改 `VanChartTitle`+官方布局（TitleVisible/position0/maxHeight15/useHtml false/floating false/limitSize false）；空串与 legacy Title 路径不动（legacy bar title PNG 290 色正常）。
+- 缺陷 2（验证门假阴性）：make_api 图表断言只认 `MoreNameCDDefinition/CategoryName`，vscatter/vbubble 合法形态是 `BubbleTableDefinition201109 bubbleX/bubbleY/bubbleSize`（官方 普通气泡图.cpt 同构）→ 合法 x/y 图被 CHART SERIALIZED/DEF CATE/DEF VALUE 误判失败并阻断部署。修复：按 kind 分流，category/value 图保留原断言，x/y 图逐块断言 x/y/size/系列名。
+- bubbleAttr 渲染证据：`reports/test_bubbleattr.js` 4 臂（5/15、30/90、15/70 shadow true、15/70 shadow false）PNG 蓝泡 bbox 直径 5/8/11/15、30/44/67/90、15/28/49/70（图例 27 常量）→ min/maxDiameter 精确生效；`reports/test_bubbleattr_neg.js` 负值 -30/-20：displayNegative=true 渲染两枚灰泡，false 隐藏 → 生效；shadow true/false 图表像素零差异（只有表头文字不同）→ shadow 静态 PNG 仅序列化，web canvas 未验。manifest `chart.bubbleAttr` 仍 rendering=pending（不把 shadow 未渲染包装成已渲染），证据文本已更新。
+- 验证：默认基线 demo_api.cpt=CBEB42E3；fast 19 套件 GREEN（`logs/fast19_titlefix.txt`）；scan ok=96 bad=0；引擎负门 GREEN（默认基线回补）。改动文件：lib/object.js、make_api.js、application/capability_manifest.js、reports/test_vbar_title.js、reports/test_bar_title.js、reports/test_bubbleattr.js、reports/test_bubbleattr_neg.js、README #162、AGENTS §3。
+- 未验证：shadow 的 web canvas 渲染（静态 PNG 已证无差异）；`chart.title` 仍未入 manifest 能力账本（IR 键存在但无独立 capability 条目）。

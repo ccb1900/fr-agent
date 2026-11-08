@@ -59,6 +59,8 @@ run.ps1 -Script make_api.js
 
 ## 3. 引擎级已知事实（踩过一次就别踩第二次）
 
+- **Van 图非空标题必须用 `VanChartTitle` 并给布局（2026-11-08 实证）**：plain `Title(text)` 无 TitleVisible/maxHeight 时占位标题吃满绘图区 → 整图空白（PNG 只剩 cell 边框）；正确形态=`new VanChartTitle(text)`+`setTitleVisible(true)`+`setPosition(0)`+`setMaxHeight(15.0)`+`setUseHtml(false)`+`setFloating(false)`+`setLimitSize(false)`（官方 `柱形图变形.cpt` 同构）。空串仍用 plain Title('') 压制引擎占位标题；legacy 图表 plain Title 正常。
+- **x/y 图（vscatter/vbubble）序列化形态是 `BubbleTableDefinition201109`**（`bubbleX/bubbleY/bubbleSize`，官方 `普通气泡图.cpt` 同构），没有 `MoreNameCDDefinition/CategoryName`；make_api 图表门必须按 kind 分流，否则把合法 x/y 图误判失败（2026-11-08 修）。
 - **FR 存 cpt 时会改写 SQL**：`[]` 标识符补表别名 → 运行时 ORDER BY 失效；全序走 `ROW_NUMBER() OVER(...)` 出 `_ord`，外层 `ORDER BY _ord`（无标识符不被改写）
 - **字号单位 = pt×2（2026-10-27 font_ruler 标尺证伪 pt×4 旧说）**：attr{10,20,40,42} 渲染墨高 px {3,6,10,11} @0.667px/pt，与 attr/2=pt 全对合（attr/4 预测差 2.25 倍）。写字号：getInstanceFromFRSize 时 attr=sizePt×2（lib/object.js font()）；设计器字号框显示 getSize2D≈attr/8 的浮点值（attr42→5.3、attr50→6.3，用户在框里看到的 6.5/4.5 即此类值+人工口记偏差）。历史"SimHei 8pt 吞负号"实验当时 attr=32=真 16pt，结论的原口径需重验后才可再引用
 - **自造工具条超链翻页禁用**：数据分析预览中每点一次导航，请求头随导航膨胀，三四次 → Tomcat 400「请求头太大」；且页码参数在多次跳转中会漂移。翻页 = 参数面板 page/size + 查询提交（同视图重算，无导航）；模块互跳 = 导航条 ReportletHyperlink（低频、可接受）
