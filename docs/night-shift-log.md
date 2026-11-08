@@ -2056,3 +2056,10 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 升层：chart.vgantt/chart.vtreemap 四层 verified+agentAvailable=true（scope=gantt 无关联线；treemap 仅顶层区块，嵌套静态不绘制不承诺）；ReportSpec/Planner 补 taskid/seriesname/processname/starttime/endtime 与 levels[]/value 词表；gantt_rows_001/treemap_rows_001/structure_rows_003 create+validate PASS。
 - 账本：93 项/69 承诺/24 未承诺（webInteraction 13 / unverifiedRendering 4 / notImplemented 4 / rejected 3）；jar 30 supported/23 base/1 unsupported；chart.meter 证据旧句修正、meter 变体 regressionScope=null。
 - 回归：fast 20 GREEN、scan ok=128 bad=0、基线 CBEB42E3。
+
+### 第 40 轮 复核收口：docs-only FAIL + RISK 清零（2026-11-08）
+- 复核结论：能力/账本/门全部成立；FAIL 仅两处文档旧陈述（§6.4 gantt/treemap 仍写 serialization-only、row 7 仍写 structure_rows_002）。
+- 修正：§6.4 两行改 DONE（scope 如实）；row 7 → structure_rows_003；头/§2 计数 → 94 项/69 承诺/25 未承诺。
+- RISK 清理：①IR gantt link{dataset,start,end,type} 结构化校验（UNKNOWN_REF/REQUIRED，不再引擎期 NPE）；②drillmap 入账 chart.vdrillmap（constructed/constructed/serialization-only/pending，agentAvailable=false；webInteraction 计 14）；③totals 94/69/25。
+- 遗留 RISK（接受并记录）：vcombo make_api 序列化断言用整份 cpt 正则（单 chart/块场景足够，多图同页可能互借证据）；style 推导在 object 与 make_api 双处同构（改动需同步）。
+- 回归：fast 20 GREEN、scan ok=128 bad=0、基线 CBEB42E3。

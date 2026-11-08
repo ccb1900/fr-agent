@@ -560,6 +560,8 @@ check('meter theme 非白名单 INVALID_ENUM', codeAt(chartIR('meter', { theme: 
 
 // 2026-11-08 审查修复：gantt/treemap 分支独立后的 REQUIRED 断言
 check('vgantt 缺 taskid REQUIRED', codeAt(chartIR('vgantt', { taskid: null }), 'REQUIRED', 'sheets[0].blocks[1]'));
+check('vgantt link 未知数据集 UNKNOWN_REF', codeAt(chartIR('vgantt', { taskid: 'd', link: { dataset: 'nope', start: 'a', end: 'b', type: 't' } }), 'UNKNOWN_REF', 'sheets[0].blocks[1].link.dataset'));
+check('vgantt link 缺 start REQUIRED', codeAt(chartIR('vgantt', { taskid: 'd', link: { dataset: 'd', end: 'b', type: 't' } }), 'REQUIRED', 'sheets[0].blocks[1].link.start'));
 check('vtreemap 缺 levels REQUIRED', codeAt(chartIR('vtreemap', { levels: null }), 'REQUIRED', 'sheets[0].blocks[1]'));
 check('vcombo groups 非数组不抛且 REQUIRED', errsOf(chartIR('vcombo', { groups: 'x' })).some(function (e) { return e.code === 'REQUIRED'; }));
 check('vcombo 重复 plot 拒', codeAt(chartIR('vcombo', { groups: [{ plot: 'column', dataset: 'd', category: '机型', values: ['产量'] }, { plot: 'column', dataset: 'd', category: '机型', values: ['产量'] }] }), 'INVALID_SHAPE', 'sheets[0].blocks[1].groups[1].plot'));
