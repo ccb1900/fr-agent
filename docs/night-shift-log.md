@@ -1789,3 +1789,15 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   ③ 官方 demo 实际用法 label.richText（${SERIES}: ${PERCENT}，PieCategoryLabelContent+richTextAttr）→ 同样失败
 - 结论：本版 headless 的 vpie 标签内容写路径（AttrTooltipContent/PieCategoryLabelContent 的 writeXML）修改即丢 ChartCollection——序列化墙确认；代码已回滚（AL 开关键与 object 分支移除，不留半成品），backlog P3 保留并补"vbar 隔离实验"证据（排除 AttrTooltipContent 类本身的问题）。
 - 未验证：该墙是否与 vpie 的 label 挂载/条件集组合有关（官方 demo 用命名 ConditionAttr 条件属性4，与本实现同构；仍失败）。
+
+### 第 14 轮 frserver 生命周期工具（web 交互验证前置，用户授权后）
+- 由 `server/lib`（完整 Tomcat）无头启动 `webapps/webroot`，不启动设计器 GUI、不改生产安装文件：
+  scripts/frserver.ps1 start/status/stop；临时 catalina.base=logs/frserver_base（conf 复制、appBase/
+  common.loader 绝对化、Connector 端口参数化），Bootstrap start，就绪=/webroot/decision 200；
+  pidfile 只停自己起的 java。
+- 实测：start → ready http=200 pid=49752（Tomcat 服务器启动 ~186s）；status → alive=True http=200；
+  stop → stopped、端口释放。首版 Probe-Http 对 302→/login 读 Response 失败（http=0 假未就绪），
+  改为跟随重定向后 200 判定。
+- 阻塞：报告页 `decision/view/report?viewlet=...` 302→/login，需 FR 账号密码；已向用户请求。
+  未登录前不改任何账本（webInteraction 维持 serialization-only），待凭据后做浏览器级
+  tooltip/超链/工具栏验证并留证据。
