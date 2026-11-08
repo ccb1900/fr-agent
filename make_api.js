@@ -465,7 +465,7 @@ if (rb) {
           }
         }
         var ucn = Object.keys(ucol).length;
-        check('CHART RENDER NONBLANK (uniqueColors=' + ucn + ' chromatic=' + chroma + ')', ucn >= 8 || chroma >= 100);
+        check('CHART RENDER NONBLANK (uniqueColors=' + ucn + ' chromatic=' + chroma + ')', chroma >= 20);   // 2026-11-08 收紧：标题抗锯齿灰能让 unique 很多但 chromatic=0；有图必须有彩色/深色像素
       }
     } catch (ePng) { FAILS++; stamp('CHART RENDER CHECK FAIL: ' + ePng); RR.diag('CHART RENDER CHECK FAIL: ' + ePng); }
   }

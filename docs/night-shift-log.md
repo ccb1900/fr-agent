@@ -1842,7 +1842,7 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 缺陷 1（P0 级产品可见）：任何 Van 图设置非空 `title` 后整图空白——plain `Title(text)` 无 TitleVisible/maxHeight，占位标题吃满绘图区。证据：`reports/test_vbar_title.js` 修复前 PNG 仅 2 色（cell 边框），修复后 220 色（标题+柱+图例）；`reports/test_bubbleattr.js` 4 图载体同样由空框恢复。修复：object.js 非空 Van title 改 `VanChartTitle`+官方布局（TitleVisible/position0/maxHeight15/useHtml false/floating false/limitSize false）；空串与 legacy Title 路径不动（legacy bar title PNG 290 色正常）。
 - 缺陷 2（验证门假阴性）：make_api 图表断言只认 `MoreNameCDDefinition/CategoryName`，vscatter/vbubble 合法形态是 `BubbleTableDefinition201109 bubbleX/bubbleY/bubbleSize`（官方 普通气泡图.cpt 同构）→ 合法 x/y 图被 CHART SERIALIZED/DEF CATE/DEF VALUE 误判失败并阻断部署。修复：按 kind 分流，category/value 图保留原断言，x/y 图逐块断言 x/y/size/系列名。
 - bubbleAttr 渲染证据：`reports/test_bubbleattr.js` 4 臂（5/15、30/90、15/70 shadow true、15/70 shadow false）PNG 蓝泡 bbox 直径 5/8/11/15、30/44/67/90、15/28/49/70（图例 27 常量）→ min/maxDiameter 精确生效；`reports/test_bubbleattr_neg.js` 负值 -30/-20：displayNegative=true 渲染两枚灰泡，false 隐藏 → 生效；shadow true/false 图表像素零差异（只有表头文字不同）→ shadow 静态 PNG 仅序列化，web canvas 未验。manifest `chart.bubbleAttr` 仍 rendering=pending（不把 shadow 未渲染包装成已渲染），证据文本已更新。
-- 缺陷 3（P0 验证门漏报）：出图段只判"PNG 有字节"，整图空白也 ALL PASS（Van title 事故就是这样过的门）。补 `CHART RENDER NONBLANK`：有 chart 块时抽样 PNG，uniqueColors<8 且 chromatic<100 判失败；正常 vbar_title PNG unique=151/chromatic=2556 PASS，历史空白对照 unique=2/chromatic=0 被拒。默认基线（无图表）门自动跳过，MD5 仍 CBEB42E3。
+- 缺陷 3（P0 验证门漏报）：出图段只判"PNG 有字节"，整图空白也 ALL PASS（Van title 事故就是这样过的门）。补 `CHART RENDER NONBLANK`：有 chart 块时抽样 PNG，chromatic<20 判失败（2026-11-08 收紧：标题抗锯齿灰能让 uniqueColors 很高但 chromatic=0；multipie 空白实验 unique=88/chromatic=0 被拒）。默认基线（无图表）门自动跳过，MD5 仍 CBEB42E3。
 - 候选复核（不升层）：`examples/report-spec/cells_extras.json` 真引擎 PNG 目检，`presentation.cells` 的 rich 文本格「【结论】」粗体段+正文行可见；但 formula/link/barcode 等 item 形态各有独立能力账本、未逐形态目检，`spec.rows.cells` rendering 保持 pending（只入证据）。
 - 验证：默认基线 demo_api.cpt=CBEB42E3；fast 19 套件 GREEN（`logs/fast19_titlefix.txt`、`logs/fast19_bubbleattr.txt`、`logs/fast19_blankgate.txt`）；scan ok=96 bad=0；引擎负门 GREEN（默认基线回补）。改动文件：lib/object.js、make_api.js、application/capability_manifest.js、reports/test_vbar_title.js、reports/test_bar_title.js、reports/test_bubbleattr.js、reports/test_bubbleattr_neg.js、README #162、AGENTS §3。
 - 未验证：shadow 的 web canvas 渲染（静态 PNG 已证无差异）；`chart.title` 仍未入 manifest 能力账本（IR 键存在但无独立 capability 条目）。
@@ -1901,6 +1901,13 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   9. SQL 路图区偏小/图例截断列为 P2 产品边界（§4.1），不以图种闭环掩盖。
 - 回归：fast 20 套件 GREEN（`logs/fast_review_fixes.txt`，含另一个会话的 acceptance 套件；我们的 19 个核心套件仍全绿）；scan ok=104；基线 CBEB42E3；81 项层扫描 ERR=0；golden 全链 PASS。
 - 未闭环：SQL 路图表版式 P2；box 多系列 spec 入口；donut 经典单环分段（不承诺）；剩余 11 图族。
+
+### 第 26.1 轮 环境事故：C 盘满导致基线失败（2026-11-08）
+- 现象：默认 make_api 连续失败——`NoClassDefFoundError: com.fr.license.selector.LicenseContext`、`FineAssist version not match`、demo_api.cpt 0 字节；md5=d41d8cd9（空文件）。
+- 根因：C: 盘 0 字节可用；`C:\Users\guojianhang\AppData\Local\Temp` 19GB，其中 FinePrivacy_x*_*.dll 2351 份约 14.3GB、FineAssist DLL 2352 份 184MB（每次 JVM 启动解压一份，从不清理）。
+- 处置：只删 Temp 下 FinePrivacy/FineAssist 模式文件（不动用户数据/安装目录），C: 释放 14.3GB；默认 make_api 恢复 PASS，demo_api.cpt=CBEB42E3。
+- 教训：引擎反复跑会累积 native DLL 临时副本；环境满时表现为 license/版本错误而非磁盘错误，先查 `df`/Temp。
+- 同期把 `CHART RENDER NONBLANK` 从 `unique>=8 || chroma>=100` 收紧为 `chroma>=20`：multipie 空白实验 unique=88/chromatic=0 被正确拒绝（标题抗锯齿灰曾绕过旧门）。
 
 ### 第 26 轮 Agent 验收基准 V0.1（用户提案：40 任务/8 组，2026-11-08）
 - 目标：把"40 条报表任务"落成可执行验收规格，而不是提示词清单。先做尺子：任务定义、固定数据、真值 oracle、结果记录器、完整性门；**不伪造执行结果**。

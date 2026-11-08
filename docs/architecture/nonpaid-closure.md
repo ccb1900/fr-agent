@@ -13,8 +13,8 @@
 | 1 | 雷达 radar | VanChartRadarPlot | doc/NewRadarChart 24 | MoreNameCDDefinition | **DONE（chart.vradar，agentAvailable；runId=radar_e2e_001）** |
 | 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | **DONE（chart.vfunnel，agentAvailable；runId=funnel_e2e_001）** |
 | 3 | 箱线 box | VanChartBoxPlot | doc 3 | VanBoxTableDefinition detailed | **DONE（chart.vbox，单系列 scope；runId=box_e2e_001）** |
-| 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | 待探针 | 待做 |
-| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | 待探针 | 待做 |
+| 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | MultiPieValueDefinition(levels) | 待做（与 treemap 共用数据定义） |
+| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels) | 待做（与 multipie 共用） |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | 待探针 | 待做 |
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | 待探针 | 待做 |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
