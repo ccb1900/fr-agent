@@ -1,0 +1,25 @@
+{
+  "specVersion": "1",
+  "report": { "name": "仪表盘 rows 自检" },
+  "outName": "能力自检_仪表盘",
+  "dimensions": [
+    { "field": "line", "label": "产线", "widthPt": 120 }
+  ],
+  "metrics": [
+    { "field": "value", "label": "值", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" }
+  ],
+  "dataset": {
+    "rows": [["A线", 80]]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "meter",
+      "value": "value",
+      "seriesName": "产量",
+      "title": "仪表盘",
+      "heightPt": 320
+    }
+  }
+}

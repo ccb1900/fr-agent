@@ -1,22 +1,22 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T14:46:22.9841238+08:00",
+    "generatedAt":  "2026-11-08T15:59:39.0349745+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  12,
+                   "unsupported":  11,
                    "base":  19,
-                   "supported":  23
+                   "supported":  24
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  18,
+                         "current":  19,
                          "base":  16,
                          "van":  4,
-                         "legacy":  16
+                         "legacy":  15
                      },
     "licensePolicy":  {
                           "paidPrefixes":  [
@@ -171,15 +171,15 @@
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "legacy meter variant not wired"
+                        "reason":  "blue theme variant not separately wired/tested (MeterPlot/SimpleMeterPlot cover the family core)"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.MeterPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "legacy",
-                        "cap":  "",
-                        "reason":  "legacy meter/仪表盘 variant not wired"
+                        "family":  "current",
+                        "cap":  "chart.meter",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Pie3DPlot",
@@ -235,7 +235,7 @@
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "legacy meter variant not wired"
+                        "reason":  "simple variant not separately wired/tested; carrier covers MeterPlot family core"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.StockPlot",

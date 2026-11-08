@@ -235,22 +235,22 @@
       "family": "legacy"
     },
     "com.fr.chart.chartattr.MeterPlot": {
-      "status": "unsupported",
-      "reason": "legacy meter/仪表盘 variant not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "legacy"
+      "family": "current",
+      "cap": "chart.meter"
     },
     "com.fr.chart.chartattr.MeterBluePlot": {
       "status": "unsupported",
-      "reason": "legacy meter variant not wired",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "reason": "blue theme variant not separately wired/tested (MeterPlot/SimpleMeterPlot cover the family core)"
     },
     "com.fr.chart.chartattr.SimpleMeterPlot": {
       "status": "unsupported",
-      "reason": "legacy meter variant not wired",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "reason": "simple variant not separately wired/tested; carrier covers MeterPlot family core"
     },
     "com.fr.chart.chartattr.RadarPlot": {
       "status": "base",
