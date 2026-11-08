@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T14:20:23.2442833+08:00",
+    "generatedAt":  "2026-11-08T14:46:22.9841238+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  13,
+                   "unsupported":  12,
                    "base":  19,
-                   "supported":  22
+                   "supported":  23
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  17,
+                         "current":  18,
                          "base":  16,
-                         "van":  5,
+                         "van":  4,
                          "legacy":  16
                      },
     "licensePolicy":  {
@@ -439,11 +439,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.structure.VanChartStructurePlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "structure/organization chart not wired"
+                        "family":  "current",
+                        "cap":  "chart.vstructure",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.treemap.VanChartTreeMapPlot",

@@ -393,6 +393,17 @@ try {
       && xmlText.indexOf('valueName="' + val + '"') >= 0
       && (cb.levels || []).every(function (lv) { return xmlText.indexOf('levelName="' + lv + '"') >= 0; }));
   });
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vstructure') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    check('CHART SERIALIZED (structure ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /StructureTableDefinition/.test(xmlText) && /StructureAttr/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset) >= 0
+      && xmlText.indexOf('nodeid="' + cb.nodeId + '"') >= 0
+      && xmlText.indexOf('parentid="' + cb.parentId + '"') >= 0
+      && xmlText.indexOf('nodename="' + cb.nodeName + '"') >= 0
+      && xmlText.indexOf('nodevalue="' + cb.nodeValue + '"') >= 0);
+  });
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);
   var sw2 = new (J('java.io.StringWriter'))(); var pw2 = new (J('java.io.PrintWriter'))(sw2);

@@ -1976,3 +1976,9 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：`reports/test_wordcloud.js` 真引擎 failures=0，PNG 词云（报表/数据/帆软/分析/图表/大屏 按值大小）+图例+标题（594 色）；SQL 真库 plan→plan2spec→create→validate PASS（runId=wordcloud_e2e_002，wordName=machine/wordValue=planned，表体 33531/26531 真值不变）；manifest chart.vwordcloud 四层 verified/agentAvailable=true（83 项/62 承诺）。
 - 边界：structure 仍只出层级+数值、节点名未出，不接；treemap 只出顶层矩形，不接。
 - 回归：fast 20 套件 GREEN（`logs/fast_wordcloud.txt`，caps=83/agent=62；supported=22/unsupported=13）；scan ok=106；基线 CBEB42E3；层扫描 81 项+multipie/vwordcloud 单项门，83 项全量待下轮复跑。
+
+### 第 29 轮 非付费图族闭环第 7 个：chart.vstructure 结构图（2026-11-08）
+- 一手结构：官方 `doc/Chart/NewStructureFrame/DivergentStructureFrame.cpt` = VanChartStructurePlot + StructureTableDefinition（`nodeid/parentid/nodename/nodevalue` + NoneFunction）。官方 `AttrLabel labelAttr enable="false"`，因此静态 PNG 不显示节点名是官方默认；账本只承诺层级结构图，不包装成节点名静态可见。
+- 实施：object VK vstructure；IR node* 校验/列引用；ReportSpec `CHART_KEYS` + structure 分支；SpecCompiler sql/rows 双路发射 node*；layer gate planner 合同给 nodeId/parentId/nodeName/nodeValue。
+- 验证：rawIR `reports/test_structure.js` PNG 4 节点层级；ReportSpec rows `examples/report-spec/structure_rows.json` 经 `fr_agent create` + `validate` PASS（runId=structure_rows_002），部署 PNG 同层级 + 表体合计；jar 面 VanChartStructurePlot supported（23 supported/19 base/12 unsupported=8 图族）；manifest 四层 verified/agentAvailable=true（84 项/63 承诺）。
+- 回归：fast 20 GREEN（修 exact 清单遗漏 vstructure 后）；scan ok=108；基线 CBEB42E3。

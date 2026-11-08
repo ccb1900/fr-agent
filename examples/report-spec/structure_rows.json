@@ -1,0 +1,75 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "结构图 rows 自检"
+  },
+  "outName": "能力自检_结构图rows",
+  "dimensions": [
+    {
+      "field": "node",
+      "label": "节点",
+      "widthPt": 100
+    },
+    {
+      "field": "parent",
+      "label": "父节点",
+      "widthPt": 100
+    },
+    {
+      "field": "name",
+      "label": "名称",
+      "widthPt": 120
+    }
+  ],
+  "metrics": [
+    {
+      "field": "value",
+      "label": "值",
+      "aggregation": "sum",
+      "dataType": "number",
+      "widthPt": 80,
+      "format": "#,##0"
+    }
+  ],
+  "dataset": {
+    "rows": [
+      [
+        "1",
+        "",
+        "总部",
+        100
+      ],
+      [
+        "2",
+        "1",
+        "研发",
+        60
+      ],
+      [
+        "3",
+        "1",
+        "销售",
+        40
+      ],
+      [
+        "4",
+        "2",
+        "测试",
+        20
+      ]
+    ]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vstructure",
+      "nodeId": "node",
+      "parentId": "parent",
+      "nodeName": "name",
+      "nodeValue": "value",
+      "title": "组织架构",
+      "heightPt": 320
+    }
+  }
+}

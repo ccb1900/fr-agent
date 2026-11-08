@@ -319,10 +319,10 @@
       "cap": "chart.vradar"
     },
     "com.fr.plugin.chart.structure.VanChartStructurePlot": {
-      "status": "unsupported",
-      "reason": "structure/organization chart not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vstructure"
     },
     "com.fr.plugin.chart.treemap.VanChartTreeMapPlot": {
       "status": "unsupported",

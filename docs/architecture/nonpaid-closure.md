@@ -3,10 +3,10 @@
 > 定义：**闭环 = 构造 → 序列化 → 真实渲染/交互 → Agent plan→create 证据 → 账本状态一致**，五态标注不混写。
 > 注意：图种"闭环"指上述四段证据成立；**产品版式**（SQL 路图区偏小、图例截断）列为 P2 独立项（§4.1），不以图种闭环掩盖。
 > 付费排除口径：FVS bigScreen 14 包 / `com.fr.extended.chart.*` / 移动端；不实现、不排期。
-> 当前基线：83 项账本 / 62 项 Agent 可用 / jar 面 54 Plot 类（22 supported、19 base、13 unsupported=9 图族）。
+> 当前基线：84 项账本 / 63 项 Agent 可用 / jar 面 54 Plot 类（23 supported、19 base、12 unsupported=8 图族）。
 > 进度以本文件与 `docs/night-shift-log.md` 为准；每完成一项更新状态并做一次独立审查。
 
-## 1. 图族闭环（9 个待办，按可行性排序）
+## 1. 图族闭环（8 个待办，按可行性排序）
 
 | # | 图族 | 类 | 官方语料 | 数据绑定形态 | 状态 |
 |---|---|---|---|---|---|
@@ -16,7 +16,7 @@
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | MultiPieValueDefinition(levels) | **DONE（chart.vmultipie；runId=multipie_e2e_004）** |
 | 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels) | 待做（rawIR 只出顶层矩形；嵌套子块未达成） |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | WordCloudTableDefinition(wordName/wordValue) | **DONE（chart.vwordcloud；runId=wordcloud_e2e_002）** |
-| 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | 待做（rawIR 可出层级+数值，节点名未出） |
+| 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | 待探针（起止/分类） | 待做 |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |

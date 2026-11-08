@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T14:20:21.0516920+08:00",
+    "generatedAt":  "2026-11-08T14:46:20.7398037+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,7 +661,7 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  197,
+    "namedCount":  199,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
@@ -684,6 +684,7 @@
                      "com.fr.chart.chartdata.OneValueCDDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.column.VanChartColumnPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.TreeComboBoxEditor":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.structure.VanChartStructurePlot":  "fine-report-engine-11.0.jar",
                      "com.fr.code.bar.core.BarcodeAttr":  "fine-core-11.0.jar",
                      "com.fr.stable.ColumnRow":  "fine-cbb-11.0.jar",
                      "com.fr.plugin.chart.base.AttrTooltip":  "fine-report-engine-11.0.jar",
@@ -710,7 +711,7 @@
                      "com.fr.report.web.button.write.AppendColumnRow":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartdata.BubbleTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.RadioGroup":  "fine-report-engine-11.0.jar",
-                     "com.fr.report.write.BuiltInSQLSubmiter":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.structure.data.StructureTableDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.page.Last":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.multilayer.data.MultiPieValueDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.base.Margin":  "fine-core-11.0.jar",
@@ -728,6 +729,7 @@
                      "com.fr.report.stable.ReportSettings":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrSeriesStackAndAxis":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.box.data.VanBoxTableDefinition":  "fine-report-engine-11.0.jar",
+                     "com.fr.report.write.BuiltInSQLSubmiter":  "fine-report-engine-11.0.jar",
                      "com.fr.report.cell.cellattr.core.RichText":  "fine-report-engine-11.0.jar",
                      "com.fr.general.data.TableDataColumn":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.box.data.VanBoxTableResultDefinition":  "fine-report-engine-11.0.jar",

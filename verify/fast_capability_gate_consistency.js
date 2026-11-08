@@ -24,7 +24,7 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
   var segs = ['chart', 'condition', 'write', 'page', 'product'];
   var total = 0, aa = 0;
   segs.forEach(function (s) { (mf[s] || []).forEach(function (c) { total++; if (c.agentAvailable) aa++; }); });
-  check('manifest totals 与逐段计数一致（83/62/21）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 83 && aa === 62);
+  check('manifest totals 与逐段计数一致（84/63/21）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 84 && aa === 63);
   check('unavailable 覆盖全部未承诺项且分类互斥', mf.unavailable.length === total - aa && mf.unavailable.every(function (x) {
     return ['webInteraction', 'unverifiedRendering', 'notImplemented', 'rejected', 'e5Evidence'].indexOf(x.reason) >= 0;
   }));
