@@ -73,8 +73,8 @@
 
 ## 3. 与层间一致性门的关系
 
-- `fast_layer_coherence`：账本 84 项 / 承诺 63 项，I1/I2/jar 锚定不变量全绿（能力→类→jar）。
-- `fast_jar_surface`（新）：54 个绘图类必须**全部有定性**（unclassified/stale 为空）；supported 23 类与 IR 词表 23 kinds 互相对上；unsupported 每类有原因。
+- `fast_layer_coherence`：账本 94 项 / 承诺 69 项（2026-11-08 复核），I1/I2/jar 锚定不变量全绿（能力→类→jar）。
+- `fast_jar_surface`（新）：54 个绘图类必须**全部有定性**（unclassified/stale 为空）；supported 30 类与 IR 词表 30 kinds 互相对上；unsupported 每类有原因。
 - 两层一起回答"全过程是否协调"：能力承诺（Agent 面）→ 词表（IR/Spec）→ 对象构造（Object）→ 序列化（CPT）→ jar 物理类面，均能双向追溯。
 
 ## 4. 诚实边界（"付费之外都闭环了吗" = 没有）
