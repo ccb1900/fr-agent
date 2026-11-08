@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T04:56:19.8367582+08:00",
+    "generatedAt":  "2026-11-08T09:02:55.5732054+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -696,6 +696,7 @@
                      "com.fr.js.NameJavaScript":  "fine-report-engine-11.0.jar",
                      "com.fr.base.background.ImageBackground":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.base.AttrEffect":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.base.AttrBorderWithShape":  "fine-report-engine-11.0.jar",
                      "com.fr.base.iofile.attr.TemplateIdAttrMark":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.Export":  "fine-report-engine-11.0.jar",
                      "com.fr.general.ImageWithSuffix":  "fine-core-11.0.jar",
@@ -810,7 +811,6 @@
                      "com.fr.report.web.button.page.Previous":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.FlashPrint":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.PiePlot4VanChart":  "fine-report-engine-11.0.jar",
-                     "com.fr.plugin.chart.base.AttrBorderWithAlpha":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.page.Next":  "fine-report-engine-11.0.jar",
                      "com.fr.base.iofile.attr.ForkIdAttrMark":  "fine-report-engine-11.0.jar",
                      "com.fr.data.condition.CommonCondition":  "fine-core-11.0.jar",

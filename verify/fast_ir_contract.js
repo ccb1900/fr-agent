@@ -534,6 +534,11 @@ check('批I mapTooltip payload 未知键拒', codeAt(chartIR('vmap', { mapToolti
   check('seriesBorder style 1 合法零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 1 }; })).length === 0);
   check('seriesBorder style=3 拒（官方语料仅 0/1；其他值引擎不画）', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 3 }; }), 'INVALID_ENUM', P + '.seriesBorder.style'));
   check('seriesBorder alpha 拒（AttrBorderWithAlpha 引擎不画，写了不生效）', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].seriesBorder = { color: 0xFF0000, style: 1, alpha: 1 }; }), 'INVALID_ENUM', P + '.seriesBorder.alpha'));
+  // 2026-11-08 标签边框新能力（官方 268/268：labelDetail > AttrBorderWithShape，lineStyle=0/shapeType=RectangularMarker）
+  check('label.border color+style 合法零误报', errsOf(mdIr(function (ir) { ir.sheets[0].blocks[3].label = { enable: true, border: { color: 0xFF0000, style: 1, shape: 'rect' } }; })).length === 0);
+  check('label.border style=2 拒（官方语料仅 0/1）', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].label = { enable: true, border: { color: 0xFF0000, style: 2 } }; }), 'INVALID_ENUM', P + '.label.border.style'));
+  check("label.border shape 非 'rect' 拒（官方 268/268 RectangularMarker）", codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].label = { enable: true, border: { color: 0xFF0000, shape: 'circle' } }; }), 'INVALID_ENUM', P + '.label.border.shape'));
+  check('label.border 未知键拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].label = { enable: true, border: { color: 0xFF0000, foo: 1 } }; }), 'INVALID_ENUM', P + '.label.border.foo'));
 })();
 
 print('SELFTEST END, failures=' + FAILS);
