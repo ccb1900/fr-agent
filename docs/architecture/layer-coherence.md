@@ -8,13 +8,13 @@
 
 | 不变量 | 含义 | 机器门 | 现状 |
 | --- | --- | --- | --- |
-| I1 承诺有实现 | `agentAvailable=true` ⇒ construction/serialization 均 verified | fast_layer_coherence | **72/72 成立**（0 违反） |
+| I1 承诺有实现 | `agentAvailable=true` ⇒ construction/serialization 均 verified | fast_layer_coherence | **52/52 成立**（0 违反；73 项账本口径） |
 | I2 承诺有入口 | `agentAvailable=true` ⇒ 证据点到磁盘上存在的可执行载体（probe/carrier/fast/spec/integration） | fast_layer_coherence + 层门 probe/tool | **52/52 成立**（0 违反） |
-| I3 入口有引擎锚 | construction=verified ⇒ 锚到核心 jar 物理存在的类（`data/engine_class_map.json` → `data/jar_class_inventory.json`） | fast_layer_coherence + 层门 jar | **62/65 锚定，3 项为 runtime/tool 层（设计上无引擎类）** |
-| I4 Planner 真合同 | planner 层判定来自真实 `ReportPlanner.plan()` 输入→输出断言，且三条负控必被拒 | 层门 selftest | **自测 PASS；47/72 有合同，25 项明确 UNKNOWN** |
+| I3 入口有引擎锚 | construction=verified ⇒ 锚到核心 jar 物理存在的类（`data/engine_class_map.json` → `data/jar_class_inventory.json`） | fast_layer_coherence + 层门 jar | **63/66 锚定，3 项为 runtime/tool 层（agent.*，设计上无引擎类）** |
+| I4 Planner 真合同 | planner 层判定来自真实 `ReportPlanner.plan()` 输入→输出断言，且三条负控必被拒 | 层门 selftest | **自测 PASS；53/73 有合同，20 项明确 UNKNOWN** |
 | I5 账本不撒谎 | agentAvailable 能力不得有任何层 rejected/pending；jar 清单 missing 为空 | fast_layer_coherence | **成立** |
 
-**一句话**：Agent 承诺的 50 项能力现在全部满足"有实现、有可执行入口、有引擎/工具锚定"；不满足的部分都在账本里明确标为 UNKNOWN/BLOCKED 并写明原因，没有把未验证包装成已接入。
+**一句话**：Agent 承诺的 52 项能力现在全部满足"有实现、有可执行入口、有引擎/工具锚定"；不满足的部分都在账本里明确标为 UNKNOWN/BLOCKED 并写明原因，没有把未验证包装成已接入。
 
 ## 2. 层定义与判定来源（11 个机器判定）
 
@@ -36,21 +36,21 @@
 
 ## 3. 73 项能力 × 11 层分布（机器扫描）
 
-数据文件：`logs/layer_sweep.csv`（每项一行，逐层 PASS/BLOCKED/UNKNOWN）。汇总（见 `logs/layer_sweep_summary3.txt`）：
+数据文件：`logs/layer_sweep.csv`（每项一行，逐层 PASS/BLOCKED/UNKNOWN）。本轮汇总见 `logs/r19_sweep.txt`（2026-11-08，73 项全量复跑）：
 
 | 层 | PASS | BLOCKED | UNKNOWN | 说明 |
 | --- | --- | --- | --- | --- |
-| probe | 65 | 7 | 0 | 7 项 blocked 全是 agentAvailable=false（write.submit/verifiers、freezeWeb、cell.sort/poly、databaseDict、template.patch.style） |
-| tool | 5 | 2 | 65 | 只有工具族适用；2 blocked = rejected/pending 的设计内条目 |
-| jar | 63 | 6 | 3 | 62 个 verified 有引擎锚 + databaseDict(pending 但已锚) = 63 PASS；6 BLOCKED = 设计内无类；3 UNKNOWN = agent.* runtime 层 |
-| object | 65 | 7 | 0 | 7 项 pending/rejected |
-| cpt | 65 | 7 | 0 | 同上 |
+| probe | 66 | 7 | 0 | 7 项 blocked 全是 agentAvailable=false（write.submit/verifiers、freezeWeb、cell.sort/poly、databaseDict、template.patch.style） |
+| tool | 5 | 2 | 66 | 只有工具族适用；2 blocked = rejected/pending 的设计内条目 |
+| jar | 64 | 6 | 3 | 63 个 verified 有引擎锚 + databaseDict(pending 但已锚) = 64 PASS；6 BLOCKED = 设计内无类；3 UNKNOWN = agent.* runtime 层 |
+| object | 66 | 7 | 0 | 7 项 pending/rejected |
+| cpt | 66 | 7 | 0 | 同上 |
 | render | 52 | 21 | 0 | 21 项 = web 交互/静态 PNG 不可见（与官方语料同规则）|
 | ir | 48 | 0 | 25 | UNKNOWN = 词表无该 token（write/template/agent 族 + validator-only 键） |
 | spec | 39 | 0 | 34 | PASS = 可执行合同（plan→SpecValidator→SpecCompiler→Ir.validate）或表面精确成员 |
 | planner | 53 | 0 | 20 | 无 planner 输入输出合同（工具/运行时/部分装饰） |
 | agent | 52 | 21 | 0 | 21 项未承诺（manifest 分类见下） |
-| manifest | 72 | 0 | 0 | 全部条目在账本且有证据 |
+| manifest | 73 | 0 | 0 | 全部条目在账本且有证据 |
 
 **怎么读 UNKNOWN**：UNKNOWN 不是"没做"，是"这一层不是该能力的入口，或者本门没有合同可验证"。
 例：`page.templateMarks` 的 ir=UNKNOWN（Ir.capabilities() 不列 templateId 键）、spec=UNKNOWN（ReportSpec 表面不承载模板标记）、planner=UNKNOWN（planner 不表达模板标记），但 manifest 四层 verified + jar=PASS（TemplateIdAttrMark 在核心 jar）+ probe=PASS（载体在盘）——它由模板层证据背书，不靠某层凑绿。工具族（`template.patch.*` / `agent.*`）在 ir/spec/planner 三列都是 UNKNOWN 属设计内——它们的入口是 tool 层（verb 接线）+ integration S-cases。
@@ -69,11 +69,11 @@
 
 ## 5. 各层"协调一致"还差什么（诚实清单）
 
-1. **planner 合同覆盖 47/72**：25 项没有合同 = 装饰类（mapLabel/tooltip 变体）、工具/运行时族、以及 spec 表面不承载的族。要提升不是硬凑绿，而是逐族补"输入意图 → 发射路径"的合同（先写载体，再开合同）。
-2. **ir 词表 32/72**：40 项 UNKNOWN 中大多数是 product/write/template/agent 族——它们的入口本就不在 IR 词表（write 走 ReportWriteAttr 序列化、template 走 patch ops、agent 走工具链）。这些已由 tool/jar/object/cpt 层背书。
-3. **spec 表面 26/72**：46 项 UNKNOWN 同上（res ReportSpec 只承载表/图/参数/合计/多 sheet 这批）。
+1. **planner 合同覆盖 53/73**：20 项没有合同 = 装饰类（mapLabel/tooltip 变体）、工具/运行时族、以及 spec 表面不承载的族。要提升不是硬凑绿，而是逐族补"输入意图 → 发射路径"的合同（先写载体，再开合同）。
+2. **ir 词表 48/73**：25 项 UNKNOWN 中大多数是 product/write/template/agent 族——它们的入口本就不在 IR 词表（write 走 ReportWriteAttr 序列化、template 走 patch ops、agent 走工具链）。这些已由 tool/jar/object/cpt 层背书。
+3. **spec 表面 39/73**：34 项 UNKNOWN 同上（res ReportSpec 只承载表/图/参数/合计/多 sheet 这批）。
 4. **render 52/73**：21 项 BLOCKED 是 web 交互/静态 PNG 不可见——这是**已定性**的（与官方语料同规则），不是缺陷。seriesBorder 已于 2026-11-08 反转达成（旧载体 style=3 越界+alpha 通道误判；官方 551 处 AttrBorder 语料 + PNG 红边 596 像素，IR 闸 style 0|1、alpha 拒）。
-5. **jar 锚定 62/65 verified**：3 项 agent.* 是 runtime/tool 层，设计上无引擎类（map.none 记录原因）。
+5. **jar 锚定 63/66 verified**：3 项 agent.* 是 runtime/tool 层，设计上无引擎类（map.none 记录原因）。
 
 ## 6. 机器门清单（本文引用的证据）
 
@@ -82,7 +82,7 @@
 scripts\capability-layer-gate.ps1 -Capability chart.vbar
 # 73 项全量扫描（层分布 + CSV）
 powershell -File logs\layer_gate_sweep.ps1     # 侦察工具，非门
-# 常驻不变量（18 套件之一）
+# 常驻不变量（19 套件之第 18；第 19 为 fast_jar_surface）
 verify\fast_layer_coherence.js                 # I1/I2/I3/I5 + jar 清单指纹
 # jar 清单重建（升级 FineReport 后跑）
 scripts\build_jar_inventory.ps1

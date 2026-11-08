@@ -1827,3 +1827,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：CHART SERIALIZED 通过、pipeline failures=0、**PNG 饼图扇区渲染「标签内容」**（crop 目检）；此前"序列化墙"结论作废（根因=新建对象字段不全）。
 - 词表收口：IR 明确拒 label.summary（旧 PieCategoryLabelContent 通道不渲染，写了不生效）；fast_ir_contract 更新 5 条（summary 全 kind 拒 + vpie richText 零误报）；新载体 examples/report-spec/vpielabel_rows.json（scan ok=92）。
 - 遗留 P3：richText 占位符 `${SERIES}/${PERCENT}` 需官方 `<img data-id>` HTML 格式才替换，纯文本原样显示。
+
+### 第 19 轮 jar 级引擎面分析 + 层一致性复核（用户 11081050 标准）
+- 新增 scripts/build_jar_surface.ps1：扫核心 jar（lib/server-lib/WEB-INF-lib，不含付费插件）的 Plot/Plot4VanChart 类 → data/jar_surface_analysis.json；规则表 data/jar_surface_classifications.json（逐类 supported/base/unsupported+原因，任何未登记类即 exit 2）。
+- 结果：**54 个绘图类 = 12 supported（对 12 个 Ir chart kind 一一映射并 jar 可解析）+ 16 base + 26 unsupported（3D/环形/漏斗/甘特/雷达/meter legacy/股价/区间/GIS/自定义组合/钻取地图/多层饼/结构/树图/词云，逐类原因）**。
+- 新门 verify/fast_jar_surface.js（fast 第 19 套件）：unclassified/stale=0、计数自洽、supported↔Ir kinds 双向对上、unsupported 原因非空。
+- 报告 docs/architecture/jar-surface-analysis.md；AGENTS fast 18→19、§6 现状补 jar 图类面口径。
+- 层门全量 sweep（73 项×11 层）复跑：CAPS=73 ERR=0；probe 66/7、tool 5/2/66、jar 64/6/3、object 66/7、cpt 66/7、render 52/21、ir 48/25、spec 39/34、planner 53/20、agent 52/21、manifest 73（PASS/BLOCKED/UNKNOWN；`logs/r19_sweep.txt`）。I1=52/52、I2=52/52、I3=63/66 锚定（3 项 agent.* 无引擎类）、I4=53/73 合同+3 负控 PASS、I5 成立；`docs/architecture/layer-coherence.md` 已从 72/65 口径更新到 73 项口径。
+- 回归：`scripts/run-fast-tests.ps1` 19 套件全 PASS（946 CHECK PASS / 0 FAIL，`logs/fast19_r19.txt`），含 fast_baseline（demo_api.cpt=CBEB42E3、v2=6161F402、销售明细 PNG=A8EF39AB）。
+- 诚实边界：本次只逐类建账 Plot 层；Attr/Condition/Definition 类未做全量分类（饰能力已有四层+jar 锚定）。
