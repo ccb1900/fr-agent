@@ -19,7 +19,7 @@
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_003；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | DrillMapDefinition(bg+layers)+setGeoUrl；carrier `probes/probe_drillmap_carrier.js` | **serialization-only**（execute PASS、渲染 blank=web div 层，见 §6.3） |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | VanGanttDefinition(VanGanttTableDefinition firstProcess/series/start/end + **linkDefinition 必填** + TimeAxis/ProcessAxis)；carrier `reports/test_gantt.js`、rows `gantt_rows.json`（runId=gantt_rows_001） | **DONE（chart.vgantt；scope=无关联线甘特，时间轴/流程行/任务条渲染；有 link 数据未测）** | |
-| 10 | 组合图 custom | VanChartCustomPlot | doc/Combination 10 | CustomDefinition.setDefinitionProviderMap（CustomPlotType enum 键 → VanChartMoreNameCDDefinition）+ CustomPlotList[VanChartColumnPlot, VanChartLinePlot] | **DONE（chart.vcombo；column/line/area/bubble(数值x)/pie + stacked；5 carrier 真引擎 + rows runId=combo_rows_002/combo_stack_rows_001；D1 墙破）** |
+| 10 | 组合图 custom | VanChartCustomPlot | doc/Combination 10 | CustomDefinition.setDefinitionProviderMap（CustomPlotType enum 键 → VanChartMoreNameCDDefinition）+ CustomPlotList[VanChartColumnPlot, VanChartLinePlot] | **DONE（chart.vcombo；column/line/area/bubble(数值x)/pie + stacked；6 carrier 真引擎 + rows runId=combo_rows_002/combo_stack_rows_001；D1 墙破）** |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
 | 13 | 仪表 meter | MeterPlot/SimpleMeterPlot/MeterBluePlot | 0（legacy） | MeterTableDefinition(name/value/targetValue/meterType/custom) | **DONE（chart.meter，单 needle 80 PNG；多 needle 重叠为官方多值不解决）；主题变体 MeterBlue/SimpleMeter=wired+renders 80（carrier test_meter_blue/simple），但静态 PNG 带 share 徽标/默认单位占位 → rendering pending、不承诺** |
@@ -57,7 +57,7 @@
 6. Agent plan→plan2spec→create→validate（SQL/rows 真值不变）。
 7. manifest 四层 + engine_class_map + jar inventory 锚定。
 8. jar 面分类更新（supported/legacy 归位），fast_jar_surface GREEN。
-9. 默认基线 CBEB42E3 + fast 19 + scan + 引擎负门；文档/README/日志同步。
+9. 默认基线 CBEB42E3 + fast 20 + scan + 引擎负门；文档/README/日志同步。
 
 ## 4.1 已知产品边界（审查发现，不阻塞图种闭环但需后续处理）
 
