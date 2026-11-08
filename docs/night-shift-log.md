@@ -2022,3 +2022,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 结论：`chart.gismap` serialization-only（construction/serialization=verified、rendering=serialization-only、regressionScope=serialization、agentAvailable=false）。jar 面 GisMapPlot 转 supported（54 类=29 supported/19 base/6 unsupported）；清单 217 类 resolved=217 missing=0；manifest 90/66/24。
 - 验证：fast 20 GREEN；scan ok=116 bad=0 skipped=1；基线三件 MD5 PASS（CBEB42E3/6161F402/A8EF39AB）。
 - 未验证：带 key/网络的 web 真地图渲染（缺授权凭据，不擅自接第三方服务）；gantt/treemap/drillmap 的 web div 渲染同样保持 serialization-only。
+
+### 第 36 轮 非付费图族闭环第 11 个：chart.vcombo 组合图（D1 引擎墙破除，2026-11-08）
+- 目标：最后两个未闭环非付费图族之一 custom（组合图）。旧 D1 结论"线系列渲染不达成=引擎硬墙"，本轮先找官方语料再下结论。
+- 一手证据：官方 `doc/Chart/Combination/` 有 10 份组合图语料（旧轮只用了 柱形图变形.cpt）。`probes/probe_custom_surface.js` 反射+官方对象图：VanChart(VanChartCustomPlot) + CustomStyle.COMMON_COLUMN_LINE（XML customStyle="column_line"）+ CustomPlotList=[VanChartColumnPlot, VanChartLinePlot] + CustomDefinition.setDefinitionProviderMap（LinkedHashMap，键=**CustomPlotType.COLUMN/LINE enum**，值=VanChartMoreNameCDDefinition 各自数据集/category/ChartSummaryColumn）。
+- 根因修正：旧 D1 失败=缺 DefinitionProviderMap 分键（线系列无定义来源），不是渲染墙。初次实现用 String 键 → cpt 导出期 `ClassCastException: String cannot be cast to CustomPlotType`（一手），改 enum 常量即通。
+- 实施：object `vcombo` 分支（CustomStyle + 子 plot 列表 + enum 键 map + setAllPlotInCustom）；IR `CHART_KINDS`/vanChart/REQUIRED groups[]/组内列引用；ReportSpec capabilities（rows+sql）、SpecValidator CHART_KEYS/负项、SpecCompiler rows+sql 发 groups/dataset、Planner rows groups 字段归一；make_api 专用序列化门（DefinitionMap key + dataset）。
+- 验证：carrier `reports/test_combo.js` ①独立双数据集：柱 10/20/15/30 + 线 5/8/12/18，类目轴 1-4 月+双图例；②同数据集判别臂：线 25-28 贴顶、柱不变 → 线系列数据真实参与渲染。ReportSpec rows `examples/report-spec/combo_rows.json` 经 `fr_agent create`+`validate` PASS（runId=combo_rows_002；PNG 表体+合计 106+组合图）。fast_ir_contract +5 / fast_report_spec +5 断言入册。
+- 账本：jar 面 VanChartCustomPlot supported、legacy CustomPlot/GanttPlot 归 base（54 类=30 supported/21 base/3 unsupported；named=222 resolved）；manifest `chart.vcombo` 四层 verified+agentAvailable=true（91 项/67 承诺/24 unavailable）；closure 表 10 行 DONE。
+- 回归：fast 20 GREEN；scan ok=118 bad=0；基线 CBEB42E3/6161F402/A8EF39AB。scope 诚实边界=column|line 组合；面积/饼/气泡/雷达组合样式未承诺。

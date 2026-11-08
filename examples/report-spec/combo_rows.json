@@ -1,0 +1,53 @@
+{
+  "specVersion": "1",
+  "report": {
+    "name": "组合图 rows 自检"
+  },
+  "outName": "combo_rows_selftest",
+  "dimensions": [
+    {
+      "field": "month",
+      "label": "月份",
+      "widthPt": 120
+    }
+  ],
+  "metrics": [
+    {
+      "field": "Rainfall",
+      "label": "降水",
+      "aggregation": "sum",
+      "dataType": "number",
+      "widthPt": 100,
+      "format": "#,##0"
+    },
+    {
+      "field": "Temperature",
+      "label": "气温",
+      "aggregation": "sum",
+      "dataType": "number",
+      "widthPt": 100,
+      "format": "#,##0"
+    }
+  ],
+  "dataset": {
+    "rows": [
+      ["1月", 10, 25],
+      ["2月", 20, 26],
+      ["3月", 15, 27],
+      ["4月", 30, 28]
+    ]
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vcombo",
+      "title": "降水与气温",
+      "heightPt": 340,
+      "groups": [
+        { "plot": "column", "category": "month", "values": ["Rainfall"] },
+        { "plot": "line", "category": "month", "values": ["Temperature"] }
+      ]
+    }
+  }
+}

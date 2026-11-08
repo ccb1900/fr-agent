@@ -223,8 +223,8 @@
       "reason": "legacy funnel engine variant; current funnel family chart.vfunnel uses VanChartFunnelPlot"
     },
     "com.fr.chart.chartattr.GanttPlot": {
-      "status": "unsupported",
-      "reason": "gantt family not wired",
+      "status": "base",
+      "reason": "legacy gantt engine variant; current gantt family chart.vgantt uses VanChartGanttPlot",
       "license": "basic",
       "family": "legacy"
     },
@@ -271,8 +271,8 @@
       "cap": "chart.stock"
     },
     "com.fr.chart.chartattr.CustomPlot": {
-      "status": "unsupported",
-      "reason": "legacy custom plot not wired",
+      "status": "base",
+      "reason": "legacy custom engine variant; current combination family chart.vcombo uses VanChartCustomPlot",
       "license": "basic",
       "family": "legacy"
     },
@@ -283,10 +283,10 @@
       "cap": "chart.vbox"
     },
     "com.fr.plugin.chart.custom.VanChartCustomPlot": {
-      "status": "unsupported",
-      "reason": "van custom/combination-plot not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vcombo"
     },
     "com.fr.plugin.chart.drillmap.VanChartDrillMapPlot": {
       "status": "unsupported",

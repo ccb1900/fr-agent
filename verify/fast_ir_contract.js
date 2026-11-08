@@ -543,5 +543,14 @@ check('批I mapTooltip payload 未知键拒', codeAt(chartIR('vmap', { mapToolti
   check('label.border 未知键拒', codeAt(mdIr(function (ir) { ir.sheets[0].blocks[3].label = { enable: true, border: { color: 0xFF0000, foo: 1 } }; }), 'INVALID_ENUM', P + '.label.border.foo'));
 })();
 
+// 2026-11-08 组合图 vcombo：groups[] 必填、plot 白名单、组内列引用
+check('vcombo 合法 groups 零误报', errsOf(chartIR('vcombo', { groups: [
+  { plot: 'column', dataset: 'd', category: '机型', values: ['产量'] },
+  { plot: 'line', dataset: 'd', category: '机型', values: ['产量'] } ] })).length === 0);
+check('vcombo 缺 groups REQUIRED', codeAt(chartIR('vcombo', { groups: null }), 'REQUIRED', 'sheets[0].blocks[1]'));
+check('vcombo group.plot 非白名单', codeAt(chartIR('vcombo', { groups: [{ plot: 'pie', dataset: 'd', category: '机型', value: '产量' }] }), 'INVALID_ENUM', 'sheets[0].blocks[1].groups[0].plot'));
+check('vcombo group.category 未知列', codeAt(chartIR('vcombo', { groups: [{ plot: 'column', dataset: 'd', category: 'nope', value: '产量' }] }), 'UNKNOWN_REF', 'sheets[0].blocks[1].groups[0].category'));
+check('vcombo group.value 未知列', codeAt(chartIR('vcombo', { groups: [{ plot: 'line', dataset: 'd', category: '机型', value: 'nope' }] }), 'UNKNOWN_REF', 'sheets[0].blocks[1].groups[0].value'));
+
 print('SELFTEST END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

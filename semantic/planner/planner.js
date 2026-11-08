@@ -175,6 +175,12 @@ var ReportPlanner = (function () {
         var rv = presRows.chart[rk];
         if (typeof rv === 'string' && hasOwn(refMap, rv)) presRows.chart[rk] = refMap[rv];
       });
+      // vcombo groups[] 的 category/value(s) 同样按 label→field 归一（不影响其它 kind）
+      if (Array.isArray(presRows.chart.groups)) presRows.chart.groups.forEach(function (g) {
+        if (!g || typeof g !== 'object') return;
+        ['category', 'value'].forEach(function (rk) { if (typeof g[rk] === 'string' && hasOwn(refMap, g[rk])) g[rk] = refMap[g[rk]]; });
+        if (Array.isArray(g.values)) g.values = g.values.map(function (v) { return (typeof v === 'string' && hasOwn(refMap, v)) ? refMap[v] : v; });
+      });
     }
 
     var rows = intent.rows;

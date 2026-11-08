@@ -341,7 +341,7 @@ try {
   var catChart = null;
   chartBlocks.forEach(function (b) {
     // OneValue 派（vpie/vgauge/vfunnel）与 x/y 派不走 MoreNameCDDefinition/CategoryName 形态
-    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d' || b.kind === 'vmultipie' || b.kind === 'vstructure' || b.kind === 'meter' || b.kind === 'vtreemap' || b.kind === 'gismap') return;
+    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d' || b.kind === 'vmultipie' || b.kind === 'vstructure' || b.kind === 'meter' || b.kind === 'vtreemap' || b.kind === 'gismap' || b.kind === 'vcombo') return;
     if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
   });
   if (catChart) {
@@ -403,6 +403,18 @@ try {
       && xmlText.indexOf('parentid="' + cb.parentId + '"') >= 0
       && xmlText.indexOf('nodename="' + cb.nodeName + '"') >= 0
       && xmlText.indexOf('nodevalue="' + cb.nodeValue + '"') >= 0);
+  });
+  // 组合图：VanChartCustomPlot + CustomDefinition/DefinitionMapList（每 key 一个 MoreNameCDDefinition，独立数据集）
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vcombo') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    var okCombo = /<O t="CC">/.test(xmlText) && /VanChartCustomPlot/.test(xmlText)
+      && /CustomDefinition/.test(xmlText) && /DefinitionMapList/.test(xmlText);
+    (cb.groups || []).forEach(function (g) {
+      okCombo = okCombo && xmlText.indexOf('DefinitionMap key="' + String(g.plot).toLowerCase() + '"') >= 0
+        && xmlText.indexOf('CDATA[' + g.dataset + ']') >= 0;
+    });
+    check('CHART SERIALIZED (vcombo ' + tag + ')', okCombo);
   });
   // legacy GIS 地图：GisMapPlot + GisMapTableDefinition（address/addressName/lnglatOrder + TittleValue SeriesDefinition）
   chartBlocks.forEach(function (cb, ix) {

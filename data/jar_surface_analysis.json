@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T18:45:43.5995790+08:00",
+    "generatedAt":  "2026-11-08T18:55:28.9011991+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  6,
-                   "base":  19,
-                   "supported":  29
+                   "unsupported":  3,
+                   "base":  21,
+                   "supported":  30
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  24,
+                         "current":  25,
                          "base":  16,
-                         "van":  2,
+                         "van":  1,
                          "legacy":  12
                      },
     "licensePolicy":  {
@@ -95,11 +95,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.CustomPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "legacy custom plot not wired"
+                        "reason":  "legacy custom engine variant; current combination family chart.vcombo uses VanChartCustomPlot"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.Donut2DPlot",
@@ -135,11 +135,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GanttPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "gantt family not wired"
+                        "reason":  "legacy gantt engine variant; current gantt family chart.vgantt uses VanChartGanttPlot"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GisMapPlot",
@@ -343,11 +343,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.custom.VanChartCustomPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "van custom/combination-plot not wired"
+                        "family":  "current",
+                        "cap":  "chart.vcombo",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.drillmap.VanChartDrillMapPlot",

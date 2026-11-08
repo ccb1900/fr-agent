@@ -130,7 +130,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|meter|stock|range');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|vcombo|meter|stock|range');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return typeof r.chart === 'object' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
@@ -627,6 +627,30 @@ check('多Sheet 名 __proto__ 重复仍拒', codeAt(msSpec(function (rs) { rs.ex
   var c = null;
   try { c = SpecCompiler.compile(rs); } catch (e) { check('多Sheet 原型名 compile 不抛: ' + e, false); return; }
   check('多Sheet 原型名编译产物过 Ir.validate', Ir.validate(c).length === 0);
+})();
+
+// 2026-11-08 组合图：vcombo groups[] spec 路（rows 编译发射 groups/dataset；顶层 category 拒）
+(function () {
+  function comboSpec(f) {
+    var rs = { specVersion: '1', report: { name: 't' }, outName: 'vcombo',
+      dimensions: [{ field: 'd', label: 'D', widthPt: 120 }],
+      metrics: [{ field: 'm', label: 'M', aggregation: 'sum', dataType: 'number', widthPt: 100 },
+                { field: 'm2', label: 'M2', aggregation: 'sum', dataType: 'number', widthPt: 100 }],
+      dataset: { rows: [['a', 1, 10], ['b', 2, 20]] },
+      presentation: { type: 'table', chart: { kind: 'vcombo', title: 'C', groups: [
+        { plot: 'column', category: 'd', values: ['m'] },
+        { plot: 'line', category: 'd', values: ['m2'] } ] } } };
+    if (f) f(rs); return rs;
+  }
+  check('vcombo spec 零误报', errsOf(comboSpec()).length === 0);
+  check('vcombo 顶层 category 拒（写了不生效）', codeAt(comboSpec(function (r) { r.presentation.chart.category = 'd'; }), 'UNSUPPORTED_CAPABILITY', 'presentation.chart.category'));
+  check('vcombo 缺 groups REQUIRED', codeAt(comboSpec(function (r) { delete r.presentation.chart.groups; }), 'REQUIRED', 'presentation.chart.groups'));
+  check('vcombo group.plot 非白名单', codeAt(comboSpec(function (r) { r.presentation.chart.groups[0].plot = 'pie'; }), 'INVALID_ENUM', 'presentation.chart.groups[0].plot'));
+  var c = null;
+  try { c = SpecCompiler.compile(comboSpec()); } catch (e) { check('vcombo compile 不抛: ' + e, false); }
+  var cb = c && c.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
+  check('vcombo compile 发射 groups（2 组、dataset=ds1）且 IR 零误报',
+    !!(cb && cb.kind === 'vcombo' && cb.groups && cb.groups.length === 2 && cb.groups[0].dataset === 'ds1' && cb.groups[1].plot === 'line') && Ir.validate(c).length === 0);
 })();
 
 print('SELFTEST END, failures=' + FAILS);

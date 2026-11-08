@@ -19,7 +19,7 @@
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | DrillMapDefinition(bg+layers)+setGeoUrl；carrier `probes/probe_drillmap_carrier.js` | **serialization-only**（execute PASS、渲染 blank=web div 层，见 §6.3） |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable + TimeAxis/ProcessAxis + processList)；**三轮 rawIR 试错**：①NPE（无 geoUrl/axis 类）→ 加 TimeAxis/ProcessAxis 修复 NPE → execute PASS → ②无 rawIR 词表 → IR 补 → ③渲染「图形没有数据」= web 渲染需 div 层（与 drillmap 一致） | **serialization-only**（与 tooltip/hyperlink 等 web 交互相责统一口径） | |
-| 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
+| 10 | 组合图 custom | VanChartCustomPlot | doc/Combination 10 | CustomDefinition.setDefinitionProviderMap（CustomPlotType enum 键 → VanChartMoreNameCDDefinition）+ CustomPlotList[VanChartColumnPlot, VanChartLinePlot] | **DONE（chart.vcombo，column\|line scope；carrier test_combo 双臂 + rows runId=combo_rows_002；D1 墙破）** |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
 | 13 | 仪表 meter | MeterPlot/SimpleMeterPlot/MeterBluePlot | 0（legacy） | MeterTableDefinition(name/value/targetValue/meterType/custom) | **DONE（chart.meter，单 needle 80 PNG；多 needle 重叠为官方多值不解决）** |
@@ -82,5 +82,5 @@
 | drillmap | 官方 XML + `probe_chartdata_builder` | `execute` 已通（加 `setGeoUrl` 后），但渲染 blank（web div 层） | **serialization-only**（与 tooltip/hyperlink 口径一致） |
 | gantt | `probe_gantt_official` 读官方对象图 | `reports/test_gantt.js` 真引擎 EXE PASS（firstProcess/processList/linkTable/TimeAxis/ProcessAxis 全序列化） | **serialization-only**（PNG「图形没有数据」=web div 层） |
 | treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | `reports/test_treemap.js` 真引擎 EXE PASS；顶层 blocks 渲染，嵌套子块未出（web 层） | **serialization-only**（TreeMapIndependentVanChart 存在） |
-| custom | D1 三轮 log | 线系列渲染官方一致不显示 | 引擎硬墙；需官方条件块语料再重开 |
+| custom | 官方 doc/Chart/Combination/柱形-折线组合图.cpt + `probes/probe_custom_surface.js` | DefinitionProviderMap 键必须 CustomPlotType enum（String 键导出 ClassCastException）；旧 D1 缺分键→线不渲染 | **DONE column\|line（chart.vcombo）；其他组合样式未承诺** |
 | GIS | `probes/probe_gismap.js` + carrier `reports/test_gismap.js` | 构造/序列化 PASS；静态渲染=内置 gisMap.png 固定示例图（数据不参与） | **serialization-only**（真地图需 web+百度/谷歌 key/网络，外部依赖未授权） |
