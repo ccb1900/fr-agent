@@ -1744,3 +1744,17 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 结果：run-golden-e2e 全链 PASS，runId=ge20261108081409-3c1bc7——plan→plan2spec→create→validate（逐格真值 10 day@machine 行 + 合计 33531:26531）→preview（1587×2245/44,068B）→modify（diffClean+orig 保留）→promote→restore→baseline-restore。
 - 账本：page.headerFooter 入 evidenceGrade.fullE2e（证据=本次 G2）；spec.sql.chart / chart.bar 同步入 fullE2e（G2 的 SQL 图与 legacy bar 均真实出图）。
 - 验证：基线 demo_api.cpt MD5=CBEB42E3（harness 末步 baseline-restore）；fast/scan 见下条。
+
+### 第 9 轮 SQL 路条件高亮接通 + G3 业务验收（真实能力缺口）
+- 问题（G3 首跑证据）：`presentation.conditions` 在 sql 路被 spec_validator 拒绝（条件/cells/total 一锅拒），compileSql 也不发射；但 condition.* 账本 agentAvailable=true → 账本承诺与生产主路（SQL）能力不一致。
+- 一手核对：IR 的 cells item 支持 conditions（checkConditions/applyConditions），object 在 cells item 上逐格挂 highlight；只需 compileSql 发射。
+- 实施：
+  1. lib/spec_compiler.js compileSql：按 `cd.column` 把 conditions 挂到对应明细 item（无 column=块级挂全部；剥离 column 键只留 when/then，IR 词表同规）
+  2. lib/spec_validator.js：sql 路 conditions 放开（cells/total 仍拒——无编译面/未验证）
+  3. verify/fast_report_spec.js +3 断言（sql conditions 放行、cells 仍拒、total 仍拒）
+  4. 载体 verify/fixtures/golden/g3_intent.json = G2 + 参数面板 + 条件（when.formula `=E3<75`、then.color 0xFF0000 + bold）
+- 两次真引擎迭代（证据驱动）：
+  - 首跑 then 用嵌套 style → IR 明确拒（COND_THEN_KEYS 扁平词表）→ 改扁平 {color,bold}
+  - 二跑公式 `=E2<60`（锚点错，明细从 r3 起且全部完成率 67-88）→ 三跑 `=E3<75` 命中 6 行
+- 结果：run-golden-e2e 全链 PASS（runId=ge20261108082641-e5ede7；10 行逐格真值+合计 33531:26531）；部署 cpt 含 FormulaCondition/ForegroundHighlightAction；**PNG 红字 1411 像素**（条件高亮真实渲染）。
+- 账本：condition.formula / condition.then.style 入 fullE2e；spec.params.panel 保持 serialization-only（面板是 web 交互面，不能进 fullE2e 子集——fast_capability_gate_consistency 的 fullE2e⊆agentAvailable 断言首次拦下，按账本口径修正而非放宽断言）。

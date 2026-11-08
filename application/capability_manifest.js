@@ -62,14 +62,14 @@ var CapabilityManifest = (function () {
   ];
   // 条件属性族（README #45/#49/#71；carrier=test_hla2/test_cellattrs，scan 可重复）
   var condition = [
-    cap('condition.formula', 'verified', 'verified', 'verified', 'verified', 'README #71 carrier test_hla2 PNG 分片', 'rendering'),
+    cap('condition.formula', 'verified', 'verified', 'verified', 'verified', 'README #71 carrier test_hla2 PNG 分片；**2026-11-08 G3 业务验收**（runId=ge20261108082641-e5ede7）：SQL 真库 plan→create 全链 + 条件高亮 when.formula 锚点按明细首行（=E3<75）→ PNG 红字 1411 像素（逐格判定），compileSql 现发射 item.conditions', 'rendering'),
     cap('condition.column', 'verified', 'verified', 'verified', 'verified', 'README #71 本格值求值语义一手；carrier test_cellattrs', 'cpt'),
     cap('condition.list', 'verified', 'verified', 'verified', 'verified', 'README #45/#71；carrier test_closure_gaps（when.list 形态，v2 对账器补实）', 'cpt'),
     cap('condition.then.value', 'verified', 'verified', 'verified', 'verified', 'README #71 字面换值+公式换值 PNG；carrier test_hla2', 'rendering'),
     cap('condition.then.border', 'verified', 'verified', 'verified', 'verified', 'README #71 粗底线 PNG 分片；carrier test_hla2', 'rendering'),
     cap('condition.then.link', 'verified', 'verified', 'serialization-only', 'verified', 'README #71 超链为浏览器行为静态 PNG 不现形（官方同）；carrier test_hla2', 'serialization'),
     cap('condition.then.widget', 'verified', 'verified', 'serialization-only', 'verified', 'README #71 PNG 不渲染控件序列化为准（官方同）；carrier test_hla2', 'serialization'),
-    cap('condition.then.style', 'verified', 'verified', 'verified', 'verified', 'README #45/#49 bg/color/font/rowHeight/colWidth/page；carrier test_cellattrs', 'cpt')
+    cap('condition.then.style', 'verified', 'verified', 'verified', 'verified', 'README #45/#49 bg/color/font/rowHeight/colWidth/page；carrier test_cellattrs；**2026-11-08 G3**（runId=ge20261108082641-e5ede7）：SQL 路 then.color+bold 经 ForegroundHighlightAction 渲染（PNG 红字 1411 像素）；then 形态=IR 扁平词表（color/bold/bg…，嵌套 style 会被 IR 明确拒）', 'cpt')
   ];
   // 填报族（README #76/#80）
   var write = [
@@ -152,7 +152,7 @@ var CapabilityManifest = (function () {
       // 证据强度口径（2026-11-08）：agentAvailable=true 表示"可按账本承诺（四层状态+显式 override）"，
       //   不等于每项都跑过 plan→create→preview→modify→promote→restore 全链。fullE2e 名单是真正有
       //   端到端证据的项；其余为 layerEvidence（四层+回归证据）。discover 输出须带此口径，防"广告"被误读。
-      evidenceGrade: { fullE2e: ['agent.plan', 'agent.artifact.isolation', 'agent.runtime.serial', 'page.multiSheet', 'page.headerFooter', 'spec.rows.sum', 'spec.sql.model', 'spec.sql.chart', 'template.patch.cellValue', 'template.patch.dataset', 'chart.vmap', 'chart.vheatmap', 'cells.rowSpan', 'spec.params.filter', 'chart.bar'], note: 'agentAvailable=可按账本承诺；fullE2e=有端到端工具链实证；未列名者=layerEvidence（四层/回归证据），不等于已跑全生命周期' },
+      evidenceGrade: { fullE2e: ['agent.plan', 'agent.artifact.isolation', 'agent.runtime.serial', 'page.multiSheet', 'page.headerFooter', 'spec.rows.sum', 'spec.sql.model', 'spec.sql.chart', 'condition.formula', 'condition.then.style', 'template.patch.cellValue', 'template.patch.dataset', 'chart.vmap', 'chart.vheatmap', 'cells.rowSpan', 'spec.params.filter', 'chart.bar'], note: 'agentAvailable=可按账本承诺；fullE2e=有端到端工具链实证；未列名者=layerEvidence（四层/回归证据），不等于已跑全生命周期' },
       unavailable: unavailableCatalog(),
       chart: chart, condition: condition, write: write, page: page, product: product
     };
