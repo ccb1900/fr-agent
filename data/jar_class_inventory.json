@@ -1,6 +1,6 @@
 {
     "tool":  "build_jar_inventory",
-    "generatedAt":  "2026-11-08T12:44:26.4173785+08:00",
+    "generatedAt":  "2026-11-08T14:03:41.2096582+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "jars":  [
                  {
@@ -661,7 +661,7 @@
                           "transaction":  33,
                           "metric":  136
                       },
-    "namedCount":  192,
+    "namedCount":  195,
     "resolved":  {
                      "com.fr.chart.chartattr.Title":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.map.VanChartMapPlot":  "fine-report-engine-11.0.jar",
@@ -681,6 +681,7 @@
                      "com.fr.report.cell.painter.BiasTextPainter":  "fine-report-engine-11.0.jar",
                      "com.fr.chart.chartattr.ChartCollection":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.marker.type.MarkerType":  "fine-report-engine-11.0.jar",
+                     "com.fr.chart.chartdata.OneValueCDDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.column.VanChartColumnPlot":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.TreeComboBoxEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.code.bar.core.BarcodeAttr":  "fine-core-11.0.jar",
@@ -711,6 +712,7 @@
                      "com.fr.form.ui.RadioGroup":  "fine-report-engine-11.0.jar",
                      "com.fr.report.write.BuiltInSQLSubmiter":  "fine-report-engine-11.0.jar",
                      "com.fr.report.web.button.page.Last":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.multilayer.data.MultiPieValueDefinition":  "fine-report-engine-11.0.jar",
                      "com.fr.base.Margin":  "fine-core-11.0.jar",
                      "com.fr.general.FRFont":  "fine-core-11.0.jar",
                      "com.fr.plugin.chart.type.MapMarkerType":  "fine-report-engine-11.0.jar",
@@ -721,6 +723,7 @@
                      "com.fr.data.impl.EmbeddedTableData":  "fine-core-11.0.jar",
                      "com.fr.form.ui.container.WParameterLayout":  "fine-report-engine-11.0.jar",
                      "com.fr.report.core.ReportHF":  "fine-report-engine-11.0.jar",
+                     "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot":  "fine-report-engine-11.0.jar",
                      "com.fr.form.ui.TextEditor":  "fine-report-engine-11.0.jar",
                      "com.fr.report.stable.ReportSettings":  "fine-report-engine-11.0.jar",
                      "com.fr.plugin.chart.base.AttrSeriesStackAndAxis":  "fine-report-engine-11.0.jar",

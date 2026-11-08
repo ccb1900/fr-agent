@@ -307,10 +307,10 @@
       "family": "van"
     },
     "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot": {
-      "status": "unsupported",
-      "reason": "multi-layer pie not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vmultipie"
     },
     "com.fr.plugin.chart.radar.VanChartRadarPlot": {
       "status": "supported",

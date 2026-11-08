@@ -341,7 +341,7 @@ try {
   var catChart = null;
   chartBlocks.forEach(function (b) {
     // OneValue 派（vpie/vgauge/vfunnel）与 x/y 派不走 MoreNameCDDefinition/CategoryName 形态
-    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d') return;
+    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel' || b.kind === 'donut' || b.kind === 'donut3d' || b.kind === 'vmultipie') return;
     if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
   });
   if (catChart) {
@@ -382,6 +382,16 @@ try {
       && xmlText.indexOf('seriesName="' + cb.category + '"') >= 0
       && xmlText.indexOf('valueName="' + val + '"') >= 0);
     check('CHART DEF ONEVALUE ' + tag + ' "' + cb.category + '/' + val + '"', xmlText.indexOf('seriesName="' + cb.category + '"') >= 0 && xmlText.indexOf('valueName="' + val + '"') >= 0);
+  });
+  // 多层饼/树图：MultiPieValueDefinition + OneValueCDDefinition + MultiPie level list
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vmultipie') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    var val = cb.value || (cb.values && cb.values[0]);
+    check('CHART SERIALIZED (multipie ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /MultiPieValueDefinition/.test(xmlText) && /OneValueCDDefinition/.test(xmlText)
+      && xmlText.indexOf('valueName="' + val + '"') >= 0
+      && (cb.levels || []).every(function (lv) { return xmlText.indexOf('levelName="' + lv + '"') >= 0; }));
   });
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);

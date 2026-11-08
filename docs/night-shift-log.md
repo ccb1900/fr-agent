@@ -1945,3 +1945,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
   - oracle 跨语言 134/134（`logs/oracle_review.txt`）。
   - **全 20 套件本轮两次未拿到绿色（环境并发，非 acceptance 回归）**：第一次 `fast_contracts.js` rc=-1（进程被杀，疑似另一线 run.ps1 kill-all；单跑 rc=0）；第二次 19 PASS/1 FAIL，`fast_baseline.js` 因 `demo_api.cpt=0B1B43BC…`（另一线 make_api 产物，默认 spec 未回补）失败；`fast_acceptance` 两次均 GREEN。基线恢复需另一线收敛后复跑，不在本重复原。
 - 代码基线：commit `3cf24e7`（复核修复）；未触碰 lib/manifest/报表产物。
+
+### 第 27 轮 非付费图族闭环第 5 个：chart.vmultipie 多层饼（2026-11-08）
+- 结构一手：官方 `doc/Chart/销售情况.cpt` = VanChartMultiPiePlot + MultiPieValueDefinition(OneValueCDDefinition valueName + MultiPie Attr levelCount/LevelColumnNameList)；javap 方法面 setLevelCount/addLevelName/setValueColumnName/setDataFunction。
+- 实施：object VK 增 vmultipie（setTableData/setSeriesName/setValueColumnName/NoneFunction/setLevelCount/addLevelName）；IR CHART_KINDS + vanChart 增 vmultipie，图块校验支持 `levels[]/value` 并逐层列校验；ReportSpec CHART_KEYS 增 levels、validator 分支、SpecCompiler 发射 levels；layer gate planner 合同对 vmultipie 用 levels 输入（旧合同传 category 会误判 BLOCKED）；jar 面 VanChartMultiPiePlot 转 supported（21 supported/19 base/14 unsupported=10 图族）。
+- 验证：`reports/test_multipie.js` 真引擎 failures=0，PNG 内外双层饼（华东/华北+销售员内层）+图例+标题（chroma=8023）；SQL 真库 plan→plan2spec→create→validate PASS（runId=multipie_e2e_004，levels=[bizDate,machine]/value=planned，表体 33531/26531 真值不变，多层饼渲染）；manifest chart.vmultipie 四层 verified/agentAvailable=true（82 项/61 承诺）。
+- treemap 共用 MultiPieValueDefinition，rawIR 只出顶层矩形（嵌套子块未出）→ 不接、不计入闭环；backlog 保留。
+- 门修复：`CHART RENDER NONBLANK` 收紧 chroma>=20 后 multipie 首版空白被拒，推动找到 MultiPieValueDefinition 分支/function 缺失；donut/donut3d carrier 已按 OneValue 重跑（标题+多色多环）。
+- 回归：待跑 fast 20/scan/基线；层扫描待 82 项复跑。
