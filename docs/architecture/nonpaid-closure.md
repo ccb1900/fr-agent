@@ -18,7 +18,7 @@
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | WordCloudTableDefinition(wordName/wordValue) | **DONE（chart.vwordcloud；runId=wordcloud_e2e_002）** |
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
-| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable 可空表；mark/progress 可 null) | 待做：条形语义未对齐，rawIR 已见网格但 bars 不显示；下一步按官方字段逐一对 | |
+| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable + TimeAxis/ProcessAxis + processList)；**三轮 rawIR 试错**：①NPE（无 geoUrl/axis 类）→ 加 TimeAxis/ProcessAxis 修复 NPE → execute PASS → ②无 rawIR 词表 → IR 补 → ③渲染「图形没有数据」= web 渲染需 div 层（与 drillmap 一致） | **serialization-only**（与 tooltip/hyperlink 等 web 交互相责统一口径） | |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
@@ -71,3 +71,16 @@
 - 审查人（子 agent 或自审清单）只读：`git diff`、`docs/night-shift-log.md`、本文件、门输出。
 - 审查问题：①有没有把未验证写成已闭环？②付费项有没有被排期？③账本数字与门输出是否一致？④基线/门是否真跑过？⑤下一项是否可直续？
 - 审查不通过 → 回到对应项继续，不得以"已记录"代替闭环。
+## 6.3 drillmap 二轮结果（2026-11-08）
+- 找到 NPE 根因：pl 需 `setGeoUrl`（引擎 map 解析无 map◤ 源就 NPE）→ 加上后 **execute 一次通过**；render 输出 uniqueColors=2（空白），即 **chardata 可建/引擎可跑/setGeoUrl 需要，但**底层 map 图不含区县图层**。
+- 结论：drillmap 定义结构已建成（`DrillMapDefinition(bg+layers)` + `setFromBottomData(false)/setBottomDataDefinition/setEachLayerDataDefinitionList`），但地图渲染需要 web 端 div/layer init。**serialization-only** 与 tooltip/hyperlink 等 web 交互相责统一口径。
+
+## 6.4 剩余 5 图族当前状态汇总（2026-11-08 本轮探针后）
+
+| 图族 | 一手证据源 | 当前阻塞点 | 下一步 |
+|---|---|---|---|
+| drillmap | 官方 XML + `probe_chartdata_builder` | `execute` 已通（加 `setGeoUrl` 后），但渲染 blank（web div 层） | **serialization-only**（与 tooltip/hyperlink 口径一致） |
+| gantt | `probe_gantt_official` 读官方对象图 | raw渲染了 grid 但 bars 需 time/process/series 三列排列 | 对齐官方 firstProcess/processList/linkID 形态 |
+| treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | raw渲染出顶层 blocks，嵌套子块未出（TreeMapPlot 渲染端差） | `{VanChartTreeMapPlot.plotStyle 或 nested box layout}` |
+| custom | D1 三轮 log | 线系列渲染官方一致不显示 | 引擎硬墙；需官方条件块语料再重开 |
+| GIS | `probe_chartdata_builder` + `GisMapTableDefinition` | legacy 独立类（与 VanChartMapPlot 不同家族） | 沿 setGisType/setAddressType/setAddress 路径 |
