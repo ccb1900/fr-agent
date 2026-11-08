@@ -1982,3 +1982,9 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 实施：object VK vstructure；IR node* 校验/列引用；ReportSpec `CHART_KEYS` + structure 分支；SpecCompiler sql/rows 双路发射 node*；layer gate planner 合同给 nodeId/parentId/nodeName/nodeValue。
 - 验证：rawIR `reports/test_structure.js` PNG 4 节点层级；ReportSpec rows `examples/report-spec/structure_rows.json` 经 `fr_agent create` + `validate` PASS（runId=structure_rows_002），部署 PNG 同层级 + 表体合计；jar 面 VanChartStructurePlot supported（23 supported/19 base/12 unsupported=8 图族）；manifest 四层 verified/agentAvailable=true（84 项/63 承诺）。
 - 回归：fast 20 GREEN（修 exact 清单遗漏 vstructure 后）；scan ok=108；基线 CBEB42E3。
+
+### 第 30 轮 非付费图族闭环第 8 个：chart.meter 仪表盘（2026-11-08）
+- 先 `probes/probe_chartdata_builder.js` 批量反射 MeterTableDefinition/StockTableDefinition 的 ctor + setter 面（探针先行，不再猜）；meter 走 MeterTableDefinition 单 needle。
+- object TK meter(MeterPlot)；IR legacy 词表 + spec 校验 + Compiler sql/rows 转齐； ReportSpec meter_rowsJson 真引擎 create/validate PASS（runId 2026-11-08 14:55）；carrier reports/test_meter.js 单 needle 80 PNG 渲染正确。多 needle 重叠为官方多值排布问题，账本仅承诺单 needle/单值图。
+- jar 面 MeterPlot 入 supported；MeterBlue/Simple 主题变体留 unsupported（蓝主题未单独 tested）。
+- fast 20 GREEN(scan ok=110，基线 CBEB42E3，engine 名类=201，resolved=201). jars 24 supported/19 base/11 unsupported=7 图族. manifest `chart.meter` 四层 verified/agentAvailable=true（85/64）。
