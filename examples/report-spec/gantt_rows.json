@@ -1,0 +1,28 @@
+{
+  "specVersion": "1",
+  "report": { "name": "甘特图 rows 自检" },
+  "outName": "gantt_rows_selftest",
+  "dimensions": [
+    { "field": "id", "label": "任务ID", "widthPt": 80 },
+    { "field": "dept", "label": "部门", "widthPt": 80 },
+    { "field": "process", "label": "流程", "widthPt": 90 },
+    { "field": "start", "label": "开始", "widthPt": 100 },
+    { "field": "end", "label": "结束", "widthPt": 100 }
+  ],
+  "metrics": [
+    { "field": "load", "label": "工作量", "aggregation": "sum", "dataType": "number", "widthPt": 80, "format": "#,##0" }
+  ],
+  "dataset": { "rows": [
+    ["1", "研发", "开发流程", "2026-01-01", "2026-01-10", 10],
+    ["2", "测试", "测试流程", "2026-01-08", "2026-01-15", 6]
+  ] },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": {
+      "kind": "vgantt", "title": "项目甘特", "heightPt": 340,
+      "taskid": "id", "seriesname": "dept", "processname": "process",
+      "starttime": "start", "endtime": "end"
+    }
+  }
+}

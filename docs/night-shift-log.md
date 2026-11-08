@@ -2028,7 +2028,7 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 一手证据：官方 `doc/Chart/Combination/` 有 10 份组合图语料（旧轮只用了 柱形图变形.cpt）。`probes/probe_custom_surface.js` 反射+官方对象图：VanChart(VanChartCustomPlot) + CustomStyle.COMMON_COLUMN_LINE（XML customStyle="column_line"）+ CustomPlotList=[VanChartColumnPlot, VanChartLinePlot] + CustomDefinition.setDefinitionProviderMap（LinkedHashMap，键=**CustomPlotType.COLUMN/LINE enum**，值=VanChartMoreNameCDDefinition 各自数据集/category/ChartSummaryColumn）。
 - 根因修正：旧 D1 失败=缺 DefinitionProviderMap 分键（线系列无定义来源），不是渲染墙。初次实现用 String 键 → cpt 导出期 `ClassCastException: String cannot be cast to CustomPlotType`（一手），改 enum 常量即通。
 - 实施：object `vcombo` 分支（CustomStyle + 子 plot 列表 + enum 键 map + setAllPlotInCustom）；IR `CHART_KINDS`/vanChart/REQUIRED groups[]/组内列引用；ReportSpec capabilities（rows+sql）、SpecValidator CHART_KEYS/负项、SpecCompiler rows+sql 发 groups/dataset、Planner rows groups 字段归一；make_api 专用序列化门（DefinitionMap key + dataset）。
-- 验证：carrier `reports/test_combo.js` ①独立双数据集：柱 10/20/15/30 + 线 5/8/12/18，类目轴 1-4 月+双图例；②同数据集判别臂：线 25-28 贴顶、柱不变 → 线系列数据真实参与渲染。ReportSpec rows `examples/report-spec/combo_rows.json` 经 `fr_agent create`+`validate` PASS（runId=combo_rows_002；PNG 表体+合计 106+组合图）。fast_ir_contract +5 / fast_report_spec +5 断言入册。
+- 验证：carrier `reports/test_combo_dual.js` ①独立双数据集：柱 10/20/15/30 + 线 5/8/12/18，类目轴 1-4 月+双图例；`reports/test_combo.js` ②同数据集判别臂：线 25-28 贴顶、柱不变 → 线系列数据真实参与渲染。ReportSpec rows `examples/report-spec/combo_rows.json` 经 `fr_agent create`+`validate` PASS（runId=combo_rows_002；PNG 表体+合计 106+组合图）。fast_ir_contract +5 / fast_report_spec +5 断言入册。
 - 账本：jar 面 VanChartCustomPlot supported、legacy CustomPlot/GanttPlot 归 base（54 类=30 supported/21 base/3 unsupported；named=222 resolved）；manifest `chart.vcombo` 四层 verified+agentAvailable=true（91 项/67 承诺/24 unavailable）；closure 表 10 行 DONE。
 - 回归：fast 20 GREEN；scan ok=118 bad=0；基线 CBEB42E3/6161F402/A8EF39AB。scope 诚实边界=column|line 组合；面积/饼/气泡/雷达组合样式未承诺。
 
@@ -2047,3 +2047,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：`reports/test_meter_blue.js` / `reports/test_meter_simple.js` 真引擎 EXE+PNG，均渲染数值 80、主题可区分；但 Blue 带引擎内置 share 徽标痕迹、Simple 带默认占位文案 Fine-Engine_Chart_Meter_Yuan → 不升 rendering、不承诺。
 - 账本：manifest 新增 chart.meterBlue/chart.simpleMeter（construction/serialization=verified，rendering/regression=pending，agentAvailable=false）→ 93 项/67 承诺/26 未承诺；jar MeterBlue/SimpleMeter 转 base（54 类=30 supported/23 base/1 unsupported；唯一 unsupported=VanChartDrillMapPlot）。
 - 回归：fast 20 GREEN；基线 CBEB42E3。诚实边界：主题“能渲染”≠“可交付”（水印/占位未清）。
+
+### 第 39 轮 独立审查 FAIL 修复：分支覆盖事故 + gantt/treemap 真渲染反转（2026-11-08）
+- 审查证据（独立 agent）：HEAD 上 lib/object.js 只有 vtreemap 分支，内部依次写 MultiPieValueDefinition→VanGanttDefinition→StructureTableDefinition（last-write），vgantt/vstructure 无独立分支；旧 gantt/treemap carrier 产物早于事故，账本却标 verified/agentAvailable。
+- 根因：d39a382（gantt）把 vstructure 分支头替换成 vgantt 并在其后保留 structure 代码；1664a06（treemap）又替换该头并保留 gantt+structure 代码 → 三分支互相嵌套。
+- 修复：①三分支独立；②gantt linkDefinition 必填（execute 无条件调用→null NPE；无关联线注入 0 行命名表 VanGanttLinkTableDefinition），processList 空表交引擎推断（曾用列名画重复流程行）；③make_api 增 vtreemap/vgantt 序列化门，vcombo 门补 customStyle/stack 条件/分族定义类断言；④IR/validator 增 vcombo 非数组/重复 plot/stacked 无 column 结构拒（validator 契约不再抛）。
+- 反转结论：gantt 静态 PNG 真渲染（流程行 开发流程/测试流程 + 时间轴 2026-01/1周2周3周 + 任务条 + 图例）；treemap 真渲染顶层区块（华东/华北/华南）；“web div 墙”是分支覆盖 + 缺 linkDefinition 造成的假象。
+- 升层：chart.vgantt/chart.vtreemap 四层 verified+agentAvailable=true（scope=gantt 无关联线；treemap 仅顶层区块，嵌套静态不绘制不承诺）；ReportSpec/Planner 补 taskid/seriesname/processname/starttime/endtime 与 levels[]/value 词表；gantt_rows_001/treemap_rows_001/structure_rows_003 create+validate PASS。
+- 账本：93 项/69 承诺/24 未承诺（webInteraction 13 / unverifiedRendering 4 / notImplemented 4 / rejected 3）；jar 30 supported/23 base/1 unsupported；chart.meter 证据旧句修正、meter 变体 regressionScope=null。
+- 回归：fast 20 GREEN、scan ok=128 bad=0、基线 CBEB42E3。

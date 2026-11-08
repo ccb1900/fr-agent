@@ -1,0 +1,22 @@
+{
+  "specVersion": "1",
+  "report": { "name": "树图 rows 自检" },
+  "outName": "treemap_rows_selftest",
+  "dimensions": [
+    { "field": "region", "label": "区域", "widthPt": 110 },
+    { "field": "staff", "label": "销售员", "widthPt": 110 }
+  ],
+  "metrics": [
+    { "field": "amount", "label": "金额", "aggregation": "sum", "dataType": "number", "widthPt": 90, "format": "#,##0" }
+  ],
+  "dataset": { "rows": [
+    ["华东", "张三", 40], ["华东", "李四", 30],
+    ["华北", "王五", 25], ["华北", "赵六", 15],
+    ["华南", "孙七", 20]
+  ] },
+  "presentation": {
+    "type": "table",
+    "showTotal": true,
+    "chart": { "kind": "vtreemap", "title": "区域金额", "heightPt": 340, "levels": ["region", "staff"], "value": "amount" }
+  }
+}

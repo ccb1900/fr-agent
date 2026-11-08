@@ -171,10 +171,11 @@ var ReportPlanner = (function () {
       var refMap = {};
       dims.forEach(function (d) { refMap[d.label] = d.field; });
       mets.forEach(function (m) { refMap[m.label] = m.field; });
-      ['category', 'value', 'x', 'y', 'bubbleSize'].forEach(function (rk) {
+      ['category', 'value', 'x', 'y', 'bubbleSize', 'taskid', 'seriesname', 'processname', 'firstprocess', 'starttime', 'endtime', 'marktime', 'progress'].forEach(function (rk) {
         var rv = presRows.chart[rk];
         if (typeof rv === 'string' && hasOwn(refMap, rv)) presRows.chart[rk] = refMap[rv];
       });
+      if (Array.isArray(presRows.chart.levels)) presRows.chart.levels = presRows.chart.levels.map(function (lv) { return (typeof lv === 'string' && hasOwn(refMap, lv)) ? refMap[lv] : lv; });
       // vcombo groups[] 的 category/value(s) 同样按 label→field 归一（不影响其它 kind）
       if (Array.isArray(presRows.chart.groups)) presRows.chart.groups.forEach(function (g) {
         if (!g || typeof g !== 'object') return;

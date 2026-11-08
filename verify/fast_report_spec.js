@@ -130,7 +130,7 @@ check('r8-A2 列引用未知键→UNSUPPORTED_CAPABILITY', codeAt(mutSql(functio
 check('r8-A2 列引用 widthPt 非数→INVALID_NUMBER', codeAt(mutSql(function (r) { r.dataset.metrics = [{ term: 'planned', widthPt: 'wide' }]; }), 'INVALID_NUMBER', 'dataset.metrics[0].widthPt'));
 check('r8-A2 列引用 label 空串→INVALID_TYPE', codeAt(mutSql(function (r) { r.dataset.dimensions = [{ term: 'bizDate', label: '' }]; }), 'INVALID_TYPE', 'dataset.dimensions[0].label'));
 // capabilities 与实际能力一字对齐（r4 P2：机器读清单不得撒谎）
-check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|vcombo|meter|stock|range');
+check('I1.1 capabilities：sql 路 chart Van 族全列', ReportSpec.capabilities().datasets.sql.chart.supported.join('|') === 'bar|pie|line|bar3d|pie3d|area3d|donut|donut3d|vbar|vline|varea|vscatter|vbubble|vpie|vgauge|vmap|vheatmap|vradar|vfunnel|vbox|vmultipie|vwordcloud|vstructure|vcombo|vgantt|vtreemap|meter|stock|range');
 check('I1.1 capabilities：rows 路 chart/filters/sort/topN/join 均 unsupported', (function () {
   var r = ReportSpec.capabilities().datasets.rows;
   return typeof r.chart === 'object' && r.filters === 'unsupported' && r.sort === 'unsupported' && r.topN === 'unsupported' && r.join === 'unsupported';
@@ -674,6 +674,32 @@ check('多Sheet 名 __proto__ 重复仍拒', codeAt(msSpec(function (rs) { rs.ex
   try { c = SpecCompiler.compile(cs()); } catch (e) { check('vcombo stacked compile 不抛: ' + e, false); }
   var cb = c && c.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
   check('vcombo stacked compile 发射 stacked=true 且 IR 零误报', !!(cb && cb.stacked === true && cb.groups.length === 2) && Ir.validate(c).length === 0);
+})();
+
+// 2026-11-08 审查修复：gantt/treemap spec 路
+(function () {
+  function gtSpec(kind, extra) {
+    var rs = { specVersion: '1', report: { name: 't' }, outName: 'gt',
+      dimensions: [{ field: 'd', label: 'D', widthPt: 100 }, { field: 'd2', label: 'D2', widthPt: 100 }],
+      metrics: [{ field: 'm', label: 'M', aggregation: 'sum', dataType: 'number', widthPt: 90 }],
+      dataset: { rows: [['a', 'x', 1]] },
+      presentation: { type: 'table', chart: extra } };
+    return rs;
+  }
+  var g = { kind: 'vgantt', taskid: 'd', starttime: 'd2', endtime: 'd', seriesname: 'd2' };
+  check('vgantt spec 零误报', errsOf(gtSpec('vgantt', g)).length === 0);
+  check('vgantt 缺 starttime REQUIRED', codeAt(gtSpec('vgantt', { kind: 'vgantt', taskid: 'd' }), 'REQUIRED', 'presentation.chart.starttime'));
+  var t = { kind: 'vtreemap', levels: ['d', 'd2'], value: 'm' };
+  check('vtreemap spec 零误报', errsOf(gtSpec('vtreemap', t)).length === 0);
+  check('vtreemap 缺 levels REQUIRED', codeAt(gtSpec('vtreemap', { kind: 'vtreemap', value: 'm' }), 'REQUIRED', 'presentation.chart.levels'));
+  var c1 = null, c2 = null;
+  try { c1 = SpecCompiler.compile(gtSpec('vgantt', g)); } catch (e) { check('vgantt compile 不抛: ' + e, false); }
+  try { c2 = SpecCompiler.compile(gtSpec('vtreemap', t)); } catch (e) { check('vtreemap compile 不抛: ' + e, false); }
+  var cb1 = c1 && c1.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
+  var cb2 = c2 && c2.sheets[0].blocks.filter(function (b) { return b.type === 'chart'; })[0];
+  check('vgantt/vtreemap compile 产物 IR 零误报且键齐',
+    !!(cb1 && cb1.taskid === 'd' && cb1.starttime === 'd2' && cb1.endtime === 'd' && cb2 && cb2.levels.length === 2 && cb2.value === 'm')
+    && Ir.validate(c1).length === 0 && Ir.validate(c2).length === 0);
 })();
 
 print('SELFTEST END, failures=' + FAILS);

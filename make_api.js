@@ -393,6 +393,29 @@ try {
       && xmlText.indexOf('valueName="' + val + '"') >= 0
       && (cb.levels || []).every(function (lv) { return xmlText.indexOf('levelName="' + lv + '"') >= 0; }));
   });
+  // 树图：MultiPieValueDefinition（levelCount/levelName/valueName）
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vtreemap') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    var val = cb.value || (cb.values && cb.values[0]);
+    check('CHART SERIALIZED (vtreemap ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /MultiPieValueDefinition/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset + ']') >= 0
+      && (cb.levels || []).every(function (lv) { return xmlText.indexOf('levelName="' + lv + '"') >= 0; })
+      && xmlText.indexOf('valueName="' + val + '"') >= 0);
+  });
+  // 甘特：VanGanttDefinition/VanGanttTableDefinition + GanttAttr 三列 + linkDefinition（execute 必需）
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vgantt') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    check('CHART SERIALIZED (vgantt ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /VanGanttDefinition/.test(xmlText) && /VanGanttTableDefinition/.test(xmlText)
+      && /VanGanttLinkTableDefinition/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset + ']') >= 0
+      && xmlText.indexOf('starttime="' + cb.starttime + '"') >= 0
+      && xmlText.indexOf('endtime="' + cb.endtime + '"') >= 0
+      && xmlText.indexOf('linkid="' + cb.taskid + '"') >= 0);
+  });
   chartBlocks.forEach(function (cb, ix) {
     if (cb.kind !== 'vstructure') return;
     var tag = cb.kind + '#' + (ix + 1);
@@ -410,9 +433,18 @@ try {
     var tag = cb.kind + '#' + (ix + 1);
     var okCombo = /<O t="CC">/.test(xmlText) && /VanChartCustomPlot/.test(xmlText)
       && /CustomDefinition/.test(xmlText) && /DefinitionMapList/.test(xmlText);
+    var cpset = {}; (cb.groups || []).forEach(function (g) { cpset[g.plot] = 1; });
+    var cstyleExpect = (cb.stacked && cpset.column && cpset.line) ? 'stack_column_line'
+      : (cpset.column && cpset.line && !cpset.area && !cpset.bubble && !cpset.pie ? 'column_line'
+      : (cpset.column && cpset.area && !cpset.line && !cpset.bubble && !cpset.pie ? 'column_area' : 'custom'));
+    okCombo = okCombo && xmlText.indexOf('customStyle="' + cstyleExpect + '"') >= 0;
+    if (cb.stacked) okCombo = okCombo && /AttrSeriesStackAndAxis/.test(xmlText) && /stacked="true"/.test(xmlText);
     (cb.groups || []).forEach(function (g) {
       okCombo = okCombo && xmlText.indexOf('DefinitionMap key="' + String(g.plot).toLowerCase() + '"') >= 0
         && xmlText.indexOf('CDATA[' + g.dataset + ']') >= 0;
+      if (g.plot === 'pie') okCombo = okCombo && /OneValueCDDefinition/.test(xmlText);
+      if (g.plot === 'bubble') okCombo = okCombo && /BubbleTableDefinition/.test(xmlText);
+      if (g.plot === 'column' || g.plot === 'line' || g.plot === 'area') okCombo = okCombo && /MoreNameCDDefinition/.test(xmlText);
     });
     check('CHART SERIALIZED (vcombo ' + tag + ')', okCombo);
   });

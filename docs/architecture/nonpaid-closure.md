@@ -3,7 +3,7 @@
 > 定义：**闭环 = 构造 → 序列化 → 真实渲染/交互 → Agent plan→create 证据 → 账本状态一致**，五态标注不混写。
 > 注意：图种"闭环"指上述四段证据成立；**产品版式**（SQL 路图区偏小、图例截断）列为 P2 独立项（§4.1），不以图种闭环掩盖。
 > 付费排除口径：FVS bigScreen 14 包 / `com.fr.extended.chart.*` / 移动端；不实现、不排期。
-> 当前基线：84 项账本 / 63 项 Agent 可用 / jar 面 54 Plot 类（23 supported、19 base、12 unsupported=8 图族）。
+> 当前基线：93 项账本 / 69 项 Agent 可用 / jar 面 54 Plot 类（30 supported、23 base、1 unsupported）。
 > 进度以本文件与 `docs/night-shift-log.md` 为准；每完成一项更新状态并做一次独立审查。
 
 ## 1. 图族闭环（8 个待办，按可行性排序）
@@ -14,11 +14,11 @@
 | 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | **DONE（chart.vfunnel，agentAvailable；runId=funnel_e2e_001）** |
 | 3 | 箱线 box | VanChartBoxPlot | doc 3 | VanBoxTableDefinition detailed | **DONE（chart.vbox，单系列 scope；runId=box_e2e_001）** |
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | MultiPieValueDefinition(levels) | **DONE（chart.vmultipie；runId=multipie_e2e_004）** |
-| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels)；carrier `reports/test_treemap.js` | **serialization-only**（真引擎 EXE PASS；顶层 169 块可渲染，嵌套子块=web 层，见 §6.4） |
+| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels)；carrier `reports/test_treemap.js`、rows `treemap_rows.json`（runId=treemap_rows_001） | **DONE（chart.vtreemap；scope=顶层区块渲染，嵌套子块静态不绘制不承诺）** |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | WordCloudTableDefinition(wordName/wordValue) | **DONE（chart.vwordcloud；runId=wordcloud_e2e_002）** |
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
 | 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | DrillMapDefinition(bg+layers)+setGeoUrl；carrier `probes/probe_drillmap_carrier.js` | **serialization-only**（execute PASS、渲染 blank=web div 层，见 §6.3） |
-| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable + TimeAxis/ProcessAxis + processList)；**三轮 rawIR 试错**：①NPE（无 geoUrl/axis 类）→ 加 TimeAxis/ProcessAxis 修复 NPE → execute PASS → ②无 rawIR 词表 → IR 补 → ③渲染「图形没有数据」= web 渲染需 div 层（与 drillmap 一致） | **serialization-only**（与 tooltip/hyperlink 等 web 交互相责统一口径） | |
+| 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | VanGanttDefinition(VanGanttTableDefinition firstProcess/series/start/end + **linkDefinition 必填** + TimeAxis/ProcessAxis)；carrier `reports/test_gantt.js`、rows `gantt_rows.json`（runId=gantt_rows_001） | **DONE（chart.vgantt；scope=无关联线甘特，时间轴/流程行/任务条渲染；有 link 数据未测）** | |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/Combination 10 | CustomDefinition.setDefinitionProviderMap（CustomPlotType enum 键 → VanChartMoreNameCDDefinition）+ CustomPlotList[VanChartColumnPlot, VanChartLinePlot] | **DONE（chart.vcombo；column/line/area/bubble(数值x)/pie + stacked；5 carrier 真引擎 + rows runId=combo_rows_002/combo_stack_rows_001；D1 墙破）** |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
@@ -29,12 +29,12 @@
 
 > 注：legacy Funnel/Gantt/Custom 类与其 Van 族合并；legacy RadarPlot 已归 base（当前族由 vradar 覆盖）。
 
-## 2. 能力账本 21 项未承诺
+## 2. 能力账本 24 项未承诺
 
 | 类别 | 数量 | 项 | 闭环定义 |
 |---|---|---|---|
-| webInteraction | 12 | chart.tooltip / hotTooltip / effect / hyperlinkCell / mapTooltipFormat / mapTooltip；condition.then.link / widget；write.structure / toolbarButtons / editorReg；spec.params.panel | web 端真实交互验证（浏览器像素/DOM）；静态 PNG 不可见=官方同规则时记为 serialization-only 并给官方语料证据 |
-| unverifiedRendering | 2 | chart.bubbleAttr（shadow）、spec.rows.cells（非 rich 形态） | 静态 PNG / web canvas 至少一种真实渲染证据 |
+| webInteraction | 13 | chart.tooltip / hotTooltip / effect / hyperlinkCell / mapTooltipFormat / mapTooltip / gismap（内置示例图）；condition.then.link / widget；write.structure / toolbarButtons / editorReg；spec.params.panel | web 端真实交互验证（浏览器像素/DOM）；静态 PNG 不可见=官方同规则时记为 serialization-only 并给官方语料证据 |
+| unverifiedRendering | 4 | chart.bubbleAttr（shadow）、spec.rows.cells（非 rich 形态）、chart.meterBlue / chart.simpleMeter（水印/占位未清） | 静态 PNG / web canvas 至少一种真实渲染证据 |
 | notImplemented | 4 | write.submit（需 F8 写库授权）、page.freezeWeb、cell.poly、spec.dataset.databaseDict（需凭据注入） | 实现 + 真实引擎/交互验证；write.submit/databaseDict 需用户显式授权 |
 | rejected | 3 | write.verifiers、cell.sort、template.patch.style | **已闭环（明确不做 + 理由入账）**，无需实现 |
 
@@ -82,5 +82,5 @@
 | drillmap | 官方 XML + `probe_chartdata_builder` | `execute` 已通（加 `setGeoUrl` 后），但渲染 blank（web div 层） | **serialization-only**（与 tooltip/hyperlink 口径一致） |
 | gantt | `probe_gantt_official` 读官方对象图 | `reports/test_gantt.js` 真引擎 EXE PASS（firstProcess/processList/linkTable/TimeAxis/ProcessAxis 全序列化） | **serialization-only**（PNG「图形没有数据」=web div 层） |
 | treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | `reports/test_treemap.js` 真引擎 EXE PASS；顶层 blocks 渲染，嵌套子块未出（web 层） | **serialization-only**（TreeMapIndependentVanChart 存在） |
-| custom | 官方 doc/Chart/Combination/柱形-折线组合图.cpt + `probes/probe_custom_surface.js` | DefinitionProviderMap 键必须 CustomPlotType enum（String 键导出 ClassCastException）；旧 D1 缺分键→线不渲染 | **DONE column\|line（chart.vcombo）；其他组合样式未承诺** |
+| custom | 官方 doc/Chart/Combination/ 10 份 + `probes/probe_custom_surface.js` | DefinitionProviderMap 键必须 CustomPlotType enum（String 键导出 ClassCastException）；旧 D1 缺分键→线不渲染 | **DONE：column/line/area/bubble(数值x)/pie + stacked（chart.vcombo）** |
 | GIS | `probes/probe_gismap.js` + carrier `reports/test_gismap.js` | 构造/序列化 PASS；静态渲染=内置 gisMap.png 固定示例图（数据不参与） | **serialization-only**（真地图需 web+百度/谷歌 key/网络，外部依赖未授权） |
