@@ -2003,3 +2003,13 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - gantt 三轮（carrier→NPE→TimeAxis/ProcessAxis→EXE PASS→render web div），treemap ctor 169 色顶块；drillmap serialization-only（execute PASS 但 web div rendering）。
 - 这些代码未 push 到 lib（git reset 到 066efc8 range-green 门）；stashed 拷贝留着（`git stash show`）。不进 agentAvailable（serialization-only 口径）。
 - 恢复 fast 20 GREEN。剩 5 个的下轮一手：gantt web div、treemap nested 渲染驱动、drillmap layerMap/ZoomLevel、custom D1 line render、GIS legacy GisMapPlot 构造。
+
+### 第 34 轮 serialization-only 账本收口 + 零误伤扫描修复（2026-11-08）
+- 目标：把第 33 轮遗留的 manifest/扫描红灯收干净，使 gantt/treemap 的 serialization-only 口径在账本、门、闭包表三处一致。
+- 代码证据/实施：
+  ① `verify/fast_manifest_evidence.js` 两处失败：chart.vgantt/chart.vtreemap 原为 regressionScope='rendering' 且 evidence 仅 README/描述、无具体入口 → 统一为 `construction=verified, serialization=verified, rendering=serialization-only, regression=verified, regressionScope='serialization'`，evidence 补 `reports/test_gantt.js`/`reports/test_treemap.js` + `probes/probe_gantt_official.js`/`probes/probe_chartdata_builder.js`（与 chart.tooltip 同型）。
+  ② `probes/scan_all_specs.js` bad=1：`reports/test_drillmap.js` 使用已降出 IR 词表的 `vdrillmap`（第 33 轮决定：serialization-only、不进账本），留在 reports/ 污染"合法报表"语料 → `git mv` 到 `probes/probe_drillmap_carrier.js`（证据保留、不再入扫描）。
+  ③ `docs/architecture/nonpaid-closure.md` 表 5/8/14 与 §6.4 gantt/treemap 行同步为实际状态（treemap/drillmap serialization-only、range DONE）。
+- 验证：fast 20 套件 GREEN；scan `ok=115 bad=0 skipped=1`（skip=rebuild_basicA 历史缺 sproduct_dump.txt）；基线三件 MD5 PASS（demo_api CBEB42E3 / v2 6161F402 / 销售明细 A8EF39AB）。
+- 未验证：gantt/treemap/drillmap 的 web div 渲染仍未驱动（serialization-only 边界，不承诺静态 PNG）；legacy GIS GisMapPlot 仍待探针；custom D1 线系列渲染=引擎硬墙未解。
+- 代码基线：本条 commit（账本 89 项/66 agentAvailable；jar 面 28 supported/19 base/7 unsupported）。

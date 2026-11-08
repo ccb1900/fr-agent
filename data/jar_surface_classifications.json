@@ -301,10 +301,10 @@
       "cap": "chart.vfunnel"
     },
     "com.fr.plugin.chart.gantt.VanChartGanttPlot": {
-      "status": "unsupported",
-      "reason": "van gantt family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vgantt"
     },
     "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot": {
       "status": "supported",
@@ -325,10 +325,10 @@
       "cap": "chart.vstructure"
     },
     "com.fr.plugin.chart.treemap.VanChartTreeMapPlot": {
-      "status": "unsupported",
-      "reason": "treemap family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vtreemap"
     },
     "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot": {
       "status": "supported",

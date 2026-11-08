@@ -20,6 +20,8 @@
     "chart.vmultipie": { "class": "com.fr.plugin.chart.multilayer.VanChartMultiPiePlot", "module": "lib/object.js" },
     "chart.vwordcloud": { "class": "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot", "module": "lib/object.js" },
     "chart.vstructure": { "class": "com.fr.plugin.chart.structure.VanChartStructurePlot", "module": "lib/object.js" },
+    "chart.vtreemap": { "class": "com.fr.plugin.chart.treemap.VanChartTreeMapPlot", "module": "lib/object.js" },
+    "chart.vgantt": { "class": "com.fr.plugin.chart.gantt.VanChartGanttPlot", "module": "lib/object.js" },
     "chart.meter": { "class": "com.fr.chart.chartattr.MeterPlot", "module": "lib/object.js" },
     "chart.stock": { "class": "com.fr.chart.chartattr.StockPlot", "module": "lib/object.js" },
     "chart.range": { "class": "com.fr.chart.chartattr.RangePlot", "module": "lib/object.js" },

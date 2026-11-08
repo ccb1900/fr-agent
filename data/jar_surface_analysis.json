@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T16:44:00.5992877+08:00",
+    "generatedAt":  "2026-11-08T18:21:19.5826812+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  9,
+                   "unsupported":  7,
                    "base":  19,
-                   "supported":  26
+                   "supported":  28
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  21,
+                         "current":  23,
                          "base":  16,
-                         "van":  4,
+                         "van":  2,
                          "legacy":  13
                      },
     "licensePolicy":  {
@@ -367,11 +367,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.gantt.VanChartGanttPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "van gantt family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vgantt",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.gauge.VanChartGaugePlot",
@@ -447,11 +447,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.treemap.VanChartTreeMapPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "treemap family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vtreemap",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.wordcloud.VanChartWordCloudPlot",

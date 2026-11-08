@@ -14,16 +14,16 @@
 | 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | **DONE（chart.vfunnel，agentAvailable；runId=funnel_e2e_001）** |
 | 3 | 箱线 box | VanChartBoxPlot | doc 3 | VanBoxTableDefinition detailed | **DONE（chart.vbox，单系列 scope；runId=box_e2e_001）** |
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | MultiPieValueDefinition(levels) | **DONE（chart.vmultipie；runId=multipie_e2e_004）** |
-| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels) | 待做（rawIR 只出顶层矩形；嵌套子块未达成） |
+| 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | MultiPieValueDefinition(levels)；carrier `reports/test_treemap.js` | **serialization-only**（真引擎 EXE PASS；顶层 169 块可渲染，嵌套子块=web 层，见 §6.4） |
 | 6 | 词云 wordcloud | VanChartWordCloudPlot | doc 3 | WordCloudTableDefinition(wordName/wordValue) | **DONE（chart.vwordcloud；runId=wordcloud_e2e_002）** |
 | 7 | 结构图 structure | VanChartStructurePlot | doc 6 | StructureTableDefinition(nodeId/parentId/nodeName/nodeValue) | **DONE（chart.vstructure；rows runId=structure_rows_002；官方默认不显示节点名，只承诺层级）** |
-| 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | 待探针 | 待做 |
+| 8 | 钻取地图 drillmap | VanChartDrillMapPlot | doc 12 | DrillMapDefinition(bg+layers)+setGeoUrl；carrier `probes/probe_drillmap_carrier.js` | **serialization-only**（execute PASS、渲染 blank=web div 层，见 §6.3） |
 | 9 | 甘特 gantt | VanChartGanttPlot | doc 15 | **一手探出**：VanGanttDefinition(data=VanGanttTableDefinition firstProcess/series/start/end + linkTable + TimeAxis/ProcessAxis + processList)；**三轮 rawIR 试错**：①NPE（无 geoUrl/axis 类）→ 加 TimeAxis/ProcessAxis 修复 NPE → execute PASS → ②无 rawIR 词表 → IR 补 → ③渲染「图形没有数据」= web 渲染需 div 层（与 drillmap 一致） | **serialization-only**（与 tooltip/hyperlink 等 web 交互相责统一口径） | |
 | 10 | 组合图 custom | VanChartCustomPlot | doc/demo 36 | D1 已证构造/序列化，线系列渲染未达成（README #105） | 阻塞（需官方条件块语料） |
 | 11 | 3D 族 | Area3D/Bar3D/Pie3D/Donut3D | 0（legacy） | Chart+MoreName（3D）；Donut3D 走 OneValue | **DONE（chart.bar3d/pie3d/area3d `_e2e_002`；donut3d 见环形行 `_e2e_003`）** |
 | 12 | 环形 donut | Donut2D/Donut | 0（legacy） | Chart+OneValue（每系列一环） | **DONE（chart.donut/donut3d，多环形态；runIds=donut_e2e_003/donut3d_e2e_003）** |
 | 13 | 仪表 meter | MeterPlot/SimpleMeterPlot/MeterBluePlot | 0（legacy） | MeterTableDefinition(name/value/targetValue/meterType/custom) | **DONE（chart.meter，单 needle 80 PNG；多 needle 重叠为官方多值不解决）** |
-| 14 | 区间 range | RangePlot | 0（legacy） | 待探针 | 待做 |
+| 14 | 区间 range | RangePlot | 0（legacy） | ScatterTableDefinition(低/高)+setFilterDefinition；carrier `reports/test_range.js` | **DONE（chart.range；PNG 4 区间带+图例；官方 0 语料，样式未手调）** |
 | 15 | 股价 stock | StockPlot | 0（legacy） | StockTableDefinition(OHLC; StockLabel 不换文本) | **DONE（chart.stock；rows runId=stock_rows_001；官方 0 语料，形态=裸 K 柱）** |
 | 16 | GIS 地图 | GisMapPlot | 0（legacy） | 待探针（区别于 vmap） | 待做 |
 
@@ -80,7 +80,7 @@
 | 图族 | 一手证据源 | 当前阻塞点 | 下一步 |
 |---|---|---|---|
 | drillmap | 官方 XML + `probe_chartdata_builder` | `execute` 已通（加 `setGeoUrl` 后），但渲染 blank（web div 层） | **serialization-only**（与 tooltip/hyperlink 口径一致） |
-| gantt | `probe_gantt_official` 读官方对象图 | raw渲染了 grid 但 bars 需 time/process/series 三列排列 | 对齐官方 firstProcess/processList/linkID 形态 |
-| treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | raw渲染出顶层 blocks，嵌套子块未出（TreeMapPlot 渲染端差） | `{VanChartTreeMapPlot.plotStyle 或 nested box layout}` |
+| gantt | `probe_gantt_official` 读官方对象图 | `reports/test_gantt.js` 真引擎 EXE PASS（firstProcess/processList/linkTable/TimeAxis/ProcessAxis 全序列化） | **serialization-only**（PNG「图形没有数据」=web div 层） |
+| treemap | 官方 XML=`MultiPieValueDefinition(levelCount=2)`（与 vmultipie 同型） | `reports/test_treemap.js` 真引擎 EXE PASS；顶层 blocks 渲染，嵌套子块未出（web 层） | **serialization-only**（TreeMapIndependentVanChart 存在） |
 | custom | D1 三轮 log | 线系列渲染官方一致不显示 | 引擎硬墙；需官方条件块语料再重开 |
 | GIS | `probe_chartdata_builder` + `GisMapTableDefinition` | legacy 独立类（与 VanChartMapPlot 不同家族） | 沿 setGisType/setAddressType/setAddress 路径 |
