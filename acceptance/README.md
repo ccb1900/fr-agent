@@ -237,6 +237,7 @@ V0.1 共 40 条，分组 5/5/8/5/5/4/4/4。`expectedLevel` 是静态投影：`PA
 | `data` | 逐键等于 oracle | 视觉正确 |
 | `visual` | 布局/样式人工或视觉检查 | 数据正确 |
 | `interaction` | 参数/跳转/联动真实可用 | 其它层 |
+| `analysis` | 只读分析任务的结构提取与说明（inspect.json/transcript） | cpt/渲染/数据层 |
 | `spec→…→interaction` | **九层都过才是 PASS** | 任何单层绿都不算完成 |
 
 > 一个真实渲染 PNG 里有字，不等于数据对；`IR` 校验通过、`CPT` 生成成功、引擎打开成功、渲染正确，是四件不同的事。
@@ -329,7 +330,12 @@ java -cp <nashorn.jar> jdk.nashorn.tools.Shell acceptance/record_result.js
 ```
 
 > 模板只示意字段；`data.actual` 必须包含任务 `dataAssertions` 的全部键并与 oracle 相等，否则记录器判非法。
+> 只读分析任务（G01）用 `evidence.analysis` 代替 spec/ir/cpt/engine/render/data。
 > 不要在 V0.1 里把"没跑过"的任务写成 PASS——`fast_acceptance` 会校验结果文件，但不会替你判断证据真假。
+>
+> **记录器的边界（必读）**：它能证明的是"结果自洽、证据文件存在、`data.actual` 与 oracle 数值一致、等级规则未被绕过"；
+> 它不能证明"`data.actual` 是从真实渲染/导出中提取的"、"`evidence.*.pass` 是人工判断的"、"PNG 就来自该 RunId"。
+> 后三者靠证据包复核（路径、哈希、产物对照、视觉验收）——记录器是防呆，不是测谎仪。
 
 ---
 

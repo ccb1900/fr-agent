@@ -65,7 +65,7 @@ check('taskModelDoc present', String(bench.taskModelDoc || '') === 'acceptance/R
 check('capability ledger source pinned', String((bench.capabilityLedger || {}).source) === 'application/capability_manifest.js');
 check('fixture manifest path pinned', String((bench.fixture || {}).manifest) === 'acceptance/fixtures/sales/manifest.json');
 check('result levels complete', isArr(bench.resultLevels) && bench.resultLevels.length === 6);
-check('evidence tiers documented', isObj(bench.evidenceTiers) && hasOwn(bench.evidenceTiers, 'specValid') && hasOwn(bench.evidenceTiers, 'interaction') && hasOwn(bench.evidenceTiers, 'note'));
+check('evidence tiers documented', isObj(bench.evidenceTiers) && hasOwn(bench.evidenceTiers, 'specValid') && hasOwn(bench.evidenceTiers, 'interaction') && hasOwn(bench.evidenceTiers, 'analysis') && hasOwn(bench.evidenceTiers, 'note'));
 
 // ---- ② 任务文件/哈希/能力/真值键/工具/提示词/权重 ----
 var tasks = bench.tasks;

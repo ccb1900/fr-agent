@@ -20,7 +20,7 @@ var ResultSchema = (function () {
     UNSAFE: 1
   };
   var DIMENSIONS = ['requirement', 'semantic', 'planning', 'capability', 'ir', 'cpt', 'render', 'interaction', 'safety'];
-  var TIERS = ['spec', 'ir', 'cpt', 'engine', 'render', 'data', 'visual', 'interaction'];
+  var TIERS = ['spec', 'ir', 'cpt', 'engine', 'render', 'data', 'visual', 'interaction', 'analysis'];
 
   function hasOwn(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
   function isObj(o) { return o !== null && typeof o === 'object' && !isArr(o); }
@@ -154,9 +154,15 @@ var ResultSchema = (function () {
         if (!isStr(pathOf('render'))) E('EVIDENCE_PATH', 'evidence.render.path', 'rendered PNG path required');
         if (!passOf('visual')) E('EVIDENCE_MISSING', 'evidence.visual', 'visual review pass=true required');
       }
-      ['spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
-        if (!isObj(tier[t]) || tier[t].pass !== true) E('EVIDENCE_MISSING', 'evidence.' + t, t + ' evidence pass=true required for ' + level);
-      });
+      if (task.analysisOnly === true) {
+        // 只读分析任务没有 cpt/engine/render/data 层：把"结构提取与说明"作为独立证据层。
+        if (!isObj(tier.analysis) || tier.analysis.pass !== true) E('EVIDENCE_MISSING', 'evidence.analysis', 'analysis evidence pass=true required for analysis-only ' + level);
+        if (!isStr(pathOf('analysis'))) E('EVIDENCE_PATH', 'evidence.analysis.path', 'inspect/transcript path required');
+      } else {
+        ['spec', 'ir', 'cpt', 'engine'].forEach(function (t) {
+          if (!isObj(tier[t]) || tier[t].pass !== true) E('EVIDENCE_MISSING', 'evidence.' + t, t + ' evidence pass=true required for ' + level);
+        });
+      }
       if (!isArr(used)) E('CAPABILITIES_MISSING', 'capabilitiesUsed', 'capabilitiesUsed array required');
       else {
         (task.requiredCapabilities || []).forEach(function (n) {

@@ -95,6 +95,7 @@
     "dataTruth": "栅格逐格/聚合值与 oracle 一致",
     "visual": "人工/视觉检查通过（布局与样式）",
     "interaction": "参数/跳转/联动真实可用（web 行为）",
+    "analysis": "只读分析任务：inspect.json/transcript 的结构提取与说明（无 cpt/渲染层）",
     "note": "九种证据不得合并成一个 PASS；结果记录器按证据层级校验等级"
   },
   "eligibility": {
