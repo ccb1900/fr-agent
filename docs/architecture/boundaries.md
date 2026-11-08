@@ -10,6 +10,7 @@
 │ Feature  features/data_browser/                        │  业务生成器：spec/IR 词汇产出
 ├────────────────────────────────────────────────────────┤
 │ Core    lib/ir.js → lib/object.js → lib/cpt.js          │  编译核心：IR → 对象图 → 校验器
+│         lib/object_core.js（基础件）/ object_chart.js（图表族）│ 2026-11-08 由 object.js 内部 load，Obj 门面不变
 │         lib/index.js（CORE 门面，事实契约：Ir/Obj/Cpt）  │
 ├────────────────────────────────────────────────────────┤
 │ Runtime runtime/paths.js（路径单点）                     │

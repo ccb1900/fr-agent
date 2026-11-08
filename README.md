@@ -26,7 +26,7 @@ reports*/（业务 spec）→ features/data_browser/browser.js（业务生成器
 
 ```
 reports/xxx.js   ← 报表规格：标题/列定义/数据（人只管这一层）
-lib/object.js    ← v3.0 后端：spec → FR API 对象图 → wb.export()（真源在此）
+lib/object.js    ← v3.0 后端：spec → FR API 对象图 → wb.export()（真源在此；2026-11-08 拆出 object_core.js 基础件 / object_chart.js 图表族，Obj 门面与 load 调用点不变）
 lib/cpt.js       ← v2 字符串生成器 + 校验器（validate/assertRoundTrip = 回归门）
 make_api.js      ← v3 runner：对象图→自序列化→执行→导出→校验器过门
 make_report.js   ← v2 runner（回归对照，仍然可用）
