@@ -1,21 +1,21 @@
 {
     "tool":  "build_jar_surface",
-    "generatedAt":  "2026-11-08T12:04:39.3449824+08:00",
+    "generatedAt":  "2026-11-08T12:17:28.9962114+08:00",
     "frHome":  "D:\\software\\FineReport_11.0",
     "coreJars":  121,
     "plotClassCount":  54,
     "counts":  {
-                   "unsupported":  24,
-                   "base":  17,
-                   "supported":  13
+                   "unsupported":  22,
+                   "base":  18,
+                   "supported":  14
                },
     "licenseCounts":  {
                           "basic":  54
                       },
     "familyCounts":  {
-                         "current":  13,
+                         "current":  14,
                          "base":  16,
-                         "van":  9,
+                         "van":  8,
                          "legacy":  16
                      },
     "licensePolicy":  {
@@ -127,11 +127,11 @@
                     },
                     {
                         "class":  "com.fr.chart.chartattr.FunnelPlot",
-                        "status":  "unsupported",
+                        "status":  "base",
                         "license":  "basic",
                         "family":  "legacy",
                         "cap":  "",
-                        "reason":  "funnel family not wired"
+                        "reason":  "legacy funnel engine variant; current funnel family chart.vfunnel uses VanChartFunnelPlot"
                     },
                     {
                         "class":  "com.fr.chart.chartattr.GanttPlot",
@@ -359,11 +359,11 @@
                     },
                     {
                         "class":  "com.fr.plugin.chart.funnel.VanChartFunnelPlot",
-                        "status":  "unsupported",
+                        "status":  "supported",
                         "license":  "basic",
-                        "family":  "van",
-                        "cap":  "",
-                        "reason":  "van funnel family not wired"
+                        "family":  "current",
+                        "cap":  "chart.vfunnel",
+                        "reason":  ""
                     },
                     {
                         "class":  "com.fr.plugin.chart.gantt.VanChartGanttPlot",

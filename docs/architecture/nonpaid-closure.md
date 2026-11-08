@@ -2,15 +2,15 @@
 
 > 定义：**闭环 = 构造 → 序列化 → 真实渲染/交互 → Agent plan→create 证据 → 账本状态一致**，五态标注不混写。
 > 付费排除口径：FVS bigScreen 14 包 / `com.fr.extended.chart.*` / 移动端；不实现、不排期。
-> 当前基线：74 项账本 / 53 项 Agent 可用 / jar 面 54 Plot 类（13 supported、17 base、24 unsupported=15 图族）。
+> 当前基线：75 项账本 / 54 项 Agent 可用 / jar 面 54 Plot 类（14 supported、18 base、22 unsupported=14 图族）。
 > 进度以本文件与 `docs/night-shift-log.md` 为准；每完成一项更新状态并做一次独立审查。
 
-## 1. 图族闭环（15 个待办，按可行性排序）
+## 1. 图族闭环（14 个待办，按可行性排序）
 
 | # | 图族 | 类 | 官方语料 | 数据绑定形态 | 状态 |
 |---|---|---|---|---|---|
 | 1 | 雷达 radar | VanChartRadarPlot | doc/NewRadarChart 24 | MoreNameCDDefinition | **DONE（chart.vradar，agentAvailable；runId=radar_e2e_001）** |
-| 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | 待做 |
+| 2 | 漏斗 funnel | VanChartFunnelPlot | doc/FunnelPlot 5 | OneValueCDDefinition(seriesName,valueName) | **DONE（chart.vfunnel，agentAvailable；runId=funnel_e2e_001）** |
 | 3 | 箱线 box | VanChartBoxPlot | doc 3 | 待探针（Box 数据定义） | 待做 |
 | 4 | 多层饼 multipie | VanChartMultiPiePlot | doc 5 | 待探针 | 待做 |
 | 5 | 树图 treemap | VanChartTreeMapPlot | doc 2 | 待探针 | 待做 |

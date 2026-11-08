@@ -1863,3 +1863,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 门修复：`fast_layer_coherence` I2 入口检查共享 `/g` 正则未复位 lastIndex，命中后后续能力从错误偏移匹配 → chart.vradar 假阴性；已加 `re.lastIndex=0`（门自身缺陷，非账本问题）。`fast_capability_gate_consistency` totals 硬编码 73/52 → 74/53。
 - 回归：fast 19 套件 GREEN（`logs/fast19_radar2.txt`，COHERENCE caps=74/agent=53；JAR-SURFACE supported=13/unsupported=24）；scan ok=97 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
 - 下一项：按同法做 Van 漏斗/箱线（官方 doc 语料、MoreName 或 OneValue 绑定），再做 Gantt/组合/树图/词云/结构/钻取/多层饼；legacy 3D/环形/仪表/区间/股价/GIS 单独立项。
+
+### 第 23 轮 非付费图族闭环第 2 个：chart.vfunnel 漏斗图（2026-11-08）
+- 结构一手：官方 `doc/Chart/FunnelPlot/漏斗图.cpt` = `VanChartFunnelPlot` + `OneValueCDDefinition seriesName=分类列 valueName=值列 function=SumFunction`（CategoryName 空）。javap 确认 `OneValueCDDefinition(TableData, categoryName, seriesColumnName, valueColumnName, DataFunction)`；object 复用 vpie/vgauge 的 OneValue 派。
+- 实施：object VK 增 vfunnel + OneValue 分支；IR CHART_KINDS/vanChart、ReportSpec 两路、spec_validator、planner 合同同步；engine_class_map/jar_inventory 锚定；jar 面 VanChartFunnelPlot 转 supported、legacy FunnelPlot 归 base（supported 14/base 18/unsupported 22=14 图族）。
+- 门修复：make_api 图表门对 `OneValueCDDefinition`（vpie/vgauge/vfunnel）仍走 MoreName 断言 → 单图 vpie/vgauge 也会假阴性；现按 kind 分流，OneValue 派断言 `<O t="CC">`+OneValueCDDefinition+seriesName/valueName。
+- 验证：`reports/test_funnel.js` 真引擎 failures=0，PNG 目检 5 段漏斗 + 5 条图例（420pt 高度全出）+ 标题；SQL 真库 plan→plan2spec→create→validate PASS（runId=funnel_e2e_001，表体 33531/26531 真值不变，漏斗图在表体下方渲染）。manifest chart.vfunnel 四层 verified/agentAvailable=true（75 项/54 承诺）。
+- 回归：fast 19 套件 GREEN（`logs/fast19_funnel.txt`，COHERENCE caps=75/agent=54；JAR-SURFACE supported=14/unsupported=22）；scan ok=98 bad=0；默认基线 demo_api.cpt=CBEB42E3 回补。
+- 下一项：箱线 box（官方 doc 3 语料，先探针 Box 数据定义），或先做高价值树图/多层饼。

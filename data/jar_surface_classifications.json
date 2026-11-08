@@ -217,10 +217,10 @@
       "family": "legacy"
     },
     "com.fr.chart.chartattr.FunnelPlot": {
-      "status": "unsupported",
-      "reason": "funnel family not wired",
+      "status": "base",
       "license": "basic",
-      "family": "legacy"
+      "family": "legacy",
+      "reason": "legacy funnel engine variant; current funnel family chart.vfunnel uses VanChartFunnelPlot"
     },
     "com.fr.chart.chartattr.GanttPlot": {
       "status": "unsupported",
@@ -295,10 +295,10 @@
       "family": "van"
     },
     "com.fr.plugin.chart.funnel.VanChartFunnelPlot": {
-      "status": "unsupported",
-      "reason": "van funnel family not wired",
+      "status": "supported",
       "license": "basic",
-      "family": "van"
+      "family": "current",
+      "cap": "chart.vfunnel"
     },
     "com.fr.plugin.chart.gantt.VanChartGanttPlot": {
       "status": "unsupported",

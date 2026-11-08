@@ -340,6 +340,8 @@ try {
   //   现按 kind 分流：category/value 图保留原断言；x/y 图逐块断言 x/y/size 与数据集。
   var catChart = null;
   chartBlocks.forEach(function (b) {
+    // OneValue 派（vpie/vgauge/vfunnel）与 x/y 派不走 MoreNameCDDefinition/CategoryName 形态
+    if (b.kind === 'vscatter' || b.kind === 'vbubble' || b.kind === 'vpie' || b.kind === 'vgauge' || b.kind === 'vfunnel') return;
     if (b.category != null || b.value != null || (b.values && b.values.length)) catChart = b;
   });
   if (catChart) {
@@ -366,6 +368,20 @@ try {
       && (cb.bubbleSize == null || xmlText.indexOf('bubbleSize="' + cb.bubbleSize + '"') >= 0));
     check('CHART DEF X/Y ' + tag + ' "' + cb.x + '/' + cb.y + '"', xmlText.indexOf('bubbleX="' + cb.x + '"') >= 0 && xmlText.indexOf('bubbleY="' + cb.y + '"') >= 0);
     if (cb.seriesName != null) check('CHART DEF SERIES ' + tag + ' "' + cb.seriesName + '"', xmlText.indexOf('seriesName="' + cb.seriesName + '"') >= 0);
+  });
+  // OneValue 派（vpie/vgauge/vfunnel）：官方形态=OneValueCDDefinition seriesName/valueName（CategoryName 空），
+  //   不是 MoreNameCDDefinition/CategoryName——旧门在单图 vpie/vgauge 上同样会假阴性（2026-11-08 漏斗暴露）。
+  chartBlocks.forEach(function (cb, ix) {
+    if (cb.kind !== 'vpie' && cb.kind !== 'vgauge' && cb.kind !== 'vfunnel') return;
+    var tag = cb.kind + '#' + (ix + 1);
+    var val = cb.value || (cb.values && cb.values[0]);
+    check('CHART SERIALIZED (onevalue ' + tag + ')', /<O t="CC">/.test(xmlText)
+      && /OneValueCDDefinition/.test(xmlText)
+      && /NameTableData/.test(xmlText)
+      && xmlText.indexOf('CDATA[' + cb.dataset) >= 0
+      && xmlText.indexOf('seriesName="' + cb.category + '"') >= 0
+      && xmlText.indexOf('valueName="' + val + '"') >= 0);
+    check('CHART DEF ONEVALUE ' + tag + ' "' + cb.category + '/' + val + '"', xmlText.indexOf('seriesName="' + cb.category + '"') >= 0 && xmlText.indexOf('valueName="' + val + '"') >= 0);
   });
 } catch (e) {
   FAILS++; stamp('CPT EXPORT/VALIDATE FAIL: ' + e); RR.diag('CPT EXPORT/VALIDATE FAIL: ' + e);
