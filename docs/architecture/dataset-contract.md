@@ -106,8 +106,19 @@ function toReportDataset(ds, reportScope) {
 - 不做变更影响分析（S4）；`lineage` 只是抓手，不是图数据库。
 - 不让任何 verb 写 `model.json`（模型侧仍是人工 + `preflight`/fast 门把关）。
 - Dataset 纯文件操作**不进** FineReport 单实例 Mutex（规范 §10.2 采纳：读=list/inspect，写=create 走原子写；validate 需要 SqlBuilder 但零引擎，仍可无锁）。
+- **IO 不进 `semantic/`**：`scripts/check-boundaries.ps1` 的 R7b 只给 `inspector.js`/`inspect_main.js` 两个薄壳例外（`semantic/**` 禁 `Java.type`，保证离线可测 + 可换引擎）。因此原规范 v1.0 §7 的 `semantic/dataset/repository.js` **作废**：读目录/原子写属工具层（`agent/tools/assets.js` 复用 `agent/tools/_lib.js` 的 `atomicWriteUtf`），`semantic/dataset/` 只留 `definition.js`（契约）与 `registry.js`（索引），两者零 Java、零 IO——由契约门第 0 节文本断言守住。
 
 ## 8. 验证与运行
+
+## 7b. D1 落地状态（2026-11-09）
+
+契约已进入生产代码，门不再自证：
+
+- `semantic/dataset/definition.js`：键集/身份/引用/选择/粒度/断言/生命周期审计 + 绑定检查 + 组合规则（纯函数）
+- `semantic/dataset/registry.js`：按域/id/状态索引 + 重复 id 检出（纯函数）
+- `verify/fast_dataset_contract.js`：**消费上两件**（78 项），不再复刻契约
+- 门的两次真收获：① `columnsOf` 里 `built.errors` 为 `[]` 被当真值 → 派生列恒空（JS 经典陷阱，被门抓住后修）；② 契约件自身注释含 `com.fr.` 字面量触发 R7a 文本门（假阳性，改述解决——门按文本判定是既定设计，不放宽）
+- 故障注入 5 连全红（塞自由 SQL / 无 review 假装发布 / 粒度脱钩 / 版本漂移 / 手写列改错），还原即 `failures=0`
 
 ```powershell
 # 契约验证器（零引擎，秒级）

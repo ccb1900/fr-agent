@@ -122,14 +122,16 @@ Intent → Domain Resolver → published Semantic Model → Dataset Resolver →
 ## 7. 目录（v1.1 采用"职责先于整齐"）
 
 ```
-semantic/dataset/          # 新增（D1）：definition.js(契约+audit)、registry.js(按域索引)、repository.js(唯一 IO)
-models/<domain>/datasets/  # 已建目录（D0 落了 1 个真样例）
-agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口，薄壳做 IO 与 JSON 合同行
+semantic/dataset/          # D1 已落：definition.js(契约审计+组合)、registry.js(按域索引)；两者零 Java/零 IO
+models/<domain>/datasets/  # D0 已建（落了 1 个真样例）
+agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读目录与原子写(复用 _lib.js)都在这层
+#   注：v1.0 设想的 semantic/dataset/repository.js 作废——R7b 只允许 inspector 两个薄壳碰 Java，
+#   IO 进 semantic 会自破"离线可测+可换引擎"红线（本轮由边界门发现，详见 dataset-contract.md §7）
 ```
 
 - **不建** `semantic/catalog/{lifecycle,version,impact}.js` 三件套：v1 生命周期/版本就是 `status` + `versions/<n>.json` 快照，单独文件只为转发（v1.0 §7 自己禁止空模块）
 - 影响分析（S4）真需要时再加，位置 `semantic/dataset/impact.js`
-- 不为目录整齐迁移成熟代码；业务逻辑不进 `fr_agent.ps1`（它只做参数/环境/进程编排）；JS 保持纯函数，IO 收敛在 `repository.js`；继续 ES5
+- 不为目录整齐迁移成熟代码；业务逻辑不进 `fr_agent.ps1`（它只做参数/环境/进程编排）；JS 业务模块保持纯函数，IO 收敛在工具层（`agent/tools/*` 复用 `_lib.js` 原子写），`semantic/**` 零 Java；继续 ES5
 
 ---
 
@@ -138,8 +140,8 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口，薄�
 | 阶段 | 内容 | 验收 | 状态 |
 |---|---|---|---|
 | **D0** | 契约冻结：ADR + 1 个真资产 + 可运行验证器 | `verify/fast_dataset_contract.js` failures=0；4 项故障注入必红；已登记聚合门；旧 spec 兼容断言过 | ✅ **完成（2026-11-09）** |
-| **D1** | `semantic/dataset/{definition,registry,repository}.js` + 真值单测 | 读/校验/稳定保存/非法拒写；`lib/*` 与铁证零改动 | ⬜ 下一步 |
-| **D2** | `assets list/inspect/create/validate/publish`（零引擎） | Agent 经 Skill 可建草稿→验证→（人确认后）发布；错误面带 `nextActions` | ⬜ |
+| **D1** | `semantic/dataset/{definition,registry}.js`（IO 归工具层）+ 套件改为消费生产契约件 | 78 项 failures=0；5 项故障注入全红还原即绿；`lib/*`/`make_api.js`/Runtime 零改动 | ✅ **完成（2026-11-09）** |
+| **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | Agent 经 Skill 可建草稿→验证→（人确认后）发布；错误面带 `nextActions`；非法资产拒写且同 id 不静默覆盖 | ⬜ 下一步 |
 | **D3** | Dataset Resolver 接 Planner/ReportSpec + 版本绑定 | 同一 Dataset 被 2 张报表复用，生成的 FR 数据集正确；渲染门全绿 | ⬜ |
 | **S1** | 多领域模型（`domain` 寻址统一 + Registry 按域加载 + Validator 两档拆分） | ≥2 领域模型可加载；术语不跨域误匹配；旧模型仍可用 | ⬜ |
 | **S2** | `semantic list/inspect/create/update/validate/review/publish` | 一领域完整草稿 + 待确认清单输出 | ⬜ |

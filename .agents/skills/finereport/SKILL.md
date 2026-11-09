@@ -31,10 +31,12 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 
 **C 能力咨询**：`discover` → 只看 `capabilityManifest` / `agentAvailable` 名单 → 说明支持状态、限制与替代。`agentAvailable=true` 表示"可按账本承诺"，不等于每项都跑过全生命周期（看 `evidenceGrade.fullE2e`）。
 
+**D 资产缺口（语义/数据集）**：用户要的词不在模型里、或需要新数据集时——**不要**改 `model.json`、不要手写 Dataset。产出一份变更申请 JSON（`logs/agent/runs/<runId>/semanticRequest.json`），字段：`type`（add_metric/add_dimension/confirm_relation/add_dataset/new_dataset_metric…）、`term`、`proposed`、`evidence`（schema 快照 + `sample_data` 采样 + 真值文件）、`businessOwnerQuestion`（要人确认的口径一句话）。交人确认后再进入资产变更流程。理由：模型与 Dataset 是**业务事实的权威源**，Agent 有提议权、无自确认权。
+
 ## 铁律（每条都有原因）
 
 1. **不臆造业务事实**：实体/维度/指标只能来自 `discover` 的模型与 `resolve` 的解析结果。未知术语 → `unknown`，问用户，不编字段、不猜表。
-2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。
+2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。**Dataset 资产（`models/<domain>/datasets/*.json`）也不手改**——它的契约由 `semantic/dataset/definition.js` 定义、`verify/fast_dataset_contract.js` 判定；管理 verb 尚未开放（D2），需要新数据集时按 §场景 D 产出变更申请交人确认。
 3. **不跳过 `validate`**：`create` 的 `exit=0` 只说明工具链跑通；合计/公式/栅格自洽由 `validate.json` 判定。有真值时用 `-ExpectTotals` 对拍，执行成功不等于数据正确。
 4. **歧义必问**：`ambiguous`、`requiresConfirmation`、用户口径冲突都停下来问。一次问清，别用"先按常见的来"蒙过去。
 5. **不静默降级**：不支持的能力要明说并给替代（如"按派生完成率排序"→ 改按计划数排序）。不要偷偷删掉用户要求的字段或图表。
@@ -73,5 +75,6 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Ve
 - `references/capability-rules.md`：capabilityManifest 为唯一能力依据
 - `references/error-handling.md`：错误分类、重试与停止、部署授权
 - `references/examples.md`：真实可用样例（GOLDEN v1 / G2 / G3 / 修改标题）
+- `references/assets.md`：Dataset / Semantic 资产层现状（D0/D1 已冻结契约、无管理 verb）、变更申请格式、为什么 Agent 不能自确认口径
 
 仓库事实库 `README.md`、工具契约 `docs/agent-tools.md`、架构边界 `AGENTS.md` 仍有效；技能与代码冲突时**以代码和机器输出为准**，并把它当成待修的文档问题报告出来。
