@@ -113,7 +113,8 @@ function toReportDataset(ds, reportScope) {
 # 契约验证器（零引擎，秒级）
 "D:\software\FineReport_11.0\jre\bin\java.exe" -cp "D:\software\FineReport_11.0\jre\lib\ext\nashorn.jar" `
   jdk.nashorn.tools.Shell verify/fast_dataset_contract.js
-# 已登记进 scripts/run-fast-tests.ps1 聚合门与 verify/fast_parse.js 白名单（套件内自证）
+# 已登记进 scripts/run-fast-tests.ps1 聚合门（现 21 套件）；套件内自断言登记状态并自检语法
+#   （verify/fast_parse.js 的 FILES 只收录产品文件，verify 套件按惯例不收录，故此处靠第 7 节自检）
 ```
 
 套件第 7 节自我检查"是否被登记进门"——正是我 2026-11-08 拆分 `object.js` 时漏登记 `fast_parse` 白名单、导致语法门出现盲区的教训固化。
