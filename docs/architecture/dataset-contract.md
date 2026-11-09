@@ -99,7 +99,13 @@ function toReportDataset(ds, reportScope) {
 
 **只有第一行是新的**，且它不做任何 SQL/语义判断 —— 这是"不新建第二套校验器"的可验证承诺。
 
-阶梯单调性（`auditLifecycle`）：`published ⊇ validated` —— 缺数据证据与缺业务确认是两条独立错误码（`PUBLISHED_WITHOUT_DATA_EVIDENCE` / `PUBLISHED_WITHOUT_REVIEW`），被拒的证据由 `evidenceProblems()` 给出逐条原因（`EVIDENCE_SHAPE` / `EVIDENCE_DATASET_ID_MISMATCH` / `EVIDENCE_MODEL_VERSION_MISMATCH` / `EVIDENCE_SOURCE_REF_MISMATCH` / `EVIDENCE_MISSING_AT`），不把"有证据"与"证据无效"混成一个词。
+阶梯统一规则（`auditLifecycle`，2026-11-09 两轮审查收口）：
+
+1. **任何状态**：给了证据条目就必须**全部有效**——`validated` 曾只数有效条目，于是"一条真 + 一条假"可蒙混过关；`draft` 也不得藏垃圾证据（不给"以后再说"留缝）。
+2. **`validated` / `published`**：还须**至少一条**有效证据（空数组、或全部被拒都算没有）。
+3. **`published`**：额外要求业务 `review`（阶梯单调 `published ⊇ validated`；缺证据与缺确认是两条独立错误码）。
+
+被拒原因由 `evidenceProblems()` 逐条给出：`EVIDENCE_SHAPE` / `EVIDENCE_MISSING_{REF,DATASETID,MODELVERSION,SOURCEREF,AT}` / `EVIDENCE_BAD_AT_FORMAT` / `EVIDENCE_{DATASET_ID,MODEL_VERSION,SOURCE_REF}_MISMATCH`，不把"有证据"与"证据无效"混成一个词。`at` 须 ISO 形态，且 **D2 起由 `assets validate` 统一生成**，不接受调用方手填时间。
 
 三条同期收紧（2026-11-09 审查轮）：
 
@@ -131,8 +137,8 @@ function toReportDataset(ds, reportScope) {
 - `semantic/dataset/registry.js`：按域/id/状态索引 + 重复 id 检出（纯函数）
 - `verify/fast_dataset_contract.js`：**消费上两件**（78 项），不再复刻契约
 - 门的两次真收获：① `columnsOf` 里 `built.errors` 为 `[]` 被当真值 → 派生列恒空（JS 经典陷阱，被门抓住后修）；② 契约件自身注释含 `com.fr.` 字面量触发 R7a 文本门（假阳性，改述解决——门按文本判定是既定设计，不放宽）
-- 故障注入：D1 后 5 连全红；审查轮再 3 连（自报路径冒充 validated / 粒度少声明一维 / 删 metrics）各 1–5 项红，还原即绿
-- 契约套件现 **103 项**（含证据绑定、范围白名单、grainDrift、原型安全、metrics 必填）；`fast_sqlbuilder` 51 项（含 `==` 对文本/数值列一致）
+- 故障注入：D1 后 5 连全红；审查轮 3 连（自报路径冒充 validated / 粒度少声明一维 / 删 metrics）各 1–5 项红；收口轮混合证据注入 8 项红（首条直指 `EVIDENCE_SHAPE@validation.samples[1]`），还原即绿
+- 契约套件现 **109 项**（含证据绑定、混合无效证据、范围白名单、grainDrift、原型安全、metrics 必填）；`fast_sqlbuilder` 51 项（含 `==` 对文本/数值列一致）
 
 ```powershell
 # 契约验证器（零引擎，秒级）
