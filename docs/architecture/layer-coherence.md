@@ -82,7 +82,7 @@
 scripts\capability-layer-gate.ps1 -Capability chart.vbar
 # 94 项全量扫描（层分布 + CSV）
 powershell -File logs\layer_gate_sweep.ps1     # 侦察工具，非门
-# 常驻不变量（19 套件之第 18；第 19 为 fast_jar_surface）
+# 常驻不变量（fast 聚合门成员，清单见 scripts/run-fast-tests.ps1）
 verify\fast_layer_coherence.js                 # I1/I2/I3/I5 + jar 清单指纹
 # jar 清单重建（升级 FineReport 后跑）
 scripts\build_jar_inventory.ps1

@@ -3,7 +3,7 @@
 > 用户口径："demo cpt 其实没有 jar 覆盖全面，应该已经有针对 jar 的分析吧。"
 > 本文把"引擎里到底有哪些图"从核心 jar 物理类面钉成账，并与能力账本/IR 词表机器对账。
 > 产物：`data/jar_surface_analysis.json`（build_jar_surface.ps1 生成），规则表 `data/jar_surface_classifications.json`，
-> 门 `verify/fast_jar_surface.js`（fast 第 19 套件）。
+> 门 `verify/fast_jar_surface.js`（fast 聚合门成员）。
 
 ## 1. 扫描口径
 

@@ -57,7 +57,7 @@
 6. Agent plan→plan2spec→create→validate（SQL/rows 真值不变）。
 7. manifest 四层 + engine_class_map + jar inventory 锚定。
 8. jar 面分类更新（supported/legacy 归位），fast_jar_surface GREEN。
-9. 默认基线 CBEB42E3 + fast 20 + scan + 引擎负门；文档/README/日志同步。
+9. 默认基线 CBEB42E3 + fast 聚合门 + scan + 引擎负门；文档/README/日志同步。
 
 ## 4.1 已知产品边界（审查发现，不阻塞图种闭环但需后续处理）
 
