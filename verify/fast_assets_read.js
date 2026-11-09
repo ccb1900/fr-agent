@@ -221,6 +221,12 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   })(), JSON.stringify((jt(ASSETS + '/validate_me.json').validation || {}).samples || []).slice(0, 200));
   check('validate·round-trip 审计零错', DatasetDef.audit(jt(ASSETS + '/validate_me.json'), 'models/production/datasets/validate_me.json').length === 0,
     JSON.stringify(DatasetDef.audit(jt(ASSETS + '/validate_me.json'), 'models/production/datasets/validate_me.json')));
+  check('正控·工具生成的证据 ref 始终为仓库相对路径', (function () {
+    var back = jt(ASSETS + '/validate_me.json');
+    var arr = (back.validation || {}).samples || [];
+    var last = arr[arr.length - 1];
+    return last && !/^[A-Za-z]:/.test(last.ref) && last.ref.indexOf('/') > 0;
+  })(), JSON.stringify((jt(ASSETS + '/validate_me.json').validation || {}).samples || []));
 
   var published = jt(ASSETS + '/validate_me.json');
   published.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };
@@ -230,6 +236,29 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   check('publish·状态已升为 published', exists(ASSETS + '/validate_me.json') && jt(ASSETS + '/validate_me.json').status === 'published');
   var rp2 = runTool('publish', { AGENT_ASSETS_ID: 'production.validate_me' });
   check('负控·已 published 再 publish → 拒（幂等不重做）', rp2.rc === 1 && !!rp2.result && rp2.result.ok === false, 'rc=' + rp2.rc);
+  // 负控·粒度声明是维度的真子集（create 现在跑 grainDrift，应该拒）
+  (function () {
+    var subset = JSON.parse(JSON.stringify(good));
+    subset.id = 'production.grain_subset'; subset.name = '粒度子集';
+    subset.selection = { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned'] };
+    subset.asserts = { fields: [{ name: 'bizDate', role: 'dim' }, { name: 'machine', role: 'dim' }, { name: 'planned', role: 'metric' }] };
+    subset.grain = { description: '只按日期分组', keys: ['bizDate'] };   // SQL 会按 bizDate+machine 分组
+    var rgs = runTool('create', { AGENT_ASSETS_DOC: writeDoc(subset) });
+    check('负控·粒度是维度真子集 → create 拒（GRAIN_DRIFT）',
+      rgs.rc === 1 && JSON.stringify(rgs.result).indexOf('GRAIN_DRIFT') >= 0 && !exists(ASSETS + '/grain_subset.json'),
+      JSON.stringify(rgs.result && (rgs.result.error || rgs.result.diagnostics)).slice(0, 220));
+  })();
+  // 负控·证据 ref 须为仓库相对路径（不可移植 = 克隆仓库后证据指向不存在路径）
+  (function () {
+    var dvAbs = JSON.parse(JSON.stringify(good));
+    dvAbs.id = 'production.abs_ref'; dvAbs.status = 'validated';
+    dvAbs.validation = { samples: [{ ref: 'D:/fineagent/logs/agent/runs/x/validate_sample.json', datasetId: dvAbs.id, modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+    dvAbs.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };   // 让 review 不挡，专心测 ref 格式行为
+    wrote(ASSETS + '/abs_ref.json', JSON.stringify(dvAbs, null, 1));
+    var rab = runTool('publish', { AGENT_ASSETS_ID: 'production.abs_ref' });
+    check('负控·绝对路径证据 ref 不影响 publish（工具层生成的必须是相对路径，publish 层不检查 ref 格式）',
+      rab.rc === 0, JSON.stringify(rab.result).slice(0, 160));
+  })();
   var rc3 = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ id: 'production.validate_me' })) });
   check('负控·published 后 create 同 id → ASSET_ALREADY_EXISTS', rc3.rc === 1 && (rc3.result.error || {}).code === 'ASSET_ALREADY_EXISTS');
   try { Files.delete(Pth.get(ASSETS + '/validate_me.json')); } catch (eDel) { }

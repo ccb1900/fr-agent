@@ -31,8 +31,8 @@ Files.createDirectories(Pth.get(resultDir));
 function genv(k) { var v = System.getenv(k); return (v == null || String(v) === '') ? null : String(v); }
 function finish(rc, obj) {
   writeJson(outFile, obj);
-  print('{"ok":' + (rc === 0) + ',"runId":"' + runId + '","action":"' + action + '","result":"' +
-    (runsDir ? 'logs/agent/runs/' + runId + '/assets.json' : 'logs/agent/runs/' + runId + '/assets.json') + '"}');
+  var relResult = 'logs/agent/runs/' + runId + '/assets.json';   // 合同行路径恒为此（runsDir 隔离时由测试直接读文件）
+  print('{"ok":' + (rc === 0) + ',"runId":"' + runId + '","action":"' + action + '","result":"' + relResult + '"}');
   System.exit(rc);
 }
 function bail(code, message, next, extra) {
@@ -172,6 +172,9 @@ if (action === 'create') {
   var am = DatasetDef.assertsMatch(doc, DatasetDef.columnsOf(built));
   if (am.length) bail('ASSERTED_FIELDS_MISMATCH', am.join(', '),
     ['asserts.fields must equal the derived columns exactly (name+role, same order)', 'or drop asserts.fields'], { diagnostics: diagnostics });
+  var cg = DatasetDef.grainDrift(doc, built.groupDims || []);
+  if (cg.length) bail('GRAIN_DRIFT', cg.join(', '),
+    ['grain.keys must exactly match the SQL GROUP BY dimensions (order + count)'], { diagnostics: diagnostics });
   writeJson(target, doc);                                          // 原子写：复用 _lib.js（不自造写路径）
   var back = tryJson(target);
   var reAudit = (back && typeof back === 'object') ? DatasetDef.audit(back, exp) : ['UNREADABLE@' + target];
@@ -233,9 +236,15 @@ if (action === 'validate') {
         ['check the model mapping'], { expected: vCols.map(function (c) { return c.name; }), actual: colLabels });
   }
 
-  // 生成绑定证据（工具自己出 ISO 时间戳，不接调用方手填）
+  // grainDrift：粒度声明 vs SQL 实际 GROUP BY 同序全等（审查轮 P2，audit 只查 ⊆ 不查 =）
+  var vGrain = DatasetDef.grainDrift(vDoc, vBuilt.groupDims || []);
+  if (vGrain.length) bail('GRAIN_DRIFT', vGrain.join(', '),
+    ['grain.keys must exactly match the SQL GROUP BY dimensions (order + count)'], { diagnostics: diagnostics });
+
+  // 生成绑定证据（工具自己出 ISO 时间戳，不接调用方手填；ref 用仓库相对路径保可移植）
   var evAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  var evEntry = { ref: resultDir + '/validate_sample.json', datasetId: vid, modelVersion: model.modelVersion, sourceRef: model.source, at: evAt };
+  var evRefRel = 'logs/agent/runs/' + runId + '/validate_sample.json';
+  var evEntry = { ref: evRefRel, datasetId: vid, modelVersion: model.modelVersion, sourceRef: model.source, at: evAt };
   var evData = { sql: vBuilt.sql, rowCount: rowCount, columns: colLabels, validatedAt: evAt, sourceRef: model.source };
   writeJson(resultDir + '/validate_sample.json', evData);
 
@@ -274,8 +283,10 @@ if (action === 'publish') {
   var pAudit = DatasetDef.audit(pDoc, pEntry.relPath);
   var pBind = DatasetDef.bindDrift(pDoc, model);
   var pEvProb = DatasetDef.evidenceProblems(pDoc);
-  if (pAudit.length || pBind.length || pEvProb.length)
-    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb).join(', '),
+  var pBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(pDoc));
+  var pGrain = (pBuilt.errors || []).length ? [] : DatasetDef.grainDrift(pDoc, pBuilt.groupDims || []);
+  if (pAudit.length || pBind.length || pEvProb.length || pGrain.length)
+    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb, pGrain).join(', '),
       ['fix contract violations and evidence issues before publishing'], { diagnostics: diagnostics });
   if (!(isObj(pDoc.review) && isStr(pDoc.review.by) && pDoc.review.by && isStr(pDoc.review.at) && pDoc.review.at))
     bail('PUBLISHED_WITHOUT_REVIEW', 'business review missing (review.by + review.at must be set by a human)',
