@@ -15,7 +15,8 @@
 #   P2-1 a RunId is registered CREATE-NEW - an explicit duplicate is refused (RUNID_EXISTS), no artifact cross-pollution.
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore')][string]$Verb,
+  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets')][string]$Verb,
+  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish')][string]$Action = 'list',
   [string]$Spec = '',
   [string]$Patch = '',
   [string]$Term = '',
@@ -337,6 +338,25 @@ switch ($inner) {
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) "logs/agent/runs/$RunId/sample.json"
     exit $rc
+  }
+  'assets' {
+    # D2.1 read-only asset management (list/inspect). Zero engine, no FineReport mutex: pure file reads
+    #   over models/*/datasets + the pure DatasetDef/DatasetRegistry/SqlBuilder functions. create/validate/
+    #   publish are D2.2+ and deliberately refused here (no half-wired write path).
+    if ($Action -eq 'list' -or $Action -eq 'inspect') {
+      $env:AGENT_ASSETS_ACTION = $Action
+      if ($Target) { $env:AGENT_ASSETS_ID = $Target }
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/assets.js')
+      $rc = $LASTEXITCODE
+      Remove-Item env:AGENT_ASSETS_ACTION -ErrorAction SilentlyContinue
+      Remove-Item env:AGENT_ASSETS_ID -ErrorAction SilentlyContinue
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
+      exit $rc
+    }
+    Write-Output ('{"ok":false,"error":"assets -Action ' + $Action + ' not implemented until D2.2+ (D2.1 = list/inspect only)","nextActions":["use -Action list or -Action inspect"]}')
+    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    exit 2
   }
   'inspect_template' {
     # Phase-2 B-sect: read-only template checkup over the engine (sheet dims + cell texts + dataset/param

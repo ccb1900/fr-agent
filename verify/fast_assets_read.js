@@ -1,0 +1,159 @@
+// verify/fast_assets_read.js — D2.1 只读管理工具契约（零引擎；用隔离临时资产目录，不碰生产资产）
+//   TDD：本套件先于 agent/tools/assets.js 写，第一击必须因"工具不存在"红。
+//   被测对象是工具脚本本身（以 Nashorn 子进程方式执行真实入口），不是把逻辑复刻进测试：
+//     - 造临时目录 + 资产文件 + env（AGENT_ASSETS_DIR / AGENT_ASSETS_ACTION / ...）
+//     - java -cp nashorn.jar ... Shell agent/tools/assets.js
+//     - 读回 logs/agent/runs/<runId>/assets.json 判定
+//   验收重点（与 dataset-semantic-plan.md §8 D2.1 一致）：
+//     ① 目录读取 + Registry 构建；② registry.errors 非空即 fail-closed（重复 id 不得"报着继续用"）；
+//     ③ list/inspect 各自的输出形状；④ 非法 JSON/路径越界/缺 id 的诊断面；
+//     ⑤ 零写操作（工具层只读）、不进 FineReport 引擎 Mutex。
+var J = function (n) { return Java.type(n); };
+var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
+var System = J('java.lang.System');
+var ROOT = System.getenv('FR_AGENT_HOME') || 'D:/fineagent';
+var FAILS = 0;
+function check(name, cond, detail) {
+  if (cond) print('CHECK PASS: ' + name);
+  else { FAILS++; print('CHECK FAIL: ' + name + (detail == null ? '' : ' :: ' + detail)); }
+}
+function read(p) { return String(new (J('java.lang.String'))(Files.readAllBytes(Pth.get(p)), 'UTF-8')).replace(/^\uFEFF/, ''); }
+function exists(p) { try { return Files.exists(Pth.get(p)); } catch (e) { return false; } }
+function jt(p) { return JSON.parse(read(p)); }
+function wrote(p, text) {
+  Files.createDirectories(Pth.get(p).getParent());
+  Files.write(Pth.get(p), J('java.lang.String').valueOf(text).getBytes('UTF-8'));
+}
+
+var TOOL = 'agent/tools/assets.js';
+function runToolAt(dir, action) { return runTool(action, null, dir); }
+var TMP = System.getenv('AGENT_ASSETS_TEST_TMP') || (System.getProperty('java.io.tmpdir').replace(/\\/g, '/') + '/fr_assets_d21');
+var ASSETS = TMP + '/models/production/datasets';
+var RUNS = TMP + '/logs/agent/runs';
+// 造 1 个合法 draft（与生产资产同形）+ 1 个坏 JSON；路径全部在临时目录，不碰仓库资产
+Files.createDirectories(Pth.get(ASSETS));
+var good = {
+  datasetVersion: '1', id: 'production.alpha', domain: 'production', name: '甲', description: '临时 A',
+  status: 'draft', source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
+  model: { ref: 'models/production/model.json', modelVersion: '1' },
+  selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done'] },
+  grain: { description: '一天一机台', keys: ['bizDate', 'machine'] },
+  asserts: { fields: [{ name: 'bizDate', role: 'dim' }, { name: 'machine', role: 'dim' }, { name: 'planned', role: 'metric' }, { name: 'done', role: 'metric' }] },
+  validation: { samples: [], executions: [] }
+};
+wrote(ASSETS + '/alpha.json', JSON.stringify(good, null, 1));
+wrote(ASSETS + '/broken.json', '{ this is not json');
+
+// 以真实子进程跑工具（不把工具逻辑 load 进当前上下文，验证入口/退出码/contract 文件）
+function runTool(action, extra, dirOverride) {
+  var rid = 'asset_' + action + '_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
+  var out = RUNS + '/' + rid + '/assets.json';
+  var javaExe = System.getenv('FR_AGENT_JAVA') || 'D:/software/FineReport_11.0/jre/bin/java.exe';
+  var nashorn = System.getenv('FR_AGENT_NASHORN') || 'D:/software/FineReport_11.0/jre/lib/ext/nashorn.jar';
+  var argv = new (J('java.util.ArrayList'))();
+  [javaExe, '-cp', nashorn, 'jdk.nashorn.tools.Shell', ROOT + '/' + TOOL].forEach(function (x) { argv.add(x); });
+  var pb = new (J('java.lang.ProcessBuilder'))(argv);
+  pb.environment().put('FR_AGENT_HOME', ROOT);
+  pb.environment().put('AGENT_RUN_ID', rid);
+  pb.environment().put('AGENT_ASSETS_DIR', dirOverride || ASSETS);
+  pb.environment().put('AGENT_ASSETS_RUNS', RUNS);
+  pb.environment().put('AGENT_ASSETS_ACTION', action);
+  if (extra) Object.keys(extra).forEach(function (k) { pb.environment().put(k, String(extra[k])); });
+  pb.redirectErrorStream(true);
+  var p = pb.start();
+  var br = new (J('java.io.BufferedReader'))(new (J('java.io.InputStreamReader'))(p.getInputStream(), 'UTF-8'));
+  var stdout = [], line;
+  while ((line = br.readLine()) != null) stdout.push(String(line));
+  var rc = p.waitFor();
+  return { rc: rc, stdout: stdout.join('\n'), result: exists(out) ? jt(out) : null, rid: rid };
+}
+
+// ============================ 0. 工具入口存在（TDD 第一击） ============================
+check('工具入口存在：' + TOOL, exists(ROOT + '/' + TOOL));
+if (!exists(ROOT + '/' + TOOL)) { print('ASSETS D2.1 ABORT: 工具尚未实现'); J('java.lang.System').exit(1); }
+
+// ============================ 1. list ============================
+var r = runTool('list');
+check('list rc=0', r.rc === 0, 'rc=' + r.rc + ' stdout=' + r.stdout.slice(0, 200));
+check('list 合同行 ok=true 且带 runId', /"ok":true/.test(r.stdout) && r.stdout.indexOf(r.rid) >= 0, r.stdout.slice(0, 200));
+check('list 结果文件存在', !!r.result, r.stdout.slice(0, 200));
+if (r.result) {
+  check('list 输出 tool=assets/action=list', r.result.tool === 'assets' && r.result.action === 'list', JSON.stringify(r.result).slice(0, 200));
+  check('list 只收合法资产（broken.json 不混入）', (r.result.assets || []).length === 1 && (r.result.assets || [])[0].id === 'production.alpha', JSON.stringify(r.result.assets));
+  check('list 带路径/状态/domain（可直接交 Agent 选）', (r.result.assets || [])[0].relPath && (r.result.assets || [])[0].status === 'draft' && (r.result.assets || [])[0].domain === 'production');
+  check('list 报出坏 JSON 诊断但不因此失败', (r.result.diagnostics || []).some(function (d) { return d.code === 'UNREADABLE_JSON' && d.path.indexOf('broken.json') >= 0; }), JSON.stringify(r.result.diagnostics));
+  check('list 无 registry 错误（干净目录）', (r.result.registryErrors || []).length === 0, JSON.stringify(r.result.registryErrors));
+  check('list 明确 zeroEngine=true（不进 FR 实例锁）', r.result.zeroEngine === true);
+  check('list 未写资产目录（只读）', exists(ASSETS + '/alpha.json') && !exists(ASSETS + '/created_by_list.json'));
+}
+
+// ============================ 2. inspect ============================
+var ri = runTool('inspect', { AGENT_ASSETS_ID: 'production.alpha' });
+check('inspect rc=0', ri.rc === 0, 'rc=' + ri.rc + ' stdout=' + ri.stdout.slice(0, 200));
+check('inspect 结果完整（doc + audit + binding + columns + grainDrift）', !!ri.result && !!ri.result.doc && Array.isArray(ri.result.audit) && Array.isArray(ri.result.columns) && Array.isArray(ri.result.grainDrift), ri.stdout.slice(0, 220));
+if (ri.result) {
+  check('inspect doc.id 与请求一致', ri.result.doc.id === 'production.alpha');
+  check('inspect audit 零错（合法资产）', ri.result.audit.length === 0, JSON.stringify(ri.result.audit));
+  check('inspect 派生列来自 SqlBuilder（4 列，与 asserts 一致）', ri.result.columns.length === 4 && ri.result.columns[0].name === 'bizDate', JSON.stringify(ri.result.columns));
+  check('inspect grainDrift 零错（生产函数判定）', ri.result.grainDrift.length === 0, JSON.stringify(ri.result.grainDrift));
+  check('inspect 绑定零漂移', (ri.result.binding || []).length === 0, JSON.stringify(ri.result.binding));
+}
+var rmiss = runTool('inspect', { AGENT_ASSETS_ID: 'production.nope' });
+check('负控·inspect 不存在 id → rc=1 + 明确错误 + nextActions', rmiss.rc === 1 && !!rmiss.result && rmiss.result.ok === false && (rmiss.result.nextActions || []).length > 0,
+  'rc=' + rmiss.rc + ' out=' + JSON.stringify(rmiss.result).slice(0, 200));
+var rno = runTool('inspect', {});
+check('负控·inspect 缺 id → rc=2（用法）', rno.rc === 2 && !!rno.result && rno.result.ok === false, 'rc=' + rno.rc + ' out=' + JSON.stringify(rno.result).slice(0, 200));
+
+// ============================ 3. registry.errors fail-closed（重复 ID） ============================
+var dup = JSON.parse(JSON.stringify(good));
+wrote(ASSETS + '/alpha_duplicate.json', JSON.stringify(dup, null, 1));
+var rd = runTool('list');
+check('负控·重复 ID 时 list rc=1（不再"报着继续用"）', rd.rc === 1, 'rc=' + rd.rc + ' stdout=' + rd.stdout.slice(0, 200));
+check('负控·重复 ID 时结果带 DUPLICATE_ID 与 nextActions', !!rd.result && rd.result.ok === false && (rd.result.registryErrors || []).some(function (e) { return String(e).indexOf('DUPLICATE_ID') >= 0; }) && (rd.result.nextActions || []).length > 0,
+  JSON.stringify(rd.result).slice(0, 220));
+var rdi = runTool('inspect', { AGENT_ASSETS_ID: 'production.alpha' });
+check('负控·重复 ID 时 inspect 同样 fail-closed', rdi.rc === 1 && !!rdi.result && rdi.result.ok === false, 'rc=' + rdi.rc);
+try { Files.delete(Pth.get(ASSETS + '/alpha_duplicate.json')); } catch (eD) { }
+var rrestored = runTool('list');
+check('删除重复后恢复 rc=0（故障可逆）', rrestored.rc === 0, 'rc=' + rrestored.rc);
+
+// ============================ 4. 注册表错误之外的边界 ============================
+// 4a. 文件名与 id 不符（路径身份绑定；此前工具用 id 反推路径会短路这条，现已传真实发现路径）
+var misnamed = JSON.parse(JSON.stringify(good)); misnamed.id = 'production.gamma';   // 唯一 id（不触发重复门），但文件名放成 wrongname.json
+wrote(ASSETS + '/wrongname.json', JSON.stringify(misnamed, null, 1));
+var rmis = runTool('list');
+check('负控·文件名与 id 不符 → 契约诊断含 PATH_ID_MISMATCH', rmis.rc === 0 && (rmis.result.diagnostics || []).some(function (d) {
+  return d.code === 'CONTRACT_AUDIT_FAILED' && String(d.message).indexOf('PATH_ID_MISMATCH') >= 0;
+}), JSON.stringify(rmis.result && rmis.result.diagnostics).slice(0, 240));
+try { Files.delete(Pth.get(ASSETS + '/wrongname.json')); } catch (eW) { }
+var badKey = JSON.parse(JSON.stringify(good)); badKey.id = '../escape'; badKey.domain = 'production';
+wrote(ASSETS + '/badkey.json', JSON.stringify(badKey, null, 1));
+var rb = runTool('list');
+check('负控·非法 id/路径身份被诊断（不静默入索引）', rb.rc === 0 && (rb.result.diagnostics || []).some(function (d) { return d.path.indexOf('badkey.json') >= 0; }), JSON.stringify(rb.result && rb.result.diagnostics).slice(0, 220));
+check('负控·非法 id 不出现在 list 资产清单', !(rb.result.assets || []).some(function (a) { return a.id === '../escape'; }), JSON.stringify(rb.result && rb.result.assets));
+try { Files.delete(Pth.get(ASSETS + '/badkey.json')); } catch (eB) { }
+
+// ============================ 5. 边界纪律 ============================
+check('本套件已登记进 fast 聚合门（run-fast-tests）',
+  read(ROOT + '/scripts/run-fast-tests.ps1').indexOf('fast_assets_read.js') >= 0);
+// 递归根若指向 models/，模型本体 model.json 不得被当数据集候选（此前会误报 BAD_ID）
+(function () {
+  var parent = TMP + '/models/production';
+  try { Files.createDirectories(Pth.get(parent)); } catch (e) { }
+  wrote(parent + '/model.json', JSON.stringify({ modelVersion: '1', domain: 'x', entities: [] }));
+  var saved = System.getenv('AGENT_ASSETS_DIR');
+  var r2 = runToolAt(TMP + '/models', 'list');
+  try { Files.delete(Pth.get(parent + '/model.json')); } catch (eD) { }
+  check('回归·model.json 在 models/ 根下不被当数据集（不报 BAD_ID/UNREADABLE）',
+    r2.rc === 0 && !(r2.result.assets || []).some(function (a) { return a.relPath.indexOf('model.json') >= 0; }) &&
+    !(r2.result.diagnostics || []).some(function (d) { return d.path.indexOf('model.json') >= 0; }),
+    JSON.stringify(r2.result && r2.result.diagnostics).slice(0, 200));
+})();
+
+check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
+check('assets.js 不自己实现原子写（D2.1 只读）', !/atomicWriteUtf|ATOMIC_MOVE/.test(read(ROOT + '/' + TOOL)));
+check('assets.js 复用 _lib.js 与 DatasetDef/Registry',
+  read(ROOT + '/' + TOOL).indexOf("_lib.js") >= 0 && read(ROOT + '/' + TOOL).indexOf("dataset/definition.js") >= 0 && read(ROOT + '/' + TOOL).indexOf("dataset/registry.js") >= 0);
+
+print('ASSETS D2.1 END, failures=' + FAILS);
+J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

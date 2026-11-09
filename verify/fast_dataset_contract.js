@@ -239,6 +239,12 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('负控·draft 也不得藏垃圾证据（不给"以后再说"留缝）', hasCode(DatasetDef.audit(bad, ASSET), 'EVIDENCE_SHAPE', 'validation.samples[0]'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
   bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: 'yesterday-ish' })] };
   check('负控·非 ISO 时间戳证据被拒', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_BAD_AT_FORMAT'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: '2026-99-99T12:00:00Z' })] };
+  check('负控·日历无效日期（2026-99-99）被拒（审查轮 P2：不止查形状）', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_BAD_AT_FORMAT'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: '2026-11-09T29:80:00Z' })] };
+  check('负控·无效时分（29:80）被拒', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_BAD_AT_FORMAT'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: '2026-11-09' })] };
+  check('正控·纯日期（无时间）仍是合法 ISO 形态', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
   bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [], executions: [boundEntry()] };
   check('正控·空数组不影响判定（另一数组有真证据即成立）', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
   bad = clone(ds); bad.status = 'published'; bad.validation = { samples: [boundEntry()] }; bad.review = { by: '业务负责人', at: '2026-11-09' };

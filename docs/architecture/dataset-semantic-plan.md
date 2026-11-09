@@ -144,6 +144,7 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读�
 | **D0** | 契约冻结：ADR + 1 个真资产 + 可运行验证器 | `verify/fast_dataset_contract.js` failures=0；4 项故障注入必红；已登记聚合门；旧 spec 兼容断言过 | ✅ **完成（2026-11-09）** |
 | **D1** | `semantic/dataset/{definition,registry}.js`（IO 归工具层）+ 套件改为消费生产契约件 | 78 项 failures=0；5 项故障注入全红还原即绿；`lib/*`/`make_api.js`/Runtime 零改动 | ✅ **完成（2026-11-09）** |
 | **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | ①合法草稿可建 ②非法资产拒写 ③validate 产真实证据非自报 ④无业务确认不能发布 ⑤重复 id/路径不符/版本漂移必拒 ⑥不进 FR 引擎锁 | ⬜ 下一步 |
+| **D2.1** | `assets list/inspect`（零引擎只读，递归扫 models/*/*/datasets） | 隔离套件 32 项 + 真实 CLI（list/inspect/未实现 action 拒）+ 重复 ID 注入 fail-closed；`model.json` 不被当数据集；`lib/*` 未动 | ✅ 完成（2026-11-09） |
 | **D1.6** | 收口轮：`validated` 混合无效证据漏洞（+ draft 不得藏垃圾、`at` 须 ISO） | 契约套件 **109 项**；混合证据注入 8 项红、还原即绿；**D1 就此冻结** | ✅ 完成（2026-11-09） |
 | **D1.5** | 审查轮收尾（证据绑定、reportScope 白名单、metrics 必填、grainDrift、registry 原型安全） | 契约套件 103 项 + 注入 3 连全红；`==` 双类型一致有测试钉住 | ✅ 完成（2026-11-09） |
 | **D3** | Dataset Resolver 接 Planner/ReportSpec + 版本绑定 | 同一 Dataset 被 2 张报表复用，生成的 FR 数据集正确；渲染门全绿 | ⬜ |

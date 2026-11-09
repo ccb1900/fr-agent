@@ -13,7 +13,9 @@ var DatasetDef = (function () {
   var FIELD_ROLES = { dim: 1, metric: 1, derived: 1 };           // 与 sqlbuilder.js:165-166 role 同集
   var REF_KEYS = { term: 1, label: 1, widthPt: 1 };               // 与 spec_validator.js:73 REF_KEYS 同集
   var ID_RE = /^[a-z][a-z0-9_]{1,40}\.[a-z][a-z0-9_]{1,60}$/;
-  var ISO_AT_RE = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;   // 证据时间戳形态（D2 由工具层统一生成）
+  // ISO 形态：月 01-12 日 01-31 时 00-23 分秒 00-59；拒 2026-99-99 / 29:80（形状对但日历错，审查轮 P2）。
+  //   不引日期库、不做闰年/大小月精细校验——D2 由 java 生成标准戳，这里只是入参防御。
+  var ISO_AT_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])([T ]([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z|[+-]([01]\d|2[0-3]):?[0-5]\d)?)?$/;
 
   function hasOwn(o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
