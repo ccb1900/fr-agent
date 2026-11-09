@@ -284,9 +284,10 @@ if (action === 'publish') {
   var pBind = DatasetDef.bindDrift(pDoc, model);
   var pEvProb = DatasetDef.evidenceProblems(pDoc);
   var pBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(pDoc));
-  var pGrain = (pBuilt.errors || []).length ? [] : DatasetDef.grainDrift(pDoc, pBuilt.groupDims || []);
-  if (pAudit.length || pBind.length || pEvProb.length || pGrain.length)
-    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb, pGrain).join(', '),
+  var pBuiltErrs = (pBuilt.errors || []).map(function (x) { return x.code + '@' + x.path; });
+  var pGrain = pBuiltErrs.length ? [] : DatasetDef.grainDrift(pDoc, pBuilt.groupDims || []);
+  if (pAudit.length || pBind.length || pEvProb.length || pGrain.length || pBuiltErrs.length)
+    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb, pGrain, pBuiltErrs).join(', '),
       ['fix contract violations and evidence issues before publishing'], { diagnostics: diagnostics });
   if (!(isObj(pDoc.review) && isStr(pDoc.review.by) && pDoc.review.by && isStr(pDoc.review.at) && pDoc.review.at))
     bail('PUBLISHED_WITHOUT_REVIEW', 'business review missing (review.by + review.at must be set by a human)',

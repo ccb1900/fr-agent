@@ -14,9 +14,11 @@ var DatasetResolver = (function () {
     if (!hit) return { ok: false, errors: ['DATASET_NOT_FOUND@' + ref] };
     if (hit.doc.status !== 'published')
       return { ok: false, errors: ['NOT_PUBLISHED@' + ref + ' (status=' + hit.doc.status + ')'] };
+    if (!isObj(hit.doc.model) || !isStr(hit.doc.model.modelVersion))
+      return { ok: false, errors: ['BAD_MODEL_REF@' + ref + ' (doc.model missing or modelVersion empty)'] };
     var problems = DatasetDef.scopeProblems(reportScope);
     if (problems.length) return { ok: false, errors: problems };
-    if (model && isObj(hit.doc.model) && hit.doc.model.modelVersion !== model.modelVersion)
+    if (model && hit.doc.model.modelVersion !== model.modelVersion)
       return { ok: false, errors: ['MODEL_VERSION_MISMATCH@' + ref + ' (dataset expects ' + hit.doc.model.modelVersion + ', model is ' + model.modelVersion + ')'] };
     var dataset = DatasetDef.toReportDataset(hit.doc, reportScope);
     return {
@@ -27,6 +29,7 @@ var DatasetResolver = (function () {
   }
 
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+  function isStr(v) { return typeof v === 'string'; }
 
   return { resolve: resolve };
 })();
