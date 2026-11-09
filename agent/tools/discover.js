@@ -16,11 +16,26 @@ var model = JSON.parse(readUtf('models/production/model.json'));
 var schemaName = 'schema_' + (model.source || 'atom_live_demo') + '.json';
 var schema = JSON.parse(readUtf('data/' + schemaName));
 
+// S1：扫描 models/ 下所有含 model.json 的子目录 = 可用域清单（当前可能只有 production）
+var availableDomains = [];
+try {
+  var mds = Files.newDirectoryStream(Pth.get(ROOT + '/models'));
+  try { var mit = mds.iterator(); while (mit.hasNext()) {
+    var md = mit.next();
+    if (!Files.isDirectory(md)) continue;
+    var dn = String(md.getFileName());
+    if (dn.charAt(0) === '.') continue;
+    if (Files.exists(Pth.get(ROOT + '/models/' + dn + '/model.json'))) availableDomains.push(dn);
+  } } finally { try { mds.close(); } catch (eC) { } }
+  availableDomains.sort();
+} catch (eD) { }
+
 var safeCards = ModelVocab.JOIN_SAFE_CARDINALITY || {};
 var manifest = CapabilityManifest.build();
 var out = {
   tool: 'discover', runId: runId, schemaSource: model.source, schemaTables: (schema.tables || []).length,
   modelVersion: model.modelVersion, domain: model.domain,
+  availableDomains: availableDomains,   // S1：多域发现（当前可能只有 production）
   entities: (model.entities || []).map(function (e) {
     return { name: e.name, label: e.label, table: e.table, key: e.key || [], properties: (e.properties || []).map(function (p) { return { name: p.name, label: p.label, column: p.column, type: p.type }; }) };
   }),

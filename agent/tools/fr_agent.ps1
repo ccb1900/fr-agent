@@ -15,7 +15,7 @@
 #   P2-1 a RunId is registered CREATE-NEW - an explicit duplicate is refused (RUNID_EXISTS), no artifact cross-pollution.
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
-  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets')][string]$Verb,
+  [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets', 'semantic')][string]$Verb,
   [ValidateSet('list', 'inspect', 'create', 'validate', 'publish')][string]$Action = 'list',
   [string]$Spec = '',
   [string]$Patch = '',
@@ -27,6 +27,7 @@ param(
   [string]$Target = '',
   [string]$Sample = '',
   [string]$Doc = '',
+  [string]$Domain = '',
   [string]$RunId = ''
 )
 $ErrorActionPreference = 'Continue'
@@ -359,6 +360,20 @@ switch ($inner) {
     Remove-Item env:AGENT_ASSETS_DOC -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
+    exit $rc
+  }
+  'semantic' {
+    # S2 Semantic model read-only management (list/inspect). Zero engine, no mutex.
+    if ($Action -ne 'list' -and $Action -ne 'inspect') { Write-Output ('{"ok":false,"error":"semantic -Action ' + $Action + ' not implemented (S2 = list/inspect only)","nextActions":["use -Action list or -Action inspect"]}'); Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+    $env:AGENT_SEMANTIC_ACTION = $Action
+    if ($Domain) { $env:AGENT_SEMANTIC_DOMAIN = $Domain }
+    if ($Target) { $env:AGENT_SEMANTIC_DOMAIN = $Target }   # -Target alias (same as inspect_template)
+    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/semantic.js')
+    $rc = $LASTEXITCODE
+    Remove-Item env:AGENT_SEMANTIC_ACTION -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_SEMANTIC_DOMAIN -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+    Emit ($rc -eq 0) "logs/agent/runs/$RunId/semantic.json"
     exit $rc
   }
   'inspect_template' {

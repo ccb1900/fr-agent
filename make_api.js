@@ -99,6 +99,37 @@ try {
     var rsText = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(specPath))), 'UTF-8')).replace(/^\uFEFF/, '');
     var rs = null;
     try { rs = JSON.parse(rsText); } catch (eJson) { throw new Error('REPORTSPEC JSON parse failed: ' + eJson); }
+    // D3 Dataset Resolver：dataset.kind='catalog' → 读已发布 Dataset 资产 → 替换为 kind:'sql' → 后续链路不变。
+    //   只在此处做前置变换；SpecValidator/SpecCompiler 不感知 catalog。不带 ref 的 spec 走原路径零变化。
+    if (rs.dataset && rs.dataset.kind === 'catalog' && rs.dataset.ref) {
+      load(Paths.semantic('model/vocab.js'));
+      load(Paths.semantic('dataset/definition.js'));
+      load(Paths.semantic('dataset/registry.js'));
+      load(Paths.semantic('dataset/resolver.js'));
+      var JF = J('java.nio.file.Files'), JP = J('java.nio.file.Paths');
+      var catModelPath = J('java.lang.System').getenv('SCHEMA_MODEL') || 'models/production/model.json';
+      var catModel = JSON.parse(String(new (J('java.lang.String'))(JF.readAllBytes(JP.get(Paths.spec(catModelPath))), 'UTF-8')));
+      var catEntries = [];
+      (function walkDatasets(dir) {
+        var dsStream; try { dsStream = JF.newDirectoryStream(JP.get(dir), '*.json'); } catch (e) { return; }
+        try { var it = dsStream.iterator(); while (it.hasNext()) {
+          var f = it.next(); var doc = null;
+          try { doc = JSON.parse(String(new (J('java.lang.String'))(JF.readAllBytes(f), 'UTF-8'))); } catch (eJ) { }
+          if (doc && typeof doc === 'object' && !Array.isArray(doc)) catEntries.push({ relPath: String(f).replace(/\\/g, '/'), doc: doc });
+        } } finally { try { dsStream.close(); } catch (eC) { } }
+      })(Paths.root + '/models/production/datasets');
+      var catReg = DatasetRegistry.build(catEntries);
+      var catScope = {}; ['dateRange', 'sort', 'topN'].forEach(function (k) { if (rs.dataset[k] != null) catScope[k] = rs.dataset[k]; });
+      var resolved = DatasetResolver.resolve(catReg, rs.dataset.ref, catScope, catModel);
+      if (!resolved.ok) {
+        resolved.errors.forEach(function (e) { stamp('DATASET RESOLVE ISSUE: ' + e); RR.diag('DATASET RESOLVE ISSUE: ' + e); });
+        RR.fail('input_load'); stamp('DATASET RESOLVE FAILED: refusing to compile from unresolved catalog ref'); finishRun(2);
+      }
+      rs.dataset = resolved.dataset;
+      rs._datasetRef = resolved.datasetRef;   // 版本绑定：记入 compile.json/artifact.json（D3.2/S4）
+      stamp('DATASET RESOLVED: ' + resolved.datasetRef.id + ' v' + resolved.datasetRef.version + ' → kind:sql');
+      RR.diag('DATASET_REF: ' + JSON.stringify(resolved.datasetRef));   // D3.2/S4：版本绑定记入 runresult.json
+    }
     var rsErrs = SpecValidator.validate(rs);
     if (rsErrs.length) {
       rsErrs.forEach(function (e) { var t = irErrText(e); stamp('SPEC ISSUE: ' + t); RR.diag('SPEC ISSUE: ' + t); });
