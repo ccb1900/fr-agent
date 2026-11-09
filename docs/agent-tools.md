@@ -1,5 +1,8 @@
 # fr-agent Tool API（外部 Agent 调用契约，r7-B）
 
+> **官方 Agent 使用入口（2026-11-09）：`.agents/skills/finereport/`**。它把本文件的工具契约组织成创建/修改/能力咨询三条工作流，含铁律、错误面与真实样例；外部 Agent 应优先按该 Skill 驱动本 Tool API。Skill 与本文冲突时以代码和 `discover` 的机器输出为准。
+> 本文的 r12 / r13 段（队列、OwnerToken、current.json）是 **r13/r14 历史档案**，现行 Runtime 协议见 §r15 薄执行器、`docs/architecture/runtime-supervisor.md` 与 AGENTS §N；不要按历史段实施。
+
 > 目的：让**现成 AI Agent** 通过稳定业务接口使用 fr-agent 的能力，而不是直接操作 Java 对象、CPT XML 或任意 SQL。
 > Agent 负责理解需求、追问、规划；fr-agent 负责语义约束、编译、修改、执行验证与产物交付。
 
