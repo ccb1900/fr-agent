@@ -26,10 +26,14 @@ function wrote(p, text) {
 }
 
 var TOOL = 'agent/tools/assets.js';
-function runToolAt(dir, action) { return runTool(action, null, dir); }
-var TMP = System.getenv('AGENT_ASSETS_TEST_TMP') || (System.getProperty('java.io.tmpdir').replace(/\\/g, '/') + '/fr_assets_d21');
+function runToolAt(dir, action) { return runTool(action, null, dir); }   // dir=资产根（models 层）
+// 每次跑用独立临时目录（UUID 后缀），不依赖上轮清理成功——Windows 下文件锁/残留会让递归删不可靠
+var TMP = System.getProperty('java.io.tmpdir').replace(/\\/g, '/') + '/fr_assets_' +
+  J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 12);
 var ASSETS = TMP + '/models/production/datasets';
+var MODELS_ROOT = TMP + '/models';
 var RUNS = TMP + '/logs/agent/runs';
+load(ROOT + '/semantic/dataset/definition.js');   // create round-trip 审计用
 // 造 1 个合法 draft（与生产资产同形）+ 1 个坏 JSON；路径全部在临时目录，不碰仓库资产
 Files.createDirectories(Pth.get(ASSETS));
 var good = {
@@ -55,7 +59,7 @@ function runTool(action, extra, dirOverride) {
   var pb = new (J('java.lang.ProcessBuilder'))(argv);
   pb.environment().put('FR_AGENT_HOME', ROOT);
   pb.environment().put('AGENT_RUN_ID', rid);
-  pb.environment().put('AGENT_ASSETS_DIR', dirOverride || ASSETS);
+  pb.environment().put('AGENT_ASSETS_DIR', dirOverride || MODELS_ROOT);
   pb.environment().put('AGENT_ASSETS_RUNS', RUNS);
   pb.environment().put('AGENT_ASSETS_ACTION', action);
   if (extra) Object.keys(extra).forEach(function (k) { pb.environment().put(k, String(extra[k])); });
@@ -134,6 +138,50 @@ check('负控·非法 id 不出现在 list 资产清单', !(rb.result.assets || 
 try { Files.delete(Pth.get(ASSETS + '/badkey.json')); } catch (eB) { }
 
 // ============================ 5. 边界纪律 ============================
+// ============================ 4b. create（D2.2：只能产 draft；非法拒写；不覆盖） ============================
+function writeDoc(o) { wrote(TMP + '/docs/doc.json', JSON.stringify(o, null, 1)); return TMP + '/docs/doc.json'; }
+function mkDraft(over) {
+  var d = JSON.parse(JSON.stringify(good));
+  d.id = 'production.beta'; d.name = '乙'; d.description = '临时 B（D2.2 create 测试）';
+  if (over) Object.keys(over).forEach(function (k) { d[k] = over[k]; });
+  return d;
+}
+var rc1 = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft()) });
+check('create·合法草稿 rc=0', rc1.rc === 0, 'rc=' + rc1.rc + ' out=' + JSON.stringify(rc1.result).slice(0, 200));
+check('create·文件落在 id 推导路径且状态强制 draft', exists(ASSETS + '/beta.json') && jt(ASSETS + '/beta.json').status === 'draft', exists(ASSETS + '/beta.json') ? jt(ASSETS + '/beta.json').status : 'missing');
+check('create·round-trip 重读审计零错', DatasetDef.audit(jt(ASSETS + '/beta.json'), 'models/production/datasets/beta.json').length === 0);
+check('create·调用方给 published 也被强制降为 draft（只产草稿，独立 id）', (function () {
+  var r = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ id: 'production.epsilon', status: 'published', review: { by: 'x', at: '2026-11-10' } })) });
+  return r.rc === 0 && exists(ASSETS + '/epsilon.json') && jt(ASSETS + '/epsilon.json').status === 'draft';
+})());
+check('create·同 id 二次创建 → 拒且原文件不被覆盖', (function () {
+  var before = read(ASSETS + '/beta.json');
+  var r = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ description: '覆盖尝试' })) });
+  return r.rc === 1 && r.result && r.result.ok === false && (r.result.error || {}).code === 'ASSET_ALREADY_EXISTS' && read(ASSETS + '/beta.json') === before;
+})(), (rc1.result || {}).error && JSON.stringify(rc1.result.error));
+check('create·幽灵指标（契约不合格）→ 拒且不落盘', (function () {
+  var r = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({
+    id: 'production.gamma',
+    selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'ghostMetric'] }
+  })) });
+  return r.rc === 1 && !exists(ASSETS + '/gamma.json') && JSON.stringify(r.result).indexOf('UNKNOWN_REF') >= 0;
+})());
+check('create·asserts 与派生不符 → 拒', (function () {
+  var r = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ id: 'production.delta', asserts: { fields: [{ name: 'wrongCol', role: 'metric' }] } })) });
+  return r.rc === 1 && !exists(ASSETS + '/delta.json');
+})());
+check('负控·create 文档坏 JSON → rc=2', (function () {
+  wrote(TMP + '/docs/bad.json', '{ nope');
+  var r = runTool('create', { AGENT_ASSETS_DOC: TMP + '/docs/bad.json' });
+  return r.rc === 2;
+})());
+check('负控·create 缺 DOC 参数 → rc=2', runTool('create', {}).rc === 2);
+check('create·成功后 list 能看到（联动）', (function () {
+  var r = runTool('list');
+  return r.rc === 0 && (r.result.assets || []).some(function (a) { return a.id === 'production.beta'; });
+})());
+check('create·ghostMetric 拒绝后 gamma.json 确实不存在（无半截写入）', !exists(ASSETS + '/gamma.json') && !exists(ASSETS + '/delta.json'));
+
 check('本套件已登记进 fast 聚合门（run-fast-tests）',
   read(ROOT + '/scripts/run-fast-tests.ps1').indexOf('fast_assets_read.js') >= 0);
 // 递归根若指向 models/，模型本体 model.json 不得被当数据集候选（此前会误报 BAD_ID）
@@ -151,7 +199,8 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
 })();
 
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
-check('assets.js 不自己实现原子写（D2.1 只读）', !/atomicWriteUtf|ATOMIC_MOVE/.test(read(ROOT + '/' + TOOL)));
+check('assets.js 不自造原子写（写路径必须来自 _lib.js 的 atomicWriteUtf）',
+  !/ATOMIC_MOVE|createTempFile/.test(read(ROOT + '/' + TOOL)) && read(ROOT + '/' + TOOL).indexOf('writeJson') >= 0);
 check('assets.js 复用 _lib.js 与 DatasetDef/Registry',
   read(ROOT + '/' + TOOL).indexOf("_lib.js") >= 0 && read(ROOT + '/' + TOOL).indexOf("dataset/definition.js") >= 0 && read(ROOT + '/' + TOOL).indexOf("dataset/registry.js") >= 0);
 

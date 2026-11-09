@@ -132,6 +132,55 @@ if (action === 'list') {
   finish(0, base);
 }
 
+if (action === 'create') {
+  // D2.2 硬约束②：create 只能产 draft——调用方给 published/validated 一律强制降级，review 字段剔除
+  //   （review 是业务确认的语义，工具自填=伪造确认；证据留 D2.3 validate 生成）
+  var docPath = genv('AGENT_ASSETS_DOC');
+  if (!docPath) bail('ASSETS_USAGE', 'AGENT_ASSETS_DOC required for create (path to an asset JSON file)',
+    ['write the asset JSON (contract: docs/architecture/dataset-contract.md)', 'fr_agent.ps1 -Verb assets -Action create -Doc <file>']);
+  if (!model) bail('MODEL_UNAVAILABLE', 'models/production/model.json unreadable; create needs it for binding + derived columns',
+    ['run -Verb discover first; fix the model file']);
+  var doc = tryJson(absOf(docPath));
+  if (!doc || typeof doc !== 'object' || Array.isArray(doc)) bail('ASSETS_USAGE', 'asset doc unreadable / not a JSON object: ' + docPath,
+    ['check the file exists and is valid UTF-8 JSON']);
+  if (typeof doc.id !== 'string' || !DatasetDef.ID_RE.test(doc.id) || !doc.domain)
+    bail('ASSET_DOC_INVALID', 'doc.id outside ' + DatasetDef.ID_RE + ' or doc.domain missing', ['run assets -Action list for id shape examples'], { requestedId: doc.id || null });
+  var exp = DatasetDef.expectedPath(doc);                          // models/<domain>/datasets/<name>.json
+  var tail = exp ? exp.slice('models/'.length) : null;             // <domain>/datasets/<name>.json
+  if (!tail) bail('ASSET_DOC_INVALID', 'cannot derive target path from id: ' + doc.id);
+  if (String(assetsDir).replace(/[\\/]+$/, '').slice(-'models'.length) !== 'models')
+    bail('ASSETS_USAGE', 'AGENT_ASSETS_DIR must end with /models (asset home), got: ' + assetsDir);
+  var target = assetsDir + '/' + tail;
+  if (exists(target)) bail('ASSET_ALREADY_EXISTS', 'refusing to overwrite: ' + target,
+    ['inspect the existing asset', 'use a new id for a new dataset'], { requestedId: doc.id, target: target });
+  doc.status = 'draft';
+  if (doc.review != null) delete doc.review;
+  if (doc.validation != null) delete doc.validation;
+  var audit = DatasetDef.audit(doc, exp);
+  var binding = DatasetDef.bindDrift(doc, model);
+  if (audit.length || binding.length) {
+    diagnostics.push({ code: 'CONTRACT_AUDIT_FAILED', path: exp, message: audit.concat(binding).join(', ') });
+    bail('CONTRACT_AUDIT_FAILED', audit.concat(binding).join(', '),
+      ['fix the listed contract violations', 'run assets -Action list for id/status examples'], { diagnostics: diagnostics });
+  }
+  var built = SqlBuilder.build(model, DatasetDef.selectionArgs(doc));
+  if ((built.errors || []).length) bail('SQL_BUILD_FAILED', built.errors.map(function (x) { return x.code + '@' + x.path; }).join(', '),
+    ['fix selection terms against the model'], { diagnostics: diagnostics });
+  var am = DatasetDef.assertsMatch(doc, DatasetDef.columnsOf(built));
+  if (am.length) bail('ASSERTED_FIELDS_MISMATCH', am.join(', '),
+    ['asserts.fields must equal the derived columns exactly (name+role, same order)', 'or drop asserts.fields'], { diagnostics: diagnostics });
+  writeJson(target, doc);                                          // 原子写：复用 _lib.js（不自造写路径）
+  var back = tryJson(target);
+  var reAudit = (back && typeof back === 'object') ? DatasetDef.audit(back, exp) : ['UNREADABLE@' + target];
+  if (reAudit.length) bail('WRITE_ROUNDTRIP_FAILED', reAudit.join(', '),
+    ['inspect the written file manually; this is a tool defect, not a caller error'], { diagnostics: diagnostics });
+  base.created = exp;
+  base.status = doc.status;
+  base.audit = [];
+  base.nextActions = ['assets -Action validate (D2.3) to generate real data evidence', 'assets -Action publish (D2.4) after evidence + review'];
+  finish(0, base);
+}
+
 if (action === 'inspect') {
   var id = genv('AGENT_ASSETS_ID');
   if (!id) bail('ASSETS_USAGE', 'AGENT_ASSETS_ID required for inspect', ['fr_agent.ps1 -Verb assets -Action inspect -Target <datasetId>']);

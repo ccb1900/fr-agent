@@ -26,6 +26,7 @@ param(
   [string]$ExpectTotals = '',
   [string]$Target = '',
   [string]$Sample = '',
+  [string]$Doc = '',
   [string]$RunId = ''
 )
 $ErrorActionPreference = 'Continue'
@@ -340,9 +341,9 @@ switch ($inner) {
     exit $rc
   }
   'assets' {
-    # D2.1 read-only asset management (list/inspect). Zero engine, no FineReport mutex: pure file reads
-    #   over models/*/datasets + the pure DatasetDef/DatasetRegistry/SqlBuilder functions. create/validate/
-    #   publish are D2.2+ and deliberately refused here (no half-wired write path).
+    # D2.1 read-only (list/inspect) + D2.2 create. Zero engine, no FineReport mutex: pure file reads/writes
+    #   over models/*/datasets + the pure DatasetDef/DatasetRegistry/SqlBuilder functions. validate/publish
+    #   are D2.3+ and deliberately refused here (no half-wired path).
     if ($Action -eq 'list' -or $Action -eq 'inspect') {
       $env:AGENT_ASSETS_ACTION = $Action
       if ($Target) { $env:AGENT_ASSETS_ID = $Target }
@@ -354,7 +355,19 @@ switch ($inner) {
       Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
       exit $rc
     }
-    Write-Output ('{"ok":false,"error":"assets -Action ' + $Action + ' not implemented until D2.2+ (D2.1 = list/inspect only)","nextActions":["use -Action list or -Action inspect"]}')
+    if ($Action -eq 'create') {
+      if (-not $Doc) { Write-Output '{"ok":false,"error":"-Doc required for assets -Action create (path to an asset JSON file)","nextActions":["write the asset JSON per docs/architecture/dataset-contract.md","fr_agent.ps1 -Verb assets -Action create -Doc <file>"]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+      $env:AGENT_ASSETS_ACTION = 'create'
+      $env:AGENT_ASSETS_DOC = $Doc
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/assets.js')
+      $rc = $LASTEXITCODE
+      Remove-Item env:AGENT_ASSETS_ACTION -ErrorAction SilentlyContinue
+      Remove-Item env:AGENT_ASSETS_DOC -ErrorAction SilentlyContinue
+      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
+      Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
+      exit $rc
+    }
+    Write-Output ('{"ok":false,"error":"assets -Action ' + $Action + ' not implemented until D2.3+ (validate/publish pending)","nextActions":["use -Action list, -Action inspect or -Action create"]}')
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     exit 2
   }
