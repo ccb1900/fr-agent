@@ -153,7 +153,10 @@ var SqlBuilder = (function () {
           if (!SAFE_TOKEN.test(v) && !CN_TOKEN.test(v)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符: ' + v); return; }
           where.push(qualCol + " LIKE '%" + v + "%'");
         } else {
-          var sqlOp2 = OP_SQL[rawOp];
+          // I5.4 复审（2026-11-09）：文本列白名单=|=|!=|like——与报错文案一致收紧。
+          //   此前文案说"只允许 =|!=|like"，OP_SQL 却放行 >/< >= <=（字符串比较，语义歧义）。
+          //   影响面实证：examples/verify 全量 0 处文本比较 filter（仅 daily_filtered 用 like），收紧零破坏。
+          var sqlOp2 = hasOwn({ '=': 1, '==': 1, '!=': 1 }, String(rawOp)) ? OP_SQL[rawOp] : null;
           if (!sqlOp2) { E(errs, 'INVALID_ENUM', fp + '.op', '文本列 filter 只允许 =|!=|like，收到: ' + rawOp); return; }
           var v2 = String(fl.value == null ? '' : fl.value);
           if (!SAFE_TOKEN.test(v2) && !CN_TOKEN.test(v2)) { E(errs, 'INVALID_TYPE', fp + '.value', '文本 filter 值含非法字符: ' + v2); return; }

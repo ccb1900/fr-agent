@@ -57,7 +57,8 @@ check('契约件零 Java 依赖（R7b 语义层红线）',
 check('契约件不触 FR 后端/激活链（R7a）', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(src('semantic/dataset/definition.js') + src('semantic/dataset/registry.js')));
 check('契约件不引 IO（IO 归工具层，ADR §7）', !/java\.nio|Files\.|readAllBytes/.test(src('semantic/dataset/definition.js') + src('semantic/dataset/registry.js')));
 check('契约选择键 ⊆ ReportSpec sql 白名单（−报表级−query）',
-  ['entity', 'dimensions', 'metrics', 'filters'].every(function (k) { return DatasetDef.SELECTION_KEYS[k]; }) &&
+  ['entity', 'dimensions', 'metrics', 'filters'].every(function (k) { return DatasetDef.SELECTION_KEYS[k]; }) &&   // 每个键都另有正/负控，防"词表写了没测"
+
   ['dateRange', 'sort', 'topN'].every(function (k) { return DatasetDef.REPORT_SCOPE_KEYS[k] && !DatasetDef.SELECTION_KEYS[k]; }));
 
 // ============================ 1. 资产在位 + 自一致（由生产契约件判定） ============================
@@ -97,7 +98,8 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('registry 索引零错误', reg.errors.length === 0, JSON.stringify(reg.errors));
   check('registry resolve(id) 命中且带回路径', !!reg.resolve(ds.id) && reg.resolve(ds.id).relPath === ASSET);
   check('registry domains 含 production', reg.domains().indexOf('production') >= 0, JSON.stringify(reg.domains()));
-  check('registry byStatus(validated) 命中 1', reg.byStatus('production', 'validated').length === 1);
+  check('registry byStatus(draft) 命中 1（资产如实为草稿）', reg.byStatus('production', 'draft').length === 1);
+  check('registry byStatus(validated) 为空（未做数据验证就不占这个词）', reg.byStatus('production', 'validated').length === 0);
   check('registry byStatus(published) 为空（不虚报已发布）', reg.byStatus('production', 'published').length === 0);
   var dup = DatasetRegistry.build([{ relPath: ASSET, doc: ds }, { relPath: 'models/production/datasets/other.json', doc: clone(ds) }]);
   check('registry 同 id 不静默覆盖（检出 DUPLICATE_ID）', hasCode(dup.errors, 'DUPLICATE_ID'), JSON.stringify(dup.errors));
@@ -185,6 +187,27 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   });
   check('抗炸·bindDrift/columnsOf/assertsMatch/selectionArgs 垃圾输入不抛',
     !throwsIt(function () { DatasetDef.bindDrift(null, null); DatasetDef.columnsOf(null); DatasetDef.assertsMatch(null, null); DatasetDef.selectionArgs({}); }));
+  check('资产如实为 draft（结构验证≠数据验证，不占 validated 这个词）', ds.status === 'draft' && DatasetDef.dataEvidence(ds).length === 0);
+  bad = clone(ds); bad.status = 'validated';
+  check('负控·validated 无数据证据即拒（阶梯不免费）', hasCode(DatasetDef.audit(bad, ASSET), 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: ['logs/agent/runs/x/sample.json'] };
+  check('正控·补数据证据后 validated 可成立', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.status = 'published'; bad.validation = { samples: ['logs/agent/runs/x/sample.json'] };
+  check('负控·published 缺业务确认仍拒（即使有数据证据）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_REVIEW', 'review'));
+  bad = clone(ds); bad.status = 'published'; bad.review = { by: '业务负责人', at: '2026-11-09' };
+  check('负控·published 缺数据证据亦拒（阶梯单调：published ⊇ validated）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation'));
+  bad = clone(ds); bad.validation = 'validated by me';
+  check('负控·validation 形状非法被拒', hasCode(DatasetDef.audit(bad, ASSET), 'BAD_VALIDATION', 'validation'));
+  // filters 是契约允许键：正负都测（否则删掉 SELECTION_KEYS.filters 也不会红）
+  bad = clone(ds); bad.selection.filters = [{ field: 'stage', op: 'like', value: 'L' }];
+  check('正控·filters 属合法选择键且可组合可消费',
+    DatasetDef.audit(bad, ASSET).length === 0 && SpecValidator.validate(toReportSpec(bad)).length === 0 && (buildOf(bad).errors || []).length === 0,
+    JSON.stringify(DatasetDef.audit(bad, ASSET)) + JSON.stringify(buildOf(bad).errors) + codesOf(SpecValidator.validate(toReportSpec(bad))).join(','));
+  check('正控·filters 真进 WHERE（不是被静默丢弃）', /LIKE/i.test(buildOf(bad).sql), buildOf(bad).sql.slice(0, 200));
+  bad = clone(ds); bad.selection.filters = [{ field: 'stage', op: '>=', value: 'L' }];
+  check('负控·非法 filter op 由 SqlBuilder 拒（契约不放松既有闸）', hasCode(buildOf(bad).errors, 'INVALID_ENUM', 'filters[0].op'), JSON.stringify(buildOf(bad).errors));
+  bad = clone(ds); bad.selection.filters = [{ field: 'ghostCol', op: '=', value: 1 }];
+  check('负控·幽灵 filter 字段被拒', hasCode(buildOf(bad).errors, 'UNKNOWN_REF', 'filters[0].field'));
   check('契约件纯函数·audit 不改入参', JSON.stringify(ds) === snap);
   check('确定序·同一资产两次审计全等', JSON.stringify(DatasetDef.audit(ds, ASSET)) === JSON.stringify(DatasetDef.audit(ds, ASSET)));
 })();

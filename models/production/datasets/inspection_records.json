@@ -3,44 +3,68 @@
   "id": "production.inspection_records",
   "domain": "production",
   "name": "生产检验记录",
-  "description": "激光加工检验记录的可复用数据访问契约：按业务日期×机台聚合，输出计划数/完成数/完成率。口径锚 models/production/model.json（计划=有效评分记录数 COUNT(*)、完成=score>=0.9、完成率=完成/计划×100 展示层派生），结构事实锚 data/schema_atom_live_demo.json。本资产只声明选择哪些实体/维度/指标（可复用结构），不带时间窗、排序、行数上限——那些属报表级关注点，由 ReportSpec 提供。",
-
+  "description": "激光加工检验记录的可复用数据访问契约：按业务日期×机台聚合，输出计划数/完成数/完成率。口径锚 models/production/model.json（计划=有效评分记录数 COUNT(*)、完成=score>=0.9、完成率=完成/计划×100 展示层派生），结构事实锚 data/schema_atom_live_demo.json。本资产只声明选择哪些实体/维度/指标（可复用结构），不带时间窗、排序、行数上限——那些属报表级关注点，由 ReportSpec 提供。 状态=draft：本资产的结构与契约已由 verify/fast_dataset_contract.js 判定，但尚未做过数据级验证（未对本选择做过采样/执行与真值对拍），因此不得声称 validated；补齐 validation.samples/executions 证据后方可升级。",
   "source": {
     "type": "database",
     "ref": "atom_live_demo",
     "connection": "ATOM_LIVE"
   },
-
   "model": {
     "ref": "models/production/model.json",
     "modelVersion": "1"
   },
-
   "selection": {
     "entity": "InspectionRecord",
-    "dimensions": ["bizDate", "machine"],
-    "metrics": ["planned", "done", "completionRate"]
-  },
-
-  "grain": {
-    "description": "一行 = 一个业务日期在一个机台上的检验记录聚合",
-    "keys": ["bizDate", "machine"]
-  },
-
-  "asserts": {
-    "fields": [
-      { "name": "bizDate", "role": "dim" },
-      { "name": "machine", "role": "dim" },
-      { "name": "planned", "role": "metric" },
-      { "name": "done", "role": "metric" },
-      { "name": "completionRate", "role": "derived" }
+    "dimensions": [
+      "bizDate",
+      "machine"
+    ],
+    "metrics": [
+      "planned",
+      "done",
+      "completionRate"
     ]
   },
-
-  "lineage": {
-    "truthRefs": ["data/db_laser_machine_daily_truth.txt"],
-    "verifiedBy": "verify/fast_dataset_contract.js（零引擎契约测：可被 SpecValidator 接受 + 可被 SqlBuilder 消费 + 列派生一致 + 结构画像可回溯）"
+  "grain": {
+    "description": "一行 = 一个业务日期在一个机台上的检验记录聚合",
+    "keys": [
+      "bizDate",
+      "machine"
+    ]
   },
-
-  "status": "validated"
+  "asserts": {
+    "fields": [
+      {
+        "name": "bizDate",
+        "role": "dim"
+      },
+      {
+        "name": "machine",
+        "role": "dim"
+      },
+      {
+        "name": "planned",
+        "role": "metric"
+      },
+      {
+        "name": "done",
+        "role": "metric"
+      },
+      {
+        "name": "completionRate",
+        "role": "derived"
+      }
+    ]
+  },
+  "lineage": {
+    "structuralGate": "verify/fast_dataset_contract.js（零引擎：可被 SpecValidator 接受 + 可被 SqlBuilder 消费 + 列派生一致 + 结构画像可回溯）",
+    "plannedTruthRefs": [
+      "data/db_laser_machine_daily_truth.txt（日期×机台真值，用于本选择的数据级对拍）"
+    ]
+  },
+  "status": "draft",
+  "validation": {
+    "samples": [],
+    "executions": []
+  }
 }

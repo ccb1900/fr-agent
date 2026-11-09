@@ -71,7 +71,6 @@ var DatasetDef = (function () {
       if (list.some(function (x) { return termsOf([x])[0] == null; })) E(e, 'BAD_' + k.toUpperCase(), 'selection.' + k);
       if (list.some(function (x) { return isObj(x) && Object.keys(x).some(function (kk) { return !hasOwn(REF_KEYS, kk); }); })) E(e, 'ILLEGAL_REF_KEY', 'selection.' + k);
     });
-    if (isArr(ds.selection.dimensions) && termsOf(ds.selection.dimensions).some(function (t) { return t == null; })) E(e, 'BAD_DIMENSIONS', 'selection.dimensions');
     return e;
   }
   function auditGrain(ds) {
@@ -98,10 +97,28 @@ var DatasetDef = (function () {
     });
     return e;
   }
+  // 阶梯必须有门槛：draft=无承诺；validated=已有数据级证据；published=数据证据 + 业务确认。
+  //   为什么：状态词若不自带门槛，"validated" 就成了免费广告（AGENTS 五态不混写）。
+  //   门槛是"有指向真实产物的证据条目"，不是"我声称验证过"。
+  function dataEvidence(ds) {
+    var v = isObj(ds) && ds.validation;
+    if (!isObj(v)) return [];
+    var out = [];
+    ['samples', 'executions'].forEach(function (k) {
+      if (isArr(v[k])) v[k].forEach(function (x) { if (isStr(x) && x) out.push(x); else if (isObj(x) && isStr(x.ref) && x.ref) out.push(x.ref); });
+    });
+    return out;
+  }
   function auditLifecycle(ds) {
     var e = [];
-    if (ds.status === 'published' && !(isObj(ds.review) && isStr(ds.review.by) && ds.review.by && isStr(ds.review.at) && ds.review.at)) E(e, 'PUBLISHED_WITHOUT_REVIEW', 'review');
     if (ds.review != null && !isObj(ds.review)) E(e, 'BAD_REVIEW', 'review');
+    var ev = dataEvidence(ds);
+    if (ds.status === 'validated' && !ev.length) E(e, 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation');
+    if (ds.status === 'published') {
+      if (!ev.length) E(e, 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation');
+      if (!(isObj(ds.review) && isStr(ds.review.by) && ds.review.by && isStr(ds.review.at) && ds.review.at)) E(e, 'PUBLISHED_WITHOUT_REVIEW', 'review');
+    }
+    if (ds.validation != null && !isObj(ds.validation)) E(e, 'BAD_VALIDATION', 'validation');
     return e;
   }
   // 全量审计（纯函数，不改入参）
@@ -146,7 +163,7 @@ var DatasetDef = (function () {
     DATASET_VERSION: DATASET_VERSION, ID_RE: ID_RE,
     SELECTION_KEYS: SELECTION_KEYS, REPORT_SCOPE_KEYS: REPORT_SCOPE_KEYS,
     STATUSES: STATUSES, SOURCE_TYPES: SOURCE_TYPES, FIELD_ROLES: FIELD_ROLES,
-    domainOf: domainOf, nameOf: nameOf, expectedPath: expectedPath, termsOf: termsOf,
+    domainOf: domainOf, nameOf: nameOf, expectedPath: expectedPath, termsOf: termsOf, dataEvidence: dataEvidence,
     auditIdentity: auditIdentity, auditRefs: auditRefs, auditSelection: auditSelection,
     auditGrain: auditGrain, auditAsserts: auditAsserts, auditLifecycle: auditLifecycle, audit: audit,
     bindDrift: bindDrift, selectionArgs: selectionArgs, toReportDataset: toReportDataset,

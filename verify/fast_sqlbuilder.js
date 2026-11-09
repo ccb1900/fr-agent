@@ -97,6 +97,13 @@ check('I5.3-B 数值列非数值值→INVALID_NUMBER', codeAt(fbadnum, 'INVALID_
 var fghost = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'ghost_col', op: '=', value: 1 }] });
 check('I5.3-B 未知 filter 列→UNKNOWN_REF', codeAt(fghost, 'UNKNOWN_REF', 'filters'));
 check('I5.3-B filter 生成 SQL 仍单语句无分号', (fnum.sql || '').indexOf(';') < 0);
+// I5.4 复审（2026-11-09）：文本列白名单收紧=|=|!=|like（与报错文案一致；此前漏放行 >/< >= <=）
+var ftxtcmp = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '>=', value: 'L' }] });
+check('I5.4 文本列比较 op(>=)→INVALID_ENUM 拒（收紧到声明白名单）', codeAt(ftxtcmp, 'INVALID_ENUM', 'filters[0].op') && !ftxtcmp.sql);
+var ftxtcmp2 = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '<', value: 'R' }] });
+check('I5.4 文本列比较 op(<)→同样拒', codeAt(ftxtcmp2, 'INVALID_ENUM', 'filters[0].op'));
+check('I5.4 文本列 == 与 = 同义（合法别名仍在白名单内）',
+  (function () { var r = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '==', value: 'L' }] }); return (r.errors || []).length === 0 && /stage = 'L'/.test(r.sql || ''); })());
 
 // ===== I5.4 边界（r4 P2）：JOIN 顺序无关 / 跨表日期归属 / op×类型 / == 映射 =====
 check('I5.4 JOIN 列限定与维度顺序无关', (function () {

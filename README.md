@@ -281,6 +281,13 @@ D:\software\FineReport_11.0\jre\bin\java.exe -Djava.awt.headless=true ^
 - #114 R3-0 收尾：rowSpan 游标缺陷修复（合并格曾被覆盖丢失）+ IR 整数闸/块内重叠静态拒 + 7 场景断言 + 真引擎载体；矩阵口径修正（cells 合并 vs header 多层拆行、Agent 可用=待验证、频率 103/240 文件）
 - #115 Native Capability Inventory（docs/architecture/native-capability-inventory.md）：五层差集（Engine/CPT+Object/IR/ReportSpec/Agent）+ A/B/C/D 四份清单；核心结论=最大金矿是 B 类（IR 已有但 ReportSpec 无入口：条件高亮/参数面板/cells 族/页眉页脚），A 类确证仅多 Sheet；确立原则=不做 FR 重实现，只做语义接口层
 - #116 C 类两项裁定/实施：C1 TemplateInfoAttrMark 探针更正为 cloud 插件类（com.fr.plugin.cloud.analytics.attr.*，core 包无此类→noncore 不追）；C2 隐藏行列三层打通（IR sheets[].hideRows/hideCols 整数闸 + object 于 sheet 构建末归零行高/列宽 + ReportSpec sheet.hideRows/hideCols）——rawIR 载体与 spec 载体均真引擎跑通（RowHeight[1]=0/ColumnWidth=0，PNG 表头行与列消失），fast 5 套件/scan 55 ok/基线 MD5 CBEB42E3 不变
+- #178 Dataset 层审查收口（2026-11-09）：对 D0/D1 产物复审，抓出 3 个真问题并修复——
+  ① **生命周期阶梯无门槛**：`draft→validated` 免费、契约只罚 `published` 缺 review——`validated` 成了可虚报的词（AGENTS 五态不混写）。修复：`auditLifecycle` 要求 `validated` 必带 `validation.{samples,executions}` 数据证据、`published` 单调继承（缺数据证据/缺确认分两条错误码）；资产如实降至 **draft**，`lineage` 拆"结构门（fast_dataset_contract）"与"待做数据验证（plannedTruthRefs）"。
+  ② **`SELECTION_KEYS.filters` 零覆盖**：把它从词表删掉不会有任何检查红。补正控（合法 like 进 WHERE 且真过滤）+ 负控（幽灵字段 UNKNOWN_REF）。
+  ③ **`sqlbuilder` 文本列 op 白名单没按自己声明实现**：注释与报错都说"只允许 =|!=|like"，代码却放行 `> < >= <=`（字符串比较）。收紧到声明白名单并加 3 断言（>=/< 拒、== 合法别名）——影响面实证为 0（examples/verify 全量仅 daily_filtered 用 like）。
+  **诚实记录**：本轮首条负控（文本 `>=` 应拒）起初按我假设写错——实测 `OP_SQL` 映射 SQL 字符串、``=''`` 并不假值、该 op 当时**确实放行**；正因绿不上才发现白名单元实现这条真缺陷。审查方法论=怀疑自己的断言跑到实证。
+  验证：契约套件增到 **89 项 failures=0**；fast_sqlbuilder **49 项 0 失败**；fast 聚合门 21/21；`scan_all_specs` ok=128 bad=0；boundaries R1–R8 clean。**未跑引擎门**：未碰 `lib/object|ir|cpt` 与 Runtime，收紧只新增拒绝、无存量 SQL/字节变化——此事如实标注而非跑门凑安心。
+
 - #177 Dataset 契约进入生产件（D1，2026-11-09）：**门不再自证**——契约与索引落为纯函数 `semantic/dataset/definition.js`（身份/引用/选择/粒度/断言/生命周期审计 + 绑定检查 + 组合规则）与 `registry.js`（域/id/状态索引、同 id 不静默覆盖），`verify/fast_dataset_contract.js` 删除复刻逻辑改为消费它们（78 项）。两件零 Java、零 IO（R7a/R7b 语义层红线）。
   门抓出两个真缺陷（不是测试笔误）：① `columnsOf` 以 `built.errors` 真值性判失败，而 SqlBuilder 成功时返回 `[]`——**空数组在 JS 是真值**，导致派生列恒空、`asserts.fields` 比较恒假；改判 `length`。② 契约件注释含 `com.fr.` 字面量触发 R7a 文本门（该门按文本判定是既定设计，不放宽，改述消除）。
   边界发现并写进文档：v1.0 设想的 `semantic/dataset/repository.js` **作废**——`check-boundaries.ps1` R7b 只给 `inspector.js/inspect_main.js` 两个薄壳例外，IO 进 semantic 会自破"离线可测 + 可换引擎"红线；读目录与原子写归工具层（复用 `_lib.js` 的 `atomicWriteUtf`）。
