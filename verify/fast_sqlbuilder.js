@@ -104,6 +104,12 @@ var ftxtcmp2 = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions:
 check('I5.4 文本列比较 op(<)→同样拒', codeAt(ftxtcmp2, 'INVALID_ENUM', 'filters[0].op'));
 check('I5.4 文本列 == 与 = 同义（合法别名仍在白名单内）',
   (function () { var r = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '==', value: 'L' }] }); return (r.errors || []).length === 0 && /stage = 'L'/.test(r.sql || ''); })());
+// I5.4 复审（2026-11-09）：== 归一须对文本/数值一致（审查提出；实测本就一致，用测试钉住防未来分叉）
+var feqnum = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'score', op: '==', value: 0.9 }] });
+var feqtxt = SqlBuilder.build(model, { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned'], filters: [{ field: 'stage', op: '==', value: 'L' }] });
+check('I5.4 == 别名对数值列同样支持（与文本列一致，无未记录差异）',
+  (feqnum.errors || []).length === 0 && /TRY_CAST\(score AS float\) = 0\.9/.test(feqnum.sql || ''), JSON.stringify(feqnum.errors));
+check('I5.4 == 别名对文本列支持且归一为 =', (feqtxt.errors || []).length === 0 && /stage = 'L'/.test(feqtxt.sql || ''), JSON.stringify(feqtxt.errors));
 
 // ===== I5.4 边界（r4 P2）：JOIN 顺序无关 / 跨表日期归属 / op×类型 / == 映射 =====
 check('I5.4 JOIN 列限定与维度顺序无关', (function () {

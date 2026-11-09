@@ -114,6 +114,7 @@ Intent → Domain Resolver → published Semantic Model → Dataset Resolver →
 1. 新 JS → 登记 `verify/fast_parse.js`（产品文件）或 `scripts/run-fast-tests.ps1`（套件），**缺登记视为未完成**
 2. 新纯函数层 → 过 `scripts/check-boundaries.ps1`（R1–R8；`semantic/*` 禁 `com.fr.*`，见 R7）
 3. 新 verb → 更新 `docs/agent-tools.md` + Skill 的 `references/tool-api.md`，并给出 `nextActions` 失败面
+   - **D2 附加硬约束**（2026-11-09 审查轮）：`registry.errors` 非空即停（重复 id 不得"报着继续用"）；`assets validate` **自己产生**绑定证据（`{ref,datasetId,modelVersion,sourceRef,at}`）并核对 `ref` 文件真实存在，不接受调用方自报路径；`publish` 需证据 + review 双全；纯文件操作不进 FR 引擎 Mutex
 4. 改 `lib/object*.js` → 必跑 `scripts/run-render-regression.ps1`（默认 spec + legacy 图 + Van/cells/装饰，末步回补基线）
 5. 新 PowerShell → ASCII-only、无硬编路径（`verify/check_ps1_static.ps1` 自动纳入）
 
@@ -141,7 +142,8 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读�
 |---|---|---|---|
 | **D0** | 契约冻结：ADR + 1 个真资产 + 可运行验证器 | `verify/fast_dataset_contract.js` failures=0；4 项故障注入必红；已登记聚合门；旧 spec 兼容断言过 | ✅ **完成（2026-11-09）** |
 | **D1** | `semantic/dataset/{definition,registry}.js`（IO 归工具层）+ 套件改为消费生产契约件 | 78 项 failures=0；5 项故障注入全红还原即绿；`lib/*`/`make_api.js`/Runtime 零改动 | ✅ **完成（2026-11-09）** |
-| **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | Agent 经 Skill 可建草稿→验证→（人确认后）发布；错误面带 `nextActions`；非法资产拒写且同 id 不静默覆盖 | ⬜ 下一步 |
+| **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | ①合法草稿可建 ②非法资产拒写 ③validate 产真实证据非自报 ④无业务确认不能发布 ⑤重复 id/路径不符/版本漂移必拒 ⑥不进 FR 引擎锁 | ⬜ 下一步 |
+| **D1.5** | 审查轮收尾（证据绑定、reportScope 白名单、metrics 必填、grainDrift、registry 原型安全） | 契约套件 103 项 + 注入 3 连全红；`==` 双类型一致有测试钉住 | ✅ 完成（2026-11-09） |
 | **D3** | Dataset Resolver 接 Planner/ReportSpec + 版本绑定 | 同一 Dataset 被 2 张报表复用，生成的 FR 数据集正确；渲染门全绿 | ⬜ |
 | **S1** | 多领域模型（`domain` 寻址统一 + Registry 按域加载 + Validator 两档拆分） | ≥2 领域模型可加载；术语不跨域误匹配；旧模型仍可用 | ⬜ |
 | **S2** | `semantic list/inspect/create/update/validate/review/publish` | 一领域完整草稿 + 待确认清单输出 | ⬜ |

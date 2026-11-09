@@ -61,6 +61,7 @@ models/
 | `asserts.fields[]` | ⬜ | `{name,role}`，`role∈dim\|metric\|derived`；与派生列**逐项等值同序** | 列的真相只有 SqlBuilder 一处；此字段是防回归断言（模型被改而资产未复核 → 立即红） |
 | `lineage.truthRefs[]` `lineage.verifiedBy` | ⬜ | 指仓库内真实文件 | "四者一致"验收（规范 §11）的可追溯抓手 |
 | `review.by` `review.at` | 发布态必填 | `status=published` 时缺失即拒 | 把"Agent 可提议、不得自确认口径"写成机器规则，而非口号 |
+| `validation.samples[]` `validation.executions[]` | validated 起必填 | 每条必须是**绑定记录** `{ref, datasetId, modelVersion, sourceRef, at}`，五个字段非空且三个身份字段与本资产逐字相等 | 一条自报路径可以是别人的/旧版本的/纯手打的采样——那 `validated` 又成免费广告（2026-11-09 审查 P1a）。**分层不破**：`definition.js` 只判形状与绑定（零 IO）；`ref` 指向的文件是否真实存在、类型对不对，由工具层 D2 的 `assets validate` 判定并**亲手生成**这些记录 |
 
 ## 5. 四向映射（Dataset ↔ ReportSpec ↔ SqlBuilder ↔ Schema）
 
@@ -98,12 +99,24 @@ function toReportDataset(ds, reportScope) {
 
 **只有第一行是新的**，且它不做任何 SQL/语义判断 —— 这是"不新建第二套校验器"的可验证承诺。
 
+阶梯单调性（`auditLifecycle`）：`published ⊇ validated` —— 缺数据证据与缺业务确认是两条独立错误码（`PUBLISHED_WITHOUT_DATA_EVIDENCE` / `PUBLISHED_WITHOUT_REVIEW`），被拒的证据由 `evidenceProblems()` 给出逐条原因（`EVIDENCE_SHAPE` / `EVIDENCE_DATASET_ID_MISMATCH` / `EVIDENCE_MODEL_VERSION_MISMATCH` / `EVIDENCE_SOURCE_REF_MISMATCH` / `EVIDENCE_MISSING_AT`），不把"有证据"与"证据无效"混成一个词。
+
+三条同期收紧（2026-11-09 审查轮）：
+
+| 规则 | 机器化 | 之前的问题 |
+|---|---|---|
+| `selection.metrics` 必填 | `REQUIRED@selection.metrics` | ADR 写了必填、代码只强制 dimensions（文档与实现分叉） |
+| 粒度 = 实际分组维 | `grainDrift(ds, groupDims)` 判**同序全等** | 只校验 `grain ⊆ dimensions`：`dimensions=[bizDate,machine]` + `grain=[bizDate]` 可过审，但 SQL 按两维分组——"一行代表什么"与实现不符 |
+| 报表范围只增不改结构 | `scopeProblems()` + `toReportDataset` 越界抛错（fail-closed） | 原实现把任意 `reportScope` 键直接盖上，可覆盖 `entity`/`connection`/`metrics` 甚至塞 `query` |
+
 ## 7. v1 明确不做（写下来防止顺手扩）
 
 - 不做 `kind:'catalog'` 新数据集种类：`ReportSpec.DATASET_KINDS` 仍是 `rows|sql`，验证器有断言守着。资产在**组合进 ReportSpec 之后**才进入现有链路。
 - 不做多 Dataset 单报表、跨 Dataset JOIN、参数化时间窗（`dateRange` 引用参数）。
 - 不做 Dataset 独立 DB/索引/审批系统；文件 + git 即版本管理。
 - 不做变更影响分析（S4）；`lineage` 只是抓手，不是图数据库。
+- `registry.js` 索引用 null-prototype 映射（`byId`/`byDomain`）+ `hasOwnProperty` 查表：域名或 id 为 `__proto__`/`constructor` 时旧实现会 `TypeError` 崩溃（本轮实测），现在只当普通域索引；`resolve` 不对原型键假命中。
+- **D2 硬约束（写在此处以免将来忘记）**：`registry.errors` 非空时管理工具必须停——不得一边报重复 id 一边继续用其中一个；`assets validate` 必须自己产生绑定证据记录，不接受调用方自报路径。
 - 不让任何 verb 写 `model.json`（模型侧仍是人工 + `preflight`/fast 门把关）。
 - Dataset 纯文件操作**不进** FineReport 单实例 Mutex（规范 §10.2 采纳：读=list/inspect，写=create 走原子写；validate 需要 SqlBuilder 但零引擎，仍可无锁）。
 - **IO 不进 `semantic/`**：`scripts/check-boundaries.ps1` 的 R7b 只给 `inspector.js`/`inspect_main.js` 两个薄壳例外（`semantic/**` 禁 `Java.type`，保证离线可测 + 可换引擎）。因此原规范 v1.0 §7 的 `semantic/dataset/repository.js` **作废**：读目录/原子写属工具层（`agent/tools/assets.js` 复用 `agent/tools/_lib.js` 的 `atomicWriteUtf`），`semantic/dataset/` 只留 `definition.js`（契约）与 `registry.js`（索引），两者零 Java、零 IO——由契约门第 0 节文本断言守住。
@@ -118,7 +131,8 @@ function toReportDataset(ds, reportScope) {
 - `semantic/dataset/registry.js`：按域/id/状态索引 + 重复 id 检出（纯函数）
 - `verify/fast_dataset_contract.js`：**消费上两件**（78 项），不再复刻契约
 - 门的两次真收获：① `columnsOf` 里 `built.errors` 为 `[]` 被当真值 → 派生列恒空（JS 经典陷阱，被门抓住后修）；② 契约件自身注释含 `com.fr.` 字面量触发 R7a 文本门（假阳性，改述解决——门按文本判定是既定设计，不放宽）
-- 故障注入 5 连全红（塞自由 SQL / 无 review 假装发布 / 粒度脱钩 / 版本漂移 / 手写列改错），还原即 `failures=0`
+- 故障注入：D1 后 5 连全红；审查轮再 3 连（自报路径冒充 validated / 粒度少声明一维 / 删 metrics）各 1–5 项红，还原即绿
+- 契约套件现 **103 项**（含证据绑定、范围白名单、grainDrift、原型安全、metrics 必填）；`fast_sqlbuilder` 51 项（含 `==` 对文本/数值列一致）
 
 ```powershell
 # 契约验证器（零引擎，秒级）

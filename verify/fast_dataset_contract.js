@@ -75,6 +75,16 @@ check('资产内无自由文本 SQL 键', src(ASSET).indexOf('"query"') < 0);
 
 // ============================ 2. 可被现有 SpecValidator 接受 ============================
 check('Dataset 组合成 ReportSpec 后 errors=0', SpecValidator.validate(toReportSpec(ds)).length === 0, codesOf(SpecValidator.validate(toReportSpec(ds))).join(' | '));
+check('负控·reportScope 越界键（entity/connection/query/metrics）被拒且不覆盖资产',
+  (function () {
+    var probs = DatasetDef.scopeProblems({ entity: 'Other', connection: 'X', query: 'SELECT 1', metrics: ['x'] });
+    var t = false;
+    try { DatasetDef.toReportDataset(ds, { entity: 'Other' }); } catch (e) { t = true; }
+    return ['entity', 'connection', 'query', 'metrics'].every(function (k) { return hasCode(probs, 'ILLEGAL_SCOPE_KEY', k); }) && t;
+  })(), JSON.stringify(DatasetDef.scopeProblems({ entity: 'Other', query: 'x' })));
+check('正控·dateRange/sort/topN 合法且只增不改结构选择',
+  DatasetDef.scopeProblems({ dateRange: { from: '2026-09-13', to: '2026-09-22' }, sort: [], topN: 10 }).length === 0 &&
+  (function () { var d2 = DatasetDef.toReportDataset(ds, { topN: 10 }); return d2.entity === ds.selection.entity && d2.connection === ds.source.connection && d2.topN === 10; })());
 check('报表侧补 dateRange/sort 后仍合法（范围归报表）',
   SpecValidator.validate(toReportSpec(ds, { dateRange: { from: '2026-09-13', to: '2026-09-22' }, sort: [{ field: 'planned', dir: 'desc' }] })).length === 0,
   codesOf(SpecValidator.validate(toReportSpec(ds, { dateRange: { from: '2026-09-13', to: '2026-09-22' } }))).join(' | '));
@@ -86,7 +96,9 @@ var cols = DatasetDef.columnsOf(built);
 check('派生列非空且维度在前', cols.length >= 3 && cols[0].name === ds.selection.dimensions[0], JSON.stringify(cols));
 check('列名唯一', Object.keys(cols.reduce(function (m, c) { m[c.name] = 1; return m; }, {})).length === cols.length);
 check('asserts.fields 与派生列逐项相等含 role（列只能断言，不能手写）', DatasetDef.assertsMatch(ds, cols).length === 0, JSON.stringify(cols));
-check('grain.keys = 生成 SQL 的 GROUP BY 维（粒度不说谎）', JSON.stringify(ds.grain.keys) === JSON.stringify(built.groupDims), JSON.stringify(built.groupDims));
+check('grainDrift 生产函数判粒度 = SQL GROUP BY（不只样例比 JSON）', DatasetDef.grainDrift(ds, built.groupDims).length === 0, JSON.stringify(DatasetDef.grainDrift(ds, built.groupDims)));
+check('负控·grain 为维度真子集被 grainDrift 拒（长度不符）', hasCode(DatasetDef.grainDrift((function () { var b = clone(ds); b.grain = { description: 'x', keys: ['bizDate'] }; return b; })(), built.groupDims), 'GRAIN_GROUPBY_LENGTH'));
+check('负控·grain 换序被 grainDrift 拒（顺序即语义）', hasCode(DatasetDef.grainDrift((function () { var b = clone(ds); b.grain = { description: 'x', keys: ['machine', 'bizDate'] }; return b; })(), built.groupDims), 'GRAIN_GROUPBY_ORDER'));
 check('派生比率不进 SQL（展示层公式，README 既定口径）', built.sql.indexOf('completionRate') < 0, built.sql.slice(0, 150));
 check('生成 SQL 单语句只读', !/;/.test(built.sql) && /^(SELECT|WITH)\b/i.test(built.sql));
 check('SQL 不含 ${} 文本替换面', built.sql.indexOf('${') < 0);
@@ -111,6 +123,15 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
     { relPath: 'a.json', doc: { id: 'production.a', domain: 'production', status: 'draft' } }
   ]);
   check('registry 确定序（list 与域内均按 id 升序）', unsorted.list[0].id === 'production.a' && unsorted.byDomain.production[0].id === 'production.a');
+  // 原型污染面（本轮实测旧实现直接 TypeError 崩溃）
+  var proto = DatasetRegistry.build([
+    { relPath: 'p1.json', doc: { id: 'production.p1', domain: '__proto__', status: 'draft' } },
+    { relPath: 'p2.json', doc: { id: 'production.p2', domain: 'constructor', status: 'draft' } }
+  ]);
+  check('registry·原型特殊域名不崩且可索引', !throwsIt(function () { return proto.domains().length === 2; }) && proto.list.length === 2, JSON.stringify(proto.errors));
+  check('registry·空索引 resolve 原型键假命中为 null', DatasetRegistry.build([]).resolve('__proto__') === null && DatasetRegistry.build([]).resolve('constructor') === null);
+  check('registry·byStatus 原型域名不误读', proto.byStatus('__proto__', 'draft').length === 1 && proto.byStatus('toString', 'draft').length === 0);
+
 })();
 
 // ============================ 4. term 全可回溯到结构画像（AGENTS §4） ============================
@@ -190,12 +211,27 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('资产如实为 draft（结构验证≠数据验证，不占 validated 这个词）', ds.status === 'draft' && DatasetDef.dataEvidence(ds).length === 0);
   bad = clone(ds); bad.status = 'validated';
   check('负控·validated 无数据证据即拒（阶梯不免费）', hasCode(DatasetDef.audit(bad, ASSET), 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  function boundEntry(over) {
+    var x = { ref: 'logs/agent/runs/r1/sample.json', datasetId: ds.id, modelVersion: ds.model.modelVersion, sourceRef: ds.source.ref, at: '2026-11-09T12:00:00Z' };
+    if (over) Object.keys(over).forEach(function (k) { x[k] = over[k]; });
+    return x;
+  }
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry()] };
+  check('正控·绑定到本资产本版本的证据可支撑 validated', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
   bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: ['logs/agent/runs/x/sample.json'] };
-  check('正控·补数据证据后 validated 可成立', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
-  bad = clone(ds); bad.status = 'published'; bad.validation = { samples: ['logs/agent/runs/x/sample.json'] };
-  check('负控·published 缺业务确认仍拒（即使有数据证据）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_REVIEW', 'review'));
+  check('负控·自报一条路径字符串不算证据（形状拒）', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_SHAPE'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ modelVersion: '999' })] };
+  check('负控·旧模型版本的证据不得为新版本背书', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_MODEL_VERSION_MISMATCH'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ datasetId: 'production.other' })] };
+  check('负控·别的资产的证据不能用', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_DATASET_ID_MISMATCH'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ sourceRef: 'other_db' })] };
+  check('负控·别的数据源的证据不能用', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_SOURCE_REF_MISMATCH'));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: '' })] };
+  check('负控·证据缺时间戳视为形状不合法', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_MISSING_AT'));
+  bad = clone(ds); bad.status = 'published'; bad.validation = { samples: [boundEntry()] };
+  check('负控·published 缺业务确认仍拒（即使证据齐备）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_REVIEW', 'review'));
   bad = clone(ds); bad.status = 'published'; bad.review = { by: '业务负责人', at: '2026-11-09' };
-  check('负控·published 缺数据证据亦拒（阶梯单调：published ⊇ validated）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation'));
+  check('负控·published 缺数据证据亦拒（阶梯单调 published ⊇ validated）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation'));
   bad = clone(ds); bad.validation = 'validated by me';
   check('负控·validation 形状非法被拒', hasCode(DatasetDef.audit(bad, ASSET), 'BAD_VALIDATION', 'validation'));
   // filters 是契约允许键：正负都测（否则删掉 SELECTION_KEYS.filters 也不会红）
@@ -208,6 +244,11 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('负控·非法 filter op 由 SqlBuilder 拒（契约不放松既有闸）', hasCode(buildOf(bad).errors, 'INVALID_ENUM', 'filters[0].op'), JSON.stringify(buildOf(bad).errors));
   bad = clone(ds); bad.selection.filters = [{ field: 'ghostCol', op: '=', value: 1 }];
   check('负控·幽灵 filter 字段被拒', hasCode(buildOf(bad).errors, 'UNKNOWN_REF', 'filters[0].field'));
+  bad = clone(ds); bad.selection = { entity: bad.selection.entity, dimensions: bad.selection.dimensions };
+  check('负控·metrics 缺失被拒（与 ADR §4 一致；此前只强制 dimensions）', hasCode(DatasetDef.audit(bad, ASSET), 'REQUIRED', 'selection.metrics'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.asserts = { fields: [{ name: '__proto__', role: 'dim' }, { name: 'planned', role: 'metric' }] };
+  check('负控·asserts 用 __proto__ 名不误报重复（null-prototype seen）', !hasCode(DatasetDef.audit(bad, ASSET), 'DUPLICATE_FIELD'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+
   check('契约件纯函数·audit 不改入参', JSON.stringify(ds) === snap);
   check('确定序·同一资产两次审计全等', JSON.stringify(DatasetDef.audit(ds, ASSET)) === JSON.stringify(DatasetDef.audit(ds, ASSET)));
 })();

@@ -6,15 +6,18 @@ var DatasetRegistry = (function () {
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
 
   // entries: [{ relPath, doc }] → { byId, byDomain, list, errors }
+  //   映射用 null-prototype：域/id 来自资产内容，`__proto__`、`constructor` 之类键
+  //   若落到普通对象上会污染原型或假命中（本轮实测 build 直接 TypeError 崩溃）。
+  //   D2 硬约束：errors 非空时管理工具必须停（不得"报着重复 id 还继续用其中一个"）。
   function build(entries) {
-    var byId = {}, byDomain = {}, list = [], errors = [];
+    var byId = Object.create(null), byDomain = Object.create(null), list = [], errors = [];
     (entries || []).forEach(function (en) {
       if (!isObj(en) || !isObj(en.doc) || typeof en.doc.id !== 'string') { errors.push('UNPARSEABLE@' + (en && en.relPath)); return; }
       var id = en.doc.id;
       if (byId[id]) { errors.push('DUPLICATE_ID:' + id + '@' + en.relPath); return; }   // 同 id 不静默覆盖
       byId[id] = { id: id, relPath: en.relPath, doc: en.doc, domain: en.doc.domain, status: en.doc.status, version: en.doc.datasetVersion };
-      var d = en.doc.domain || '(none)';
-      if (!byDomain[d]) byDomain[d] = [];
+      var d = typeof en.doc.domain === 'string' && en.doc.domain ? en.doc.domain : '(none)';
+      if (!Object.prototype.hasOwnProperty.call(byDomain, d)) byDomain[d] = [];
       byDomain[d].push(byId[id]);
       list.push(byId[id]);
     });
@@ -25,9 +28,11 @@ var DatasetRegistry = (function () {
     return {
       byId: byId, byDomain: byDomain, list: list, errors: errors,
       domains: function () { return Object.keys(byDomain).sort(); },
-      resolve: function (id) { return byId[id] || null; },
+      // hasOwn 判定：null-prototype 已够用，这里再显式一次，防未来有人把 map 换成普通对象
+      resolve: function (id) { return Object.prototype.hasOwnProperty.call(byId, id) ? byId[id] : null; },
       byStatus: function (domain, status) {
-        return (byDomain[domain] || []).filter(function (r) { return status == null || r.status === status; });
+        var rows = Object.prototype.hasOwnProperty.call(byDomain, domain) ? byDomain[domain] : [];
+        return rows.filter(function (r) { return status == null || r.status === status; });
       }
     };
   }

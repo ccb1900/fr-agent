@@ -66,7 +66,7 @@ var DatasetDef = (function () {
     if (!isStr(ds.selection.entity) || !ds.selection.entity) E(e, 'BAD_ENTITY', 'selection.entity');
     ['dimensions', 'metrics'].forEach(function (k) {
       var list = ds.selection[k];
-      if (list == null) { if (k === 'dimensions') E(e, 'REQUIRED', 'selection.dimensions'); return; }
+      if (list == null) { E(e, 'REQUIRED', 'selection.' + k); return; }   // ADR §4：两者都必填（纯维度清单资产若真要支持，改 ADR 再改这里）
       if (!isArr(list) || !list.length) { E(e, 'BAD_' + k.toUpperCase(), 'selection.' + k); return; }
       if (list.some(function (x) { return termsOf([x])[0] == null; })) E(e, 'BAD_' + k.toUpperCase(), 'selection.' + k);
       if (list.some(function (x) { return isObj(x) && Object.keys(x).some(function (kk) { return !hasOwn(REF_KEYS, kk); }); })) E(e, 'ILLEGAL_REF_KEY', 'selection.' + k);
@@ -77,7 +77,7 @@ var DatasetDef = (function () {
     var e = [];
     if (!isObj(ds.grain) || !isStr(ds.grain.description) || !ds.grain.description) { E(e, 'BAD_GRAIN', 'grain'); return e; }
     if (!isArr(ds.grain.keys) || !ds.grain.keys.length) { E(e, 'BAD_GRAIN', 'grain.keys'); return e; }
-    var seen = {};
+    var seen = Object.create(null);
     ds.grain.keys.forEach(function (k) { if (seen[k]) E(e, 'DUPLICATE_GRAIN_KEY', 'grain.keys'); seen[k] = 1; });
     var dims = termsOf(ds.selection && ds.selection.dimensions);
     ds.grain.keys.forEach(function (k) { if (dims.indexOf(k) < 0) E(e, 'GRAIN_NOT_IN_DIMENSIONS', 'grain.keys'); });
@@ -87,7 +87,7 @@ var DatasetDef = (function () {
     var e = [];
     if (ds.asserts == null) return e;
     if (!isObj(ds.asserts) || !isArr(ds.asserts.fields)) { E(e, 'BAD_ASSERTS', 'asserts'); return e; }
-    var seen = {};
+    var seen = Object.create(null);
     ds.asserts.fields.forEach(function (f, i) {
       var p = 'asserts.fields[' + i + ']';
       if (!isObj(f) || !isStr(f.name) || !f.name) { E(e, 'BAD_ASSERTED_FIELD', p); return; }
@@ -100,14 +100,47 @@ var DatasetDef = (function () {
   // 阶梯必须有门槛：draft=无承诺；validated=已有数据级证据；published=数据证据 + 业务确认。
   //   为什么：状态词若不自带门槛，"validated" 就成了免费广告（AGENTS 五态不混写）。
   //   门槛是"有指向真实产物的证据条目"，不是"我声称验证过"。
+  // 证据条目必须是"绑定到本资产本版本"的记录，不是一句自报路径：
+  //   {ref, datasetId, modelVersion, sourceRef, at} 全必填，且三个身份字段与本资产逐字相等。
+  //   为什么：一条字符串路径可以是别人的采样、可以是旧版本的采样、也可以纯手打——"validated" 就又成了免费广告。
+  //   分工（分层不破）：本层只判形状与绑定（纯函数，零 IO）；ref 指向的文件是否真实存在/类型是否对
+  //   = 工具层职责（D2 的 assets validate/publish），由它产生这些记录而非接受 Agent 手填。
+  function evidenceEntryOk(x, ds) {
+    if (!isObj(x)) return 'SHAPE';
+    var req = ['ref', 'datasetId', 'modelVersion', 'sourceRef', 'at'];
+    for (var i = 0; i < req.length; i++) { if (!isStr(x[req[i]]) || !x[req[i]]) return 'MISSING_' + req[i].toUpperCase(); }
+    if (x.datasetId !== ds.id) return 'DATASET_ID_MISMATCH';
+    if (!isObj(ds.model) || x.modelVersion !== ds.model.modelVersion) return 'MODEL_VERSION_MISMATCH';
+    if (!isObj(ds.source) || x.sourceRef !== ds.source.ref) return 'SOURCE_REF_MISMATCH';
+    return null;
+  }
   function dataEvidence(ds) {
-    var v = isObj(ds) && ds.validation;
-    if (!isObj(v)) return [];
+    if (!isObj(ds) || !isObj(ds.validation)) return [];
     var out = [];
     ['samples', 'executions'].forEach(function (k) {
-      if (isArr(v[k])) v[k].forEach(function (x) { if (isStr(x) && x) out.push(x); else if (isObj(x) && isStr(x.ref) && x.ref) out.push(x.ref); });
+      if (!isArr(ds.validation[k])) return;
+      ds.validation[k].forEach(function (x) { if (!evidenceEntryOk(x, ds)) out.push(x); });
     });
     return out;
+  }
+  // 被拒原因（供工具层与人读，不把"有证据"和"证据无效"混成同一个词）
+  function evidenceProblems(ds) {
+    var e = [];
+    if (!isObj(ds)) return e;
+    if (ds.validation != null && !isObj(ds.validation)) { e.push('BAD_VALIDATION@validation'); return e; }
+    if (!isObj(ds.validation)) return e;
+    var any = false;
+    ['samples', 'executions'].forEach(function (k) {
+      if (ds.validation[k] == null) return;
+      if (!isArr(ds.validation[k])) { e.push('BAD_VALIDATION@validation.' + k); return; }
+      ds.validation[k].forEach(function (x, i) {
+        any = true;
+        var why = evidenceEntryOk(x, ds);
+        if (why) e.push('EVIDENCE_' + why + '@validation.' + k + '[' + i + ']');
+      });
+    });
+    if (!any) e.push('EMPTY_VALIDATION@validation');
+    return e;
   }
   function auditLifecycle(ds) {
     var e = [];
@@ -116,6 +149,7 @@ var DatasetDef = (function () {
     if (ds.status === 'validated' && !ev.length) E(e, 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation');
     if (ds.status === 'published') {
       if (!ev.length) E(e, 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation');
+      evidenceProblems(ds).forEach(function (c) { if (c.indexOf('EMPTY_VALIDATION') !== 0) e.push(c); });
       if (!(isObj(ds.review) && isStr(ds.review.by) && ds.review.by && isStr(ds.review.at) && ds.review.at)) E(e, 'PUBLISHED_WITHOUT_REVIEW', 'review');
     }
     if (ds.validation != null && !isObj(ds.validation)) E(e, 'BAD_VALIDATION', 'validation');
@@ -125,6 +159,18 @@ var DatasetDef = (function () {
   function audit(ds, relPath) {
     if (!isObj(ds)) return ['INVALID_TYPE@spec'];
     return auditIdentity(ds, relPath).concat(auditRefs(ds), auditSelection(ds), auditGrain(ds), auditAsserts(ds), auditLifecycle(ds));
+  }
+
+  // 粒度声明 vs 实际 SQL 分组维（必须同序全等）——需要 SqlBuilder 产物，故由工具层/D2 与契约门调用。
+  //   只检查"grain ⊆ dimensions"不够：dimensions=[a,b]、grain=[a] 时审计通过，但 SQL 按 (a,b) 分组，
+  //   资产写的"一行代表什么"与实际不符——正是本项目最忌讳的静默口径漂移。
+  function grainDrift(ds, groupDims) {
+    var e = [];
+    var g = isObj(ds) && isObj(ds.grain) ? ds.grain.keys : null;
+    if (!isArr(g) || !isArr(groupDims)) { e.push('BAD_GRAIN@grain.keys'); return e; }
+    if (g.length !== groupDims.length) { e.push('GRAIN_GROUPBY_LENGTH@grain.keys'); return e; }
+    for (var i = 0; i < g.length; i++) if (g[i] !== groupDims[i]) { e.push('GRAIN_GROUPBY_ORDER@grain.keys[' + i + ']'); break; }
+    return e;
   }
 
   // ---------- 绑定：资产声明 vs 真实加载物（防口径漂移） ----------
@@ -141,7 +187,17 @@ var DatasetDef = (function () {
     var s = (isObj(ds) && ds.selection) || {};
     return { entity: s.entity, dimensions: termsOf(s.dimensions), metrics: termsOf(s.metrics), filters: s.filters };
   }
+  // 报表级范围键白名单（越界即拒，不静默覆盖资产结构选择）
+  function scopeProblems(reportScope) {
+    var e = [];
+    if (reportScope == null) return e;
+    if (!isObj(reportScope)) { e.push('INVALID_TYPE@reportScope'); return e; }
+    Object.keys(reportScope).forEach(function (k) { if (!hasOwn(REPORT_SCOPE_KEYS, k)) e.push('ILLEGAL_SCOPE_KEY@' + k); });
+    return e;
+  }
   function toReportDataset(ds, reportScope) {
+    var bad = scopeProblems(reportScope);
+    if (bad.length) throw new Error('[DatasetDef] illegal report scope: ' + bad.join(', '));   // fail-closed：调用方须先过 scopeProblems
     var out = { kind: 'sql', connection: ds.source.connection };
     Object.keys(ds.selection).forEach(function (k) { out[k] = ds.selection[k]; });
     if (isObj(reportScope)) Object.keys(reportScope).forEach(function (k) { out[k] = reportScope[k]; });
@@ -163,7 +219,8 @@ var DatasetDef = (function () {
     DATASET_VERSION: DATASET_VERSION, ID_RE: ID_RE,
     SELECTION_KEYS: SELECTION_KEYS, REPORT_SCOPE_KEYS: REPORT_SCOPE_KEYS,
     STATUSES: STATUSES, SOURCE_TYPES: SOURCE_TYPES, FIELD_ROLES: FIELD_ROLES,
-    domainOf: domainOf, nameOf: nameOf, expectedPath: expectedPath, termsOf: termsOf, dataEvidence: dataEvidence,
+    domainOf: domainOf, nameOf: nameOf, expectedPath: expectedPath, termsOf: termsOf,
+    dataEvidence: dataEvidence, evidenceProblems: evidenceProblems, grainDrift: grainDrift, scopeProblems: scopeProblems,
     auditIdentity: auditIdentity, auditRefs: auditRefs, auditSelection: auditSelection,
     auditGrain: auditGrain, auditAsserts: auditAsserts, auditLifecycle: auditLifecycle, audit: audit,
     bindDrift: bindDrift, selectionArgs: selectionArgs, toReportDataset: toReportDataset,
