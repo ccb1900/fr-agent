@@ -49,13 +49,14 @@ wrote(ASSETS + '/alpha.json', JSON.stringify(good, null, 1));
 wrote(ASSETS + '/broken.json', '{ this is not json');
 
 // 以真实子进程跑工具（不把工具逻辑 load 进当前上下文，验证入口/退出码/contract 文件）
-function runTool(action, extra, dirOverride) {
+function runTool(action, extra, dirOverride, useSqlCp) {
   var rid = 'asset_' + action + '_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
   var out = RUNS + '/' + rid + '/assets.json';
   var javaExe = System.getenv('FR_AGENT_JAVA') || 'D:/software/FineReport_11.0/jre/bin/java.exe';
   var nashorn = System.getenv('FR_AGENT_NASHORN') || 'D:/software/FineReport_11.0/jre/lib/ext/nashorn.jar';
+  var cp = useSqlCp ? (nashorn + ';D:/software/FineReport_11.0/webapps/webroot/WEB-INF/lib/*') : nashorn;
   var argv = new (J('java.util.ArrayList'))();
-  [javaExe, '-cp', nashorn, 'jdk.nashorn.tools.Shell', ROOT + '/' + TOOL].forEach(function (x) { argv.add(x); });
+  [javaExe, '-cp', cp, 'jdk.nashorn.tools.Shell', ROOT + '/' + TOOL].forEach(function (x) { argv.add(x); });
   var pb = new (J('java.lang.ProcessBuilder'))(argv);
   pb.environment().put('FR_AGENT_HOME', ROOT);
   pb.environment().put('AGENT_RUN_ID', rid);
@@ -196,6 +197,50 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     r2.rc === 0 && !(r2.result.assets || []).some(function (a) { return a.relPath.indexOf('model.json') >= 0; }) &&
     !(r2.result.diagnostics || []).some(function (d) { return d.path.indexOf('model.json') >= 0; }),
     JSON.stringify(r2.result && r2.result.diagnostics).slice(0, 200));
+})();
+
+// ============================ 4c. validate + publish（D2.3/D2.4：真实采样 + 生命周期升级） ============================
+// validate 需要连库（JDBC），走 sample_data 同规：plain JVM + WEB-INF/lib 驱动 + dbpass 凭据。
+//   测试不 mock 连接——对 atom_live_demo 真跑（只读、LIMIT），证明"工具自己采样自己写证据"。
+(function () {
+  var dv = JSON.parse(JSON.stringify(good));
+  dv.id = 'production.validate_me'; dv.name = '验证用'; dv.description = 'D2.3 validate 测试资产';
+  dv.status = 'draft';
+  dv.selection = { entity: 'InspectionRecord', dimensions: ['bizDate'], metrics: ['planned', 'done'] };
+  dv.grain = { description: '一天一行', keys: ['bizDate'] };
+  dv.asserts = { fields: [{ name: 'bizDate', role: 'dim' }, { name: 'planned', role: 'metric' }, { name: 'done', role: 'metric' }] };
+  wrote(ASSETS + '/validate_me.json', JSON.stringify(dv, null, 1));
+
+  var rv = runTool('validate', { AGENT_ASSETS_ID: 'production.validate_me' }, MODELS_ROOT, true);
+  check('validate·rc=0', rv.rc === 0, 'rc=' + rv.rc + ' stdout=' + rv.stdout.slice(0, 300));
+  check('validate·状态已升为 validated（工具写回）', exists(ASSETS + '/validate_me.json') && jt(ASSETS + '/validate_me.json').status === 'validated');
+  check('validate·绑定证据已生成（三身份对得上）', (function () {
+    var back = jt(ASSETS + '/validate_me.json');
+    var arr = (back.validation || {}).samples || [];
+    return arr.length >= 1 && arr[0].datasetId === dv.id && arr[0].modelVersion === dv.model.modelVersion && arr[0].sourceRef === dv.source.ref;
+  })(), JSON.stringify((jt(ASSETS + '/validate_me.json').validation || {}).samples || []).slice(0, 200));
+  check('validate·round-trip 审计零错', DatasetDef.audit(jt(ASSETS + '/validate_me.json'), 'models/production/datasets/validate_me.json').length === 0,
+    JSON.stringify(DatasetDef.audit(jt(ASSETS + '/validate_me.json'), 'models/production/datasets/validate_me.json')));
+
+  var published = jt(ASSETS + '/validate_me.json');
+  published.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };
+  wrote(ASSETS + '/validate_me.json', JSON.stringify(published, null, 1));
+  var rp = runTool('publish', { AGENT_ASSETS_ID: 'production.validate_me' });
+  check('publish·rc=0（证据 + review 双全）', rp.rc === 0, 'rc=' + rp.rc + ' stdout=' + rp.stdout.slice(0, 300));
+  check('publish·状态已升为 published', exists(ASSETS + '/validate_me.json') && jt(ASSETS + '/validate_me.json').status === 'published');
+  var rp2 = runTool('publish', { AGENT_ASSETS_ID: 'production.validate_me' });
+  check('负控·已 published 再 publish → 拒（幂等不重做）', rp2.rc === 1 && !!rp2.result && rp2.result.ok === false, 'rc=' + rp2.rc);
+  var rc3 = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ id: 'production.validate_me' })) });
+  check('负控·published 后 create 同 id → ASSET_ALREADY_EXISTS', rc3.rc === 1 && (rc3.result.error || {}).code === 'ASSET_ALREADY_EXISTS');
+  try { Files.delete(Pth.get(ASSETS + '/validate_me.json')); } catch (eDel) { }
+
+  var dv2 = JSON.parse(JSON.stringify(good));
+  dv2.id = 'production.no_review'; dv2.status = 'validated';
+  dv2.validation = { samples: [{ ref: 'logs/x.json', datasetId: 'production.no_review', modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+  wrote(ASSETS + '/no_review.json', JSON.stringify(dv2, null, 1));
+  var rnr = runTool('publish', { AGENT_ASSETS_ID: 'production.no_review' });
+  check('负控·validated 缺 review → publish 拒', rnr.rc === 1 && !!rnr.result && (rnr.result.error || {}).code === 'PUBLISHED_WITHOUT_REVIEW', JSON.stringify(rnr.result).slice(0, 220));
+  try { Files.delete(Pth.get(ASSETS + '/no_review.json')); } catch (eDel2) { }
 })();
 
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));

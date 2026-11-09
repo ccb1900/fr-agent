@@ -341,35 +341,25 @@ switch ($inner) {
     exit $rc
   }
   'assets' {
-    # D2.1 read-only (list/inspect) + D2.2 create. Zero engine, no FineReport mutex: pure file reads/writes
-    #   over models/*/datasets + the pure DatasetDef/DatasetRegistry/SqlBuilder functions. validate/publish
-    #   are D2.3+ and deliberately refused here (no half-wired path).
-    if ($Action -eq 'list' -or $Action -eq 'inspect') {
-      $env:AGENT_ASSETS_ACTION = $Action
-      if ($Target) { $env:AGENT_ASSETS_ID = $Target }
-      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/assets.js')
-      $rc = $LASTEXITCODE
-      Remove-Item env:AGENT_ASSETS_ACTION -ErrorAction SilentlyContinue
-      Remove-Item env:AGENT_ASSETS_ID -ErrorAction SilentlyContinue
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
-      exit $rc
-    }
+    # D2 Dataset asset management. Zero engine, no FineReport mutex: pure file reads/writes
+    #   over models/*/datasets + pure DatasetDef/DatasetRegistry/SqlBuilder functions.
+    #   validate needs JDBC (same as sample_data: plain JVM + WEB-INF/lib driver + dbpass).
+    $cpAssets = $jar; $cpNote = ''
+    if ($Action -eq 'validate') { $cpAssets = "$jar;$FR\webapps\webroot\WEB-INF\lib\*"; $cpNote = ' (SQL classpath)' }
+    $env:AGENT_ASSETS_ACTION = $Action
+    if ($Target) { $env:AGENT_ASSETS_ID = $Target }
     if ($Action -eq 'create') {
       if (-not $Doc) { Write-Output '{"ok":false,"error":"-Doc required for assets -Action create (path to an asset JSON file)","nextActions":["write the asset JSON per docs/architecture/dataset-contract.md","fr_agent.ps1 -Verb assets -Action create -Doc <file>"]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
-      $env:AGENT_ASSETS_ACTION = 'create'
       $env:AGENT_ASSETS_DOC = $Doc
-      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/assets.js')
-      $rc = $LASTEXITCODE
-      Remove-Item env:AGENT_ASSETS_ACTION -ErrorAction SilentlyContinue
-      Remove-Item env:AGENT_ASSETS_DOC -ErrorAction SilentlyContinue
-      Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-      Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
-      exit $rc
     }
-    Write-Output ('{"ok":false,"error":"assets -Action ' + $Action + ' not implemented until D2.3+ (validate/publish pending)","nextActions":["use -Action list, -Action inspect or -Action create"]}')
+    & $java '-cp' $cpAssets 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/assets.js')
+    $rc = $LASTEXITCODE
+    Remove-Item env:AGENT_ASSETS_ACTION -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_ASSETS_ID -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_ASSETS_DOC -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-    exit 2
+    Emit ($rc -eq 0) "logs/agent/runs/$RunId/assets.json"
+    exit $rc
   }
   'inspect_template' {
     # Phase-2 B-sect: read-only template checkup over the engine (sheet dims + cell texts + dataset/param

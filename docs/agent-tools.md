@@ -23,7 +23,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 | `validate` | `[-ExpectTotals 计划:完成]` | 核验 RunResult 11 阶段 + 产物存在 + 栅格自洽（合计=明细和、完成率公式），可选对拍外部真值 |
 | `preview` | `-Png <path>` | 返回 PNG 尺寸/字节数/是否疑似空白 |
 | `patch` | `-Patch <PatchSpec.json>` | 对已有 CPT 做受控局部修改（白名单 op），写 staging 并跑结构/执行/渲染回归 |
-| `assets` | `-Action list` / `-Action inspect` `-Target <datasetId>` | 只读浏览/检视 Dataset 资产（D2.1）：list 输出 id/status/domain/relPath；inspect 输出契约 audit、绑定漂移、派生列、grainDrift。零引擎、不进 FR 锁；create/validate/publish 未实现（明确拒，D2.2+） |
+| `assets` | `-Action list`（无参）/ `-Action inspect` `-Target <id>` / `-Action create` `-Doc <file>` / `-Action validate` `-Target <id>`（连库）/ `-Action publish` `-Target <id>` | Dataset 资产全生命周期管理（D2 完整）：list=清单；inspect=契约+派生列+粒度；create=只产 draft（非法拒写）；validate=自采样+自执行+自产绑定证据（列对拍+状态升级）；publish=重检全链+review+不可变。零 FR 引擎、不进 Mutex；validate 走 SQL classpath |
 
 ## 约束（Agent 必须遵守）
 
