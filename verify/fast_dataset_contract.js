@@ -232,6 +232,18 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('负控·published 缺业务确认仍拒（即使证据齐备）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_REVIEW', 'review'));
   bad = clone(ds); bad.status = 'published'; bad.review = { by: '业务负责人', at: '2026-11-09' };
   check('负控·published 缺数据证据亦拒（阶梯单调 published ⊇ validated）', hasCode(DatasetDef.audit(bad, ASSET), 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation'));
+  // 审查轮 P1（2026-11-09）：只数有效条目 → 混入无效证据即可蒙混，现统一为"给了就必须全真"
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry(), 'this-is-not-a-valid-evidence'] };
+  check('负控·一条真证据混一条假证据不能过 validated', hasCode(DatasetDef.audit(bad, ASSET), 'EVIDENCE_SHAPE', 'validation.samples[1]'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.status = 'draft'; bad.validation = { samples: ['garbage'] };
+  check('负控·draft 也不得藏垃圾证据（不给"以后再说"留缝）', hasCode(DatasetDef.audit(bad, ASSET), 'EVIDENCE_SHAPE', 'validation.samples[0]'), JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [boundEntry({ at: 'yesterday-ish' })] };
+  check('负控·非 ISO 时间戳证据被拒', hasCode(DatasetDef.evidenceProblems(bad), 'EVIDENCE_BAD_AT_FORMAT'), JSON.stringify(DatasetDef.evidenceProblems(bad)));
+  bad = clone(ds); bad.status = 'validated'; bad.validation = { samples: [], executions: [boundEntry()] };
+  check('正控·空数组不影响判定（另一数组有真证据即成立）', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  bad = clone(ds); bad.status = 'published'; bad.validation = { samples: [boundEntry()] }; bad.review = { by: '业务负责人', at: '2026-11-09' };
+  check('正控·证据齐备 + 业务确认可 published', DatasetDef.audit(bad, ASSET).length === 0, JSON.stringify(DatasetDef.audit(bad, ASSET)));
+  check('正控·draft 带空 validation 仍合法（如实承认未验证）', DatasetDef.audit(clone(ds), ASSET).length === 0);
   bad = clone(ds); bad.validation = 'validated by me';
   check('负控·validation 形状非法被拒', hasCode(DatasetDef.audit(bad, ASSET), 'BAD_VALIDATION', 'validation'));
   // filters 是契约允许键：正负都测（否则删掉 SELECTION_KEYS.filters 也不会红）

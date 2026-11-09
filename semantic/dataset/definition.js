@@ -13,6 +13,7 @@ var DatasetDef = (function () {
   var FIELD_ROLES = { dim: 1, metric: 1, derived: 1 };           // 与 sqlbuilder.js:165-166 role 同集
   var REF_KEYS = { term: 1, label: 1, widthPt: 1 };               // 与 spec_validator.js:73 REF_KEYS 同集
   var ID_RE = /^[a-z][a-z0-9_]{1,40}\.[a-z][a-z0-9_]{1,60}$/;
+  var ISO_AT_RE = /^\d{4}-\d{2}-\d{2}([T ]\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/;   // 证据时间戳形态（D2 由工具层统一生成）
 
   function hasOwn(o, k) { return !!o && Object.prototype.hasOwnProperty.call(o, k); }
   function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
@@ -109,6 +110,7 @@ var DatasetDef = (function () {
     if (!isObj(x)) return 'SHAPE';
     var req = ['ref', 'datasetId', 'modelVersion', 'sourceRef', 'at'];
     for (var i = 0; i < req.length; i++) { if (!isStr(x[req[i]]) || !x[req[i]]) return 'MISSING_' + req[i].toUpperCase(); }
+    if (!ISO_AT_RE.test(x.at)) return 'BAD_AT_FORMAT';
     if (x.datasetId !== ds.id) return 'DATASET_ID_MISMATCH';
     if (!isObj(ds.model) || x.modelVersion !== ds.model.modelVersion) return 'MODEL_VERSION_MISMATCH';
     if (!isObj(ds.source) || x.sourceRef !== ds.source.ref) return 'SOURCE_REF_MISMATCH';
@@ -142,17 +144,18 @@ var DatasetDef = (function () {
     if (!any) e.push('EMPTY_VALIDATION@validation');
     return e;
   }
+  // 统一规则（2026-11-09 审查轮 P1：validated 曾可混入无效证据，因为只数有效条目）：
+  //   · 任何状态：给了证据条目就必须全部有效（形状+绑定+时间戳），draft 也不许藏垃圾
+  //   · validated / published：还须至少一条有效证据（空/全无效都不算）
+  //   · published：额外要求业务 review（阶梯单调 published ⊇ validated）
   function auditLifecycle(ds) {
     var e = [];
     if (ds.review != null && !isObj(ds.review)) E(e, 'BAD_REVIEW', 'review');
-    var ev = dataEvidence(ds);
-    if (ds.status === 'validated' && !ev.length) E(e, 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation');
-    if (ds.status === 'published') {
-      if (!ev.length) E(e, 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation');
-      evidenceProblems(ds).forEach(function (c) { if (c.indexOf('EMPTY_VALIDATION') !== 0) e.push(c); });
-      if (!(isObj(ds.review) && isStr(ds.review.by) && ds.review.by && isStr(ds.review.at) && ds.review.at)) E(e, 'PUBLISHED_WITHOUT_REVIEW', 'review');
-    }
-    if (ds.validation != null && !isObj(ds.validation)) E(e, 'BAD_VALIDATION', 'validation');
+    evidenceProblems(ds).forEach(function (c) { if (c.indexOf('EMPTY_VALIDATION') !== 0) e.push(c); });
+    var hasEvidence = dataEvidence(ds).length > 0;
+    if (!hasEvidence && ds.status === 'validated') E(e, 'VALIDATED_WITHOUT_DATA_EVIDENCE', 'validation');
+    if (!hasEvidence && ds.status === 'published') E(e, 'PUBLISHED_WITHOUT_DATA_EVIDENCE', 'validation');
+    if (ds.status === 'published' && !(isObj(ds.review) && isStr(ds.review.by) && ds.review.by && isStr(ds.review.at) && ds.review.at)) E(e, 'PUBLISHED_WITHOUT_REVIEW', 'review');
     return e;
   }
   // 全量审计（纯函数，不改入参）
