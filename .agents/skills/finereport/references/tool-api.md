@@ -18,7 +18,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 `
 
 详细结果在 `result` 指向的 **UTF-8 文件**。部分 verb 额外带 `"artifact":"logs/agent/runs/<id>/artifact.json"`。退出码：`0` 可向前走 / `1` 失败或未决 / `2` 用法错。`create` 与 `compile`、`modify` 与 `patch` 是别名，行为一致。
 
-## 参数（入口 param 块，共 11 个）
+## 参数（入口 param 块，共 15 个：verb/action/spec/patch/term/png/pdf/intent/expectTotals/target/sample/doc/domain/reviewBy/runId）
 
 | 参数 | 用于 |
 |---|---|

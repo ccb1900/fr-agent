@@ -53,3 +53,23 @@ W10 SKILL.md 承诺措辞改为"能力门与失败结构化拒绝均结构化实
 **domain 双轨（走查第 5 条）复核**：W7 已在（list/inspect 输出 domainDir…实际字段名 `domain`+`modelDomain`+`domainMismatch` + DOMAIN_MISMATCH_HINT warning）——走查者实跑的是 2c3cafb 之前的 commit，字段在 b81db05..2c3cafb 的 semantic.js 里；文档（assets.md）补一句"语义寻址用目录域，modelDomain 仅展示"随本轮 sync 生效。
 
 **附记（三轮零星）**：二轮提交误将走查者 create 落盘的 `models/laser_inspection/model.json` 带入仓库（git add -A 连坐）——已移除；同时给 semantic create 落盘后补 DOMAIN_DIR_HINT nextActions（目录域=寻址权威，模型内部 domain 字段仅展示——P2-7 的实锤危害闭环）。
+
+
+---
+
+## 三轮走查（同日，5/7 确认 + 4 实项 1 情报 → 当轮全清）
+
+**实测确认已修（5/7）**：machine 假歧义（rep006 七列含机台 plan ready 一把过）、acceptance 死穴（validate 阶段组装+preview 合入 ok 保持）、review 九动作落地（结构化拒+nextActions 指路）、revise/publish 闭环（publishedAt ISO+快照）、domain 双轨显性标注（domainMismatch）。
+
+**三轮四实项 → 修复**：
+
+| # | 问题 | 修复 | 验证 |
+|---|---|---|---|
+| R3-1 | 账本/expression 面没画 detail（agent 能力咨询仍答"不支持"） | manifest 增 **spec.sql.detail**（四层 verified，evidence 引证 README #188 + carrier fast_assets_read/e2e；scope=行级直读无聚合）；账本 95/69/26 冻结口径同步 | fast_contracts 引证门 + capability_gate_consistency PASS |
+| R3-2 | 数字/措辞三处不一致（tool-api"共 11 个"、assets.md"五/七动作"、AGENTS 计数） | tool-api 参数表改**15 个**（列全名单）；assets.md 标题句改**九动作**；AGENTS 95/69/26 | sync 用户级 |
+| R3-3 | review 用法错不落盘（ps1 层拦截 → run 目录 JSON 空转） | ps1 拦截块删除（semantic+assets 两分支）——usage 判定归 js 层 bail（产物必落盘）；**顺带修复 assets review 的 -ReviewBy 从未传入 ps1 的断线** | suite 114 项（含两条落盘断言） |
+| R3-4 | create 落盘目录随草案内部域漂移（-Target production 落 laser_inspection 缝里） | create 目录域=显式 -Target > 草案域；**草案内容不改写**（model.domain 参与指纹——改写即证据失效，实测反例记档）；输出双轨字段+NOTE 提示 | suite：内部域草案+显式 Target → 落对目录+内容原样 |
+
+**情报项确认**：repeatHeaderRow e5Evidence 分类正确（agentOverride=false 表达"差 Agent 全链一个 run"）。
+
+**遗留清零状态**：走查三轮全部实项关闭；未验证如实挂账——assets review/revise 引擎 e2e 未单跑（semantic 链全链已通）、repeatHeaderRow spec 入口未接（A2 同级）。

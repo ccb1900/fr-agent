@@ -24,7 +24,7 @@ function check(name, cond) { if (cond) print('CHECK PASS: ' + name); else { FAIL
   var segs = ['chart', 'condition', 'write', 'page', 'product'];
   var total = 0, aa = 0;
   segs.forEach(function (s) { (mf[s] || []).forEach(function (c) { total++; if (c.agentAvailable) aa++; }); });
-  check('manifest totals 与逐段计数一致（94/68/26，W5 走查 P1-5 如实降级后冻结口径）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 94 && aa === 68);
+  check('manifest totals 与逐段计数一致（95/69/26，W3 detail 入账 +1；W5 降级 -1 的净冻结口径）', mf.totals.registered === total && mf.totals.agentAvailable === aa && mf.totals.unavailable === total - aa && total === 95 && aa === 69);
   check('unavailable 覆盖全部未承诺项且分类互斥', mf.unavailable.length === total - aa && mf.unavailable.every(function (x) {
     return ['webInteraction', 'unverifiedRendering', 'notImplemented', 'rejected', 'e5Evidence'].indexOf(x.reason) >= 0;
   }));

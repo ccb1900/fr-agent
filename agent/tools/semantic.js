@@ -191,11 +191,17 @@ if (action === 'create') {
   var newModel = null;
   try { newModel = JSON.parse(readUtf(absOf(docPath))); } catch (eJ) { bail('SEMANTIC_USAGE', 'model draft unreadable: ' + docPath, ['check UTF-8 JSON']); }
   if (!newModel || typeof newModel !== 'object' || Array.isArray(newModel)) bail('SEMANTIC_USAGE', 'not a JSON object');
-  if (typeof newModel.domain !== 'string' || !newModel.domain) bail('SEMANTIC_USAGE', 'draft must carry domain field (directory name)');
+  if (typeof newModel.domain !== 'string' || !newModel.domain) bail('SEMANTIC_USAGE', 'draft must carry domain field (directory name)', ['set the draft domain field to the DIRECTORY name (models/<dir>/model.json) - or pass -Target <dir> explicitly']);
   if (isObj(newModel.review))   // 审查轮纪律：review 只能由业务人后期写进盘——Agent 不得借 create 代填（assets 硬约束①镜像）
     bail('REVIEW_IN_DRAFT', 'draft carries review.{by,at}; the business owner adds review only AFTER create, at publish time (do not pre-fill)',
       ['remove review from the draft and re-run create', 'let the human owner set review before publish']);
-  var targetDir = modelsRoot + '/' + newModel.domain;
+  // P2-7（走查三轮 #4）：落盘目录收敛——显式 -Target/-Domain > 草案 domain 字段（目录权威）。
+  //   **草案内容不改写**：model.domain 参与 canonicalModel 指纹（r6），改写即 confirmed 关系证据失效
+  //   （实测：改写后 UNSUPPORTED_RELATION_KEY）。内部域与目录域的双轨用提示消歧，不用改写消音。
+  var arguments_0_domain = newModel.domain;
+  var dirDomain = (genv('AGENT_SEMANTIC_DOMAIN') || newModel.domain);
+  var domainRewritten = dirDomain !== arguments_0_domain;   // 仅表意：目录域 ≠ 草案域（内容保持原样）
+  var targetDir = modelsRoot + '/' + dirDomain;
   var targetFile = targetDir + '/model.json';
   if (Files.exists(Pth.get(targetFile))) bail('MODEL_ALREADY_EXISTS', 'refusing to overwrite: ' + targetFile, ['use a new domain']);
   // 引用校验：模型 ↔ schema 快照回溯（ModelValidator 离线）
@@ -212,9 +218,11 @@ if (action === 'create') {
   // P2-7（走查二轮实例）：走查者把模型内部域（laser_inspection）当 doc.domain → 落错目录 models/laser_inspection/。
   //   落盘后给 DOMAIN_DIR_HINT（非阻断）：目录域=资产寻址权威；模型文件内部 domain 字段是另一回事。
   var dirHint = (newModel.domain !== (newModel.modelDomain || newModel.domain)) ? newModel.domain : null;
-  finish(0, { tool: 'semantic', action: 'create', runId: runId, ok: true, zeroEngine: true, created: targetFile, domain: newModel.domain, validationErrors: 0,
-    nextActions: ['inspect it: semantic -Action inspect -Target ' + newModel.domain,
-      'domain addressing uses the DIRECTORY name (models/' + newModel.domain + '/); the model file internal domain field ("' + (newModel.domain || '') + '") is display-only — do not confuse the two (P2-7)'] });
+  finish(0, { tool: 'semantic', action: 'create', runId: runId, ok: true, zeroEngine: true, created: targetFile, domain: dirDomain, validationErrors: 0,
+    modelDomain: newModel.domain,
+    domainRewritten: domainRewritten ? { directoryDomain: dirDomain, draftDomain: arguments_0_domain, note: 'directory wins for addressing; draft domain field kept verbatim (canonicalModel fingerprint binds it)' } : undefined,
+    nextActions: ['inspect it: semantic -Action inspect -Target ' + dirDomain,
+      (domainRewritten ? 'NOTE: directory domain="' + dirDomain + '" (addressing) differs from the model file internal domain="' + arguments_0_domain + '" (display-only, fingerprint-bound - do NOT edit it; P2-7)' : 'domain addressing uses the DIRECTORY name (models/' + dirDomain + '/)') ] });
 }
 
 if (action === 'validate') {

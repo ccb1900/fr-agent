@@ -735,8 +735,8 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     rn0.rc === 1 && (rn0.result.nextActions || []).length > 0 && JSON.stringify(rn0.result.nextActions).indexOf('review') >= 0, 'out=' + JSON.stringify(rn0.result).slice(0, 200));
   // W1-负控：review 无 ReviewBy → usage 拒
   var rn1 = runSemAt('review', { domain: 'revdom' });
-  check('W1·review 缺 ReviewBy → usage 拒（人审纪律：不发明名字）',
-    rn1.rc === 2 && (rn1.stdout || '').indexOf('ReviewBy') >= 0, 'rc=' + rn1.rc + ' out=' + String(rn1.stdout).slice(0, 160));
+  check('W1·review 缺 ReviewBy → SEMANTIC_USAGE 拒（人审纪律：不发明名字；产物 JSON 落盘）',
+    rn1.rc === 2 && rn1.result && (rn1.result.error || {}).code === 'SEMANTIC_USAGE', 'rc=' + rn1.rc + ' out=' + String(rn1.stdout).slice(0, 160));
   // W1-正控：review 带人名 → 写入 review.{by,at}
   var rn2 = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
   check('W1·review 带人名 → rc=0 + review.{by,at} 落 model.json（人的动作有了工具面）',
@@ -774,6 +774,25 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   var rn7 = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
   check('W2·deprecated → review 拒（退役不可逆）', rn7.rc === 1 && rn7.result && (rn7.result.error || {}).code === 'DEPRECATED', 'rc=' + rn7.rc);
   try { Files.delete(Pth.get(SEM_MODELS + '/revdom/model.json')); } catch (e0) { }
+
+  // 走查三轮 #3/#4：create 落盘目录收敛（-Target 显式域 > 草案域；草案内容不改写——指纹纪律）+ review usage 产物落盘
+  (function () {
+    var convDom = SEM_MODELS + '/convdom';
+    Files.createDirectories(Pth.get(convDom));
+    var convModel = jt(SEM_MODELS + '/sales/model.json');
+    convModel.domain = 'laser_inspection';   // 模拟走查者从模型内部域拷贝的草案
+    convModel.modelVersion = '1'; convModel.review = null; delete convModel.review;
+    var convPath = TMP + '/docs/convdom_draft.json';
+    wrote(convPath, JSON.stringify(convModel, null, 1));
+    var rcc = runSemAt('create', { domain: 'convdom', AGENT_SEMANTIC_DOC: convPath, AGENT_SEMANTIC_DOMAIN: 'convdom' });
+    check('P2-7·create 草案域=内部域 + 显式 Target → 落 Target 目录（草案内容原样保留）',
+      rcc.rc === 0 && (rcc.result || {}).domain === 'convdom' && exists(SEM_MODELS + '/convdom/model.json') &&
+      (jt(SEM_MODELS + '/convdom/model.json').domain) === 'laser_inspection', 'rc=' + rcc.rc + ' out=' + JSON.stringify(rcc.result).slice(0, 200));
+    var rr1 = runSemAt('review', { domain: 'convdom' });   // 无 ReviewBy → js 层 usage 拒（产物 JSON 落盘）
+    check('走查三轮#3·review 缺 ReviewBy → SEMANTIC_USAGE + semantic.json 落盘（读文件再判断不再空转）',
+      rr1.rc === 2 && rr1.result && (rr1.result.error || {}).code === 'SEMANTIC_USAGE', 'rc=' + rr1.rc);
+    try { Files.delete(Pth.get(SEM_MODELS + '/convdom/model.json')); } catch (eC) { }
+  })();
 
   // W3：plan detail 通路（ready 断言 + dims=实体 property 展示列 + intentHash）
   var w3Intent = {
