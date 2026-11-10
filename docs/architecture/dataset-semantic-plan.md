@@ -156,7 +156,7 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读�
 | **S1** | 多领域模型（`domain` 寻址统一 + Registry 按域加载 + Validator 两档拆分） | ≥2 领域模型可加载；术语不跨域误匹配；旧模型仍可用 | ✅ **完成（2026-11-10）**（多域 operates于 production+sales 正控，与 make_api/semantic modelsRoot 双域实测；两档拆分由 semantic create/validate 以 `requireCompleteness:false` 消费） |
 | **S2** | `semantic list/inspect/create/validate/publish`（model.json 生命周期，零引擎） | `fast_assets_read.js` 4e 段：create 草稿落 `models/<domain>/model.json` + 同域再建拒 + 幽灵校验 + 完整档 publish 快照；update/review 由 create+validate+publish 组合覆盖，不设独立动词 | ✅ **完成（2026-11-10）** |
 | **S3** | Semantic → Dataset 绑定（datasetRef 交叉验证：存在/已发布/模型版本一致） | `semantic inspect` 输出 datasetRefCheck（DATASET_NOT_FOUND / NOT_PUBLISHED / MODEL_VERSION_MISMATCH）+ warnings 透出（不被 ok:true 吞掉） | ✅ **完成（2026-11-10）** |
-| **S4** | Semantic 版本快照（versions/<modelVersion>.json）+ deprecate + impact | `fast_assets_read.js` S4 段全绿：发布前不可变副本 / 重复 deprecate 拒 / deprecated validate 拒 / impact 自排除 | ✅ **完成（2026-11-10）** |
+| **S4** | Semantic 版本快照（versions/<modelVersion>.json）+ 版本纪律（同版本内容变更即拒 / 新版须新审）；**废弃与影响分析在 assets 轨落地**（semantic 侧 deprecate/impact 尚未做，挂 backlog） | `fast_assets_read.js`：发布前不可变副本 + 幂等再发布不动快照 + `MODEL_VERSION_NOT_BUMPED`/`MODEL_REVIEW_NOT_RENEWED`/`BAD_REVIEW_AT`/`PUBLISHED_WITHOUT_VERSION` 四态负控；assets 侧 deprecate/impact/refusal 全绿（S4 段 9 查） | ✅ **完成（2026-11-10）**（semantic deprecate/impact 部分如实入 backlog） |
 | **S5** | Semantic publish 完整档证据核对全强度（连接身份与 plan.js 同源，零 JDBC） | confirmed 关系默认身份 → publish 过 + 快照；`SQL_URL` 换库 → UNSUPPORTED_RELATION_KEY 拒（数据侧证据不跨库）；编译期 preflight 仍为最终闸。两查已入 `fast_assets_read.js` | ✅ **完成（2026-11-10）** |
 
 **顺序纪律（v1.0 §13 采纳）**：一次只交付一个阶段；先查现有代码再定新接口；提交说明写明复用了哪些模块、新增为何必要；未达本阶段验收不进下一阶段；架构撑不住时先交证据与最小修正方案，不擅自扩大重构范围。

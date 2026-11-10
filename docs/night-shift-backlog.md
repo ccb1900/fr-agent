@@ -199,3 +199,21 @@
 - 证据：G4 载体 cpt 内 AttrTooltipRichText 内容正确（"自定义提示 系列=${SERIES} 值=${VALUE}"），web 端 vbar 以 SVG 渲染，两次坐标悬停未在 SVG/DOM 取到提示文本；G3 legacy bar 的默认 tooltip 悬停可见。
 - 范围：确认 VanChart SVG 下 tooltip 触发元素/坐标或改用 canvas 渲染；验收=悬停出现含"自定义提示"的浮层。
 - 优先级 P3；外部依赖：无（frserver+test/test）。
+
+### S 审查轮挂账（2026-11-10，酣畅审查第 5 轮安抚清账）
+
+#### A1（P3）：semantic deprecate/impact 未做（S4 行已如实拆实）
+- 证据：agent/tools/semantic.js 仅 list/inspect/create/validate/publish；plan §8 S4 行原把 assets 轨的 deprecate/impact 写成 semantic 完成。
+- 影响：语义模型没有退役入口；published 模型只能改写或弃用，没有带 reason 的生命周期末端。
+- 范围估计：semantic.js +80 行（deprecate 写 model.json deprecation 块 + inspect 透出 + fixt 负控）、文档。
+- 验收：deprecate 带 reason → 快照后的 model.json 有 deprecation 块（inspect diagnostics 透出）；缺 reason 拒；deprecated 后 publish 拒。
+- 外部依赖：无。夜间可直接做。
+
+#### A2（P3·技术债待议）：modelVersion 参与 ModelEvidence 身份指纹——升版即证据全失
+- 证据：semantic/model/evidence.js canonicalModel 绑 modelVersion/domain/source/relationships；模型升版（关系未变）→ modelFingerprint 漂移 → i55 数据证据被判不匹配 → 本次发布必须重跑探针。
+- 权衡：r6 的"模型任何变化重取证"对关系未变的升版可能过度严格（关系指纹 checks[].relationFingerprint 已单独绑定关系内容）。
+- 影响：正式升版 production 模型时探针必须跟着跑（当前为单域生产模型，无真实升版压力）。
+- 范围估计：如放宽，动 canonicalModel 必须**同步重探针+重录证据**（研究性：canonicalModel 拆实体身份 vs 版本身份两段）。
+- 验收：不改则记录边界；改则 canonicalModel 变更说明 + 生产探针重跑 + 全套件绿。
+- 外部依赖：无（探针可本机跑）；建议产出前与用户对齐。
+

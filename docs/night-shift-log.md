@@ -2095,3 +2095,16 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 ### 下一项
 - 人审后正式 publish production.inspection_records（把 catalog spec 真业务样例跑通生产链）
 - docs/night-shift-backlog.md 按 S 轨完成情况清账（vpie tooltip 序列化墙等 P3 保留）
+
+
+### 第 5 轮酣畅审查：publish 版本纪律三洞收口（2026-11-10）
+- 目标：审查用户指令后的第 1 轮（提交 9ee594c 之后再扫一遍发布面）。
+- 复现/证据：**P1 静默覆盖洞**——logs/_semaudit 现场二连：publish v1 → 同 modelVersion 改 metric label 再 publish 仍 ok:true；versions/1.json 留旧 label，live model.json 已是未快照的分叉内容，review 未重填（S4 验收"改已发布指标：旧版可查、新版不静默覆盖"被静默违反）。
+- 同根 P1：`MODEL_REVIEW_NOT_RENEWED` 分支永不可达——ModelVocab.MODEL_VERSION 单值 '1' + validator 全等比对把升版通道整条锁死（试 bump v2 直接 UNSUPPORTED_MODEL_VERSION 拒）。
+- 实施：canonJson 键序规范化比对（同内容不同排版幂等）；同版本内容变更拒；新版路 review.at 必须晚于已发布最晚审查时（publishedReviewAt 扫 versions/*.json，不可读即 fail-closed）；review {by,at} 双全 + ISO_AT_RE（definition.js 同规镜像）；modelVersion 必填拒；create 拒自带 review 草稿（REVIEW_IN_DRAFT）；publish 拒透 evidenceDetail；vocab 放宽为 /^\d+$/（'1' 仍模板默认）。自审再抓 helper 两洞（Path 对象身份比较必不自排除、doc.review.at 未守缺）——重写后调用点同步。
+  （审查中我最初把还原脚本写错，误判"幂等失败"——canon 是对的，闸报的是真差异：内容确实没还原。负控夹具选生产模型删 modelVersion 触发的是 UNSUPPORTED_RELATION_KEY 而非版本闸：modelVersion 参与 canonicalModel 指纹，升版即证据全失——记 backlog A2 不擅动，负控改用 sales naming-derived 夹具达成目的。）
+- 固化：fast_assets_read 83/0（版本纪律矩阵 8 查）；e2e 补部署产物清理；plan §8 S4 行拆实（semantic deprecate/impact 未做→backlog A1）；agent-tools.md semantic 行补四态；README #185。
+- 验证：CLI 逐发矩阵（幂等/NOT_BUMPED/NOT_RENEWED/v2/BAD_REVIEW_AT×2/REVIEW_IN_DRAFT/PUBLISHED_WITHOUT_VERSION）+ fast_assets_read 83/0 + 全量门（fast 22 / scan / 边界 / ps1-static / 集成）+ e2e 复跑。
+- 未验证：canonicalModel 拆分（A2 待议）；semantic deprecate/impact（A1 未做，如实）。
+
+- （补记）e2e 第三洞（门咬门）：make_api 任何 spec 复写仓库根 demo_api.cpt（ABR-1 单点）→ e2e 两次非默认 spec 后铁证 1556CDCF、fast_baseline 红两次（11:12 首绿、11:47 复审再红，11:44 mtime 实证写入者=e2e 复跑窗口）。修：e2e 尾段默认 spec 自复位 + MD5 断言；runId UUID 化（否则下轮撞 compile.json RUNID_EXISTS）；部署产物 cpt/png/pdf 用后即净。e2e 复跑 6/6、独立复核 CBEB42E3；fast 22/22 GREEN 收官。
