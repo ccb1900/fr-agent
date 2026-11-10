@@ -209,7 +209,12 @@ if (action === 'create') {
     ['fix the model draft against ' + schemaNameS2], { diagnostics: mvErrs.slice(0, 20) });
   Files.createDirectories(Pth.get(targetDir));
   writeJson(targetFile, newModel);
-  finish(0, { tool: 'semantic', action: 'create', runId: runId, ok: true, zeroEngine: true, created: targetFile, domain: newModel.domain, validationErrors: 0 });
+  // P2-7（走查二轮实例）：走查者把模型内部域（laser_inspection）当 doc.domain → 落错目录 models/laser_inspection/。
+  //   落盘后给 DOMAIN_DIR_HINT（非阻断）：目录域=资产寻址权威；模型文件内部 domain 字段是另一回事。
+  var dirHint = (newModel.domain !== (newModel.modelDomain || newModel.domain)) ? newModel.domain : null;
+  finish(0, { tool: 'semantic', action: 'create', runId: runId, ok: true, zeroEngine: true, created: targetFile, domain: newModel.domain, validationErrors: 0,
+    nextActions: ['inspect it: semantic -Action inspect -Target ' + newModel.domain,
+      'domain addressing uses the DIRECTORY name (models/' + newModel.domain + '/); the model file internal domain field ("' + (newModel.domain || '') + '") is display-only — do not confuse the two (P2-7)'] });
 }
 
 if (action === 'validate') {

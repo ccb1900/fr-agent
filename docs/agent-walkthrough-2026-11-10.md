@@ -51,3 +51,5 @@ W10 SKILL.md 承诺措辞改为"能力门与失败结构化拒绝均结构化实
 **文档根因补修（外置 agent 没发现 W1/W2 新动作的原因）**：SKILL.md 九动作 + review/revise 用法与"被 PUBLISHED_WITHOUT_REVIEW 拒不是死锁，走 review→publish"指引；tool-api verb 行补 -ReviewBy/-Doc；assets.md assets/semantic 两段补 review/revise 行——sync 三份到用户级。
 
 **domain 双轨（走查第 5 条）复核**：W7 已在（list/inspect 输出 domainDir…实际字段名 `domain`+`modelDomain`+`domainMismatch` + DOMAIN_MISMATCH_HINT warning）——走查者实跑的是 2c3cafb 之前的 commit，字段在 b81db05..2c3cafb 的 semantic.js 里；文档（assets.md）补一句"语义寻址用目录域，modelDomain 仅展示"随本轮 sync 生效。
+
+**附记（三轮零星）**：二轮提交误将走查者 create 落盘的 `models/laser_inspection/model.json` 带入仓库（git add -A 连坐）——已移除；同时给 semantic create 落盘后补 DOMAIN_DIR_HINT nextActions（目录域=寻址权威，模型内部 domain 字段仅展示——P2-7 的实锤危害闭环）。
