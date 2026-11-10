@@ -73,3 +73,5 @@ W10 SKILL.md 承诺措辞改为"能力门与失败结构化拒绝均结构化实
 **情报项确认**：repeatHeaderRow e5Evidence 分类正确（agentOverride=false 表达"差 Agent 全链一个 run"）。
 
 **遗留清零状态**：走查三轮全部实项关闭；未验证如实挂账——assets review/revise 引擎 e2e 未单跑（semantic 链全链已通）、repeatHeaderRow spec 入口未接（A2 同级）。
+
+**三轮附记（发布产物入库 + 业务完整性核验）**：走查者的 review→publish 是**真实生产动作**（署名 guojianhang，快照 versions/1.json）——`git add -A` 连坐入库（第三次）。业务完整性核验：EXPECTED TOTAL=26420 ✓、relationships 原样（confirmed recordToFile 保留→指纹未漂→证据链活）✓、modelVersion 仍 1（首发时点快照随发布诞生——D3.6 的 NOT_BUMPED 闸覆盖评估=首发建立基线后任何外部改写必拦，闸完整）✓、e2e 复跑（新模型为基底）全绿 ✓。**提交诚实性**：上笔 commit message 未提及生产模型替换——本附记即补记（不改史）。**纪律修正**：`git add -A` 三连坐，此后入库一律显式文件清单。
