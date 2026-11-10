@@ -21,6 +21,8 @@
 ... -Verb assets -Action create   -Doc <draft.json>              # 只产 draft（非法拒写、同 id 拒）
 ... -Verb assets -Action validate -Target <id>                   # 真库采样执行 + 列对拍 + 绑定证据 → validated（走 SQL classpath，plain JVM）
 ... -Verb assets -Action publish  -Target <id>                   # 重检全链 + review 齐备 → published（缺即拒）
+... -Verb assets -Action review   -Target <id> -ReviewBy "<人名>" # 人审登记（at 工具盖 ISO；由业务人执行或转述人名）
+... -Verb assets -Action revise   -Target <id> -Doc <bump.json>  # 版本 bump 入口（datasetVersion 必须 > 当前；拒自带 review；bump 后重 validate→review→publish）
 ... -Verb assets -Action deprecate -Target <id>                  # 带 deprecation.reason 退役
 ... -Verb assets -Action impact   -Target <id>                   # 静态影响扫描（examples/fixtures/models 引用面，自排除）
 ```
@@ -35,6 +37,8 @@
 ... -Verb semantic -Action create   -Doc <model-draft.json>      # 草稿档校验（完整性阈值放宽）落 models/<domain>/model.json（自带 review 拒）
 ... -Verb semantic -Action validate -Target <domain>             # 离线校验，不改文件；deprecated 拒
 ... -Verb semantic -Action publish  -Target <domain>             # 完整档 + review.{by,at} ISO + versions/<modelVersion>.json 快照
+... -Verb semantic -Action review   -Target <domain> -ReviewBy "<人名>"  # 人审登记（被 PUBLISHED_WITHOUT_REVIEW 拒时的合规通路）
+... -Verb semantic -Action revise   -Target <domain> -Doc <bump.json>    # 版本 bump（modelVersion 必须 > 当前；拒自带 review；bump 后必须重审再 publish）
                                                                   #   同版本内容变更拒、版本升高必须配新 review.at
 ... -Verb semantic -Action deprecate -Target <domain>            # 先在 model.json 写 deprecation:{reason}（人填）再调；不可逆
 ... -Verb semantic -Action impact    -Target <domain>            # 列出引用该域模型的 Dataset 资产（零引用也是合法答案）

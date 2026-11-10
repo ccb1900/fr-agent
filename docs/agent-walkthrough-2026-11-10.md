@@ -32,3 +32,22 @@ W7 list/inspect 输出 `domainDir`+`modelDomain` 双字段，模型内域≠目�
 W8 plan.json 记 `intentHash`（同 Intent 可同 RunId 复跑——零引擎 verb 幂等）；SKILL/tool-api 补"失败重试同 RunId 直接覆盖"口径。
 W9 plan 阶段即注入能力级 unresolvedQuestions（分页/参数/筛选关键词命中 → 对应账本 unavailable 提示），不等 spec 校验回头。
 W10 SKILL.md 承诺措辞改为"能力门与失败结构化拒绝均结构化实测（2026-11-10 D3.6）"， refraining 全链宣称。
+
+
+---
+
+## 二轮走查（同日，验收 W1–W10 + 新暴露 3 项）
+
+**实测确认已修**：P1-3（明细 G4 全链通：laser_aaa_rep005 plan ready→create→validate 8 绿→preview 非空白 1587×2245）、P2-8（intentHash+同 RunId 复跑口径）、P2-9（能力级 unresolvedQuestions 实测输出）、P1-6（G3 账本口径）、P2-10（SKILL 措辞）。
+
+**二轮新暴露 → 三轮修复（2026-11-10 当轮完成）**：
+
+| # | 问题 | 修复 | 验证 |
+|---|---|---|---|
+| N1 | `machine` 单候选假歧义（明细列唯一 dimension 候选被 ambiguous 拒） | `normalizeDetailColumns`：usable 扩展收 dimension；唯一 dimension 候选=无歧义直接采纳（sqlbuilder dimsByName 命中）；dimension 与 property/column 并存才真歧义照问 | w3c_plan：含 machine 的明细 intent → **ready**（dims=[bizTime,fileKey,machine]） |
+| N2 | `acceptance` 死穴（三前提全满足仍 null；preview 合入需"preview 后再跑 validate"的隐秘次序） | 双修：①fr_agent.ps1 preview 段跑完**立即刷新 artifact**（同 validate 规，调用 create_report.js）——preview 合入不再隐秘；②create_report.js `art.acceptance = acc` **落盘**（此前只算不写） | w3c_chain：create→validate→preview → **preview merged=true + acceptance.ok=true**（executionOk/validationOk/errorDiagnostics=0） |
+| N3 | discover 表达面无 detail + repeatHeaderRow 标签错挂 unverifiedRendering | ①report_spec capabilities sql 段补 `detail（…）`；②manifest 回四层 verified + **agentOverride=false**（rawIR 回归可重复+agent 无入口→e5Evidence 分类，语义精确） | fast_capability_gate_consistency PASS（94/68/26 冻结口径） |
+
+**文档根因补修（外置 agent 没发现 W1/W2 新动作的原因）**：SKILL.md 九动作 + review/revise 用法与"被 PUBLISHED_WITHOUT_REVIEW 拒不是死锁，走 review→publish"指引；tool-api verb 行补 -ReviewBy/-Doc；assets.md assets/semantic 两段补 review/revise 行——sync 三份到用户级。
+
+**domain 双轨（走查第 5 条）复核**：W7 已在（list/inspect 输出 domainDir…实际字段名 `domain`+`modelDomain`+`domainMismatch` + DOMAIN_MISMATCH_HINT warning）——走查者实跑的是 2c3cafb 之前的 commit，字段在 b81db05..2c3cafb 的 semantic.js 里；文档（assets.md）补一句"语义寻址用目录域，modelDomain 仅展示"随本轮 sync 生效。

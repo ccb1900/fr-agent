@@ -47,6 +47,7 @@ var art = ReportArtifact.create({
 var shape = ReportArtifact.validate(art);
 shape.issues.forEach(function (i) { art.diagnostics.push(ReportArtifact.normalizeDiagnostic(i)); });
 var acc = ReportArtifact.acceptance(art);
+art.acceptance = acc;   // walk-through round-2：acceptance 此前只算不落盘（tool-api 把 acceptance.ok 当最终判定，artifact 里却没有该键——死穴实修）
 var ok = shape.ok && acc.ok;
 atomicWriteUtf(runDir + '/artifact.json', JSON.stringify(art, null, 1));
 System.exit(ok ? 0 : 1);

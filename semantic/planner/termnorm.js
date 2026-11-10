@@ -54,12 +54,20 @@ var TermNorm = (function () {
         if (r2 && r2.status !== 'unknown') r = r2;
       }
       var cands = (r && r.candidates) || [];
-      var usable = cands.filter(function (c) { return c && (c.target === 'property' || c.target === 'column'); });
+      var usable = cands.filter(function (c) { return c && (c.target === 'property' || c.target === 'column' || c.target === 'dimension'); });
       if (!usable.length) {
         if (r && r.status === 'unknown') unknown.push(String(t));
         else ambiguous.push({ term: String(t), candidates: cands });
         return;
       }
+      // 走查二轮（machine 单候选假歧义）：唯一候选=dimension（如 machine 分组键）→ resolved 无歧义，直接采纳——
+      //   sqlbuilder dimsByName 命中模型维度；dimension 与 property/column 并存才是真歧义（分组键 vs 展示列语义不同，照问）。
+      var dimOnly = usable.filter(function (c) { return c.target === 'dimension'; });
+      if (usable.length === 1 && dimOnly.length === 1) {
+        dims.push((raw && typeof raw === 'object') ? (function () { var o = {}; for (var k2 in raw) if (Object.prototype.hasOwnProperty.call(raw, k2)) o[k2] = raw[k2]; o.term = dimOnly[0].ref; return o; })() : dimOnly[0].ref);
+        return;
+      }
+      if (dimOnly.length && dimOnly.length < usable.length) usable = usable.filter(function (c) { return c.target !== 'dimension'; });
       var byCol = {};
       usable.forEach(function (c) { var ck = String(c.column || c.ref); byCol[ck] = byCol[ck] || c; });
       var uniqCols = Object.keys(byCol);

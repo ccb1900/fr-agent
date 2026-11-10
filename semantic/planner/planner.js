@@ -41,7 +41,8 @@ var ReportPlanner = (function () {
         });
         return out;
       }
-      var dims = namesIn(dsn.dimensions, 'dimensions'), mets = namesIn(dsn.metrics, 'metrics');
+      var isDetailPlan = !!(intent.presentation && intent.presentation.type === 'detail');
+      var dims = namesIn(dsn.dimensions, isDetailPlan ? 'detail列' : 'dimensions'), mets = namesIn(dsn.metrics, 'metrics');
       var memberMissing = 0;   // I5.1 P2：模型成员缺失计数——纯 unknown 才 rejected（不编造）
       var ambiguousTerms = 0;  // B1（night-shift）：双指术语必须反问（unresolvedQuestions），绝不混入"成员缺失"硬拒
       if (ctx.model) {
@@ -53,6 +54,9 @@ var ReportPlanner = (function () {
         //   与内嵌路径 mapTerm 的行为一致化）；纯 unknown → 原样 validationWarnings + memberMissing（不编造）。
         function memberCheck(dn, isDim, set) {
           if (!dn) return;
+          // W3：detail 模式的列不做成员名册硬校验——展示列允许 property/物理列直上报表（plan 层已归一）；
+          //   列字符串带实体前缀（Entity.prop）也放行，形状交 spec/编译链把关。真 unknown 在 plan 层已 rejected。
+          if (isDim && isDetailPlan) { keepDim.push(dn); return; }
           if (hasOwn(set, dn)) { (isDim ? keepDim : keepMet).push(dn); return; }
           var r = (typeof ctx.resolve === 'function') ? ctx.resolve(dn) : null;
           if (r && r.status === 'ambiguous' && r.candidates && r.candidates.length) {
@@ -86,7 +90,7 @@ var ReportPlanner = (function () {
       var pres = {};
       Object.keys(presIn).forEach(function (k) { pres[k] = presIn[k]; });
       if (pres.type == null) pres.type = 'table';
-      if (pres.showTotal == null) pres.showTotal = true;
+      if (pres.showTotal == null) pres.showTotal = isDetailPlan ? false : true;   // W3：detail 无聚合合计（缺省 false）
       if (pres.chart == null && intent.chart != null) pres.chart = intent.chart;
       if (pres.chart != null && presIn.chart != null && intent.chart != null) validationWarnings.push({ feature: 'chart', reason: 'presentation.chart 与顶层 chart 同时给出，取 presentation.chart', owner: '意图输入' });
       var sqlSpec = {

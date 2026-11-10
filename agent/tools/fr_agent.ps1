@@ -216,9 +216,17 @@ switch ($inner) {
     $rc = $LASTEXITCODE
     Remove-Item env:AGENT_PNG -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_PDF -ErrorAction SilentlyContinue
+    # walk-through round-2 (acceptance dead-spot): refresh artifact AFTER preview so preview merges in
+    #   immediately (previously it only merged when validate ran after preview - the reported gotcha).
+    $artRcP = 0
+    if (Test-Path "$runDir\compile.json") {
+      & $java '-cp' $jar 'jdk.nashorn.tools.Shell' "$ROOT\application\create_report.js"
+      $artRcP = $LASTEXITCODE
+    }
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
-    Emit ($rc -eq 0) "logs/agent/runs/$RunId/preview.json"
-    exit $rc
+    $okAllP = ($rc -eq 0) -and ($artRcP -eq 0)
+    Write-Output ('{"ok":' + $okAllP.ToString().ToLower() + ',"runId":"' + $RunId + '","result":"logs/agent/runs/' + $RunId + '/preview.json","artifact":"logs/agent/runs/' + $RunId + '/artifact.json"}')
+    exit $(if ($okAllP) { 0 } else { 1 })
   }
   'validate' {
     $env:AGENT_COMPILE = "$runDir\compile.json"

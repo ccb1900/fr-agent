@@ -223,6 +223,7 @@ try {
       stamp('PREFLIGHT OK（' + schemaName + '；证据 accepted=' + pf.context.evidence.accepted.length + '，missing=0）');
       compiledIR = SpecCompiler.compile(rs, { model: pf.context.model, SqlBuilder: SqlBuilder });
       SPEC = { outName: rs.outName, IR: compiledIR };
+      if (rs.presentation && rs.presentation.type === 'detail') SPEC.allowNoFormula = true;   // W3：detail 明细无派生公式格（v2 校验器 allowNoFormula 通道）
       // 凭据本地注入：sql 数据集引用的连接名 → 非敏感 driver/url + dbpass 密码合成 SPEC.connections（密码只在本机、绝不入 JSON/cpt）
       var connNames = {};
       (compiledIR.datasets || []).forEach(function (d) { if (d.kind === 'sql' && d.connection) connNames[d.connection] = 1; });

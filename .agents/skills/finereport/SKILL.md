@@ -40,7 +40,7 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 ## 铁律（每条都有原因）
 
 1. **不臆造业务事实**：实体/维度/指标只能来自 `discover` 的模型与 `resolve` 的解析结果。未知术语 → `unknown`，问用户，不编字段、不猜表。
-2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。**Dataset 资产（`models/<domain>/datasets/*.json`）与语义模型（`models/<domain>/model.json`）用管理 verb 操作，不手写**：`assets`/`semantic` 各七动作（list/inspect/create/validate/publish/deprecate/impact）落实完整生命周期；**发布必须业务人填 review.{by,at}，Agent 不得代填**。需要新数据集/新指标时按 §场景 D 产出变更申请交人确认。
+2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。**Dataset 资产（`models/<domain>/datasets/*.json`）与语义模型（`models/<domain>/model.json`）用管理 verb 操作，不手写**：`assets`/`semantic` 各**九动作**（list/inspect/create/validate/publish/**review/revise**/deprecate/impact）落实完整生命周期。**review=人审入口**（`-Action review -Target <id> -ReviewBy "<业务人名>"`——由业务人自己执行或明确转述人名，Agent 绝不发明名字）；**revise=合法版本 bump 入口**（版本必须 > 当前、拒自带 review——bump 后必须重审再 publish）。发布被 PUBLISHED_WITHOUT_REVIEW 拒时，不是死锁：走 review 动作 → 再 publish。需要新数据集/新指标时按 §场景 D 产出变更申请交人确认。
 3. **不跳过 `validate`**：`create` 的 `exit=0` 只说明工具链跑通；合计/公式/栅格自洽由 `validate.json` 判定。有真值时用 `-ExpectTotals` 对拍，执行成功不等于数据正确。
 4. **歧义必问**：`ambiguous`、`requiresConfirmation`、用户口径冲突都停下来问。一次问清，别用"先按常见的来"蒙过去。
 5. **不静默降级**：不支持的能力要明说并给替代（如"按派生完成率排序"→ 改按计划数排序）。不要偷偷删掉用户要求的字段或图表。
