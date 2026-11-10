@@ -108,10 +108,12 @@ try {
       load(Paths.semantic('dataset/resolver.js'));
       // 多域寻址（P1-1 修复）：域从 ref 前缀推导，不硬编码 production
       var refDomain = rs.dataset.ref.split('.')[0];
-      var catModelPath = 'models/' + refDomain + '/model.json';
+      var catModelRoot = J('java.lang.System').getenv('AGENT_CATALOG_MODELS_ROOT') || Paths.root + '/models';
+      var catModelPath = catModelRoot + '/' + refDomain + '/model.json';
       var catModel = null;
       try {
-        catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(catModelPath))), 'UTF-8')));
+      var catModelAbs = /^([A-Za-z]:[\\/]|\/)/.test(catModelPath) ? catModelPath : Paths.spec(catModelPath);   // env 可给绝对路径，勿双前缀
+        catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(catModelAbs))), 'UTF-8'));
       } catch (eCatModel) {
         RR.diag('DATASET MODEL MISSING: ' + catModelPath + ' (' + eCatModel + ')');
         RR.fail('input_load'); stamp('DATASET MODEL MISSING: refusing to compile from missing domain model'); finishRun(2);
@@ -127,7 +129,7 @@ try {
             catEntries.push({ relPath: relM ? relM[1] : String(f).replace(/\\/g, '/'), doc: doc });
           }
         } } finally { try { dsStream.close(); } catch (eC) { } }
-      })(Paths.root + '/models/' + refDomain + '/datasets');
+      })(J('java.lang.System').getenv('AGENT_CATALOG_MODELS_ROOT') ? (J('java.lang.System').getenv('AGENT_CATALOG_MODELS_ROOT') + '/' + refDomain + '/datasets') : (Paths.root + '/models/' + refDomain + '/datasets'));
       var catReg = DatasetRegistry.build(catEntries);
       var catScope = {}; ['dateRange', 'sort', 'topN'].forEach(function (k) { if (rs.dataset[k] != null) catScope[k] = rs.dataset[k]; });
       var resolved = DatasetResolver.resolve(catReg, rs.dataset.ref, catScope, catModel);
