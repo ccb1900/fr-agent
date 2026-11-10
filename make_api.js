@@ -122,7 +122,10 @@ try {
         try { var it = dsStream.iterator(); while (it.hasNext()) {
           var f = it.next(); var doc = null;
           try { doc = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(f), 'UTF-8'))); } catch (eJ) { }
-          if (doc && typeof doc === 'object' && !Array.isArray(doc)) catEntries.push({ relPath: String(f).replace(/\\/g, '/'), doc: doc });
+          if (doc && typeof doc === 'object' && !Array.isArray(doc)) {
+            var relM = /(models\/.+)$/.exec(String(f).replace(/\\/g, '/'));
+            catEntries.push({ relPath: relM ? relM[1] : String(f).replace(/\\/g, '/'), doc: doc });
+          }
         } } finally { try { dsStream.close(); } catch (eC) { } }
       })(Paths.root + '/models/' + refDomain + '/datasets');
       var catReg = DatasetRegistry.build(catEntries);

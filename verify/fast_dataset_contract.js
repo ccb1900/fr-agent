@@ -271,6 +271,79 @@ check('确定序·同一资产两次 SQL 全等', buildOf(ds).sql === buildOf(ds
   check('确定序·同一资产两次审计全等', JSON.stringify(DatasetDef.audit(ds, ASSET)) === JSON.stringify(DatasetDef.audit(ds, ASSET)));
 })();
 
+// ============================ 6b. D3 Resolver + 编译等价（catalog 解析 == 内联 spec） ============================
+load(ROOT + '/semantic/dataset/resolver.js');
+function isObj6b(v) { return !!v && typeof v === 'object' && !Array.isArray(v); }
+function isArr6b(v) { return Object.prototype.toString.call(v) === '[object Array]'; }
+(function () {
+  var pubDoc = clone(ds); pubDoc.status = 'published';
+  pubDoc.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };
+  if (!isObj6b(pubDoc.validation)) pubDoc.validation = {};
+  if (!isArr6b(pubDoc.validation.samples)) pubDoc.validation.samples = [];
+  pubDoc.validation.samples.push({ ref: 'logs/agent/runs/x/sample.json', datasetId: pubDoc.id, modelVersion: pubDoc.model.modelVersion, sourceRef: pubDoc.source.ref, at: '2026-11-10T10:00:00Z' });
+  var reg = DatasetRegistry.build([{ relPath: 'models/production/datasets/inspection_records.json', doc: pubDoc }]);
+  var scope = { dateRange: { from: '2026-09-13', to: '2026-09-22' } };
+
+  // 正控·published 可解析
+  var res = DatasetResolver.resolve(reg, pubDoc.id, scope, model);
+  check('resolver·published 可解析', res.ok, JSON.stringify(res.errors || []));
+  check('resolver·datasetRef 三身份正确', res.ok && res.datasetRef.id === pubDoc.id && res.datasetRef.modelVersion === pubDoc.model.modelVersion);
+
+  // 编译等价：catalog 解析后与内联 spec 产出 IR 全等
+  if (res.ok) {
+    load(ROOT + '/lib/spec_compiler.js');
+    var deps = { model: model, SqlBuilder: SqlBuilder };
+    var catRs = { specVersion: '1', outName: 'eq_test', report: { name: '等价测试' },
+      dimensions: pubDoc.selection.dimensions, metrics: pubDoc.selection.metrics,
+      dataset: res.dataset,
+      presentation: { type: 'table', showTotal: true } };
+    var inlineRs = { specVersion: '1', outName: 'eq_test', report: { name: '等价测试' },
+      dimensions: pubDoc.selection.dimensions, metrics: pubDoc.selection.metrics,
+      dataset: { kind: 'sql', connection: pubDoc.source.connection, entity: pubDoc.selection.entity,
+        dimensions: pubDoc.selection.dimensions, metrics: pubDoc.selection.metrics, dateRange: scope.dateRange },
+      presentation: { type: 'table', showTotal: true } };
+    var catIr = SpecCompiler.compile(catRs, deps);
+    var inlineIr = SpecCompiler.compile(inlineRs, deps);
+    check('编译等价·catalog 解析与内联 spec 产出 IR JSON 全等',
+      JSON.stringify(catIr) === JSON.stringify(inlineIr),
+      JSON.stringify(catIr).slice(0, 120) + ' vs ' + JSON.stringify(inlineIr).slice(0, 120));
+  }
+
+  // 负控·draft 不能解析
+  var draftDoc = clone(ds); draftDoc.status = 'draft';
+  var draftReg = DatasetRegistry.build([{ relPath: 'x', doc: draftDoc }]);
+  check('负控·draft Dataset 不能解析（NOT_PUBLISHED）', !DatasetResolver.resolve(draftReg, ds.id, {}, model).ok);
+  // 负控·错误 modelVersion 不能解析
+  var wrongVer = clone(pubDoc); wrongVer.model.modelVersion = '999';
+  var wrongReg = DatasetRegistry.build([{ relPath: 'x', doc: wrongVer }]);
+  check('负控·错误 modelVersion 不能解析', !DatasetResolver.resolve(wrongReg, ds.id, {}, model).ok);
+  // 负控·不存在的 ref 不能解析
+  check('负控·不存在的 ref 不能解析', !DatasetResolver.resolve(reg, 'production.nope', {}, model).ok);
+  // 正控·非 production 域的 Dataset 可正确解析（多域隔离）
+  (function () {
+    var otherDoc = clone(ds); otherDoc.id = 'sales.daily'; otherDoc.domain = 'sales';
+    otherDoc.status = 'published'; otherDoc.review = { by: 'sales owner', at: '2026-11-10T10:00:00Z' };
+    otherDoc.source = { type: 'database', ref: 'other_db', connection: 'OTHER' };   // 先改 source 再 push 证据
+    otherDoc.model = { ref: 'models/sales/model.json', modelVersion: '1' };
+    if (!isObj6b(otherDoc.validation)) otherDoc.validation = {};
+    if (!isArr6b(otherDoc.validation.samples)) otherDoc.validation.samples = [];
+    otherDoc.validation.samples.push({ ref: 'logs/x.json', datasetId: otherDoc.id, modelVersion: otherDoc.model.modelVersion, sourceRef: otherDoc.source.ref, at: '2026-11-10T10:00:00Z' });
+    var salesModel = { modelVersion: '1', source: 'other_db', domain: 'sales',
+      entities: [{ name: 'E', table: 't', properties: [{ name: 'a', column: 'a', type: 'text' }] }],
+      metrics: [{ name: 'm', label: 'm', expression: { kind: 'count', table: 't' } }],
+      dimensions: [{ name: 'a', label: 'a', table: 't', column: 'a' }],
+      relationships: [] };
+    var multiReg = DatasetRegistry.build([
+      { relPath: 'models/production/datasets/inspection_records.json', doc: pubDoc },
+      { relPath: 'models/sales/datasets/daily.json', doc: otherDoc }
+    ]);
+    var r1 = DatasetResolver.resolve(multiReg, 'production.inspection_records', {}, model);
+    var r2 = DatasetResolver.resolve(multiReg, 'sales.daily', {}, salesModel);
+    check('正控·多域 registry 双域均可解析', r1.ok && r2.ok, JSON.stringify(r1.errors || r2.errors));
+    check('正控·各域 datasetRef 正确指向各自 relPath', r1.datasetRef.relPath !== r2.datasetRef.relPath);
+  })();
+})();
+
 // ============================ 6. 兼容：旧链路不回归（AGENTS §1） ============================
 check('兼容·DATASET_KINDS 仍 rows|sql（未偷加 catalog kind）',
   JSON.stringify(Object.keys(ReportSpec.DATASET_KINDS).sort()) === '["rows","sql"]', JSON.stringify(Object.keys(ReportSpec.DATASET_KINDS)));

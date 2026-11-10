@@ -20,6 +20,11 @@ var DatasetResolver = (function () {
     if (problems.length) return { ok: false, errors: problems };
     if (model && hit.doc.model.modelVersion !== model.modelVersion)
       return { ok: false, errors: ['MODEL_VERSION_MISMATCH@' + ref + ' (dataset expects ' + hit.doc.model.modelVersion + ', model is ' + model.modelVersion + ')'] };
+    // 审查轮 P1 补：resolver 侧再跑一次契约审计 + 绑定（纵深防御——make_api 的扫描器不按 audit 过滤，
+    //   不合格文档如果进了 registry 就能到这里；此处是最后一道纯函数门，零 IO）
+    var audit = DatasetDef.audit(hit.doc, hit.relPath);
+    var bind = DatasetDef.bindDrift(hit.doc, model);
+    if (audit.length || bind.length) return { ok: false, errors: audit.concat(bind) };
     var dataset = DatasetDef.toReportDataset(hit.doc, reportScope);
     return {
       ok: true,

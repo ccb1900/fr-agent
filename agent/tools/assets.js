@@ -60,7 +60,11 @@ function walk(dir, acc) {
   entries.forEach(function (p) {
     var nm = String(p.getFileName());
     if (nm.charAt(0) === '.') return;
-    if (Files.isDirectory(p)) { walk(String(p).replace(/\\/g, '/'), acc); return; }
+    if (Files.isDirectory(p)) {
+      // 跳过 versions/ 子目录（发布快照不可变副本，不是可发现资产）
+      if (nm === 'versions') return;
+      walk(String(p).replace(/\\/g, '/'), acc); return;
+    }
     if (/\.json$/.test(nm)) acc.push(String(p).replace(/\\/g, '/'));
   });
 }
@@ -248,8 +252,8 @@ if (action === 'validate') {
   var rootNorm = ROOT.replace(/\\/g, '/');
   var absNorm = String(resultDir).replace(/\\/g, '/');
   var evRefRel = absNorm.indexOf(rootNorm + '/') === 0 ? absNorm.slice(rootNorm.length + 1) : absNorm;
-  var evEntry = { ref: evRefRel, datasetId: vid, modelVersion: model.modelVersion, sourceRef: model.source, at: evAt };
-  var evData = { sql: vBuilt.sql, rowCount: rowCount, columns: colLabels, validatedAt: evAt, sourceRef: model.source };
+  var evEntry = { ref: evRefRel, datasetId: vid, modelVersion: model.modelVersion, sourceRef: model.source, at: evAt, rowLimit: 200, truncated: rowCount >= 200 };
+  var evData = { sql: vBuilt.sql, rowCount: rowCount, rowLimit: 200, truncated: rowCount >= 200, columns: colLabels, validatedAt: evAt, sourceRef: model.source };
   writeJson(resultDir + '/validate_sample.json', evData);
 
   if (!isObj(vDoc.validation)) vDoc.validation = { samples: [], executions: [] };
@@ -313,6 +317,11 @@ if (action === 'publish') {
       ['have the business owner confirm the metric definitions and set review.{by,at} in the asset file']);
   pDoc.status = 'published';
   writeJson(pEntry.abs, pDoc);
+  // S4 发布快照：versions/<datasetVersion>.json 不可变副本（同版本重 publish 不可能因已发布门拦截）
+  var snapDir = pEntry.abs.replace(/[\\/][^\\/]+$/, '') + '/versions';
+  Files.createDirectories(Pth.get(snapDir));
+  var snapFile = snapDir + '/' + (pDoc.datasetVersion || '1') + '.json';
+  if (!exists(snapFile)) writeJson(snapFile, pDoc);
   var pBack = tryJson(pEntry.abs);
   var pRe = DatasetDef.audit(pBack, pEntry.relPath);
   if (pRe.length) bail('WRITE_ROUNDTRIP_FAILED', pRe.join(', '),
@@ -321,6 +330,57 @@ if (action === 'publish') {
   base.publishedId = pid;
   base.status = 'published';
   base.nextActions = ['asset is now published; new datasets should use a new id'];
+  finish(0, base);
+}
+
+// ---------- S4 deprecate：validated/published → deprecated（带原因；不可逆） ----------
+if (action === 'deprecate') {
+  var did = genv('AGENT_ASSETS_ID');
+  if (!did) bail('ASSETS_USAGE', 'AGENT_ASSETS_ID required for deprecate', ['fr_agent.ps1 -Verb assets -Action deprecate -Target <datasetId>']);
+  var dEntry = null;
+  for (var di = 0; di < accepted.length; di++) if (accepted[di].doc.id === did) { dEntry = accepted[di]; break; }
+  if (!dEntry) bail('ASSET_NOT_FOUND', 'dataset id not found: ' + did, ['run assets -Action list'], { requestedId: did });
+  var dDoc = dEntry.doc;
+  if (dDoc.status === 'deprecated') bail('ALREADY_DEPRECATED', 'already deprecated');
+  if (!isObj(dDoc.deprecation) || !isStr(dDoc.deprecation.reason) || !dDoc.deprecation.reason)
+    bail('DEPRECATION_REASON_REQUIRED', 'deprecation.reason required (set in the asset file before calling deprecate)',
+      ['edit the asset JSON to add deprecation:{reason:"..."} then re-run deprecate']);
+  dDoc.status = 'deprecated';
+  writeJson(dEntry.abs, dDoc);
+  base.action = 'deprecate';
+  base.deprecatedId = did;
+  base.status = 'deprecated';
+  base.nextActions = ['asset is deprecated; existing reports can still reference it but new reports should not'];
+  finish(0, base);
+}
+
+// ---------- S4 impact：静态依赖分析（谁引用了这个 Dataset id） ----------
+if (action === 'impact') {
+  var iid = genv('AGENT_ASSETS_ID');
+  if (!iid) bail('ASSETS_USAGE', 'AGENT_ASSETS_ID required for impact', ['fr_agent.ps1 -Verb assets -Action impact -Target <datasetId>']);
+  var scanRoots = [ROOT + '/examples/report-spec', ROOT + '/verify/fixtures', ROOT + '/models'];
+  var affected = [];
+  scanRoots.forEach(function (rootDir) {
+    var stack = [rootDir];
+    while (stack.length) {
+      var cur = stack.pop();
+      var ds; try { ds = Files.newDirectoryStream(Pth.get(cur)); } catch (e) { continue; }
+      try { var it2 = ds.iterator(); while (it2.hasNext()) {
+        var f = it2.next();
+        var fn = String(f.getFileName());
+        if (fn.charAt(0) === '.') continue;
+        if (Files.isDirectory(f)) { stack.push(String(f).replace(/\\/g, '/')); continue; }
+        if (!/\.json$/.test(fn)) continue;
+        var txt = '';
+        try { txt = readUtf(String(f).replace(/\\/g, '/')); } catch (eR) { continue; }
+        if (txt.indexOf('"' + iid + '"') >= 0) affected.push(String(f).replace(/\\/g, '/'));
+      } } finally { try { ds.close(); } catch (eC2) { } }
+    }
+  });
+  base.action = 'impact';
+  base.impactId = iid;
+  base.referencedBy = affected;
+  base.nextActions = affected.length ? ['review the referencing files before changing this dataset'] : ['no static references found in examples/verify/models'];
   finish(0, base);
 }
 

@@ -108,37 +108,49 @@ check('负控·inspect 不存在 id → rc=1 + 明确错误 + nextActions', rmis
 var rno = runTool('inspect', {});
 check('负控·inspect 缺 id → rc=2（用法）', rno.rc === 2 && !!rno.result && rno.result.ok === false, 'rc=' + rno.rc + ' out=' + JSON.stringify(rno.result).slice(0, 200));
 
-// ============================ 3. registry.errors fail-closed（重复 ID） ============================
-var dup = JSON.parse(JSON.stringify(good));
-wrote(ASSETS + '/alpha_duplicate.json', JSON.stringify(dup, null, 1));
-var rd = runTool('list');
+// ============================ 3+4. registry fail-closed + 边界（独立目录，不碰共享 ASSETS） ============================
+var BND = TMP + '/boundary_models/production/datasets';
+Files.createDirectories(Pth.get(BND));
+var bd = JSON.parse(JSON.stringify(good));
+// 3. 重复 ID
+wrote(BND + '/alpha.json', JSON.stringify(bd, null, 1));
+wrote(BND + '/alpha_dup.json', JSON.stringify(bd, null, 1));
+var rd = runTool('list', null, TMP + '/boundary_models');
 check('负控·重复 ID 时 list rc=1（不再"报着继续用"）', rd.rc === 1, 'rc=' + rd.rc + ' stdout=' + rd.stdout.slice(0, 200));
 check('负控·重复 ID 时结果带 DUPLICATE_ID 与 nextActions', !!rd.result && rd.result.ok === false && (rd.result.registryErrors || []).some(function (e) { return String(e).indexOf('DUPLICATE_ID') >= 0; }) && (rd.result.nextActions || []).length > 0,
   JSON.stringify(rd.result).slice(0, 220));
-var rdi = runTool('inspect', { AGENT_ASSETS_ID: 'production.alpha' });
+var rdi = runTool('inspect', { AGENT_ASSETS_ID: 'production.alpha' }, TMP + '/boundary_models');
 check('负控·重复 ID 时 inspect 同样 fail-closed', rdi.rc === 1 && !!rdi.result && rdi.result.ok === false, 'rc=' + rdi.rc);
-try { Files.delete(Pth.get(ASSETS + '/alpha_duplicate.json')); } catch (eD) { }
-var rrestored = runTool('list');
+try { Files.delete(Pth.get(BND + '/alpha_dup.json')); } catch (eD) { }
+var rrestored = runTool('list', null, TMP + '/boundary_models');
 check('删除重复后恢复 rc=0（故障可逆）', rrestored.rc === 0, 'rc=' + rrestored.rc);
 
-// ============================ 4. 注册表错误之外的边界 ============================
+// 4. 注册表错误之外的边界
 // 4a. 文件名与 id 不符（路径身份绑定；此前工具用 id 反推路径会短路这条，现已传真实发现路径）
-var misnamed = JSON.parse(JSON.stringify(good)); misnamed.id = 'production.gamma';   // 唯一 id（不触发重复门），但文件名放成 wrongname.json
-wrote(ASSETS + '/wrongname.json', JSON.stringify(misnamed, null, 1));
-var rmis = runTool('list');
+var misnamed = JSON.parse(JSON.stringify(bd)); misnamed.id = 'production.gamma';
+wrote(BND + '/wrongname.json', JSON.stringify(misnamed, null, 1));
+var rmis = runTool('list', null, TMP + '/boundary_models');
 check('负控·文件名与 id 不符 → 契约诊断含 PATH_ID_MISMATCH', rmis.rc === 0 && (rmis.result.diagnostics || []).some(function (d) {
   return d.code === 'CONTRACT_AUDIT_FAILED' && String(d.message).indexOf('PATH_ID_MISMATCH') >= 0;
 }), JSON.stringify(rmis.result && rmis.result.diagnostics).slice(0, 240));
-try { Files.delete(Pth.get(ASSETS + '/wrongname.json')); } catch (eW) { }
-var badKey = JSON.parse(JSON.stringify(good)); badKey.id = '../escape'; badKey.domain = 'production';
-wrote(ASSETS + '/badkey.json', JSON.stringify(badKey, null, 1));
-var rb = runTool('list');
+try { Files.delete(Pth.get(BND + '/wrongname.json')); } catch (eW) { }
+var badKey = JSON.parse(JSON.stringify(bd)); badKey.id = '../escape'; badKey.domain = 'production';
+wrote(BND + '/badkey.json', JSON.stringify(badKey, null, 1));
+var rb = runTool('list', null, TMP + '/boundary_models');
 check('负控·非法 id/路径身份被诊断（不静默入索引）', rb.rc === 0 && (rb.result.diagnostics || []).some(function (d) { return d.path.indexOf('badkey.json') >= 0; }), JSON.stringify(rb.result && rb.result.diagnostics).slice(0, 220));
 check('负控·非法 id 不出现在 list 资产清单', !(rb.result.assets || []).some(function (a) { return a.id === '../escape'; }), JSON.stringify(rb.result && rb.result.assets));
-try { Files.delete(Pth.get(ASSETS + '/badkey.json')); } catch (eB) { }
+try { Files.delete(Pth.get(BND + '/badkey.json')); } catch (eB) { }
 
 // ============================ 5. 边界纪律 ============================
 // ============================ 4b. create（D2.2：只能产 draft；非法拒写；不覆盖） ============================
+// 清理 ASSETS 目录：只保留 alpha.json（list/inspect 基准），其余全删（防前面负控残留引发级联）
+(function () {
+  var ds; try { ds = Files.newDirectoryStream(Pth.get(ASSETS), '*.json'); } catch (e) { return; }
+  try { var it = ds.iterator(); while (it.hasNext()) {
+    var f = it.next();
+    if (String(f.getFileName()) !== 'alpha.json') { try { Files.delete(f); } catch (eD) { } }
+  } } finally { try { ds.close(); } catch (eC) { } }
+})();
 function writeDoc(o) { wrote(TMP + '/docs/doc.json', JSON.stringify(o, null, 1)); return TMP + '/docs/doc.json'; }
 function mkDraft(over) {
   var d = JSON.parse(JSON.stringify(good));

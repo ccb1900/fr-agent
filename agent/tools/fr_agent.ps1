@@ -16,7 +16,7 @@
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets', 'semantic')][string]$Verb,
-  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish')][string]$Action = 'list',
+  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish', 'deprecate', 'impact')][string]$Action = 'list',
   [string]$Spec = '',
   [string]$Patch = '',
   [string]$Term = '',
