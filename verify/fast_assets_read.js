@@ -354,6 +354,129 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   try { Files.delete(Pth.get(TMP + '/models/production/datasets/versions')); } catch (eDel3) { }
 })();
 
+// ============================ 4e. Semantic create/validate/publish（S 轨资产生命周期） ============================
+// semantic 的 create/validate/publish 都用 ModelValidator 离线校验 + schema 快照——不需要 JDBC。
+//   测试用 SEMANTIC_MODELS_ROOT 指向隔离目录；不碰生产 model.json。
+(function () {
+  function runSem(action, extra) {
+    var rid = 'sem_' + action + '_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
+    var out = RUNS + '/' + rid + '/semantic.json';
+    var argv = new (J('java.util.ArrayList'))();
+    ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ROOT + '/agent/tools/fr_agent.ps1',
+     '-Verb', 'semantic', '-Action', action, '-RunId', rid].forEach(function (x) { argv.add(x); });
+    if (extra && extra.AGENT_SEMANTIC_DOC) { argv.add('-Doc'); argv.add(String(extra.AGENT_SEMANTIC_DOC)); }
+    if (extra && extra.AGENT_SEMANTIC_DOMAIN) { argv.add('-Domain'); argv.add(String(extra.AGENT_SEMANTIC_DOMAIN)); }
+    var pb = new (J('java.lang.ProcessBuilder'))(argv);
+    var env = pb.environment();
+    env.put('FR_AGENT_HOME', ROOT);
+    env.put('AGENT_RUN_ID', rid);
+    env.put('AGENT_SEMANTIC_MODELS_ROOT', SEM_MODELS);
+    env.put('AGENT_SEMANTIC_RUNS', RUNS);
+    env.put('AGENT_SEMANTIC_ACTION', action);
+    if (extra) Object.keys(extra).forEach(function (k) { env.put(k, String(extra[k])); });
+    pb.redirectErrorStream(true);
+    var p = pb.start();
+    var br = new (J('java.io.BufferedReader'))(new (J('java.io.InputStreamReader'))(p.getInputStream(), 'UTF-8'));
+    var so = [], ln;
+    while ((ln = br.readLine()) != null) so.push(String(ln));
+    return { rc: p.waitFor(), stdout: so.join(String.fromCharCode(10)), result: exists(out) ? jt(out) : null };
+  }
+  var SEM_MODELS = TMP + '/sem_models';
+  var semDomain = SEM_MODELS + '/sales';
+  Files.createDirectories(Pth.get(semDomain));
+  // 造一个 sales 域模型草稿（引用 atom_live_demo 的真实 schema，字段来自生产模型——不臆造）
+  var prodModel = jt(ROOT + '/models/production/model.json');
+  var salesDraft = {
+    modelVersion: '1', domain: 'sales', source: 'atom_live_demo',
+    description: 'sales 域测试草稿（S 轨 create 测试）',
+    entities: [{ name: 'SalesRecord', label: '销售记录', table: 'laser_aaa', key: ['file_key'],
+      properties: [{ name: 'fileKey', label: '文件键', column: 'file_key', type: 'long' }] }],
+    metrics: [
+      { name: 'salesCount', label: '销售数', expression: { kind: 'count', table: 'laser_aaa' } },
+      { name: 'doneCount', label: '完成数', expression: { kind: 'countThreshold', table: 'laser_aaa', column: 'score', op: '>=', value: 0.9 } },
+      { name: 'completionRate', label: '完成率', format: '#,##0.00', expression: { kind: 'ratio', numerator: 'doneCount', denominator: 'salesCount', scale: 100 } },
+      { name: 'avgScore', label: '平均分', format: '#,##0.000000', expression: { kind: 'weightedAvg', table: 'laser_aaa', column: 'score' } },
+      { name: 'totalScore', label: '评分合计', expression: { kind: 'sum', table: 'laser_aaa', column: 'score' } }
+    ],
+    dimensions: [
+      { name: 'bizDate', label: '业务日期', table: 'laser_aaa', column: 'biz_date', rule: 'dateNormalize' },
+      { name: 'stage', label: '工序', table: 'laser_aaa', column: 'stage' },
+      { name: 'machine', label: '机台', table: 'laser_files', column: 'source_id' }
+    ],
+    relationships: [
+      { name: 'recordToFile', label: '检测记录归属文件', from: { table: 'laser_aaa', column: 'file_key' }, to: { table: 'laser_files', column: 'file_key' }, source: 'naming-derived', requiresConfirmation: true },   // confirmed 证据链验证在编译期 preflight（有连接指纹），semantic 资产层不验证
+      { name: 'fileToMachine', label: '文件来源机台', from: { table: 'laser_files', column: 'source_id' }, to: { table: 'laser_files', column: 'source_id' }, source: 'naming-derived', requiresConfirmation: true },
+      { name: 'recordToStage', label: '检测记录所属工序', from: { table: 'laser_aaa', column: 'stage' }, to: { table: 'laser_aaa', column: 'stage' }, source: 'naming-derived', requiresConfirmation: true }
+    ]
+  };
+  wrote(TMP + '/docs/sales_model.json', JSON.stringify(salesDraft, null, 1));
+
+  // create（带 schema 校验）
+  var rcs = runSem('create', { AGENT_SEMANTIC_DOC: TMP + '/docs/sales_model.json' });
+  check('semantic create·rc=0（模型↔schema 回溯零错）', rcs.rc === 0, 'rc=' + rcs.rc + ' stdout=' + rcs.stdout.slice(0, 250));
+  check('semantic create·文件已写到 models/sales/model.json', exists(semDomain + '/model.json'));
+
+  // 负控·已存在再 create → 拒
+  var rcs2 = runSem('create', { AGENT_SEMANTIC_DOC: TMP + '/docs/sales_model.json' });
+  check('负控·semantic create 同域再建 → MODEL_ALREADY_EXISTS', rcs2.rc === 1 && (rcs2.result.error || {}).code === 'MODEL_ALREADY_EXISTS');
+
+  // validate（离线 ModelValidator）
+  var rcv = runSem('validate', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+  check('semantic validate·rc=0', rcv.rc === 0, 'rc=' + rcv.rc + ' out=' + JSON.stringify(rcv.result).slice(0, 200));
+
+  // 负控·幽灵字段模型 → validate 拒
+  var ghostModel = JSON.parse(JSON.stringify(salesDraft));
+  ghostModel.entities[0].properties.push({ name: 'ghostCol', label: '幽灵列', column: 'ghost_col', type: 'text' });
+  var ghostDomain = SEM_MODELS + '/ghostdom';
+  Files.createDirectories(Pth.get(ghostDomain));
+  wrote(ghostDomain + '/model.json', JSON.stringify(ghostModel, null, 1));
+  var rcg = runSem('validate', { AGENT_SEMANTIC_DOMAIN: 'ghostdom' });
+  check('负控·幽灵字段模型 validate → 拒（UNKNOWN_REF）', rcg.rc === 1 && JSON.stringify(rcg.result.errors || []).indexOf('UNKNOWN_REF') >= 0, JSON.stringify(rcg.result).slice(0, 200));
+
+  // publish：缺 review → 拒
+  var rcp0 = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+  check('负控·semantic publish 缺 review → 拒', rcp0.rc === 1 && (rcp0.result.error || {}).code === 'PUBLISHED_WITHOUT_REVIEW');
+
+  // publish：加 review → 成功 + 快照
+  var withRev = JSON.parse(JSON.stringify(salesDraft));
+  withRev.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };
+  wrote(semDomain + '/model.json', JSON.stringify(withRev, null, 1));
+  var rcp = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+  check('S 轨·publish 带 review → rc=0 + 快照落盘', rcp.rc === 0 && exists(semDomain + '/versions/1.json'), 'rc=' + rcp.rc);
+
+  // S 轨证据核对全强度回归（2026-11-10 连接身份复用 plan.js 同源）：confirmed 关系在本层即核对证据指纹。
+  //   注意夹具纪律：模型内容必须与生产 model.json 逐字段一致（canonicalModel 指纹绑 modelVersion/domain/source/relationships，
+  //   改 domain 即指纹漂移 → 证据拒绝——那是门在工作，不是缺陷）；只允许注入 review（不在指纹内）。
+  //   正控：默认身份（生产连接）→ rc=0 + 快照；负控：SQL_URL 换库 → 源指纹必不匹配 → UNSUPPORTED_RELATION_KEY 拒
+  //   （数据侧证据不跨库；fixture review 自填，只作测试目录语义——正式 publish 仍人审）。
+  (function () {
+    var evModel = jt(ROOT + '/models/production/model.json');
+    evModel.review = { by: 'gate-selfcheck', at: '2026-11-10T10:00:00Z' };
+    var evDom = SEM_MODELS + '/evdom';
+    Files.createDirectories(Pth.get(evDom));
+    wrote(evDom + '/model.json', JSON.stringify(evModel, null, 1));
+    var revP = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'evdom' });
+    check('S 轨证据·confirmed 关系默认身份 publish → rc=0（证据指纹核对全强度非空转）',
+      revP.rc === 0 && exists(evDom + '/versions/' + evModel.modelVersion + '.json'), 'rc=' + revP.rc + ' out=' + JSON.stringify(revP.result).slice(0, 180));
+    var xdb = JSON.parse(JSON.stringify(evModel));
+    var evDom2 = SEM_MODELS + '/evdom2';
+    Files.createDirectories(Pth.get(evDom2));
+    wrote(evDom2 + '/model.json', JSON.stringify(xdb, null, 1));
+    var xdbP = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'evdom2', SQL_URL: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=OTHER_DB;encrypt=false' });
+    check('负控·S 轨证据·换库身份 publish → UNSUPPORTED_RELATION_KEY 拒（数据侧证据不跨库）',
+      xdbP.rc === 1 && JSON.stringify(xdbP.result).indexOf('UNSUPPORTED_RELATION_KEY') >= 0, 'rc=' + xdbP.rc + ' out=' + JSON.stringify(xdbP.result).slice(0, 180));
+  })();
+
+  // 负控·缺 schema 快照的域 validate → SCHEMA_MISSING
+  var orphanModel = JSON.parse(JSON.stringify(salesDraft));
+  orphanModel.source = 'nonexistent_db';
+  var orphanDom = SEM_MODELS + '/orphan';
+  Files.createDirectories(Pth.get(orphanDom));
+  wrote(orphanDom + '/model.json', JSON.stringify(orphanModel, null, 1));
+  var rco = runSem('validate', { AGENT_SEMANTIC_DOMAIN: 'orphan' });
+  check('负控·缺 schema 快照 → SCHEMA_MISSING 拒', rco.rc === 1 && (rco.result.error || {}).code === 'SCHEMA_MISSING');
+})();
+
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
 check('assets.js 不自造原子写（写路径必须来自 _lib.js 的 atomicWriteUtf）',
   !/ATOMIC_MOVE|createTempFile/.test(read(ROOT + '/' + TOOL)) && read(ROOT + '/' + TOOL).indexOf('writeJson') >= 0);
