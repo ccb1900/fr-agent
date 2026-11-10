@@ -1,6 +1,8 @@
-// agent/tools/semantic.js — S2 Semantic 模型只读管理（Nashorn；零引擎、不进 FR 实例锁）
-//   Action: list | inspect。list 扫 models/*/*/model.json 输出域清单；inspect 输出单域语义结构。
-//   不修改 model.json、不做语义生命周期（S3+ 才考虑）、不引第二套校验器。
+// agent/tools/semantic.js — Semantic 模型生命周期管理（Nashorn；零引擎、不进 FR 实例锁）
+//   Action: list | inspect（只读） + create | validate | publish（S 轨生命周期）。
+//   publish 纪律（审查轮 2026-11-10 收口）：完整档校验 + review.{by,at} 人填（create 拒自带 review 的草稿）
+//   + 同版本内容变更必拒（MODEL_VERSION_NOT_BUMPED）+ 新版本必须配新 review.at（MODEL_REVIEW_NOT_RENEWED）
+//   + versions/<modelVersion>.json 不可变快照。不引第二套校验器（ModelValidator 两档复用）。
 var J = function (n) { return Java.type(n); };
 var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 var System = J('java.lang.System');
@@ -143,6 +145,33 @@ function semUniqEv(modelObj, schema) {
     return { uniqueKeyEvidence: ev.unique, evidenceDetail: { accepted: ev.accepted, missing: ev.missing, mismatched: ev.mismatched.length, stale: ev.stale.length } };
   } catch (eE) { return {}; }
 }
+// ---------- 版本纪律助手（审查轮 2026-11-10 收口） ----------
+// canonJson：递归键序规范化（数组保序、对象按键排序）——同内容不同排版等价；用于「同版本内容是否真的没变」
+function canonJson(v) {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v);
+  if (Array.isArray(v)) return '[' + v.map(canonJson).join(',') + ']';
+  return '{' + Object.keys(v).sort().map(function (k) { return JSON.stringify(k) + ':' + canonJson(v[k]); }).join(',') + '}';
+}
+// ISO-8601（与 Dataset 契约 ISO_AT_RE 同规镜像，definition.js）
+var ISO_AT_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])([T ]([01]\d|2[0-3]):[0-5]\d(:[0-5]\d(\.\d+)?)?(Z|[+-]([01]\d|2[0-3]):?[0-5]\d)?)?$/;
+// versions/*.json 里已发布快照的最大 review.at（ISO 时间字符串可比较）；不可读快照即拒（fail-closed）
+function publishedReviewAt(snapDir, selfName) {   // selfName=本版本文件名（字符串），自排除（同版走内容比对，不算前版）
+  var maxAt = null;
+  var dirStream = null;
+  try { dirStream = Files.newDirectoryStream(Pth.get(snapDir), '*.json'); } catch (eS) { return { error: 'SNAPDIR_UNREADABLE' }; }
+  try {
+    var it = dirStream.iterator();
+    while (it.hasNext()) {
+      var fn = String(it.next().getFileName());
+      if (selfName && fn === selfName) continue;
+      var doc = null;
+      try { doc = JSON.parse(readUtf(snapDir + '/' + fn)); } catch (eJ) { return { error: 'MODEL_SNAPSHOT_CORRUPT', file: fn }; }
+      if (!isObj(doc) || !isStr(doc.modelVersion)) return { error: 'MODEL_SNAPSHOT_CORRUPT', file: fn };
+      if (isObj(doc.review) && isStr(doc.review.at) && (!maxAt || String(doc.review.at) > maxAt)) maxAt = String(doc.review.at);
+    }
+  } finally { try { dirStream.close(); } catch (eC) { } }
+  return { maxReviewAt: maxAt };
+}
 if (action === 'create') {
   var docPath = genv('AGENT_SEMANTIC_DOC');
   if (!docPath) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOC required for create', ['write the domain model.json draft first', 'semantic -Action create -Doc <file>']);
@@ -150,6 +179,9 @@ if (action === 'create') {
   try { newModel = JSON.parse(readUtf(absOf(docPath))); } catch (eJ) { bail('SEMANTIC_USAGE', 'model draft unreadable: ' + docPath, ['check UTF-8 JSON']); }
   if (!newModel || typeof newModel !== 'object' || Array.isArray(newModel)) bail('SEMANTIC_USAGE', 'not a JSON object');
   if (typeof newModel.domain !== 'string' || !newModel.domain) bail('SEMANTIC_USAGE', 'draft must carry domain field (directory name)');
+  if (isObj(newModel.review))   // 审查轮纪律：review 只能由业务人后期写进盘——Agent 不得借 create 代填（assets 硬约束①镜像）
+    bail('REVIEW_IN_DRAFT', 'draft carries review.{by,at}; the business owner adds review only AFTER create, at publish time (do not pre-fill)',
+      ['remove review from the draft and re-run create', 'let the human owner set review before publish']);
   var targetDir = modelsRoot + '/' + newModel.domain;
   var targetFile = targetDir + '/model.json';
   if (Files.exists(Pth.get(targetFile))) bail('MODEL_ALREADY_EXISTS', 'refusing to overwrite: ' + targetFile, ['use a new domain']);
@@ -193,17 +225,56 @@ if (action === 'publish') {
   var pSchemaPath = ROOT + '/data/' + pSchemaName;
   if (!Files.exists(Pth.get(pSchemaPath))) bail('SCHEMA_MISSING', pSchemaName + ' missing');
   var pSchema = JSON.parse(readUtf(pSchemaPath));
-  var pErrs = ModelValidator.validate(pModel, pSchema, { uniqueKeyEvidence: semUniqEv(pModel, pSchema).uniqueKeyEvidence || {} });   // publish=完整档（证据核对全强度：连接同源+过期+关系指纹）
-  if (pErrs.length) bail('MODEL_VALIDATION_FAILED', pErrs.map(function (e) { return e.code + '@' + e.path; }).join(', '),
-    ['fix before publish'], { diagnostics: pErrs.slice(0, 20) });
-  if (!(isObj(pModel.review) && isStr(pModel.review.by) && pModel.review.by))   // review 直接放 model.json（人填）
+  var pEvRes = semUniqEv(pModel, pSchema);
+  var pErrs = ModelValidator.validate(pModel, pSchema, { uniqueKeyEvidence: pEvRes.uniqueKeyEvidence || {} });   // publish=完整档（证据核对全强度：连接同源+过期+关系指纹）
+  if (pErrs.length) {
+    var pExtra = { diagnostics: pErrs.slice(0, 20) };
+    for (var pei = 0; pei < pErrs.length; pei++) {   // 审查轮：透出证据详情，区分「无证据记录」与「身份/时效不匹配」
+      if (pErrs[pei].code === 'UNSUPPORTED_RELATION_KEY') { pExtra.evidenceDetail = pEvRes.evidenceDetail; break; }
+    }
+    bail('MODEL_VALIDATION_FAILED', pErrs.map(function (e) { return e.code + '@' + e.path; }).join(', '),
+      ['fix before publish'], pExtra);
+  }
+  // 版本身份：快照以 modelVersion 命名——不给版本不能 publish（缺省会静默落 '1.json'，掩盖漂移）
+  if (!isStr(pModel.modelVersion) || !String(pModel.modelVersion).replace(/\s/g, '').length)
+    bail('PUBLISHED_WITHOUT_VERSION', 'model.json must carry modelVersion (snapshot versions/<modelVersion>.json derives from it)',
+      ['set modelVersion (e.g. "1") before publish']);
+  // 人审闸（与 Dataset 契约 D1.6 同规）：published 必须 review.{by,at} 双全且 at 合 ISO——review 只能是人填的
+  if (!(isObj(pModel.review) && isStr(pModel.review.by) && pModel.review.by))
     bail('PUBLISHED_WITHOUT_REVIEW', 'model.json must carry review.{by,at} set by the business owner');
+  if (!isStr(pModel.review.at) || !ISO_AT_RE.test(pModel.review.at))
+    bail('BAD_REVIEW_AT', 'review.at must be a valid ISO-8601 date (dataset contract parity), got: ' + pModel.review.at,
+      ['set review.at (e.g. "2026-11-10T10:00:00Z") when the business owner signs off']);
   var snapDirP = modelsRoot + '/' + pd + '/versions';
   Files.createDirectories(Pth.get(snapDirP));
-  var snapFileP = snapDirP + '/' + (pModel.modelVersion || '1') + '.json';
-  if (!Files.exists(Pth.get(snapFileP))) writeJson(snapFileP, pModel);
+  var snapNameP = String(pModel.modelVersion).replace(/[\\/:*?"<>|]/g, '_') + '.json';   // 版本号做文件名消毒（'1/2' 类防路径注入）
+  var snapFileP = snapDirP + '/' + snapNameP;
+  var snapExists = Files.exists(Pth.get(snapFileP));
+  if (snapExists) {
+    var prevDoc = null;
+    try { prevDoc = JSON.parse(readUtf(snapFileP)); } catch (ePrev) { bail('MODEL_SNAPSHOT_CORRUPT', 'existing snapshot unreadable: ' + snapFileP,
+      ['bump modelVersion and re-publish after business review']); }
+    if (!isObj(prevDoc)) bail('MODEL_SNAPSHOT_CORRUPT', 'existing snapshot is not an object: ' + snapFileP, ['bump modelVersion and re-publish after business review']);
+    if (canonJson(prevDoc) !== canonJson(pModel))   // 审查轮 P1：同版本内容变更必拒——否则 live 与快照分叉、review 残留绕过重审
+      bail('MODEL_VERSION_NOT_BUMPED', 'model.json content differs from published snapshot ' + String(pModel.modelVersion) + '; versions/<v>.json is immutable and the published content must not silently diverge',
+        ['bump modelVersion, let the business owner set a NEW review.at, then publish']);
+    // 内容全等：幂等再 publish，快照保持不动（published 状态成立）
+  } else {
+    // 新版本路：versions/ 已有更早版本时，新 review.at 必须晚于已发布最晚审查时间——「改已发布指标=新版+重审」，不允许旧审查保护新内容
+    var prior = publishedReviewAt(snapDirP, snapNameP);
+    if (prior.error === 'MODEL_SNAPSHOT_CORRUPT') bail('MODEL_SNAPSHOT_CORRUPT', 'existing version snapshot unreadable: ' + prior.file + ' — refuse to build a new version on top of a suspect archive',
+      ['repair or remove the corrupt snapshot deliberately (with a reason trace), then re-publish']);
+    if (prior.maxReviewAt) {
+      if (!ISO_AT_RE.test(prior.maxReviewAt)) bail('MODEL_SNAPSHOT_CORRUPT', 'prior snapshot review.at is not ISO-8601: ' + prior.maxReviewAt,
+        ['repair the prior snapshot review.at deliberately, then re-publish']);
+      if (!(isStr(pModel.review.at) && String(pModel.review.at) > prior.maxReviewAt))
+        bail('MODEL_REVIEW_NOT_RENEWED', 'version bump to ' + String(pModel.modelVersion) + ' requires a NEWER review.at than prior snapshot (' + prior.maxReviewAt + ') — stale review must not protect new content',
+          ['let the business owner re-review the changed model and set a new review.at, then publish']);
+    }
+    writeJson(snapFileP, pModel);
+  }
   finish(0, { tool: 'semantic', action: 'publish', runId: runId, ok: true, zeroEngine: true,
-    domain: pd, modelVersion: pModel.modelVersion, snapshot: snapFileP });
+    domain: pd, modelVersion: pModel.modelVersion, snapshot: snapFileP, publishedAt: pModel.review.at });
 }
 
 bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate or publish']);

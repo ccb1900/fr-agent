@@ -82,8 +82,8 @@ var ModelValidator = (function () {
     if (!isObj(model)) { E(errs, 'INVALID_TYPE', 'model', '模型必须是对象'); return errs; }
     var idx = schemaIndex(schema);
     if (!isStr(schema) && (!isObj(schema) || !Array.isArray(schema.tables))) { E(errs, 'INVALID_TYPE', 'schema', '回溯性校验需 I2 schema（{tables:[{name,columns}]}）'); return errs; }
-    if (model.modelVersion != null && String(model.modelVersion) !== ModelVocab.MODEL_VERSION) {
-      E(errs, 'UNSUPPORTED_MODEL_VERSION', 'modelVersion', '不支持的 modelVersion: ' + model.modelVersion); return errs;
+    if (model.modelVersion != null && !ModelVocab.MODEL_VERSION_RE.test(String(model.modelVersion))) {
+      E(errs, 'UNSUPPORTED_MODEL_VERSION', 'modelVersion', 'modelVersion 须为纯数字版本号: ' + model.modelVersion); return errs;
     }
     if (!isStr(model.domain) || !model.domain) E(errs, 'REQUIRED', 'domain', 'domain 必填');
 

@@ -5,6 +5,9 @@
 //   禁裸 formula 串（那把聚合语义丢回不可验证的黑箱）。
 var ModelVocab = (function () {
   var MODEL_VERSION = '1';
+  // 审查轮 2026-11-10 放宽：modelVersion 是**任何纯数字版本号**（'1' 仍是模板默认值）——
+  //   否则快照不可变 + 同号拒绝的组合把「改已发布指标 → 新版+重审」的升版通道整条锁死（S4 验收不可达）。
+  var MODEL_VERSION_RE = /^\d+$/;
 
   // 指标表达式 kind 白名单 + 每种必带字段（validator 据此要求"明确聚合语义"）
   var METRIC_KINDS = {
@@ -31,6 +34,7 @@ var ModelVocab = (function () {
 
   return {
     MODEL_VERSION: MODEL_VERSION,
+    MODEL_VERSION_RE: MODEL_VERSION_RE,
     METRIC_KINDS: METRIC_KINDS,
     RATIO_OPERAND_KEYS: RATIO_OPERAND_KEYS,
     OPS: OPS,
