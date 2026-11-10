@@ -128,6 +128,61 @@ if (rCat.rc === 0 && rInline.rc === 0 && exists(catCpt) && exists(inlCpt)) {
 // ⑥ 基线复位（审查轮 P1 收口）：make_api **任何 spec** 都复写仓库根 demo_api.cpt（ABR-1 单点，line 344）——
 //   本套件前面两次非默认 spec 运行已把铁证踩成 E2E 内容；不收尾复位则 fast_baseline 必红（门咬门）。
 //   按 AGENTS §1：末步用默认 spec 收尾，并断言字节回到 CBEB42E3。
+// ⑤b D3.6 多域竞态（外审 P1-1 引擎级）：sales 域 catalog 出图 + salesCount 判别性 + 跨域误绑负控。
+//   sales 模型夹具=production 拷贝+独有指标 salesCount（production 无此名）——
+//   正控能跑通 ⇔ 编译期真的用的是 sales 模型（旧缺陷=resolver 用 sales、编译期落 production → UNKNOWN_REF）。
+var TS = '2026-11-10T10:00:00Z';
+function salesModelText() {
+  var m = JSON.parse(prodModel);
+  // 注意：模型文件自身的 domain 字段（laser_inspection）参与 canonicalModel 指纹，绝不在此改写——
+  //   资产层的"sales 域身份"来自目录名/资产契约，编译期模型=production 等证指纹（本套件这样才走通证据链）。
+  (m.metrics = m.metrics || []).push({ name: 'salesCount', label: '销售数', expression: { kind: 'count', table: 'laser_aaa' } });
+  return JSON.stringify(m, null, 1);
+}
+var SALES = CATROOT + '/sales';
+wrote(SALES + '/model.json', salesModelText());
+var salesDs = { datasetVersion: '1', id: 'sales.sales_daily', domain: 'sales', name: '多域日报', description: 'D3.6 多域引擎竞态测试资产（临时目录）',
+  status: 'published', review: { by: 'test-owner', at: TS },
+  source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
+  model: { ref: 'models/sales/model.json', modelVersion: '1' },
+  selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done', 'salesCount'] },
+  grain: { description: '一天一机台', keys: ['bizDate', 'machine'] },
+  validation: { samples: [{ ref: 'logs/agent/runs/e2e/sample.json', datasetId: 'sales.sales_daily', modelVersion: '1', sourceRef: 'atom_live_demo', at: TS }] } };
+Files.createDirectories(Pth.get(SALES + '/datasets'));
+wrote(SALES + '/datasets/sales_daily.json', JSON.stringify(salesDs, null, 1));
+var salesSpec = { specVersion: '1', outName: 'E2E_SALES', report: { name: '多域等价测试' },
+  dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done', 'salesCount'],
+  dataset: { kind: 'catalog', ref: 'sales.sales_daily', dateRange: scope.dateRange },
+  presentation: { type: 'table', showTotal: true } };
+wrote(ROOT + '/logs/agent/runs/_e2e_sales_spec.json', JSON.stringify(salesSpec, null, 1));
+var rSales = frCreate('logs/agent/runs/_e2e_sales_spec.json', 'sales');
+check('端到端·D3.6·sales 域 catalog 真引擎 create rc=0（模型上下文随绑定走：salesCount 仅存在于 sales 模型）',
+  rSales.rc === 0, 'rc=' + rSales.rc + ' tail=' + rSales.stdout.slice(-260));
+// 判别性自证：同 salesCount 走非 catalogSQL 路（默认 production 模型）必须拒 → 证明 sales 正控是模型绑定给的，不是两模型本就同名
+(function () {
+  var discSpec = { specVersion: '1', outName: 'E2E_DISC_NEG', report: { name: '判别性自证' },
+    dimensions: ['bizDate'], metrics: ['salesCount'],
+    dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord',
+      dimensions: ['bizDate'], metrics: ['salesCount'], dateRange: scope.dateRange },
+    presentation: { type: 'table' } };
+  wrote(ROOT + '/logs/agent/runs/_e2e_disc_spec.json', JSON.stringify(discSpec, null, 1));
+  var rDisc = frCreate('logs/agent/runs/_e2e_disc_spec.json', 'discneg');
+  check('负控·D3.6·判别性自证：salesCount 走 production 默认模型 → 编译拒（.UNKNOWN_）——判别真实不叠拼',
+    rDisc.rc !== 0 && rDisc.stdout.indexOf('UNKNOWN') >= 0, 'rc=' + rDisc.rc + ' tail=' + rDisc.stdout.slice(-220));
+})();
+// 跨域误绑负控：sales id 的 dataset 递 model.ref=production（版本相等也不能构成身份）→ resolver DOMAIN_MISMATCH
+(function () {
+  var misb = JSON.parse(JSON.stringify(salesDs));
+  misb.id = 'sales.misbound'; misb.model = { ref: 'models/production/model.json', modelVersion: '1' };
+  wrote(SALES + '/datasets/misbound.json', JSON.stringify(misb, null, 1));
+  var misbSpec = JSON.parse(JSON.stringify(salesSpec));
+  misbSpec.outName = 'E2E_MISBIND_NEG';
+  misbSpec.dataset = { kind: 'catalog', ref: 'sales.misbound', dateRange: scope.dateRange };
+  wrote(ROOT + '/logs/agent/runs/_e2e_misbind_spec.json', JSON.stringify(misbSpec, null, 1));
+  var rMisb = frCreate('logs/agent/runs/_e2e_misbind_spec.json', 'misbind');
+  check('负控·D3.6·sales id 绑 production 模型 → 真引擎拒（DOMAIN_MISMATCH，版本相等不构成身份）',
+    rMisb.rc !== 0 && rMisb.stdout.indexOf('DOMAIN_MISMATCH') >= 0, 'rc=' + rMisb.rc + ' tail=' + rMisb.stdout.slice(-220));
+})();
 var rRestore = frCreate(null, 'restore');
 check('基线复位·默认 spec 复跑 rc=0', rRestore.rc === 0, 'rc=' + rRestore.rc + ' tail=' + rRestore.stdout.slice(-200));
 check('基线复位·demo_api.cpt 回到铁证 CBEB42E3', exists(ROOT + '/demo_api.cpt') && md5(ROOT + '/demo_api.cpt') === 'CBEB42E3CE48E46E362B9AE80168026F', md5(ROOT + '/demo_api.cpt'));
@@ -136,10 +191,13 @@ check('基线复位·demo_api.cpt 回到铁证 CBEB42E3', exists(ROOT + '/demo_a
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_cat_spec.json')); } catch (e) { }
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_inline_spec.json')); } catch (e) { }
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_draft_spec.json')); } catch (e) { }
-try { Files.delete(Pth.get(catCpt)); } catch (e) { }
-try { Files.delete(Pth.get(inlCpt)); } catch (e) { }
-[catCpt, inlCpt].forEach(function (c) {
+try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_sales_spec.json')); } catch (e) { }
+try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_disc_spec.json')); } catch (e) { }
+try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_misbind_spec.json')); } catch (e) { }
+if (FAILS === 0) [catCpt, inlCpt, 'E2E_SALES'].forEach(function (nm) {   // 失败时保留部署件供字节级 postmortem
   try {
+    var c = nm.indexOf('/') >= 0 ? nm : 'D:/software/FineReport_11.0/webapps/webroot/WEB-INF/reportlets/fineagent/' + nm + '_api.cpt';
+    if (exists(c)) Files.delete(Pth.get(c));
     var png = c.replace(/\.cpt$/, '.png');
     if (exists(png)) Files.delete(Pth.get(png));
     var pdf = c.replace(/\.cpt$/, '.pdf');   // make_api 三产物（cpt/png/pdf）用后即净，部署目录不留测试件

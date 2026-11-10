@@ -314,40 +314,46 @@ if (action === 'impact') {
   if (!idomD) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for impact');
   var modelRef = 'models/' + idomD + '/model.json';   // dataset 契约存仓库相对形（与 modelsRoot override 无关）
   var consumers = [];
-  var scanRoot = Pth.get(modelsRoot);
-  if (Files.exists(scanRoot) && Files.isDirectory(scanRoot)) {
-    var rootStream = null;
-    try { rootStream = Files.newDirectoryStream(scanRoot); } catch (eR) { }
-    try {
-      if (rootStream) {
-        var rit = rootStream.iterator();
-        while (rit.hasNext()) {
-          var domDir = rit.next();
-          if (!Files.isDirectory(domDir)) continue;
-          var dn2 = String(domDir.getFileName());
-          if (dn2.charAt(0) === '.') continue;
-          var datasetsDir = modelsRoot + '/' + dn2 + '/datasets';
-          if (!Files.isDirectory(Pth.get(datasetsDir))) continue;
-          var fileStream = null;
-          try { fileStream = Files.newDirectoryStream(Pth.get(datasetsDir), '*.json'); } catch (eF) { continue; }
-          try {
-            var fit2 = fileStream.iterator();
-            while (fit2.hasNext()) {
-              var fn2 = String(fit2.next().getFileName());
-              var refDoc = null;
-              try { refDoc = JSON.parse(readUtf(datasetsDir + '/' + fn2)); } catch (eJ2) { continue; }   // 不可读条目不入名单（诊断在 assets list 侧有）
-              if (refDoc && isObj(refDoc.model) && String(refDoc.model.ref) === modelRef)
-                consumers.push({ datasetId: refDoc.id || null, relPath: 'models/' + dn2 + '/datasets/' + fn2, status: refDoc.status || null });
-            }
-          } finally { try { fileStream.close(); } catch (eC2) { } }
-        }
-      }
-    } finally { try { if (rootStream) rootStream.close(); } catch (eC3) { } }
+  var impScanDiags = [];   // P2-1（外审）：扫描不完整 → 零引用结论不可下（"安全退役"必须以完整扫描为前提）
+  var rootStream2 = null;
+  try { rootStream2 = Files.newDirectoryStream(Pth.get(modelsRoot)); } catch (eR2) {
+    impScanDiags.push({ code: 'SCAN_DIR_UNREADABLE', path: String(modelsRoot).replace(/\\/g, '/'), message: String(eR2) });
   }
+  try {
+    if (rootStream2) {
+      var rit2 = rootStream2.iterator();
+      while (rit2.hasNext()) {
+        var domDir2 = rit2.next();
+        if (!Files.isDirectory(domDir2)) continue;
+        var dn3 = String(domDir2.getFileName());
+        if (dn3.charAt(0) === '.') continue;
+        var datasetsDir2 = modelsRoot + '/' + dn3 + '/datasets';
+        var fileStream2 = null;
+        try { fileStream2 = Files.newDirectoryStream(Pth.get(datasetsDir2), '*.json'); } catch (eF2) { continue; }   // 该域无 datasets 目录=正常空面，不算失败
+        try {
+          var fit3 = fileStream2.iterator();
+          while (fit3.hasNext()) {
+            var fn3 = String(fit3.next().getFileName());
+            var refDoc2 = null;
+            try { refDoc2 = JSON.parse(readUtf(datasetsDir2 + '/' + fn3)); } catch (eJ3) {
+              impScanDiags.push({ code: 'SCAN_FILE_UNREADABLE', path: 'models/' + dn3 + '/datasets/' + fn3, message: String(eJ3) });
+              continue;
+            }
+            if (refDoc2 && isObj(refDoc2.model) && String(refDoc2.model.ref) === modelRef)
+              consumers.push({ datasetId: refDoc2.id || null, relPath: 'models/' + dn3 + '/datasets/' + fn3, status: refDoc2.status || null });
+          }
+        } finally { try { fileStream2.close(); } catch (eC4) { } }
+      }
+    }
+  } finally { try { if (rootStream2) rootStream2.close(); } catch (eC5) { } }
   consumers.sort(function (a, b) { return (a.relPath < b.relPath ? -1 : (a.relPath > b.relPath ? 1 : 0)); });
+  var scanComplete2 = impScanDiags.length === 0;   // 目录+文件双口径：任一失败即扫描不完全→零引用结论不可下
   finish(0, { tool: 'semantic', action: 'impact', runId: runId, ok: true, zeroEngine: true,
     domain: idomD, modelRef: modelRef, consumers: consumers, count: consumers.length,
-    nextActions: consumers.length ? ['review each consumer dataset before retiring the model'] : ['no dataset references this model (safe to retire)'] });
+    scanComplete: scanComplete2, scanDiagnostics: scanComplete2 ? [] : impScanDiags,
+    nextActions: scanComplete2
+      ? (consumers.length ? ['review each consumer dataset before retiring the model'] : ['no dataset references this model (safe to retire after human review)'])
+      : ['SCAN INCOMPLETE: fix unreadable entries (see scanDiagnostics) and re-run — the zero-consumer conclusion is NOT actionable in this state'] });
 }
 
 bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, deprecate or impact']);

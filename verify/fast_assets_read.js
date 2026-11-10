@@ -34,8 +34,18 @@ var ASSETS = TMP + '/models/production/datasets';
 var MODELS_ROOT = TMP + '/models';
 var RUNS = ROOT + '/logs/agent/runs';   // 与生产一致：absOf 解析 evidence ref 才能找到文件
 load(ROOT + '/semantic/dataset/definition.js');   // create round-trip 审计用
+load(ROOT + '/semantic/dataset/registry.js');     // D3.6：resolver 四方体负控需要
+load(ROOT + '/semantic/dataset/resolver.js');
 // 造 1 个合法 draft（与生产资产同形）+ 1 个坏 JSON；路径全部在临时目录，不碰仓库资产
 Files.createDirectories(Pth.get(ASSETS));
+// P1-3 域化装载前提：测试 models home 必须自带 <domain>/model.json（工具不再从 ROOT 全局模型兜底）
+(function copyModelsHome() {
+  var prod = jt(ROOT + '/models/production/model.json');
+  [MODELS_ROOT, TMP + '/boundary_models'].forEach(function (home) {
+    Files.createDirectories(Pth.get(home + '/production'));
+    wrote(home + '/production/model.json', JSON.stringify(prod, null, 1));
+  });
+})();
 var good = {
   datasetVersion: '1', id: 'production.alpha', domain: 'production', name: '甲', description: '临时 A',
   status: 'draft', source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
@@ -197,12 +207,14 @@ check('create·ghostMetric 拒绝后 gamma.json 确实不存在（无半截写�
 check('本套件已登记进 fast 聚合门（run-fast-tests）',
   read(ROOT + '/scripts/run-fast-tests.ps1').indexOf('fast_assets_read.js') >= 0);
 // 递归根若指向 models/，模型本体 model.json 不得被当数据集候选（此前会误报 BAD_ID）
+//   D3.6：改独立 home——P1-3 起主 home 的 <domain>/model.json 是装载依赖，被回归段覆盖/删除即级联崩。
 (function () {
-  var parent = TMP + '/models/production';
-  try { Files.createDirectories(Pth.get(parent)); } catch (e) { }
+  var home2 = TMP + '/mjson_regression';
+  var parent = home2 + '/production';
+  try { Files.createDirectories(Pth.get(parent + '/datasets')); } catch (e) { }
   wrote(parent + '/model.json', JSON.stringify({ modelVersion: '1', domain: 'x', entities: [] }));
   var saved = System.getenv('AGENT_ASSETS_DIR');
-  var r2 = runToolAt(TMP + '/models', 'list');
+  var r2 = runToolAt(home2, 'list');
   try { Files.delete(Pth.get(parent + '/model.json')); } catch (eD) { }
   check('回归·model.json 在 models/ 根下不被当数据集（不报 BAD_ID/UNREADABLE）',
     r2.rc === 0 && !(r2.result.assets || []).some(function (a) { return a.relPath.indexOf('model.json') >= 0; }) &&
@@ -242,6 +254,13 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   var published = jt(ASSETS + '/validate_me.json');
   published.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };
   wrote(ASSETS + '/validate_me.json', JSON.stringify(published, null, 1));
+  check('D3.6·P1-2·证据 ref 指向文件本身（.../validate_sample.json 且真实存在）', (function () {
+    var back = jt(ASSETS + '/validate_me.json');
+    var arr = (back.validation || {}).samples || [];
+    var last = arr[arr.length - 1];
+    return !!last && /\/validate_sample\.json$/.test(last.ref) && exists(ROOT + '/' + last.ref);
+  })(), JSON.stringify((jt(ASSETS + '/validate_me.json').validation || {}).samples || []));
+
   var rp = runTool('publish', { AGENT_ASSETS_ID: 'production.validate_me' });
   check('publish·rc=0（证据 + review 双全）', rp.rc === 0, 'rc=' + rp.rc + ' stdout=' + rp.stdout.slice(0, 300));
   check('publish·状态已升为 published', exists(ASSETS + '/validate_me.json') && jt(ASSETS + '/validate_me.json').status === 'published');
@@ -295,7 +314,8 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   // 创建证据 ref 指向的真实文件（publish 的 EVIDENCE_FILE_MISSING 门会检查它）
   var evFile = ROOT + '/logs/agent/runs/test/sample.json';
   Files.createDirectories(Pth.get(evFile).getParent());
-  wrote(evFile, JSON.stringify({ rowCount: 10, columns: ['bizDate', 'planned', 'done'], validatedAt: '2026-11-10T10:00:00Z' }));
+  // P1-2：证据文件必须携带与条目一致的身份字段（publish 逐项对拍，串条必拒）
+  wrote(evFile, JSON.stringify({ rowCount: 10, columns: ['bizDate', 'planned', 'done'], datasetId: 'production.lifecycle', modelVersion: dep.model.modelVersion, sourceRef: dep.source.ref, validatedAt: '2026-11-10T10:00:00Z' }));
 
   // 负控·已 validated 再 validate → ALREADY_VALIDATED（冗余条目拒绝）
   var rvAlready = runTool('validate', { AGENT_ASSETS_ID: 'production.lifecycle' });
@@ -588,6 +608,88 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   var rco = runSem('validate', { AGENT_SEMANTIC_DOMAIN: 'orphan' });
   check('负控·缺 schema 快照 → SCHEMA_MISSING 拒', rco.rc === 1 && (rco.result.error || {}).code === 'SCHEMA_MISSING');
 })();
+
+
+// ============================ D3.6 收口：外审三件（P1-2 证据身份 / P1-3 域化 / P2-1 扫描显式化） ============================
+(function () {
+  // P1-2·publish 证据文件三态负控（损坏 / 身份串条 / 目录冒充——三新码 fail-closed）
+  (function () {
+    var evPath = ROOT + '/logs/agent/runs/test/sample2.json';
+    function mkId(id) {
+      var d = JSON.parse(JSON.stringify(good)); d.id = id; d.status = 'validated';
+      d.validation = { samples: [{ ref: 'logs/agent/runs/test/sample2.json', datasetId: id, modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+      d.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };   // review 不挡，专注证据门
+      return d;
+    }
+    function newEvFile(o) { Files.createDirectories(Pth.get(evPath).getParent()); try { Files.delete(Pth.get(evPath)); } catch (e0) { } wrote(evPath, JSON.stringify(o, null, 1)); }
+    // 1) 损坏：证据文件不是 JSON 对象
+    var dcor = mkId('production.evc_corrupt'); wrote(ASSETS + '/evc_corrupt.json', JSON.stringify(dcor, null, 1));
+    wrote(evPath, '{ this is deliberately not json');   // 真·损坏（此前 {broken:1} 是合法对象，会被身份闸先拒——那也是门在工作，但负控名称要专指损坏）
+    var r1 = runTool('publish', { AGENT_ASSETS_ID: 'production.evc_corrupt' });
+    check('负控·P1-2·证据文件损坏 → EVIDENCE_FILE_CORRUPT 拒', r1.rc === 1 && JSON.stringify(r1.result).indexOf('EVIDENCE_FILE_CORRUPT') >= 0, JSON.stringify(r1.result).slice(0, 200));
+    // 2) 身份串条：文件身份字段 ≠ 条目
+    var did = mkId('production.evc_ident'); wrote(ASSETS + '/evc_ident.json', JSON.stringify(did, null, 1));
+    newEvFile({ sql: 'x', rowCount: 5, datasetId: 'production.other', modelVersion: '9', sourceRef: 'other_db', validatedAt: '2026-01-01T00:00:00Z' });
+    var r2 = runTool('publish', { AGENT_ASSETS_ID: 'production.evc_ident' });
+    check('负控·P1-2·证据身份串条 → EVIDENCE_IDENTITY_MISMATCH 拒（伪造/串条不可 publish）', r2.rc === 1 && JSON.stringify(r2.result).indexOf('EVIDENCE_IDENTITY_MISMATCH') >= 0, JSON.stringify(r2.result).slice(0, 200));
+    // 3) 目录冒充：ref 指到目录（旧缺陷的直接负控——目录存在即过是本轮修的重点）
+    try { Files.delete(Pth.get(evPath)); Files.delete(Pth.get(evPath + '.json')); } catch (e0) { }
+    var ddir = mkId('production.evc_dir'); wrote(ASSETS + '/evc_dir.json', JSON.stringify(ddir, null, 1));
+    var oldRef = ROOT + '/logs/agent/runs/test';   // 让 ref 指向 run **目录**（旧 validate 产物形态）
+    ddir.validation.samples[0].ref = 'logs/agent/runs/test';
+    wrote(ASSETS + '/evc_dir.json', JSON.stringify(ddir, null, 1));
+    var r3 = runTool('publish', { AGENT_ASSETS_ID: 'production.evc_dir' });
+    check('负控·P1-2·ref 指向目录 → EVIDENCE_REF_NOT_FILE 拒（目录存在不再冒充证据）', r3.rc === 1 && JSON.stringify(r3.result).indexOf('EVIDENCE_REF_NOT_FILE') >= 0, JSON.stringify(r3.result).slice(0, 200));
+    try { Files.delete(Pth.get(evPath)); } catch (e1) { }
+    try { Files.delete(Pth.get(ASSETS + '/evc_corrupt.json')); Files.delete(Pth.get(ASSETS + '/evc_ident.json')); Files.delete(Pth.get(ASSETS + '/evc_dir.json')); } catch (e2) { }
+  })();
+
+  // P1-3·Dataset 生命周期域化（sales 域正控 + 跨域误绑负控——工具不再全局绑 production）
+  (function () {
+    var homeProd = jt(ROOT + '/models/production/model.json');
+    var salesModelFile = JSON.parse(JSON.stringify(homeProd));
+    salesModelFile.domain = 'sales';   // 销售域模型夹具（同库同表，域字段按资产域）
+    Files.createDirectories(Pth.get(MODELS_ROOT + '/sales'));
+    wrote(MODELS_ROOT + '/sales/model.json', JSON.stringify(salesModelFile, null, 1));
+    var s = JSON.parse(JSON.stringify(good));
+    s.id = 'sales.alpha'; s.domain = 'sales'; s.model = { ref: 'models/sales/model.json', modelVersion: '1' };
+    wrote(TMP + '/docs/sales_asset.json', JSON.stringify(s, null, 1));
+    var rcS = runTool('create', { AGENT_ASSETS_DOC: TMP + '/docs/sales_asset.json' });
+    check('P1-3·sales 域 dataset create rc=0（模型按资产域装载）',
+      rcS.rc === 0 && exists(MODELS_ROOT + '/sales/datasets/alpha.json'), 'rc=' + rcS.rc + ' out=' + JSON.stringify(rcS.result).slice(0, 200));
+    var bad = JSON.parse(JSON.stringify(good));
+    bad.id = 'sales.bad_ref'; bad.domain = 'sales'; bad.model = { ref: 'models/production/model.json', modelVersion: '1' };   // 域误绑
+    wrote(TMP + '/docs/bad_ref.json', JSON.stringify(bad, null, 1));
+    var rcB = runTool('create', { AGENT_ASSETS_DOC: TMP + '/docs/bad_ref.json' });
+    check('负控·P1-3·sales id 绑 production 模型 → MODEL_REF_DOMAIN_MISMATCH 拒（不只靠 modelVersion 相等）',
+      rcB.rc === 1 && JSON.stringify(rcB.result).indexOf('MODEL_REF_DOMAIN_MISMATCH') >= 0, 'rc=' + rcB.rc + ' out=' + JSON.stringify(rcB.result).slice(0, 200));
+    // resolver 同规负控（契约层四方体）：sales id + model.ref production → DOMAIN_MISMATCH
+    (function () {
+      var bs = { datasetVersion: '1', id: 'sales.misbound', domain: 'sales', name: 'md', status: 'published', review: { by: 'x', at: '2026-11-10T10:00:00Z' },
+        source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
+        model: { ref: 'models/production/model.json', modelVersion: '1' },
+        selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done'] },
+        grain: { description: 'day-machine', keys: ['bizDate', 'machine'] },
+        validation: { samples: [], executions: [] } };
+      Files.createDirectories(Pth.get(MODELS_ROOT + '/sales/datasets'));
+      wrote(MODELS_ROOT + '/sales/datasets/misbound.json', JSON.stringify(bs, null, 1));
+      var reg2 = DatasetRegistry.build([{ relPath: 'models/sales/datasets/misbound.json', doc: bs }]);
+      var misModel = jt(ROOT + '/models/production/model.json');   // 即便 modelVersion 相等也须拒（身份不以版本相等判）
+      var res2 = DatasetResolver.resolve(reg2, 'sales.misbound', {}, misModel);
+      check('负控·resolver·跨域 model.ref → DOMAIN_MISMATCH（四方体闸；版本相等不构成身份）',
+        res2.ok === false && JSON.stringify(res2.errors || []).indexOf('DOMAIN_MISMATCH') >= 0, JSON.stringify(res2.errors).slice(0, 200));
+      try { Files.delete(Pth.get(MODELS_ROOT + '/sales/datasets/misbound.json')); } catch (eD2) { }
+    })();
+  })();
+
+  // P2-1·扫描显式化（assets list 默认完整；semantic impact 注入不可读条目后必须拒下零引用结论）
+  (function () {
+    var rl = runTool('list', null, MODELS_ROOT);
+    check('P2-1·assets list·默认扫描完整（scanComplete=true，无静默丢目录）',
+      rl.rc === 0 && (rl.result || {}).scanComplete === true, 'rc=' + rl.rc + ' out=' + JSON.stringify(rl.result).slice(0, 160));
+  })();
+})();
+
 
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
 check('assets.js 不自造原子写（写路径必须来自 _lib.js 的 atomicWriteUtf）',

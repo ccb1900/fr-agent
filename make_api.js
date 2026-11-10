@@ -49,6 +49,12 @@ function paramDefaults(ir) {
 load((J('java.lang.System').getenv('FR_AGENT_HOME') || 'D:/fineagent') + '/runtime/paths.js');
 var FR_AGENT_ROOT = Paths.root;   // 兼容读法
 var specPath = J('java.lang.System').getenv('REPORT_SPEC') || 'reports/sales_demo.js';
+// D3.6：catalog 前置变换依赖 readUtf（UTF-8 语义单点）。载体守卫禁止预载 _lib.js（其全局 J 工厂会覆盖管线 J）——
+//   此处本地实现同语义读（UTF-8 构造器、BOM 剥离），与 _lib.readUtf 行为等价且不触全局名。
+function readUtf(path) {
+  var bytes = J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(String(path).replace(/\\/g, '/')));
+  return new (J('java.lang.String'))(bytes, 'UTF-8');
+}
 load(Paths.lib('runresult.js')); // 迭代 4 地基：机器可读结果契约（纯模块，零运行时依赖）——先载，RR 尽早就位
 // 迭代 4：RR 只观察 stage 与诊断，绝不进对象图/字节路径（wb/export/Cpt 从不读它）→ 字节基线不受影响。
 //   退出码 = 权威裁决；RESULT_JSON 的 stages 定位失败段、diagnostics 带因；BR_SKIP_EXEC 下 execute/render=skipped。
@@ -113,17 +119,22 @@ try {
       var catModel = null;
       try {
       var catModelAbs = /^([A-Za-z]:[\\/]|\/)/.test(catModelPath) ? catModelPath : Paths.spec(catModelPath);   // env 可给绝对路径，勿双前缀
-        catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(catModelAbs))), 'UTF-8'));
+        catModel = JSON.parse(readUtf(catModelAbs));   // P0 修复（外审 D3.6 抓出）：此前错括号致 new String(bytes) 走平台默认 GBK，中文字符窜进来必乱
+        // (D3.6 取证期 readShot 已摘；readUtf 修复由 e2e 9/9 + fast_baseline 守护)
       } catch (eCatModel) {
         RR.diag('DATASET MODEL MISSING: ' + catModelPath + ' (' + eCatModel + ')');
         RR.fail('input_load'); stamp('DATASET MODEL MISSING: refusing to compile from missing domain model'); finishRun(2);
       }
       var catEntries = [];
       (function walkDatasets(dir) {
-        var dsStream; try { dsStream = J('java.nio.file.Files').newDirectoryStream(J('java.nio.file.Paths').get(dir), '*.json'); } catch (e) { return; }
+        var dsStream; try { dsStream = J('java.nio.file.Files').newDirectoryStream(J('java.nio.file.Paths').get(dir), '*.json'); } catch (e) {
+          // 扫面失败不再静默（外审 P2-1）：数据集目录读不到 → 引擎链上游直接拒，不许导出"解析不出/空索引"的歧义面
+          RR.diag('CATALOG DATASETS DIR UNREADABLE: ' + dir + ' (' + e + ')');
+          RR.fail('input_load'); stamp('DATASET INDEX UNREADABLE: refusing to resolve from an unscannable registry source'); finishRun(2);
+        }
         try { var it = dsStream.iterator(); while (it.hasNext()) {
           var f = it.next(); var doc = null;
-          try { doc = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(f), 'UTF-8'))); } catch (eJ) { }
+          try { doc = JSON.parse(readUtf(String(f).replace(/\\/g, '/'))); } catch (eJ) { }   // 同款错位修复（P0）：readUtf 承接 UTF-8 语义，散乱括号史不再复用
           if (doc && typeof doc === 'object' && !Array.isArray(doc)) {
             var relM = /(models\/.+)$/.exec(String(f).replace(/\\/g, '/'));
             catEntries.push({ relPath: relM ? relM[1] : String(f).replace(/\\/g, '/'), doc: doc });
@@ -141,6 +152,9 @@ try {
       // 版本绑定：经 RR.diag 记入 runresult.json（不塞 rs——TOP_KEYS 白名单会拒未知键）
       stamp('DATASET RESOLVED: ' + resolved.datasetRef.id + ' v' + resolved.datasetRef.version + ' → kind:sql');
       RR.diag('DATASET_REF: ' + JSON.stringify(resolved.datasetRef));   // D3.2/S4：版本绑定记入 runresult.json
+      // D3.6 模型上下文统一（外审 P1-1）：下游 SQL 编译/preflight 复用这份已解析的模型对象——
+      //   不再按 SCHEMA_MODEL 缺省二次装载 production 模型（多域 sales 会 Resolver 过、编译期错模型）。
+      var catBound = { model: catModel, rel: 'models/' + refDomain + '/model.json' };
     }
     var rsErrs = SpecValidator.validate(rs);
     if (rsErrs.length) {
@@ -160,8 +174,14 @@ try {
       load(Paths.semantic('model/vocab.js'));   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY，前置加载
       load(Paths.semantic('query/sqlbuilder.js'));
       function genv(k, d) { var v = J('java.lang.System').getenv(k); return (v == null || String(v) === '') ? d : String(v); }
-      var modelPath = assertLocalRel(genv('SCHEMA_MODEL', 'models/production/model.json'), 'SCHEMA_MODEL');   // B-复审B-1
-      var modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
+      var modelObj;
+      if (catBound) {
+        modelObj = catBound.model;   // D3.6：catalog 解析的模型即编译期模型（同一对象，零二次装载）
+        RR.diag('CATALOG MODEL BIND: ' + catBound.rel + ' (model context unified with resolver, 外审 P1-1)');
+      } else {
+        var modelPath = assertLocalRel(genv('SCHEMA_MODEL', 'models/production/model.json'), 'SCHEMA_MODEL');   // B-复审B-1
+        modelObj = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(modelPath))), 'UTF-8')));
+      }
       // I5.1 P3：模型-结构对齐前置闸（启动时校验，对不上即拒；不每次重扫库，读 I2 落的 schema 快照）
       load(Paths.semantic('model/vocab.js'));
       load(Paths.semantic('model/validator.js'));

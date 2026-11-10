@@ -16,6 +16,22 @@ var DatasetResolver = (function () {
       return { ok: false, errors: ['NOT_PUBLISHED@' + ref + ' (status=' + hit.doc.status + ')'] };
     if (!isObj(hit.doc.model) || !isStr(hit.doc.model.modelVersion))
       return { ok: false, errors: ['BAD_MODEL_REF@' + ref + ' (doc.model missing or modelVersion empty)'] };
+    // D3.6 域身份闸（外审 P1-1b）：id 前缀、doc.domain、注册 relPath 域段、model.ref 域段——四方一体。
+    //   不能只靠 modelVersion 相等判定模型身份：跨域误绑（sales 资产绑 production 模型）在此拒，
+    //   与 assets 工具层的四面体闸同规（fail-closed 于 U READY 链最上游）。
+    var relDom = (function () { var m = /^models\/([^\/]+)\/datasets\//.exec(String(hit.relPath)); return m ? m[1] : null; })();
+    var refDom = (function () { var m = /^models\/([^\/]+)\/model\.json$/.exec(String(hit.doc.model.ref || '')); return m ? m[1] : null; })();
+    var idDom = String(hit.id).split('.')[0];
+    if (!relDom)
+      return { ok: false, errors: ['DOMAIN_MISMATCH@' + ref + ' (registered relPath is not models/<domain>/datasets/<name>.json: ' + hit.relPath + ')'] };
+    if (!isStr(hit.doc.domain) || hit.doc.domain !== relDom)
+      return { ok: false, errors: ['DOMAIN_MISMATCH@' + ref + ' (doc.domain=' + hit.doc.domain + ' vs registered path models/' + relDom + '/)'] };
+    if (idDom !== relDom)
+      return { ok: false, errors: ['DOMAIN_MISMATCH@' + ref + ' (id prefix ' + idDom + ' vs registered domain ' + relDom + ')'] };
+    if (!refDom)
+      return { ok: false, errors: ['BAD_MODEL_REF@' + ref + ' (model.ref must be models/<domain>/model.json, got: ' + hit.doc.model.ref + ')'] };
+    if (refDom !== relDom)
+      return { ok: false, errors: ['DOMAIN_MISMATCH@' + ref + ' (model.ref domain ' + refDom + ' vs registered domain ' + relDom + ')'] };
     var problems = DatasetDef.scopeProblems(reportScope);
     if (problems.length) return { ok: false, errors: problems };
     if (model && hit.doc.model.modelVersion !== model.modelVersion)
