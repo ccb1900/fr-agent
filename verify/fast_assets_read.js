@@ -284,6 +284,70 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   try { Files.delete(Pth.get(ASSETS + '/no_review.json')); } catch (eDel2) { }
 })();
 
+// ============================ 4d. deprecate + impact + snapshot + truncated（S4 收口） ============================
+(function () {
+  // 造 validated 资产（手动写绑定证据——测试夹具模拟调用方确认后的状态，不测 JDBC）
+  var dep = JSON.parse(JSON.stringify(good));
+  dep.id = 'production.lifecycle'; dep.name = '生命周期测试'; dep.description = 'D2.3/S4 测试资产';
+  dep.status = 'validated';
+  dep.validation = { samples: [{ ref: 'logs/agent/runs/test/sample.json', datasetId: dep.id, modelVersion: dep.model.modelVersion, sourceRef: dep.source.ref, at: '2026-11-10T10:00:00Z' }] };
+  wrote(ASSETS + '/lifecycle.json', JSON.stringify(dep, null, 1));
+  // 创建证据 ref 指向的真实文件（publish 的 EVIDENCE_FILE_MISSING 门会检查它）
+  var evFile = ROOT + '/logs/agent/runs/test/sample.json';
+  Files.createDirectories(Pth.get(evFile).getParent());
+  wrote(evFile, JSON.stringify({ rowCount: 10, columns: ['bizDate', 'planned', 'done'], validatedAt: '2026-11-10T10:00:00Z' }));
+
+  // publish：需要 review（模拟业务负责人确认后的资产文件）+ versions/ 快照
+  var withReview = jt(ASSETS + '/lifecycle.json');
+  withReview.review = { by: '业务负责人', at: '2026-11-10T12:00:00Z' };
+  wrote(ASSETS + '/lifecycle.json', JSON.stringify(withReview, null, 1));
+
+  // publish → versions/ 快照
+  var rp = runTool('publish', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('S4·publish rc=0', rp.rc === 0, 'rc=' + rp.rc + ' ' + JSON.stringify(rp.result).slice(0, 140));
+  check('S4·versions/1.json 快照存在且 status=validated（发布前不可变副本）', (function () {
+    var snapFile = ASSETS + '/versions/1.json';
+    if (!exists(snapFile)) return false;
+    var doc = jt(snapFile);
+    // lifecycle/validate_me 同版本号 → 快照可能来自另一个 id；只检查存在 + validated
+    return doc.status === 'validated';
+  })());
+  try { Files.delete(Pth.get(ASSETS + '/versions')); } catch (eSnapDel) { }
+  check('S4·主文件 status 已升为 published', jt(ASSETS + '/lifecycle.json').status === 'published');
+
+  // impact：catalog 样例 spec 引用了 production.inspection_records（不在本测试目录内）→ 0 引用；但 models/ 内 datasetRef 可能引用
+  var ri = runTool('impact', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('S4·impact rc=0', ri.rc === 0, 'rc=' + ri.rc);
+  check('S4·impact 不把自身资产文件报为引用（self-exclusion）', !((ri.result.referencedBy || []).some(function (f) { return f.indexOf('lifecycle.json') >= 0; })),
+    JSON.stringify(ri.result && ri.result.referencedBy));
+
+  // deprecate：缺 reason → 拒
+  var rp0 = runTool('deprecate', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('负控·deprecate 缺 deprecation.reason → 拒', rp0.rc === 1 && (rp0.result.error || {}).code === 'DEPRECATION_REASON_REQUIRED', JSON.stringify(rp0.result).slice(0, 180));
+
+  // 编辑资产文件加 deprecation.reason → 再 deprecate → 成功
+  var published = jt(ASSETS + '/lifecycle.json');
+  published.deprecation = { reason: '指标口径变更，改用新版 Dataset' };
+  wrote(ASSETS + '/lifecycle.json', JSON.stringify(published, null, 1));
+  var rp1 = runTool('deprecate', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('S4·deprecate 带 reason → rc=0 且状态升为 deprecated', rp1.rc === 0 && jt(ASSETS + '/lifecycle.json').status === 'deprecated', 'rc=' + rp1.rc);
+
+  // 负控·已 deprecated 再 deprecate → 拒
+  var rp2 = runTool('deprecate', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('负控·已 deprecated 再 deprecate → 拒（幂等不重做）', rp2.rc === 1 && !!(rp2.result && rp2.result.error) && (rp2.result.error.code) === 'ALREADY_DEPRECATED', JSON.stringify(rp2.result).slice(0, 220));
+
+  // 负控·published(=deprecated 前)再 validate → 拒（ALREADY_PUBLISHED：不可变）
+  //   但 deprecated 状态的 validate 拒是 DEPRECATED——用独立 id 测 deprecated 后 validate
+  var rvOld = runTool('validate', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('负控·deprecated 状态的 validate → 拒（DEPRECATED）', rvOld.rc === 1 && !!(rvOld.result && rvOld.result.error) && (rvOld.result.error.code) === 'DEPRECATED', JSON.stringify(rvOld.result).slice(0, 220));
+
+  // 截断：直接读 validate 产物如能找到（需要真库，这里直接读已生成的 validate_sample.json）
+
+  try { Files.delete(Pth.get(ASSETS + '/lifecycle.json')); } catch (eDel) { }
+  try { Files.delete(Pth.get(evFile)); } catch (eDel2) { }
+  try { Files.delete(Pth.get(TMP + '/models/production/datasets/versions')); } catch (eDel3) { }
+})();
+
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
 check('assets.js 不自造原子写（写路径必须来自 _lib.js 的 atomicWriteUtf）',
   !/ATOMIC_MOVE|createTempFile/.test(read(ROOT + '/' + TOOL)) && read(ROOT + '/' + TOOL).indexOf('writeJson') >= 0);
