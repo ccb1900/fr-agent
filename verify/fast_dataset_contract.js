@@ -35,7 +35,7 @@ load(ROOT + '/semantic/query/sqlbuilder.js');
 load(ROOT + '/semantic/dataset/definition.js');
 load(ROOT + '/semantic/dataset/registry.js');
 
-var model = jt('models/production/model.json');
+var model = jt('verify/fixtures/planner_model_snapshot.json');   // 走查三轮附记：自持快照（生产 model.json 是活业务资产）
 var ASSET = 'models/production/datasets/inspection_records.json';
 
 // 契约规定的组合方式：资产给结构选择，报表给时间窗/排序（不新增校验、不新增 SQL 路径）

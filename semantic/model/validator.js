@@ -125,11 +125,16 @@ var ModelValidator = (function () {
       requireColumn(idx, errs, d.table, d.column, dp, '维度');
     });
 
-    // relationships（≥3；端点回溯；naming-derived 必 requiresConfirmation）
+    // relationships（≥3；端点回溯；naming-derived 必 requiresConfirmation；**关系名唯一**——探针/findRelation 按 name 定位，重名即证据链歧义）
+    var relNameSeen = {};
     if (requireCompleteness && (!Array.isArray(model.relationships) || model.relationships.length < 3)) E(errs, 'REQUIRED', 'relationships', 'relationships 至少 3 个');
     else model.relationships.forEach(function (r, i) {
       var rp = 'relationships[' + i + ']';
       if (!isObj(r)) { E(errs, 'INVALID_TYPE', rp, '关系须对象'); return; }
+      if (r.name != null && r.name !== '') {
+        if (hasOwn(relNameSeen, String(r.name))) E(errs, 'DUPLICATE_RELATION_NAME', rp + '.name', '关系名重复: ' + r.name + '（探针/findRelation 按 name 定位，重名会让证据链歧义）');
+        else relNameSeen[String(r.name)] = 1;
+      }
       if (!hasOwn(ModelVocab.RELATION_SOURCES, r.source)) E(errs, 'INVALID_ENUM', rp + '.source', '关系 source 越枚举: fk|pk|naming-derived|confirmed');
       if (r.source === 'naming-derived' && r.requiresConfirmation !== true) E(errs, 'REQUIRED', rp + '.requiresConfirmation', 'naming-derived 关系必须 requiresConfirmation=true（r2 §3.3 不替代业务确认）');
       // I5.2：confirmed 关系必带合法 cardinality（JOIN 前查基数，不硬拼）

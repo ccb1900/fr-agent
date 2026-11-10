@@ -15,7 +15,7 @@ function jt(f) { return JSON.parse(src(f)); }
   var ok = true; try { new Function(src(f)); } catch (e) { ok = false; print('PARSE ' + f + ' -> ' + e); }
   check('PARSE ' + f, ok);
 });
-var model = jt('models/production/model.json');
+var model = jt('verify/fixtures/planner_model_snapshot.json');   // 自持快照（生产 model.json 是活业务资产，走查三轮附记）
 var schema = jt('data/schema_atom_live_demo.json');
 check('model.json 合法 JSON', !!model && !!model.entities);
 check('I2 schema.json 存在且含 tables', Array.isArray(schema.tables) && schema.tables.length > 0);
@@ -156,7 +156,7 @@ check('≥3 维度', model.dimensions.length >= 3);
 check('≥3 关系', model.relationships.length >= 3);
 
 // ===== ② 负项：不臆造/显式聚合/命名推导必确认 =====
-function mut(f) { var m = jt('models/production/model.json'); f(m); return m; }
+function mut(f) { var m = jt('verify/fixtures/planner_model_snapshot.json'); f(m); return m; }
 check('幽灵列→UNKNOWN_REF', codeAt(ModelValidator.validate(mut(function (m) { m.entities[0].properties[0].column = 'no_such_col'; }), schema), 'UNKNOWN_REF', 'properties[0].column'));
 check('ratio 缺分母→REQUIRED', codeAt(ModelValidator.validate(mut(function (m) { delete m.metrics[2].expression.denominator; }), schema), 'REQUIRED', 'denominator'));
 check('I5.1-T5 ratio scale 非数→INVALID_NUMBER', codeAt(ModelValidator.validate(mut(function (m) { m.metrics[2].expression.scale = '很多'; }), schema), 'INVALID_NUMBER', 'scale'));

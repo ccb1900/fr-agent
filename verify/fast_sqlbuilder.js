@@ -14,7 +14,7 @@ check('PARSE semantic/query/sqlbuilder.js', (function () { try { new Function(sr
 load(ROOT + '/lib/isodate.js');
 load(ROOT + '/semantic/model/vocab.js');   // sqlbuilder 引用 ModelVocab.JOIN_SAFE_CARDINALITY
 load(ROOT + '/semantic/query/sqlbuilder.js');
-var model = jt('models/production/model.json');
+var model = jt('verify/fixtures/planner_model_snapshot.json');   // 自持快照（生产 model.json 是活业务资产，走查三轮附记）
 function codeAt(res, code, frag) { return (res.errors || []).some(function (e) { return e.code === code && String(e.path).indexOf(frag) >= 0; }); }
 
 // 真值日报形状：按 bizDate 分组，planned/done base，completionRate derived，日期定字面

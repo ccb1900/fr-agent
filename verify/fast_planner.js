@@ -25,7 +25,7 @@ load(ROOT + '/semantic/model/resolver.js');
 load(ROOT + '/semantic/planner/capability.js');
 load(ROOT + '/semantic/planner/planner.js');
 
-var model = jt('models/production/model.json');
+var model = jt('verify/fixtures/planner_model_snapshot.json');   // 走查三轮附记：生产 model.json 是活的业务资产——planner 夹具自持快照（27708a9 原版），不被业务演进波及
 var idx = ModelRegistry.index(model);
 var ctx = {
   resolve: function (t) { return ModelResolver.resolve(idx, t); },

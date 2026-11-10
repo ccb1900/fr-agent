@@ -138,7 +138,8 @@ load(ROOT + '/semantic/model/vocab.js');       // ModelVocab 先载（validator 
 load(ROOT + '/semantic/model/validator.js');
 load(ROOT + '/semantic/model/evidence.js');    // r6：唯一性证据（confirmed 关系需绑定，与 plan.js 同规）
 var _semEvRaw = null;
-try { _semEvRaw = JSON.parse(readUtf('data/i55_relation_unique_truth.json')); } catch (eEv) { _semEvRaw = null; }
+var _semEvPath = System.getenv('AGENT_PROBE_EVIDENCE_JSON') || 'data/i55_relation_unique_truth.json';   // 走查四轮：证据源随 env（probe_relation 输出与 revise/validate 消费同源——套件隔离用临时路径）
+try { _semEvRaw = JSON.parse(readUtf(_semEvPath)); } catch (eEv) { _semEvRaw = null; }
 // 连接身份与 plan.js/make_api 同源（SQL_DRIVER/SQL_URL/SQL_USER env，规范默认=生产 ATOM_LIVE）——
 //   证据指纹核对真实可行（07e2 直测：srcMatch=true、unique 全收）；传 null 则源指纹必不匹配、证据全拒。
 function semConn() {
@@ -155,7 +156,7 @@ function semUniqEv(modelObj, schema) {
     var fp = ModelEvidence.fingerprints({ model: modelObj, schema: schema, connection: semConn() });
     var ev = ModelEvidence.filter(_semEvRaw, { fingerprints: fp, model: modelObj, schema: schema,
       nowMs: new Date().getTime(), maxAgeDays: isFinite(_semEvMaxAge) ? _semEvMaxAge : ModelEvidence.DEFAULT_MAX_AGE_DAYS });
-    return { uniqueKeyEvidence: ev.unique, evidenceDetail: { accepted: ev.accepted, missing: ev.missing, mismatched: ev.mismatched.length, stale: ev.stale.length } };
+    return { uniqueKeyEvidence: ev.unique, evidenceDetail: { accepted: ev.accepted, missing: ev.missing, mismatched: ev.mismatched, rejected: ev.rejected, malformed: ev.malformed, duplicates: ev.duplicates, stale: ev.stale } };
   } catch (eE) { return {}; }
 }
 // ---------- 版本纪律助手（审查轮 2026-11-10 收口） ----------
@@ -376,6 +377,85 @@ if (action === 'impact') {
       : ['SCAN INCOMPLETE: fix unreadable entries (see scanDiagnostics) and re-run — the zero-consumer conclusion is NOT actionable in this state'] });
 }
 
+// ---------- 走查四轮 #1（硬卡点）：probe_relation——证据重绑工具面 ----------
+//   revise bump 模型 → canonicalModel 指纹漂移 → 旧数据侧证据按纪律失效 → 必须重跑探针重绑。
+//   probes/probe_relation_unique.js 早已存在（Nashorn 可跑，非 node——走查者误判），但无 verb 包装、文档未提
+//   → 与 review/revise 同族病"环境的动作没有工具面"。本 action 复刻其行为（同 ModelEvidence 代码路径），
+//   证据输出默认 data/i55_relation_unique_truth.json（AGENT_PROBE_EVIDENCE_JSON 可指临时路径供套件隔离）。
+if (action === 'probe_relation') {
+  var prDom = genv('AGENT_SEMANTIC_DOMAIN');
+  if (!prDom) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for probe_relation', ['fr_agent.ps1 -Verb semantic -Action probe_relation -Target <domain> (needs SQL access; probe targets the domain model confirmed N:1/1:1 relations)']);
+  // 鸡生蛋死锁（walk-through round-4 实测）：盘上模型是 v1、revise 草案是 v2——canonicalModel 绑 modelVersion，
+  //   探针绑盘上 v1 的指纹对 v2 草案永远不匹配。修：probe 支持 -Doc（以 revise 草案为准重绑证据）——
+  //   草案内容原样（不改写 domain/modelVersion），与 revise 侧 semUniqEv(revNew) 的指纹自然一致。
+  var prDocPath = genv('AGENT_SEMANTIC_DOC');
+  var prModel = null, prModelSource = null;
+  if (prDocPath) {
+    try { prModel = JSON.parse(readUtf(absOf(prDocPath))); } catch (ePR0) { bail('SEMANTIC_USAGE', 'probe draft unreadable: ' + prDocPath, ['check UTF-8 JSON']); }
+    prModel.domain = prDom;   // 与 revise 的规范化对称（revNew.domain=rvd）：两侧指纹必须同一内容，否则证据永远对不上草案
+    prModelSource = 'draft(' + prDocPath + ', domain normalized to ' + prDom + ')';
+  } else {
+    var prModelPath = modelsRoot + '/' + prDom + '/model.json';
+    try { prModel = JSON.parse(readUtf(prModelPath)); } catch (ePR) { bail('MODEL_NOT_FOUND', prDom + '/model.json unreadable'); }
+    prModelSource = prModelPath;
+  }
+  var prSchemaName = 'schema_' + (prModel.source || prDom) + '.json';
+  if (!Files.exists(Pth.get(ROOT + '/data/' + prSchemaName))) bail('SCHEMA_MISSING', prSchemaName + ' missing');
+  var prSchema = JSON.parse(readUtf(ROOT + '/data/' + prSchemaName));
+  var connCfg = semConn();
+  var targets = ModelEvidence.requiredRelations(prModel);
+  var prChecks = [], prErrors = [], prStatus = 'passed';
+  if (!targets.length) bail('NO_PROBE_TARGETS', 'model has no confirmed N:1/1:1 relations to probe', ['probe_relation exists for confirmed JOIN-safe relations; nothing to rebind here']);
+  var fpPR = ModelEvidence.fingerprints({ connection: connCfg, model: prModel, schema: prSchema });
+  var IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
+  var connPR = null, sqlPwdPR = null;
+  try { load(ROOT + '/lib/dbpass.js'); sqlPwdPR = _cred.password; } catch (eP2) { }
+  if (!sqlPwdPR) bail('CREDENTIALS_MISSING', 'lib/dbpass.js unreadable', ['create data/db_local.js locally (probe needs read access)']);
+  try {
+    connPR = J('java.sql.DriverManager').getConnection(connCfg.url, connCfg.user, sqlPwdPR);
+    connPR.setReadOnly(true);
+    var stPR = connPR.createStatement();
+    targets.forEach(function (tgt) {
+      if (!IDENT.test(tgt.table) || !IDENT.test(tgt.column)) { prStatus = 'failed'; prErrors.push(tgt.name + ': 非白名单标识符 ' + tgt.table + '.' + tgt.column); return; }
+      try {
+        var rs2 = stPR.executeQuery('SELECT COUNT(*) AS n, COUNT(DISTINCT ' + tgt.column + ') AS d FROM ' + tgt.table);
+        var got2 = false;
+        while (rs2.next()) {
+          var n2 = +rs2.getLong('n'), d2 = +rs2.getLong('d');
+          var rel0 = null;   // 走查四轮：首中即返（与 evidence.js findRelation 同规）——同名关系会让 forEach 尾赋值漂到后一条，指纹两侧必不一致
+          for (var ri2 = 0; ri2 < (prModel.relationships || []).length; ri2++) { var rr3 = prModel.relationships[ri2]; if (rr3 && rr3.name === tgt.name) { rel0 = rr3; break; } }
+          prChecks.push({ table: tgt.table, column: tgt.column, rows: n2, distinct: d2, unique: (n2 === d2 && d2 > 0),
+            relation: tgt.name, relationFingerprint: ModelEvidence.relationFingerprint(rel0) });
+          got2 = true;
+        }
+        rs2.close();
+        if (!got2) { prStatus = 'failed'; prErrors.push(tgt.name + ': 查询无结果行'); }
+      } catch (eQ2) { prStatus = 'failed'; prErrors.push(tgt.name + ': ' + eQ2); }
+    });
+    stPR.close();
+  } catch (eC2) { prStatus = 'failed'; prErrors.push('connect: ' + eC2); }
+  finally { if (connPR != null) { try { connPR.close(); } catch (eCl2) { } } }
+  prChecks.forEach(function (c2) { if (!c2.unique) { prStatus = 'failed'; prErrors.push(c2.relation + ': 数据不唯一 rows=' + c2.rows + ' distinct=' + c2.distinct); } });
+  var evOut = {
+    evidenceVersion: ModelEvidence.EVIDENCE_VERSION,
+    status: prStatus,
+    schema: prModel.source || prDom,
+    sourceFingerprint: fpPR.source, modelFingerprint: fpPR.model, schemaFingerprint: fpPR.schema,
+    probedAt: new (J('java.util.Date'))().toInstant().toString(),
+    checks: prChecks,
+    error: prErrors.length ? prErrors.join(' | ') : null,
+    note: '数据快照证据（不是 DB 唯一约束）；由 semantic -Action probe_relation 生成（walk-through round-4 #1 工具面），与 probes/probe_relation_unique.js 同 ModelEvidence 代码路径'
+  };
+  var evPathOut = System.getenv('AGENT_PROBE_EVIDENCE_JSON') || (ROOT + '/data/i55_relation_unique_truth.json');
+  writeJson(evPathOut, JSON.parse(JSON.stringify(evOut)));   // 原子写（_lib）
+  if (prStatus !== 'passed') bail('PROBE_FAILED', 'probe did not pass: ' + (prErrors.join(' | ')),
+    ['fix data or relation definition and re-run', 'evidence file left in failed status (fail-closed; old file overwritten by design)'], { evidencePath: evPathOut, checks: prChecks });
+  finish(0, { tool: 'semantic', action: 'probe_relation', runId: runId, ok: true, zeroEngine: true, domain: prDom,
+    evidencePath: evPathOut, checks: prChecks, modelFingerprint: fpPR.model.slice(0, 16) + '…', modelSource: prModelSource,
+    nextActions: ['evidence rebound to ' + prModelSource + ' fingerprint - retry semantic -Action revise now',
+      'then human review via semantic -Action review, then publish'] });
+}
+
 // ---------- W1/W2（走查 P0-1/P0-2）：人的动作有了工具面——review（登记人审）+ revise（合法版本 bump 入口） ----------
 if (action === 'review') {
   var rdom = genv('AGENT_SEMANTIC_DOMAIN');
@@ -416,9 +496,16 @@ if (action === 'revise') {
   var revSchemaPathRv = ROOT + '/data/' + revSchemaName;
   if (!Files.exists(Pth.get(revSchemaPathRv))) bail('SCHEMA_MISSING', revSchemaName + ' missing');
   var revSchema = JSON.parse(readUtf(revSchemaPathRv));
-  var revErrs = ModelValidator.validate(revNew, revSchema, { requireCompleteness: false, uniqueKeyEvidence: semUniqEv(revNew, revSchema).uniqueKeyEvidence || {} });
-  if (revErrs.length) bail('MODEL_VALIDATION_FAILED', revErrs.map(function (e) { return e.code + '@' + e.path; }).join(', '),
-    ['fix the draft against ' + revSchemaName], { diagnostics: revErrs.slice(0, 20) });
+  var revEvRes = semUniqEv(revNew, revSchema);
+  var revErrs = ModelValidator.validate(revNew, revSchema, { requireCompleteness: false, uniqueKeyEvidence: revEvRes.uniqueKeyEvidence || {} });
+  if (revErrs.length) {
+    var revExtra = { diagnostics: revErrs.slice(0, 20) };
+    for (var rei = 0; rei < revErrs.length; rei++) {
+      if (revErrs[rei].code === 'UNSUPPORTED_RELATION_KEY') { revExtra.evidenceDetail = revEvRes.evidenceDetail; revExtra.evidenceSource = _semEvPath; break; }
+    }
+    bail('MODEL_VALIDATION_FAILED', revErrs.map(function (e) { return e.code + '@' + e.path; }).join(', '),
+      ['fix the draft against ' + revSchemaName, 'if UNSUPPORTED_RELATION_KEY: re-run semantic -Action probe_relation -Target ' + rvd + ' -Doc <draft> to rebind evidence to the draft fingerprint'], revExtra);
+  }
   // 内容全等也不拦（允许"白 bump"占位占版本号，可以 go；但给出提醒）：
   var priorRev = revCur.review ? revCur.review.at : null;
   writeJson(revTarget, revNew);
@@ -428,4 +515,4 @@ if (action === 'revise') {
       'then semantic -Action publish (review.at must be later than prior snapshot review.at' + (priorRev ? ' ' + priorRev : '') + ')'] });
 }
 
-bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, review, revise, deprecate or impact']);
+bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, review, revise, probe_relation, deprecate or impact']);

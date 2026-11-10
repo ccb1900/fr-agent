@@ -46,10 +46,11 @@ Files.createDirectories(Pth.get(ASSETS));
     wrote(home + '/production/model.json', JSON.stringify(prod, null, 1));
   });
 })();
+// 走查三轮附记：生产 model.json 是活的业务资产（版本随 review→revise→publish 演进）——夹具 modelVersion 动态跟随
 var good = {
   datasetVersion: '1', id: 'production.alpha', domain: 'production', name: '甲', description: '临时 A',
   status: 'draft', source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
-  model: { ref: 'models/production/model.json', modelVersion: '1' },
+  model: { ref: 'models/production/model.json', modelVersion: jt(MODELS_ROOT + '/production/model.json').modelVersion },
   selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done'] },
   grain: { description: '一天一机台', keys: ['bizDate', 'machine'] },
   asserts: { fields: [{ name: 'bizDate', role: 'dim' }, { name: 'machine', role: 'dim' }, { name: 'planned', role: 'metric' }, { name: 'done', role: 'metric' }] },
@@ -282,7 +283,7 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   (function () {
     var dvAbs = JSON.parse(JSON.stringify(good));
     dvAbs.id = 'production.abs_ref'; dvAbs.status = 'validated';
-    dvAbs.validation = { samples: [{ ref: 'D:/fineagent/logs/agent/runs/x/validate_sample.json', datasetId: dvAbs.id, modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+    dvAbs.validation = { samples: [{ ref: 'D:/fineagent/logs/agent/runs/x/validate_sample.json', datasetId: dvAbs.id, modelVersion: good.model.modelVersion, sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
     dvAbs.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };   // 让 review 不挡，专心测 ref 格式行为
     wrote(ASSETS + '/abs_ref.json', JSON.stringify(dvAbs, null, 1));
     var rab = runTool('publish', { AGENT_ASSETS_ID: 'production.abs_ref' });
@@ -295,7 +296,7 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
 
   var dv2 = JSON.parse(JSON.stringify(good));
   dv2.id = 'production.no_review'; dv2.status = 'validated';
-  dv2.validation = { samples: [{ ref: 'logs/agent/runs/test/sample.json', datasetId: 'production.no_review', modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+  dv2.validation = { samples: [{ ref: 'logs/agent/runs/test/sample.json', datasetId: 'production.no_review', modelVersion: good.model.modelVersion, sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
   wrote(ASSETS + '/no_review.json', JSON.stringify(dv2, null, 1));
   var rnr = runTool('publish', { AGENT_ASSETS_ID: 'production.no_review' });
   check('负控·validated 缺 review → publish 拒（证据 ref 前缀合法但文件不存在也可能同时触发）',
@@ -617,7 +618,7 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     var evPath = ROOT + '/logs/agent/runs/test/sample2.json';
     function mkId(id) {
       var d = JSON.parse(JSON.stringify(good)); d.id = id; d.status = 'validated';
-      d.validation = { samples: [{ ref: 'logs/agent/runs/test/sample2.json', datasetId: id, modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+      d.validation = { samples: [{ ref: 'logs/agent/runs/test/sample2.json', datasetId: id, modelVersion: good.model.modelVersion, sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
       d.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };   // review 不挡，专注证据门
       return d;
     }
@@ -652,7 +653,7 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     Files.createDirectories(Pth.get(MODELS_ROOT + '/sales'));
     wrote(MODELS_ROOT + '/sales/model.json', JSON.stringify(salesModelFile, null, 1));
     var s = JSON.parse(JSON.stringify(good));
-    s.id = 'sales.alpha'; s.domain = 'sales'; s.model = { ref: 'models/sales/model.json', modelVersion: '1' };
+    s.id = 'sales.alpha'; s.domain = 'sales'; s.model = { ref: 'models/sales/model.json', modelVersion: salesModelFile.modelVersion };   // 跟随 sales 模型拷贝（production 现态可能是 v2）
     wrote(TMP + '/docs/sales_asset.json', JSON.stringify(s, null, 1));
     var rcS = runTool('create', { AGENT_ASSETS_DOC: TMP + '/docs/sales_asset.json' });
     check('P1-3·sales 域 dataset create rc=0（模型按资产域装载）',
@@ -792,6 +793,34 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     check('走查三轮#3·review 缺 ReviewBy → SEMANTIC_USAGE + semantic.json 落盘（读文件再判断不再空转）',
       rr1.rc === 2 && rr1.result && (rr1.result.error || {}).code === 'SEMANTIC_USAGE', 'rc=' + rr1.rc);
     try { Files.delete(Pth.get(SEM_MODELS + '/convdom/model.json')); } catch (eC) { }
+  })();
+
+  // 走查四轮 #1：probe_relation 工具面（证据重绑）+ revise 续走（鸡生蛋死锁 -Doc 对称规范化修复）
+  (function () {
+    var prDom = SEM_MODELS + '/prdom';
+    Files.createDirectories(Pth.get(prDom));
+    var prModel = jt(SEM_MODELS + '/sales/model.json');   // naming-derived 基底
+    prModel.modelVersion = '1'; prModel.review = null; delete prModel.review;
+    // 注入一条 confirmed N:1 关系（探针目标）——列用实体表自身 PK 位（laser_aaa 无单列 PK → 依赖数据侧证据，真库探针判定）
+    prModel.relationships.unshift({ name: 'probeTarget', label: '探针目标关系', from: { table: 'laser_aaa', column: 'file_key' }, to: { table: 'laser_files', column: 'file_key' }, source: 'confirmed', cardinality: 'N:1', confirmedBy: 'suite probe gate' });   // to 键=laser_files.file_key（数据侧真唯一 538/538）；名不与 sales 的 naming recordToFile 撞（validator 关系名唯一闸）
+    prModel.domain = 'prdom';
+    wrote(prDom + '/model.json', JSON.stringify(prModel, null, 1));
+    var prEv = TMP + '/probe_evidence.json';
+    var prRun = runSemAt('probe_relation', { domain: 'prdom', AGENT_PROBE_EVIDENCE_JSON: prEv, SQL_URL: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false', SQL_USER: 'sa' });
+    check('走查四轮·probe_relation rc=0（真库探针重绑，证据写临时路径）',
+      prRun.rc === 0 && exists(prEv) && (jt(prEv).status) === 'passed', 'rc=' + prRun.rc + ' out=' + JSON.stringify(prRun.result).slice(0, 220));
+    // revise 续走：bump 草案 v2（同 confirmed 关系，内容与 v1 一致但版本不同→探针以草案指纹重绑）
+    var prDraft = jt(prDom + '/model.json');
+    prDraft.modelVersion = '2'; prDraft.metrics[0].label = prDraft.metrics[0].label + ' v2'; prDraft.review = null; delete prDraft.review;
+    var prDraftPath = TMP + '/docs/prdom_v2.json';
+    wrote(prDraftPath, JSON.stringify(prDraft, null, 1));
+    var prRun2 = runSemAt('probe_relation', { domain: 'prdom', AGENT_SEMANTIC_DOC: prDraftPath, AGENT_PROBE_EVIDENCE_JSON: prEv, SQL_URL: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false', SQL_USER: 'sa' });
+    check('走查四轮·probe -Doc → 以草案指纹重绑（鸡生蛋死锁修复）', prRun2.rc === 0 && (prRun2.result || {}).modelSource && String(prRun2.result.modelSource).indexOf('draft(') === 0, 'rc=' + prRun2.rc);
+    var prRun3 = runSemAt('revise', { domain: 'prdom', AGENT_SEMANTIC_DOC: prDraftPath, AGENT_PROBE_EVIDENCE_JSON: prEv, SQL_URL: 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false', SQL_USER: 'sa' });
+    check('走查四轮·revise bump 1→2 在重绑证据下 rc=0（存量模型第一次 revise 不再卡死）',
+      prRun3.rc === 0 && (prRun3.result || {}).previousVersion === '1' && (prRun3.result.modelVersion) === '2', 'rc=' + prRun3.rc + ' out=' + JSON.stringify(prRun3.result).slice(0, 220));
+    try { Files.delete(Pth.get(prEv)); } catch (eP) { }
+    try { Files.delete(Pth.get(prDom + '/model.json')); } catch (eP2) { }
   })();
 
   // W3：plan detail 通路（ready 断言 + dims=实体 property 展示列 + intentHash）

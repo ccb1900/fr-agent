@@ -29,6 +29,7 @@ function md5(p) {
 
 load(ROOT + '/semantic/dataset/definition.js');
 load(ROOT + '/semantic/dataset/registry.js');
+var PROD_MV = JSON.parse(read(ROOT + '/models/production/model.json')).modelVersion;   // 走查三轮附记：夹具跟生产模型版本（活业务资产）
 
 var TMP = System.getProperty('java.io.tmpdir').replace(/\\/g, '/') + '/fr_e2e_' +
   J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 12);
@@ -41,10 +42,10 @@ var dsDoc = {
   name: '端到端日报', description: 'D3.5 引擎端到端测试资产（临时目录，不影响生产）',
   status: 'published', review: { by: 'test-owner', at: '2026-11-10T10:00:00Z' },
   source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
-  model: { ref: 'models/production/model.json', modelVersion: '1' },
+  model: { ref: 'models/production/model.json', modelVersion: PROD_MV },
   selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done', 'completionRate'] },
   grain: { description: '一天一机台', keys: ['bizDate', 'machine'] },
-  validation: { samples: [{ ref: 'logs/agent/runs/e2e/sample.json', datasetId: 'production.e2e_daily', modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] }
+  validation: { samples: [{ ref: 'logs/agent/runs/e2e/sample.json', datasetId: 'production.e2e_daily', modelVersion: PROD_MV, sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] }
 };
 wrote(DS_DIR + '/e2e_daily.json', JSON.stringify(dsDoc, null, 1));
 var prodModel = read(ROOT + '/models/production/model.json');
@@ -144,10 +145,10 @@ wrote(SALES + '/model.json', salesModelText());
 var salesDs = { datasetVersion: '1', id: 'sales.sales_daily', domain: 'sales', name: '多域日报', description: 'D3.6 多域引擎竞态测试资产（临时目录）',
   status: 'published', review: { by: 'test-owner', at: TS },
   source: { type: 'database', ref: 'atom_live_demo', connection: 'ATOM_LIVE' },
-  model: { ref: 'models/sales/model.json', modelVersion: '1' },
+  model: { ref: 'models/sales/model.json', modelVersion: PROD_MV },
   selection: { entity: 'InspectionRecord', dimensions: ['bizDate', 'machine'], metrics: ['planned', 'done', 'salesCount'] },
   grain: { description: '一天一机台', keys: ['bizDate', 'machine'] },
-  validation: { samples: [{ ref: 'logs/agent/runs/e2e/sample.json', datasetId: 'sales.sales_daily', modelVersion: '1', sourceRef: 'atom_live_demo', at: TS }] } };
+  validation: { samples: [{ ref: 'logs/agent/runs/e2e/sample.json', datasetId: 'sales.sales_daily', modelVersion: PROD_MV, sourceRef: 'atom_live_demo', at: TS }] } };
 Files.createDirectories(Pth.get(SALES + '/datasets'));
 wrote(SALES + '/datasets/sales_daily.json', JSON.stringify(salesDs, null, 1));
 var salesSpec = { specVersion: '1', outName: 'E2E_SALES', report: { name: '多域等价测试' },

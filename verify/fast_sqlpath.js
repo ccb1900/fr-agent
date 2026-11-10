@@ -22,7 +22,7 @@ load(ROOT + '/lib/spec_validator.js');
 load(ROOT + '/lib/spec_compiler.js');
 load(ROOT + '/semantic/model/vocab.js');
 load(ROOT + '/semantic/query/sqlbuilder.js');
-var model = jt('models/production/model.json');
+var model = jt('verify/fixtures/planner_model_snapshot.json');   // 自持快照（生产 model.json 是活业务资产，走查三轮附记）
 var spec = jt('examples/report-spec/daily_report.sql.json');
 
 // ===== spec_validator sql 分支 =====

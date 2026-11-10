@@ -16,7 +16,7 @@
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets', 'semantic')][string]$Verb,
-  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish', 'deprecate', 'impact', 'review', 'revise')][string]$Action = 'list',
+  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish', 'deprecate', 'impact', 'review', 'revise', 'probe_relation')][string]$Action = 'list',
   [string]$Spec = '',
   [string]$Patch = '',
   [string]$Term = '',
@@ -373,12 +373,14 @@ switch ($inner) {
   'semantic' {
     # S2/S-track Semantic model management: list/inspect (read-only) + create/validate/publish (asset lifecycle).
     # Zero engine, no mutex. create validates against ModelValidator + schema snapshot before writing.
+    $cpSem = $jar
+    if ($Action -eq 'probe_relation') { $cpSem = "$jar;$FR\webapps\webroot\WEB-INF\lib\*" }   # probe needs JDBC driver (walk-through round-4 #1)
     $env:AGENT_SEMANTIC_ACTION = $Action
     if ($Domain) { $env:AGENT_SEMANTIC_DOMAIN = $Domain }
     if ($Target) { $env:AGENT_SEMANTIC_DOMAIN = $Target }   # -Target alias (same as inspect_template)
-    if ($Action -eq 'create' -or $Action -eq 'revise') { $env:AGENT_SEMANTIC_DOC = $Doc }   # usage judged in semantic.js (run-dir JSON always written; walk-through round-3 #3)
+    if ($Action -eq 'create' -or $Action -eq 'revise' -or $Action -eq 'probe_relation') { $env:AGENT_SEMANTIC_DOC = $Doc }   # usage judged in semantic.js (run-dir JSON always written; walk-through round-3 #3); probe_relation -Doc = rebind to draft fingerprint (round-4 chicken-egg fix)
     if ($Action -eq 'review') { $env:AGENT_SEMANTIC_REVIEW_BY = $ReviewBy }
-    & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/semantic.js')
+    & $java '-cp' $cpSem 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/semantic.js')
     $rc = $LASTEXITCODE
     Remove-Item env:AGENT_SEMANTIC_ACTION -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_SEMANTIC_DOMAIN -ErrorAction SilentlyContinue
