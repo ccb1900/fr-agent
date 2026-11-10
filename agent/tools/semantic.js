@@ -37,7 +37,7 @@ function scanModels() {
     if (!Files.isDirectory(d)) continue;
     var dn = String(d.getFileName());
     if (dn.charAt(0) === '.') continue;
-    var modelPath = ROOT + '/models/' + dn + '/model.json';
+    var modelPath = modelsRoot + '/' + dn + '/model.json';   // P2-1：与扫描根一致（此前硬编码 ROOT/models）
     if (!Files.exists(Pth.get(modelPath))) continue;
     var model = null;
     try { model = JSON.parse(readUtf(modelPath)); } catch (eJ) { diagnostics.push({ code: 'UNREADABLE_MODEL', path: modelPath, message: String(eJ) }); continue; }
@@ -77,7 +77,8 @@ if (action === 'inspect') {
   // S3：datasetRef 交叉验证——模型引用的 Dataset 必须存在且已发布（读时检查，不改模型）
   var datasetRefCheck = null;
   if (model.datasetRef) {
-    var dsRefPath = ROOT + '/models/' + model.datasetRef.split('.')[0] + '/datasets/' + model.datasetRef.split('.')[1] + '.json';
+    var dsRefParts = model.datasetRef.split('.');
+    var dsRefPath = modelsRoot + '/' + dsRefParts[0] + '/datasets/' + dsRefParts[1] + '.json';   // P2-1：与扫描根一致
     if (!Files.exists(Pth.get(dsRefPath))) datasetRefCheck = { ok: false, reason: 'DATASET_NOT_FOUND@' + model.datasetRef };
     else {
       var dsDoc = null;
@@ -86,8 +87,11 @@ if (action === 'inspect') {
       else datasetRefCheck = { ok: true, datasetId: dsDoc.id, datasetVersion: dsDoc.datasetVersion, modelVersionMatch: dsDoc.model && dsDoc.model.modelVersion === model.modelVersion };
     }
   }
+  // S3 修复（审查轮 P1-2）：datasetRefCheck 不通过时不能被 ok:true 吞掉——以 warnings 显式透出
+  var warnings = (datasetRefCheck && !datasetRefCheck.ok) ? [datasetRefCheck.reason] : [];
   finish(0, { tool: 'semantic', action: 'inspect', runId: runId, ok: true, zeroEngine: true,
     domain: domain, modelVersion: model.modelVersion, source: model.source,
+    warnings: warnings,
     entities: (model.entities || []).map(function (e) { return { name: e.name, label: e.label, table: e.table, key: e.key || [], properties: (e.properties || []).map(function (p) { return { name: p.name, column: p.column, type: p.type }; }) }; }),
     dimensions: (model.dimensions || []).map(function (d) { return { name: d.name, label: d.label, table: d.table, column: d.column, rule: d.rule || null }; }),
     metrics: (model.metrics || []).map(function (m) { return { name: m.name, label: m.label, kind: (m.expression || {}).kind, format: m.format || null, expression: m.expression }; }),

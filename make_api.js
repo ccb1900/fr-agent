@@ -106,18 +106,19 @@ try {
       load(Paths.semantic('dataset/definition.js'));
       load(Paths.semantic('dataset/registry.js'));
       load(Paths.semantic('dataset/resolver.js'));
-      var JF = J('java.nio.file.Files'), JP = J('java.nio.file.Paths');
-      var catModelPath = J('java.lang.System').getenv('SCHEMA_MODEL') || 'models/production/model.json';
-      var catModel = JSON.parse(String(new (J('java.lang.String'))(JF.readAllBytes(JP.get(Paths.spec(catModelPath))), 'UTF-8')));
+      // 多域寻址（P1-1 修复）：域从 ref 前缀推导，不硬编码 production
+      var refDomain = rs.dataset.ref.split('.')[0];
+      var catModelPath = 'models/' + refDomain + '/model.json';
+      var catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(catModelPath))), 'UTF-8')));
       var catEntries = [];
       (function walkDatasets(dir) {
-        var dsStream; try { dsStream = JF.newDirectoryStream(JP.get(dir), '*.json'); } catch (e) { return; }
+        var dsStream; try { dsStream = J('java.nio.file.Files').newDirectoryStream(J('java.nio.file.Paths').get(dir), '*.json'); } catch (e) { return; }
         try { var it = dsStream.iterator(); while (it.hasNext()) {
           var f = it.next(); var doc = null;
-          try { doc = JSON.parse(String(new (J('java.lang.String'))(JF.readAllBytes(f), 'UTF-8'))); } catch (eJ) { }
+          try { doc = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(f), 'UTF-8'))); } catch (eJ) { }
           if (doc && typeof doc === 'object' && !Array.isArray(doc)) catEntries.push({ relPath: String(f).replace(/\\/g, '/'), doc: doc });
         } } finally { try { dsStream.close(); } catch (eC) { } }
-      })(Paths.root + '/models/production/datasets');
+      })(Paths.root + '/models/' + refDomain + '/datasets');
       var catReg = DatasetRegistry.build(catEntries);
       var catScope = {}; ['dateRange', 'sort', 'topN'].forEach(function (k) { if (rs.dataset[k] != null) catScope[k] = rs.dataset[k]; });
       var resolved = DatasetResolver.resolve(catReg, rs.dataset.ref, catScope, catModel);

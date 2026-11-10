@@ -217,6 +217,7 @@ if (action === 'validate') {
     conn = J('java.sql.DriverManager').getConnection(sqlUrl, sqlUsr, sqlPwd);
     conn.setReadOnly(true);
     var st = conn.createStatement();
+    st.setMaxRows(200);   // P1-4（审查轮）：结果行数上限，防全表扫描（与 sample_data LIMIT 同口径）
     var rs = st.executeQuery(vBuilt.sql);
     var meta = rs.getMetaData(), nc = meta.getColumnCount();
     for (var ci = 1; ci <= nc; ci++) colLabels.push(String(meta.getColumnLabel(ci)));
@@ -243,7 +244,9 @@ if (action === 'validate') {
 
   // 生成绑定证据（工具自己出 ISO 时间戳，不接调用方手填；ref 用仓库相对路径保可移植）
   var evAt = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
-  var evRefRel = 'logs/agent/runs/' + runId + '/validate_sample.json';
+  var rootNorm = ROOT.replace(/\\/g, '/');
+  var absNorm = String(resultDir).replace(/\\/g, '/');
+  var evRefRel = absNorm.indexOf(rootNorm + '/') === 0 ? absNorm.slice(rootNorm.length + 1) : absNorm;
   var evEntry = { ref: evRefRel, datasetId: vid, modelVersion: model.modelVersion, sourceRef: model.source, at: evAt };
   var evData = { sql: vBuilt.sql, rowCount: rowCount, columns: colLabels, validatedAt: evAt, sourceRef: model.source };
   writeJson(resultDir + '/validate_sample.json', evData);
@@ -283,11 +286,23 @@ if (action === 'publish') {
   var pAudit = DatasetDef.audit(pDoc, pEntry.relPath);
   var pBind = DatasetDef.bindDrift(pDoc, model);
   var pEvProb = DatasetDef.evidenceProblems(pDoc);
+  // P1-3 修复（审查轮）：证据 ref 指向的文件必须真实存在且在允许目录内（不能只看 JSON 字段形状）
+  var pFileProb = [];
+  if (isObj(pDoc.validation) && isArr(pDoc.validation.samples)) {
+    pDoc.validation.samples.forEach(function (s, si) {
+      if (!isObj(s) || !isStr(s.ref) || !s.ref) return;
+      var rel = String(s.ref).replace(/\\/g, '/');
+      if (rel.indexOf('logs/agent/runs/') !== 0) { pFileProb.push('EVIDENCE_REF_OUTSIDE_ALLOWED_DIR@validation.samples[' + si + ']'); return; }
+      if (rel.indexOf('..') >= 0) { pFileProb.push('EVIDENCE_REF_TRAVERSAL@validation.samples[' + si + ']'); return; }
+      var absRef = absOf(rel);
+      if (!exists(absRef)) pFileProb.push('EVIDENCE_FILE_MISSING@validation.samples[' + si + '] (' + s.ref + ')');
+    });
+  }
   var pBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(pDoc));
   var pBuiltErrs = (pBuilt.errors || []).map(function (x) { return x.code + '@' + x.path; });
   var pGrain = pBuiltErrs.length ? [] : DatasetDef.grainDrift(pDoc, pBuilt.groupDims || []);
-  if (pAudit.length || pBind.length || pEvProb.length || pGrain.length || pBuiltErrs.length)
-    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb, pGrain, pBuiltErrs).join(', '),
+  if (pAudit.length || pBind.length || pEvProb.length || pGrain.length || pBuiltErrs.length || pFileProb.length)
+    bail('CONTRACT_AUDIT_FAILED', pAudit.concat(pBind, pEvProb, pGrain, pBuiltErrs, pFileProb).join(', '),
       ['fix contract violations and evidence issues before publishing'], { diagnostics: diagnostics });
   if (!(isObj(pDoc.review) && isStr(pDoc.review.by) && pDoc.review.by && isStr(pDoc.review.at) && pDoc.review.at))
     bail('PUBLISHED_WITHOUT_REVIEW', 'business review missing (review.by + review.at must be set by a human)',

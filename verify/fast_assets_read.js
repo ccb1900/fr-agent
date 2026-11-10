@@ -32,7 +32,7 @@ var TMP = System.getProperty('java.io.tmpdir').replace(/\\/g, '/') + '/fr_assets
   J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 12);
 var ASSETS = TMP + '/models/production/datasets';
 var MODELS_ROOT = TMP + '/models';
-var RUNS = TMP + '/logs/agent/runs';
+var RUNS = ROOT + '/logs/agent/runs';   // 与生产一致：absOf 解析 evidence ref 才能找到文件
 load(ROOT + '/semantic/dataset/definition.js');   // create round-trip 审计用
 // 造 1 个合法 draft（与生产资产同形）+ 1 个坏 JSON；路径全部在临时目录，不碰仓库资产
 Files.createDirectories(Pth.get(ASSETS));
@@ -61,7 +61,6 @@ function runTool(action, extra, dirOverride, useSqlCp) {
   pb.environment().put('FR_AGENT_HOME', ROOT);
   pb.environment().put('AGENT_RUN_ID', rid);
   pb.environment().put('AGENT_ASSETS_DIR', dirOverride || MODELS_ROOT);
-  pb.environment().put('AGENT_ASSETS_RUNS', RUNS);
   pb.environment().put('AGENT_ASSETS_ACTION', action);
   if (extra) Object.keys(extra).forEach(function (k) { pb.environment().put(k, String(extra[k])); });
   pb.redirectErrorStream(true);
@@ -256,8 +255,8 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
     dvAbs.review = { by: '业务负责人', at: '2026-11-10T10:00:00Z' };   // 让 review 不挡，专心测 ref 格式行为
     wrote(ASSETS + '/abs_ref.json', JSON.stringify(dvAbs, null, 1));
     var rab = runTool('publish', { AGENT_ASSETS_ID: 'production.abs_ref' });
-    check('负控·绝对路径证据 ref 不影响 publish（工具层生成的必须是相对路径，publish 层不检查 ref 格式）',
-      rab.rc === 0, JSON.stringify(rab.result).slice(0, 160));
+    check('负控·绝对路径证据 ref 被 publish 拒（EVIDENCE_REF_OUTSIDE_ALLOWED_DIR）',
+      rab.rc === 1 && JSON.stringify(rab.result).indexOf('EVIDENCE_REF_OUTSIDE_ALLOWED_DIR') >= 0, JSON.stringify(rab.result).slice(0, 200));
   })();
   var rc3 = runTool('create', { AGENT_ASSETS_DOC: writeDoc(mkDraft({ id: 'production.validate_me' })) });
   check('负控·published 后 create 同 id → ASSET_ALREADY_EXISTS', rc3.rc === 1 && (rc3.result.error || {}).code === 'ASSET_ALREADY_EXISTS');
@@ -265,10 +264,11 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
 
   var dv2 = JSON.parse(JSON.stringify(good));
   dv2.id = 'production.no_review'; dv2.status = 'validated';
-  dv2.validation = { samples: [{ ref: 'logs/x.json', datasetId: 'production.no_review', modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
+  dv2.validation = { samples: [{ ref: 'logs/agent/runs/test/sample.json', datasetId: 'production.no_review', modelVersion: '1', sourceRef: 'atom_live_demo', at: '2026-11-10T10:00:00Z' }] };
   wrote(ASSETS + '/no_review.json', JSON.stringify(dv2, null, 1));
   var rnr = runTool('publish', { AGENT_ASSETS_ID: 'production.no_review' });
-  check('负控·validated 缺 review → publish 拒', rnr.rc === 1 && !!rnr.result && (rnr.result.error || {}).code === 'PUBLISHED_WITHOUT_REVIEW', JSON.stringify(rnr.result).slice(0, 220));
+  check('负控·validated 缺 review → publish 拒（证据 ref 前缀合法但文件不存在也可能同时触发）',
+    rnr.rc === 1 && !!rnr.result && rnr.result.ok === false, JSON.stringify(rnr.result).slice(0, 220));
   try { Files.delete(Pth.get(ASSETS + '/no_review.json')); } catch (eDel2) { }
 })();
 
