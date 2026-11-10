@@ -2063,3 +2063,35 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - RISK 清理：①IR gantt link{dataset,start,end,type} 结构化校验（UNKNOWN_REF/REQUIRED，不再引擎期 NPE）；②drillmap 入账 chart.vdrillmap（constructed/constructed/serialization-only/pending，agentAvailable=false；webInteraction 计 14）；③totals 94/69/25。
 - 遗留 RISK（接受并记录）：vcombo make_api 序列化断言用整份 cpt 正则（单 chart/块场景足够，多图同页可能互借证据）；style 推导在 object 与 make_api 双处同构（改动需同步）。
 - 回归：fast 20 GREEN、scan ok=128 bad=0、基线 CBEB42E3。
+
+
+## 2026-11-10（D3.5 + S 轨收口轮）
+
+### 目标
+完成用户指令"继续继续 都做"的最后一程：①D3.5 引擎级端到端（catalog spec vs 内联 spec 产物逐字节等价）②Semantic 资产化 S 轨（create/validate/publish）全绿 + 全量门 + push。
+
+### 已实施
+1. **D3.5 引擎 e2e**（verify/e2e_catalog_report.js，新件）：临时 published Dataset（AGENT_CATALOG_MODELS_ROOT 隔离根）+ catalog/内联两 spec 真引擎各 create 一次 → 两 outName 部署 cpt **MD5 逐字节全等**（IR 不含 outName）+ draft 资产真引擎**拒 NOT_PUBLISHED**；4/4 PASS（收口时复跑 rc=0）。
+2. **semantic.js S 轨生命周期**：create（草稿档 requireCompleteness:false）→ validate（离线）→ publish（完整档 + review.{by,at} 人审闸 + versions/<modelVersion>.json 快照）。validator.js 两档拆分修复运算符优先级三处（`requireCompleteness && (!A || B)`）。
+3. **修复 publish 正负两查全崩的两处真缺陷**：①line 185 `isObj` 未定义（无任何已加载件全局导出）→ 本文件补形状助手；② `semUniqEv` 传 `connection:null` → 数据侧证据源指纹必不匹配 → confirmed 关系全拒（生产模型复制件 MODEL_VALIDATION_FAILED 复现）。改为与 plan.js **同源连接身份**（SQL_DRIVER/SQL_URL/SQL_USER env，规范默认=生产 ATOM_LIVE；指纹核对零 JDBC）——直接探针实证 srcMatch=true、unique={laser_files.file_key:true}；语义层证据核对由"空转误拒"升为**全强度可行**，未放宽任何门。换库负控实证：SQL_URL 覆盖 → UNSUPPORTED_RELATION_KEY 拒（数据侧证据不跨库）。
+4. **回归固化**：fast_assets_read.js 增至 **75 项 failures=0**（4e 段 S 轨 + 证据核对正/负两查；夹具纪律=模型内容逐字段拷现生产只注入 review——canonicalModel 指纹绑 domain，改 domain 即拒是门在工作）。
+5. **测试基建抑噪**（前面轮次累积收口）：AGENT_SEMANTIC_DOMAIN 传键、-RunId/-Doc/-Domain 透传、TMP UUID 目录、4b 预清理防 ASSET_ALREADY_EXISTS 级联。
+6. **文档同步**：plan §8 表 D3/D3.5/S1–S5 全部如实标 ✅ + 验收证据；agent-tools.md 增 semantic 行 + assets 补 deprecate/impact + catalog spec 最小形态样例；Skill references/assets.md 重写（五动作×2 + 换库指纹边界 + 不跨库明示）并 sync 至用户级（8 files，1 copied）；README **#184**（含未验证事项如实段）。
+
+### 验证结果（当前态全量）
+- fast 聚合门 **22/22 GREEN**（含 fast_baseline 三铁证；首轮 demo_api.cpt 被此前 D3 系列 spec 踩，按 §1 默认 spec 收尾回铺 CBEB42E3 后复绿）
+- scan_all_specs **128/0**、boundaries **R1–R8 clean**、ps1-static **0**、run-integration-tests（全链故障注入）**GREEN**
+- fast_assets_read **75/0**、fast_dataset_contract 全绿、e2e_catalog_report **4/4**（收口复跑）
+
+### 未验证事项（如实）
+- 生产 production.inspection_records 的 publish 仍待人审自填 review（不自动填——设计如此）
+- 同 spec 双域并发解析引擎 e2e 未跑（多域正控在 fast_dataset_contract 离线层）
+- 新会话 `/finereport` 自动触发未实测
+- lib/* 未触碰（无渲染级回归要求）
+
+### Commit
+本轮见 git log（fix(semantic)+feat(assets)+docs 同轮）。
+
+### 下一项
+- 人审后正式 publish production.inspection_records（把 catalog spec 真业务样例跑通生产链）
+- docs/night-shift-backlog.md 按 S 轨完成情况清账（vpie tooltip 序列化墙等 P3 保留）

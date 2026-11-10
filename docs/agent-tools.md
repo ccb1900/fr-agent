@@ -23,7 +23,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
 | `validate` | `[-ExpectTotals 计划:完成]` | 核验 RunResult 11 阶段 + 产物存在 + 栅格自洽（合计=明细和、完成率公式），可选对拍外部真值 |
 | `preview` | `-Png <path>` | 返回 PNG 尺寸/字节数/是否疑似空白 |
 | `patch` | `-Patch <PatchSpec.json>` | 对已有 CPT 做受控局部修改（白名单 op），写 staging 并跑结构/执行/渲染回归 |
-| `assets` | `-Action list`（无参）/ `-Action inspect` `-Target <id>` / `-Action create` `-Doc <file>` / `-Action validate` `-Target <id>`（连库）/ `-Action publish` `-Target <id>` | Dataset 资产全生命周期管理（D2 完整）：list=清单；inspect=契约+派生列+粒度；create=只产 draft（非法拒写）；validate=自采样+自执行+自产绑定证据（列对拍+状态升级）；publish=重检全链+review+不可变。零 FR 引擎、不进 Mutex；validate 走 SQL classpath |
+| `assets` | `-Action list`（无参）/ `-Action inspect` `-Target <id>` / `-Action create` `-Doc <file>` / `-Action validate` `-Target <id>`（连库）/ `-Action publish` `-Target <id>` / `-Action deprecate` `-Target <id>` / `-Action impact` `-Target <id>` | Dataset 资产全生命周期管理（D2 完整 + S4 废弃/影响）：list=清单；inspect=契约+派生列+粒度；create=只产 draft（非法拒写）；validate=自采样+自执行+自产绑定证据（列对拍+状态升级）；publish=重检全链+review+versions/<v>.json 不可变快照；deprecate=带 reason 退役；impact=静态影响扫描（自排除）。零 FR 引擎、不进 Mutex；validate 走 SQL classpath |
+| `semantic` | `-Action list`（无参）/ `-Action inspect` `-Target <domain>` / `-Action create` `-Doc <file>` / `-Action validate` `-Target <domain>` / `-Action publish` `-Target <domain>` | Semantic 模型生命周期管理（S1–S5 完整）：list=扫 models/*/*/model.json 多域清单；inspect=结构+datasetRef 交叉验证（存在/已发布/模型版本一致，warnings 透出）；create=草稿档校验（`requireCompleteness:false`）落 models/<domain>/model.json（已存在拒）；validate=离线诊断不改文件；publish=完整档校验+review.{by,at} 人审闸+versions/<modelVersion>.json 快照；confirmed 关系证据核对全强度（连接身份与 plan.js 同源 SQL_DRIVER/SQL_URL env，换库必拒）。零 FR 引擎、不进 Mutex |
 
 ## 约束（Agent 必须遵守）
 
@@ -52,6 +53,26 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 <ve
   "presentation": { "type": "table", "showTotal": true }
 }
 ```
+
+## ReportSpec 最小形态（catalog 路，D3——引用发布态 Dataset 资产）
+
+```json
+{
+  "specVersion": "1",
+  "outName": "生产日报",
+  "report": { "name": "生产日报" },
+  "dimensions": ["bizDate", "machine"],
+  "metrics": ["planned", "done", "completionRate"],
+  "dataset": {
+    "kind": "catalog",
+    "ref": "production.inspection_records",
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": { "type": "table", "showTotal": true }
+}
+```
+
+make_api 解析 `kind:'catalog'`：经 Dataset Registry/Resolver 确认发布态+模型版本一致后替换为解析出的内联 dataset（fail-closed：NOT_PUBLISHED / MODEL_VERSION_MISMATCH 等即整体拒绝）；报表级 scope（dateRange/sort/topN）只允许写在 spec，不写进资产。
 
 ## 当前明确不支持（会结构化拒，需 Agent 如实告知用户）
 

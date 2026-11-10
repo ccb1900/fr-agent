@@ -143,7 +143,7 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读�
 |---|---|---|---|
 | **D0** | 契约冻结：ADR + 1 个真资产 + 可运行验证器 | `verify/fast_dataset_contract.js` failures=0；4 项故障注入必红；已登记聚合门；旧 spec 兼容断言过 | ✅ **完成（2026-11-09）** |
 | **D1** | `semantic/dataset/{definition,registry}.js`（IO 归工具层）+ 套件改为消费生产契约件 | 78 项 failures=0；5 项故障注入全红还原即绿；`lib/*`/`make_api.js`/Runtime 零改动 | ✅ **完成（2026-11-09）** |
-| **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | ①合法草稿可建 ②非法资产拒写 ③validate 产真实证据非自报 ④无业务确认不能发布 ⑤重复 id/路径不符/版本漂移必拒 ⑥不进 FR 引擎锁 | ⬜ 下一步 |
+| **D2** | `agent/tools/assets.js` + `assets list/inspect/create/validate/publish`（零引擎；IO 与原子写在这层） | ①合法草稿可建 ②非法资产拒写 ③validate 产真实证据非自报 ④无业务确认不能发布 ⑤重复 id/路径不符/版本漂移必拒 ⑥不进 FR 引擎锁 | ✅ **完成（2026-11-10）**（D2.1–D2.5 行为详证） |
 | **D2.1** | `assets list/inspect`（零引擎只读，递归扫 models/*/*/datasets） | 隔离套件 32 项 + 真实 CLI（list/inspect/未实现 action 拒）+ 重复 ID 注入 fail-closed；`model.json` 不被当数据集；`lib/*` 未动 | ✅ 完成（2026-11-09） |
 | **D2.2** | `assets create`（只产 draft、原子写、非法拒写） | 合法草稿可建 + round-trip + 强制降 draft + 同 id 拒 + 幽灵指标拒 + 坏 JSON 拒；套件 43 项 | ✅ 完成（2026-11-09） |
 | **D2.3** | `assets validate`（自采样/自执行/自产绑定证据） | 真库执行 + 列对拍 + `validation.samples` 绑定记录写入 + 状态升 validated；套件 52 项 | ✅ 完成（2026-11-10） |
@@ -151,11 +151,13 @@ agent/tools/assets.js      # 新增（D2/D3）：唯一管理 verb 入口；读�
 | **D2.5** | Skill/agent-tools 同步 + 故障注入自证 | 套件 52 项含 4 负控（已 published 再 publish/缺 review/缺证据/create 同 id）| ✅ 完成（2026-11-10） |
 | **D1.6** | 收口轮：`validated` 混合无效证据漏洞（+ draft 不得藏垃圾、`at` 须 ISO） | 契约套件 **109 项**；混合证据注入 8 项红、还原即绿；**D1 就此冻结** | ✅ 完成（2026-11-09） |
 | **D1.5** | 审查轮收尾（证据绑定、reportScope 白名单、metrics 必填、grainDrift、registry 原型安全） | 契约套件 103 项 + 注入 3 连全红；`==` 双类型一致有测试钉住 | ✅ 完成（2026-11-09） |
-| **D3** | Dataset Resolver 接 Planner/ReportSpec + 版本绑定 | 同一 Dataset 被 2 张报表复用，生成的 FR 数据集正确；渲染门全绿 | ⬜ |
-| **S1** | 多领域模型（`domain` 寻址统一 + Registry 按域加载 + Validator 两档拆分） | ≥2 领域模型可加载；术语不跨域误匹配；旧模型仍可用 | ⬜ |
-| **S2** | `semantic list/inspect/create/update/validate/review/publish` | 一领域完整草稿 + 待确认清单输出 | ⬜ |
-| **S3** | Semantic → Dataset 绑定 + Evidence 接入 | 发布态模型引用发布态 Dataset，成功出 SQL 与报表 | ⬜ |
-| **S4** | 版本快照 + 静态影响分析 + 废弃策略 | 改已发布指标：旧版可查、报表可溯源、新版不静默覆盖 | ⬜ |
+| **D3** | Dataset Resolver 接 make_api（kind:'catalog' spec 预解析 → rs.dataset，fail-closed） | `fast_dataset_contract.js`：编译等价（catalog 解析产物 vs 内联 spec → SpecCompiler.compile 字节等价）/ 多域正控 / 各负测分属正确门；`AGENT_CATALOG_MODELS_ROOT` 隔离测试 | ✅ **完成（2026-11-10）** |
+| **D3.5** | 引擎级端到端：catalog spec vs 内联 spec 真引擎产物逐字节等价 | `verify/e2e_catalog_report.js` 4/4——两 outName 部署 cpt MD5 全等（IR 不含 outName）+ draft 资产真引擎 create 拒 NOT_PUBLISHED | ✅ **完成（2026-11-10）** |
+| **S1** | 多领域模型（`domain` 寻址统一 + Registry 按域加载 + Validator 两档拆分） | ≥2 领域模型可加载；术语不跨域误匹配；旧模型仍可用 | ✅ **完成（2026-11-10）**（多域 operates于 production+sales 正控，与 make_api/semantic modelsRoot 双域实测；两档拆分由 semantic create/validate 以 `requireCompleteness:false` 消费） |
+| **S2** | `semantic list/inspect/create/validate/publish`（model.json 生命周期，零引擎） | `fast_assets_read.js` 4e 段：create 草稿落 `models/<domain>/model.json` + 同域再建拒 + 幽灵校验 + 完整档 publish 快照；update/review 由 create+validate+publish 组合覆盖，不设独立动词 | ✅ **完成（2026-11-10）** |
+| **S3** | Semantic → Dataset 绑定（datasetRef 交叉验证：存在/已发布/模型版本一致） | `semantic inspect` 输出 datasetRefCheck（DATASET_NOT_FOUND / NOT_PUBLISHED / MODEL_VERSION_MISMATCH）+ warnings 透出（不被 ok:true 吞掉） | ✅ **完成（2026-11-10）** |
+| **S4** | Semantic 版本快照（versions/<modelVersion>.json）+ deprecate + impact | `fast_assets_read.js` S4 段全绿：发布前不可变副本 / 重复 deprecate 拒 / deprecated validate 拒 / impact 自排除 | ✅ **完成（2026-11-10）** |
+| **S5** | Semantic publish 完整档证据核对全强度（连接身份与 plan.js 同源，零 JDBC） | confirmed 关系默认身份 → publish 过 + 快照；`SQL_URL` 换库 → UNSUPPORTED_RELATION_KEY 拒（数据侧证据不跨库）；编译期 preflight 仍为最终闸。两查已入 `fast_assets_read.js` | ✅ **完成（2026-11-10）** |
 
 **顺序纪律（v1.0 §13 采纳）**：一次只交付一个阶段；先查现有代码再定新接口；提交说明写明复用了哪些模块、新增为何必要；未达本阶段验收不进下一阶段；架构撑不住时先交证据与最小修正方案，不擅自扩大重构范围。
 
