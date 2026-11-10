@@ -1,6 +1,6 @@
 # 数据与语义资产（五动作生命周期 + 边界）
 
-> 一句话：**assets（Dataset JSON 资产）与 semantic（模型 JSON）各有五动作生命周期**（list/inspect/create/validate/publish），全部零 FR 引擎、不进 Mutex；**发布（publish）必须证据+业务 review 双全，Agent 不得自填 review**。
+> 一句话：**assets（Dataset JSON 资产）与 semantic（模型 JSON）各有七动作生命周期**（list/inspect/create/validate/publish/deprecate/impact），全部零 FR 引擎、不进 Mutex；**发布（publish）必须证据+业务 review 双全，Agent 不得自填 review**。
 
 ## 现状（以机器输出与代码为准）
 

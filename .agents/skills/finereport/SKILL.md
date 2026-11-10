@@ -7,7 +7,7 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 
 这个技能教 Agent **如何把一句自然语言需求变成一张可验证、可交付的 FineReport 报表**。工具已经存在且经过全链验证；Agent 的职责是理解需求、追问歧义、按流程调用、如实交付，而不是重新实现报表构造。
 
-唯一执行入口是 `agent/tools/fr_agent.ps1`（15 个 verb）。**不要**绕过它去直接跑 `run.ps1`、`make_api.js`、`lib/*` 或编 CPT XML——Runtime 的单实例互斥、RunId 隔离、失败非零退出都在这条壳层里，绕过即失去保护。
+唯一执行入口是 `agent/tools/fr_agent.ps1`（17 个 verb）。**不要**绕过它去直接跑 `run.ps1`、`make_api.js`、`lib/*` 或编 CPT XML——Runtime 的单实例互斥、RunId 隔离、失败非零退出都在这条壳层里，绕过即失去保护。
 
 ## 何时触发
 
@@ -36,7 +36,7 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 ## 铁律（每条都有原因）
 
 1. **不臆造业务事实**：实体/维度/指标只能来自 `discover` 的模型与 `resolve` 的解析结果。未知术语 → `unknown`，问用户，不编字段、不猜表。
-2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。**Dataset 资产（`models/<domain>/datasets/*.json`）也不手改**——它的契约由 `semantic/dataset/definition.js` 定义、`verify/fast_dataset_contract.js` 判定；管理 verb 尚未开放（D2），需要新数据集时按 §场景 D 产出变更申请交人确认。
+2. **不写底层产物**：只写 Intent JSON / ReportSpec JSON / PatchSpec JSON。SQL 由 `semantic/query/sqlbuilder` 从模型生成；IR、对象图、CPT XML 由管线生成。**Dataset 资产（`models/<domain>/datasets/*.json`）与语义模型（`models/<domain>/model.json`）用管理 verb 操作，不手写**：`assets`/`semantic` 各七动作（list/inspect/create/validate/publish/deprecate/impact）落实完整生命周期；**发布必须业务人填 review.{by,at}，Agent 不得代填**。需要新数据集/新指标时按 §场景 D 产出变更申请交人确认。
 3. **不跳过 `validate`**：`create` 的 `exit=0` 只说明工具链跑通；合计/公式/栅格自洽由 `validate.json` 判定。有真值时用 `-ExpectTotals` 对拍，执行成功不等于数据正确。
 4. **歧义必问**：`ambiguous`、`requiresConfirmation`、用户口径冲突都停下来问。一次问清，别用"先按常见的来"蒙过去。
 5. **不静默降级**：不支持的能力要明说并给替代（如"按派生完成率排序"→ 改按计划数排序）。不要偷偷删掉用户要求的字段或图表。
@@ -70,11 +70,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 -Ve
 ## 深入阅读
 
 - `references/workflow.md`：三场景逐步命令、RunId 接力、每步判定
-- `references/tool-api.md`：15 个 verb 的参数/产物/取锁面
+- `references/tool-api.md`：17 个 verb 的参数/产物/取锁面
 - `references/report-spec.md`：Intent 与 ReportSpec 写法、PatchSpec 白名单
 - `references/capability-rules.md`：capabilityManifest 为唯一能力依据
 - `references/error-handling.md`：错误分类、重试与停止、部署授权
 - `references/examples.md`：真实可用样例（GOLDEN v1 / G2 / G3 / 修改标题）
-- `references/assets.md`：Dataset / Semantic 资产层现状（D0/D1 已冻结契约、无管理 verb）、变更申请格式、为什么 Agent 不能自确认口径
+- `references/assets.md`：Dataset / Semantic 资产的七动作生命周期、契约边界（发布人审、数据侧证据不跨库）、变更申请格式、为什么 Agent 不能自确认口径
 
 仓库事实库 `README.md`、工具契约 `docs/agent-tools.md`、架构边界 `AGENTS.md` 仍有效；技能与代码冲突时**以代码和机器输出为准**，并把它当成待修的文档问题报告出来。

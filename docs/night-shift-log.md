@@ -2116,3 +2116,12 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 验证：CLI 九发矩阵逐发实测（含 cli 抓出 fit2.next() 漏调用一处）→ fast 22/22 / suite 92/0 / scan 128/0 / 边界 / 集成全绿。
 - 冻结条款：assets/semantic 面不再周期审；审=变更边界（动闸的 diff 自带负控）；发现项走 backlog 记档。
 - Commit：本轮 git log。下一项：主管道（A2 决策 / 生产 publish 人审 / 新报表验收）。
+
+
+### D3.6 多域收口轮（外审三 P1/两 P2 清零 + 自抓 P0，2026-11-10）
+- 目标：外审（11472ea 基线）明确的六个收尾点全落地（多域闭环、证据链、生命周期域化、多域引擎 e2e、扫描显式化、Skill 口径）。
+- P0 自抓：外审 D3.5 等价对复跑发现 cpt 表头乱码——一层层钉到 make_api catModel/walkDatasets 读文件**错括号**（charset 参数挂在外层 String 包装上，构造器裸读→GBK）——根因是本轮 D3 扩展自己写错；统一 readUtf（因载体守卫禁 _lib 预载，改本地等语义实现），等价对复原逐字节等价。取证链留档：MODEL DIM0 charcode 日志 + IR dual dump + 部署件字节级 diff。
+- P1 全落：catBound（模型上下文统一）、resolver 四方体（DOMAIN_MISMATCH 引擎拒）、证据链文件化（四新码）、assets 域化（loader per 资产域；模型文件 domain 字段是内部域命名——production model.domain='laser_inspection' 反例记档，**该字段不参与身份比对**）、P2-1 扫描显式化四处 + make_api 扫面读不到即拒。
+- e2e 升至 9 查（sales 判别正控用「metrics 不进 canonicalModel 指纹」的规则构造判别夹具——不改 model.domain）；fast_assets_read 100 项；fast 22/22/scan 128/0/边界/ps1-static/集成全绿。
+- Skill 口径：SKILL.md 17 verb + tool-api 全表 + assets.md 七动作三份同步（sync 脚本执行）。
+- 冻结条款依旧：S 轨冻结维持，本轮是外审触发的**变更边界审查**（make_api/assets/semantic 三个面的 diff 自带负控批）。

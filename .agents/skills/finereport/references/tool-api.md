@@ -1,4 +1,4 @@
-# Tool API（fr_agent.ps1 15 个 verb 的精确契约）
+# Tool API（fr_agent.ps1 17 个 verb 的精确契约）
 
 事实源：`agent/tools/fr_agent.ps1`（参数/分支）、`agent/tools/*.js`（产物形状）、`docs/agent-tools.md`（历史叙事）。本文件只写**当前可调用形态**；与代码冲突时以代码为准。
 
@@ -50,6 +50,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 `
 | `sample_data` | `-Sample` | `sample.json` | 否（plain JVM 驱动） | 模型白名单实体只读 LIMIT 采样（≤200） |
 | `promote` | `-RunId` | `promote.json` | 是（部署态变更） | staging → 正式部署件，SHA-256 全链 fail-closed |
 | `restore` | `-RunId` | `restore.json` | 是 | 用同 run 的 `.orig.cpt` 撤销 promote |
+| `assets` | `-Action list` / `-Action inspect/create/validate/publish/deprecate/impact -Target <id>`（create 加 `-Doc`） | `assets.json` | 否（validate 走 SQL classpath plain JVM） | Dataset 资产七动作生命周期：validate 自采样产绑定证据（≤200 行），publish 需证据+review.{by,at}，deprecate 需人填 reason |
+| `semantic` | `-Action list` / `-Action inspect/create/validate/publish/deprecate/impact -Target <domain>`（create 加 `-Doc`） | `semantic.json` | 否 | Semantic 模型七动作生命周期：publish 版本纪律四态（同版本内容变更拒/新版本须新 review.at/ISO at/必给 modelVersion），create 拒自带 review 的草稿，deprecate 需人填 deprecation.reason，impact 列模型引用面 |
 
 `sample_data` 的 `-Sample` 文件形如 `{ "entity": "InspectionRecord", "columns": ["..."], "limit": 20, "where": {"property":"...","op":">=","value":0} }`；`entity`/`columns` 走模型白名单，`where` 值面受控字面量，禁引号/分号/注释。
 
