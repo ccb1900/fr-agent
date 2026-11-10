@@ -742,6 +742,29 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   var rn2 = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
   check('W1·review 带人名 → rc=0 + review.{by,at} 落 model.json（人的动作有了工具面）',
     rn2.rc === 0 && exists(revDom + '/model.json') && (jt(revDom + '/model.json').review || {}).by === '业务负责人', 'rc=' + rn2.rc);
+  // 走查五轮微残留 2a：同 RunId 连续动作 → 动作留痕分文件（semantic.<action>.json），不再互相覆盖丢诊断
+  var revRunId = 'rev_trace_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
+  (function () {
+    var argvT = new (J('java.util.ArrayList'))();
+    ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ROOT + '/agent/tools/fr_agent.ps1',
+     '-Verb', 'semantic', '-Action', 'list', '-RunId', revRunId].forEach(function (x) { argvT.add(x); });
+    var pbT = new (J('java.lang.ProcessBuilder'))(argvT);
+    var envT = pbT.environment();
+    envT.put('FR_AGENT_HOME', ROOT);
+    envT.put('AGENT_RUN_ID', revRunId);
+    envT.put('AGENT_SEMANTIC_MODELS_ROOT', SEM_MODELS);
+    envT.put('AGENT_SEMANTIC_RUNS', RUNS);
+    envT.put('AGENT_SEMANTIC_ACTION', 'list');
+    pbT.redirectErrorStream(true);
+    var pT = pbT.start(); var brT = new (J('java.io.BufferedReader'))(new (J('java.io.InputStreamReader'))(pT.getInputStream(), 'UTF-8'));
+    while (brT.readLine() != null) { }
+    pT.waitFor();
+    var rvDir = RUNS + '/' + revRunId;
+    check('走查五轮·同 RunId 动作留痕分文件（semantic.list.json + 主产物共存）',
+      exists(rvDir + '/semantic.json') && exists(rvDir + '/semantic.list.json') &&
+      jt(rvDir + '/semantic.list.json').action === 'list', 'dir=' + rvDir);
+  })();
+
   // W2：revise 正控（bump 2、剥 review 的草案）
   var bumped = jt(revDom + '/model.json');
   bumped.modelVersion = '2'; bumped.metrics[0].label = bumped.metrics[0].label + ' v2'; bumped.review = null; delete bumped.review;

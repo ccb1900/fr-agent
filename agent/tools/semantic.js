@@ -25,6 +25,9 @@ function isObj(v) { return !!v && typeof v === 'object' && !Array.isArray(v); } 
 function isStr(v) { return typeof v === 'string'; }
 function finish(rc, obj) {
   writeJson(outFile, obj);
+  // 走查五轮微残留 2a：同 RunId 连续调用时 semantic.json 互相覆盖、丢中间诊断——动作留痕分文件
+  //   （semantic.<action>.json 与主产物同内容；主产物路径不变，老读点兼容）
+  if (action) writeJson(resultDir + '/semantic.' + action + '.json', obj);
   print('{"ok":' + (rc === 0) + ',"runId":"' + runId + '","action":"' + action + '","result":"logs/agent/runs/' + runId + '/semantic.json"}');
   System.exit(rc);
 }

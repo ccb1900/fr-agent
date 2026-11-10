@@ -1,14 +1,14 @@
-# 数据与语义资产（五动作生命周期 + 边界）
+# 数据与语义资产（十动作生命周期 + 边界）
 
-> 一句话：**assets（Dataset JSON 资产）与 semantic（模型 JSON）各有九动作生命周期**（list/inspect/create/validate/publish/**review/revise**/deprecate/impact），全部零 FR 引擎、不进 Mutex；**发布（publish）必须证据+业务 review 双全，Agent 不得自填 review**。
+> 一句话：**assets（Dataset JSON 资产）与 semantic（模型 JSON）各有十动作生命周期**（list/inspect/create/validate/publish/**review/revise/probe_relation**/deprecate/impact），全部零 FR 引擎、不进 Mutex；**发布（publish）必须证据+业务 review 双全，Agent 不得自填 review**。
 
 ## 现状（以机器输出与代码为准）
 
 | 层 | 位置 | 状态 |
 |---|---|---|
 | 结构事实 | `data/schema_<source>.json` | I2 由 `semantic/schema/inspect_main.js` 生成（需连库，人工/回归时执行） |
-| 业务模型 | `models/<domain>/model.json` | semantic 五动作管理（S1–S5）；**publish 需 review.{by,at} 人填** |
-| Dataset 资产 | `models/<domain>/datasets/*.json` | assets 五动作管理（D2）；publish 需 `validation.samples` 绑定证据 + review |
+| 业务模型 | `models/<domain>/model.json` | semantic 十动作管理（S1–S5 + review/revise/probe_relation）；**publish 需 review.{by,at} 人填** |
+| Dataset 资产 | `models/<domain>/datasets/*.json` | assets 十动作管理（D2 + review/revise）；publish 需 `validation.samples` 绑定证据 + review |
 | 版本快照 | `versions/<version>.json` | publish 时先落不可变副本（Dataset 与 Semantic 同规） |
 | 报表引用 | `dataset: { kind: 'catalog', ref: '<domain>.<name>' }` | make_api 经 Registry/Resolver 解析发布态，fail-closed（NOT_PUBLISHED / MODEL_VERSION_MISMATCH 即拒） |
 | 契约判定 | `verify/fast_dataset_contract.js` + `verify/fast_assets_read.js`（75 项） | 均在 fast 聚合门内；含换库指纹负控 |
