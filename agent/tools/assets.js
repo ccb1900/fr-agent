@@ -201,6 +201,7 @@ if (action === 'validate') {
   if (vAudit.length || vBind.length) bail('CONTRACT_AUDIT_FAILED', vAudit.concat(vBind).join(', '),
     ['fix the contract violations before validating'], { diagnostics: diagnostics });
   if (vDoc.status === 'published') bail('ALREADY_PUBLISHED', 'published assets are immutable; deprecate first');
+  if (vDoc.status === 'deprecated') bail('DEPRECATED', 'deprecated assets cannot be re-validated');
   var vBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(vDoc));
   if ((vBuilt.errors || []).length) bail('SQL_BUILD_FAILED', vBuilt.errors.map(function (x) { return x.code + '@' + x.path; }).join(', '),
     ['fix selection terms'], { diagnostics: diagnostics });
@@ -288,14 +289,17 @@ if (action === 'publish') {
   var pEvProb = DatasetDef.evidenceProblems(pDoc);
   // P1-3 修复（审查轮）：证据 ref 指向的文件必须真实存在且在允许目录内（不能只看 JSON 字段形状）
   var pFileProb = [];
-  if (isObj(pDoc.validation) && isArr(pDoc.validation.samples)) {
-    pDoc.validation.samples.forEach(function (s, si) {
-      if (!isObj(s) || !isStr(s.ref) || !s.ref) return;
-      var rel = String(s.ref).replace(/\\/g, '/');
-      if (rel.indexOf('logs/agent/runs/') !== 0) { pFileProb.push('EVIDENCE_REF_OUTSIDE_ALLOWED_DIR@validation.samples[' + si + ']'); return; }
-      if (rel.indexOf('..') >= 0) { pFileProb.push('EVIDENCE_REF_TRAVERSAL@validation.samples[' + si + ']'); return; }
-      var absRef = absOf(rel);
-      if (!exists(absRef)) pFileProb.push('EVIDENCE_FILE_MISSING@validation.samples[' + si + '] (' + s.ref + ')');
+  if (isObj(pDoc.validation)) {
+    ['samples', 'executions'].forEach(function (ek) {
+      if (!isArr(pDoc.validation[ek])) return;
+      pDoc.validation[ek].forEach(function (s, si) {
+        if (!isObj(s) || !isStr(s.ref) || !s.ref) return;
+        var rel = String(s.ref).replace(/\\/g, '/');
+        if (rel.indexOf('logs/agent/runs/') !== 0) { pFileProb.push('EVIDENCE_REF_OUTSIDE_ALLOWED_DIR@validation.' + ek + '[' + si + ']'); return; }
+        if (rel.indexOf('..') >= 0) { pFileProb.push('EVIDENCE_REF_TRAVERSAL@validation.' + ek + '[' + si + ']'); return; }
+        var absRef = absOf(rel);
+        if (!exists(absRef)) pFileProb.push('EVIDENCE_FILE_MISSING@validation.' + ek + '[' + si + '] (' + s.ref + ')');
+      });
     });
   }
   var pBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(pDoc));

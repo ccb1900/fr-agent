@@ -109,7 +109,13 @@ try {
       // 多域寻址（P1-1 修复）：域从 ref 前缀推导，不硬编码 production
       var refDomain = rs.dataset.ref.split('.')[0];
       var catModelPath = 'models/' + refDomain + '/model.json';
-      var catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(catModelPath))), 'UTF-8')));
+      var catModel = null;
+      try {
+        catModel = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(Paths.spec(catModelPath))), 'UTF-8')));
+      } catch (eCatModel) {
+        RR.diag('DATASET MODEL MISSING: ' + catModelPath + ' (' + eCatModel + ')');
+        RR.fail('input_load'); stamp('DATASET MODEL MISSING: refusing to compile from missing domain model'); finishRun(2);
+      }
       var catEntries = [];
       (function walkDatasets(dir) {
         var dsStream; try { dsStream = J('java.nio.file.Files').newDirectoryStream(J('java.nio.file.Paths').get(dir), '*.json'); } catch (e) { return; }
@@ -127,7 +133,7 @@ try {
         RR.fail('input_load'); stamp('DATASET RESOLVE FAILED: refusing to compile from unresolved catalog ref'); finishRun(2);
       }
       rs.dataset = resolved.dataset;
-      rs._datasetRef = resolved.datasetRef;   // 版本绑定：记入 compile.json/artifact.json（D3.2/S4）
+      // 版本绑定：经 RR.diag 记入 runresult.json（不塞 rs——TOP_KEYS 白名单会拒未知键）
       stamp('DATASET RESOLVED: ' + resolved.datasetRef.id + ' v' + resolved.datasetRef.version + ' → kind:sql');
       RR.diag('DATASET_REF: ' + JSON.stringify(resolved.datasetRef));   // D3.2/S4：版本绑定记入 runresult.json
     }
