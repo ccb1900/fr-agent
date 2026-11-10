@@ -69,8 +69,9 @@ wrote(ROOT + '/logs/agent/runs/_e2e_cat_spec.json', JSON.stringify(catalogSpec, 
 wrote(ROOT + '/logs/agent/runs/_e2e_inline_spec.json', JSON.stringify(inlineSpec, null, 1));
 
 // ③ 真引擎 create 两次（走 fr_agent 生产同路径 run.ps1 -NoKill：classpath = engine_launch 全套）
+//   specRel=null → 不设 REPORT_SPEC env → make_api 走默认 reports/sales_demo.js（收尾复位铁证用，AGENTS §1：末步必须默认 spec）
 function frCreate(specRel, tag) {
-  var rid = 'e2e_' + tag;
+  var rid = 'e2e_' + tag + '_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);   // UUID 化：套件可幂等复跑（固定 rid 会撞 compile.json → RUNID_EXISTS）
   var argv = new (J('java.util.ArrayList'))();
   ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ROOT + '/run.ps1',
    '-Script', 'make_api.js', '-NoKill'].forEach(function (x) { argv.add(x); });
@@ -78,7 +79,7 @@ function frCreate(specRel, tag) {
   var env = pb.environment();
   env.put('FR_AGENT_HOME', ROOT);
   env.put('AGENT_RUN_ID', rid);
-  env.put('REPORT_SPEC', specRel);
+  if (specRel) env.put('REPORT_SPEC', specRel); else env.remove('REPORT_SPEC');   // null=默认 spec（复位铁证）
   env.put('AGENT_CATALOG_MODELS_ROOT', CATROOT);
   env.put('FR_AGENT_RESULT', ROOT + '/logs/agent/runs/' + rid + '/runresult.json');
   env.put('FR_AGENT_JAVA_PIDFILE', ROOT + '/logs/agent/runs/' + rid + '/java.pid');
@@ -124,10 +125,27 @@ if (rCat.rc === 0 && rInline.rc === 0 && exists(catCpt) && exists(inlCpt)) {
   try { Files.delete(Pth.get(DS_DIR + '/e2e_draft.json')); } catch (eD) { }
 })();
 
-// 清理测试产物（run 目录保留供 postmortem，仅删两份 spec + 部署产物）
+// ⑥ 基线复位（审查轮 P1 收口）：make_api **任何 spec** 都复写仓库根 demo_api.cpt（ABR-1 单点，line 344）——
+//   本套件前面两次非默认 spec 运行已把铁证踩成 E2E 内容；不收尾复位则 fast_baseline 必红（门咬门）。
+//   按 AGENTS §1：末步用默认 spec 收尾，并断言字节回到 CBEB42E3。
+var rRestore = frCreate(null, 'restore');
+check('基线复位·默认 spec 复跑 rc=0', rRestore.rc === 0, 'rc=' + rRestore.rc + ' tail=' + rRestore.stdout.slice(-200));
+check('基线复位·demo_api.cpt 回到铁证 CBEB42E3', exists(ROOT + '/demo_api.cpt') && md5(ROOT + '/demo_api.cpt') === 'CBEB42E3CE48E46E362B9AE80168026F', md5(ROOT + '/demo_api.cpt'));
+
+// 清理测试产物（run 目录保留供 postmortem）：spec + 部署面的两件 cpt/png 一并清——部署目录是生产 reportlets，不留测试件
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_cat_spec.json')); } catch (e) { }
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_inline_spec.json')); } catch (e) { }
 try { Files.delete(Pth.get(ROOT + '/logs/agent/runs/_e2e_draft_spec.json')); } catch (e) { }
+try { Files.delete(Pth.get(catCpt)); } catch (e) { }
+try { Files.delete(Pth.get(inlCpt)); } catch (e) { }
+[catCpt, inlCpt].forEach(function (c) {
+  try {
+    var png = c.replace(/\.cpt$/, '.png');
+    if (exists(png)) Files.delete(Pth.get(png));
+    var pdf = c.replace(/\.cpt$/, '.pdf');   // make_api 三产物（cpt/png/pdf）用后即净，部署目录不留测试件
+    if (exists(pdf)) Files.delete(Pth.get(pdf));
+  } catch (e2) { }
+});
 
 print('E2E CATALOG END, failures=' + FAILS);
 J('java.lang.System').exit(FAILS > 0 ? 1 : 0);

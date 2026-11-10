@@ -467,6 +467,67 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
       xdbP.rc === 1 && JSON.stringify(xdbP.result).indexOf('UNSUPPORTED_RELATION_KEY') >= 0, 'rc=' + xdbP.rc + ' out=' + JSON.stringify(xdbP.result).slice(0, 180));
   })();
 
+  // 版本与审查纪律矩阵（2026-11-10 审查轮收口）：同版本不可变 / 新版须新审 / review 双全 ISO / 不收代填 review 草稿
+  //   全链具omain 串行推进：sales v1（前面已发布）→ 幂等 → 漂移拒 → v2 陈旧拒 → v2 新审过 → v3 审查形态拒。
+  //   此前首版实现三洞：同版本静默分叉（P1）、review 只查不查 at、无 modelVersion 静默落 '1.json'。
+  (function () {
+    var rcIdem = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('版本纪律·幂等 publish（内容==快照）→ rc=0 快照不动', rcIdem.rc === 0, 'rc=' + rcIdem.rc + ' out=' + JSON.stringify(rcIdem.result).slice(0, 140));
+
+    var drift = jt(semDomain + '/model.json');
+    drift.metrics[0].label = drift.metrics[0].label + '(drift)';
+    wrote(semDomain + '/model.json', JSON.stringify(drift, null, 1));
+    var rcDrift = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('负控·版本纪律·同 modelVersion 内容变更 → MODEL_VERSION_NOT_BUMPED 拒（live 不静默分叉快照）',
+      rcDrift.rc === 1 && (rcDrift.result.error || {}).code === 'MODEL_VERSION_NOT_BUMPED', 'rc=' + rcDrift.rc + ' out=' + JSON.stringify(rcDrift.result).slice(0, 140));
+
+    var stale = jt(semDomain + '/model.json');
+    stale.modelVersion = '2';
+    wrote(semDomain + '/model.json', JSON.stringify(stale, null, 1));   // review.at 仍是 v1 那份（陈旧）
+    var rcStale = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('负控·版本纪律·v2 陈旧 review.at → MODEL_REVIEW_NOT_RENEWED 拒（旧审查不保护新内容）',
+      rcStale.rc === 1 && (rcStale.result.error || {}).code === 'MODEL_REVIEW_NOT_RENEWED', 'rc=' + rcStale.rc + ' out=' + JSON.stringify(rcStale.result).slice(0, 140));
+
+    var renewed = jt(semDomain + '/model.json');
+    renewed.review = { by: '业务负责人', at: '2026-11-10T12:00:00Z' };
+    wrote(semDomain + '/model.json', JSON.stringify(renewed, null, 1));
+    var rcNew = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('版本纪律·v2 新 review.at → rc=0 + versions/2.json（改已发布指标=新版+重审通路真实存在）',
+      rcNew.rc === 0 && exists(semDomain + '/versions/2.json'), 'rc=' + rcNew.rc + ' out=' + JSON.stringify(rcNew.result).slice(0, 140));
+
+    var noAt = jt(semDomain + '/model.json');
+    noAt.modelVersion = '3'; delete noAt.review.at;
+    wrote(semDomain + '/model.json', JSON.stringify(noAt, null, 1));
+    var rcNoAt = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('负控·版本纪律·review 缺 at → BAD_REVIEW_AT 拒（与 Dataset 契约 review.{by,at} 同规）',
+      rcNoAt.rc === 1 && (rcNoAt.result.error || {}).code === 'BAD_REVIEW_AT', 'rc=' + rcNoAt.rc + ' out=' + JSON.stringify(rcNoAt.result).slice(0, 140));
+
+    var badAt = jt(semDomain + '/model.json');
+    badAt.modelVersion = '3'; badAt.review.at = '明天吧';
+    wrote(semDomain + '/model.json', JSON.stringify(badAt, null, 1));
+    var rcBad = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'sales' });
+    check('负控·版本纪律·review.at 非 ISO → BAD_REVIEW_AT 拒',
+      rcBad.rc === 1 && (rcBad.result.error || {}).code === 'BAD_REVIEW_AT', 'rc=' + rcBad.rc + ' out=' + JSON.stringify(rcBad.result).slice(0, 140));
+
+    var noVer = jt(semDomain + '/model.json');   // 用 sales 模型（naming-derived，无证据依赖）——生产模型删 modelVersion 会先触发
+    noVer.modelVersion = null; delete noVer.modelVersion;   // canonicalModel 指纹漂移的 UNSUPPORTED_RELATION_KEY（modelVersion 参与指纹）
+    noVer.domain = 'noverdom';
+    var noVerDom = SEM_MODELS + '/noverdom';
+    Files.createDirectories(Pth.get(noVerDom));
+    wrote(noVerDom + '/model.json', JSON.stringify(noVer, null, 1));
+    var rcNoVer = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'noverdom' });
+    check('负控·版本纪律·无 modelVersion publish → PUBLISHED_WITHOUT_VERSION 拒（缺省会静默落 1.json，掩盖漂移）',
+      rcNoVer.rc === 1 && (rcNoVer.result.error || {}).code === 'PUBLISHED_WITHOUT_VERSION', 'rc=' + rcNoVer.rc + ' out=' + JSON.stringify(rcNoVer.result).slice(0, 140));
+
+    var preRev = jt(semDomain + '/model.json');
+    preRev.domain = 'cleanrevdom';   // review 仍在（模拟 Agent 把业务人的 review 拷进新草稿）
+    var preDocPath = TMP + '/docs/cleanrev_model.json';
+    wrote(preDocPath, JSON.stringify(preRev, null, 1));
+    var rcPre = runSem('create', { AGENT_SEMANTIC_DOC: preDocPath });
+    check('负控·版本纪律·create 草稿自带 review → REVIEW_IN_DRAFT 拒（review 只能业务人写，Agent 不得代填闭环）',
+      rcPre.rc === 1 && (rcPre.result.error || {}).code === 'REVIEW_IN_DRAFT', 'rc=' + rcPre.rc + ' out=' + JSON.stringify(rcPre.result).slice(0, 140));
+  })();
+
   // 负控·缺 schema 快照的域 validate → SCHEMA_MISSING
   var orphanModel = JSON.parse(JSON.stringify(salesDraft));
   orphanModel.source = 'nonexistent_db';
