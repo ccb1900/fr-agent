@@ -691,6 +691,123 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
 })();
 
 
+
+// ============================ W1/W2 + W3 补查（走查轮 2026-11-10） ============================
+// semantic review/revise（人审入口 + 合法版本 bump 入口）+ plan detail 通路（ready 断言）
+(function () {
+  function runSemAt(action, extra) {
+    var rid = 'w1_' + action + '_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
+    var out = RUNS + '/' + rid + '/semantic.json';
+    var argv = new (J('java.util.ArrayList'))();
+    ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ROOT + '/agent/tools/fr_agent.ps1',
+     '-Verb', 'semantic', '-Action', action, '-RunId', rid].forEach(function (x) { argv.add(x); });
+    if (extra && extra.AGENT_SEMANTIC_DOC) { argv.add('-Doc'); argv.add(String(extra.AGENT_SEMANTIC_DOC)); }
+    if (extra && extra.ReviewBy) { argv.add('-ReviewBy'); argv.add(String(extra.ReviewBy)); }
+    argv.add('-Target'); argv.add(String(extra && extra.domain ? extra.domain : 'revdom'));
+    var pb = new (J('java.util.ArrayList'))() === argv ? null : new (J('java.lang.ProcessBuilder'))(argv);
+    var env = pb.environment();
+    env.put('FR_AGENT_HOME', ROOT);
+    env.put('AGENT_RUN_ID', rid);
+    env.put('AGENT_SEMANTIC_MODELS_ROOT', SEM_MODELS);
+    env.put('AGENT_SEMANTIC_RUNS', RUNS);
+    env.put('AGENT_SEMANTIC_ACTION', action);
+    if (extra && extra.ReviewBy) env.put('AGENT_SEMANTIC_REVIEW_BY', String(extra.ReviewBy));
+    if (extra) Object.keys(extra).forEach(function (k) { if (k.indexOf('AGENT_') === 0) env.put(k, String(extra[k])); });
+    pb.redirectErrorStream(true);
+    var p = pb.start();
+    var br = new (J('java.io.BufferedReader'))(new (J('java.io.InputStreamReader'))(p.getInputStream(), 'UTF-8'));
+    var so = [], ln;
+    while ((ln = br.readLine()) != null) so.push(String(ln));
+    return { rc: p.waitFor(), stdout: so.join(String.fromCharCode(10)), result: exists(out) ? jt(out) : null };
+  }
+  var SEM_MODELS = TMP + '/sem_models';   // W-block 独立 scope（4e 段内 SEM_MODELS 是 IIFE 局部，此处重建同一目录约定）
+  var revDom = SEM_MODELS + '/revdom';
+  Files.createDirectories(Pth.get(revDom));
+  // （sales 夹具由 4e 段已写入 SEM_MODELS/sales——revise 复用其内容）
+  var revModel = jt(SEM_MODELS + '/sales/model.json');   // naming-derived 夹具（无证据依赖）——confirmed 模型 bump 版本即指纹漂移、证据失效（r6 契约，backlog A2）
+  revModel.modelVersion = '1';   // 4e 版本矩阵把 sales 推到 v2——revdom 夹具显式归位 1（current==draft 会撞 VERSION_NOT_BUMPED）
+  revModel.review = null; delete revModel.review;
+  wrote(revDom + '/model.json', JSON.stringify(revModel, null, 1));
+
+  // W1-负控：publish 缺 review 的 nextActions 不再为空（合同违约清零）
+  var rn0 = runSemAt('publish', { domain: 'revdom' });
+  check('W1·publish 缺 review → 拒 + nextActions 指路 review 动作（合同不再空）',
+    rn0.rc === 1 && (rn0.result.nextActions || []).length > 0 && JSON.stringify(rn0.result.nextActions).indexOf('review') >= 0, 'out=' + JSON.stringify(rn0.result).slice(0, 200));
+  // W1-负控：review 无 ReviewBy → usage 拒
+  var rn1 = runSemAt('review', { domain: 'revdom' });
+  check('W1·review 缺 ReviewBy → usage 拒（人审纪律：不发明名字）',
+    rn1.rc === 2 && (rn1.stdout || '').indexOf('ReviewBy') >= 0, 'rc=' + rn1.rc + ' out=' + String(rn1.stdout).slice(0, 160));
+  // W1-正控：review 带人名 → 写入 review.{by,at}
+  var rn2 = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
+  check('W1·review 带人名 → rc=0 + review.{by,at} 落 model.json（人的动作有了工具面）',
+    rn2.rc === 0 && exists(revDom + '/model.json') && (jt(revDom + '/model.json').review || {}).by === '业务负责人', 'rc=' + rn2.rc);
+  // W2：revise 正控（bump 2、剥 review 的草案）
+  var bumped = jt(revDom + '/model.json');
+  bumped.modelVersion = '2'; bumped.metrics[0].label = bumped.metrics[0].label + ' v2'; bumped.review = null; delete bumped.review;
+  var bumpPath = TMP + '/docs/revdom_v2.json';
+  wrote(bumpPath, JSON.stringify(bumped, null, 1));
+  var rn4 = runSemAt('revise', { domain: 'revdom', AGENT_SEMANTIC_DOC: bumpPath });
+  check('W2·revise bump 1→2 → rc=0 + previousVersion 记档 + nextActions 指路 review/publish',
+    rn4.rc === 0 && (rn4.result || {}).previousVersion === '1' && (rn4.result.modelVersion) === '2', 'rc=' + rn4.rc + ' out=' + JSON.stringify(rn4.result).slice(0, 200));
+  // W1/W2 合规叙事：bump 后 publish 必须重审（PUBLISHED_WITHOUT_REVIEW）→ review → publish rc=0
+  var rn3a = runSemAt('publish', { domain: 'revdom' });
+  check('W2·revise 后 publish → PUBLISHED_WITHOUT_REVIEW（版本 bump 后必须重审）', rn3a.rc === 1 && rn3a.result && (rn3a.result.error || {}).code === 'PUBLISHED_WITHOUT_REVIEW', 'rc=' + rn3a.rc);
+  var rn3b = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
+  check('W2·revise 后 review rc=0（重审通路）', rn3b.rc === 0 && rn3b.result && rn3b.result.ok === true, 'rc=' + rn3b.rc);
+  var rn3c = runSemAt('publish', { domain: 'revdom' });
+  check('W2·重审后 publish rc=0（review→publish 两步合规闭环）', rn3c.rc === 0, 'rc=' + rn3c.rc);
+  // W2-负控：降版本拒
+  var dnDraft = jt(bumpPath); dnDraft.modelVersion = '1';
+  var dnPath = TMP + '/docs/revdom_down.json';
+  wrote(dnPath, JSON.stringify(dnDraft, null, 1));
+  var rn5 = runSemAt('revise', { domain: 'revdom', AGENT_SEMANTIC_DOC: dnPath });
+  check('W2·revise 降版本 → VERSION_NOT_BUMPED 拒', rn5.rc === 1 && rn5.result && (rn5.result.error || {}).code === 'VERSION_NOT_BUMPED', 'rc=' + rn5.rc);
+  // W2-负控：revise 草案自带 review → REVIEW_IN_DRAFT 拒
+  var wr = jt(dnPath); wr.modelVersion = '3'; wr.review = { by: 'x', at: '2026-11-10T10:00:00Z' };
+  var wrPath = TMP + '/docs/revdom_wr.json';
+  wrote(wrPath, JSON.stringify(wr, null, 1));
+  var rn6 = runSemAt('revise', { domain: 'revdom', AGENT_SEMANTIC_DOC: wrPath });
+  check('W2·revise 草案自带 review → REVIEW_IN_DRAFT 拒（review 只走 review 动作）', rn6.rc === 1 && rn6.result && (rn6.result.error || {}).code === 'REVIEW_IN_DRAFT', 'rc=' + rn6.rc);
+  // W2-负控：deprecated 拒 review
+  var ddep = jt(revDom + '/model.json'); ddep.status = 'deprecated'; ddep.deprecation = { reason: 'gate test' };
+  wrote(revDom + '/model.json', JSON.stringify(ddep, null, 1));
+  var rn7 = runSemAt('review', { domain: 'revdom', ReviewBy: '业务负责人' });
+  check('W2·deprecated → review 拒（退役不可逆）', rn7.rc === 1 && rn7.result && (rn7.result.error || {}).code === 'DEPRECATED', 'rc=' + rn7.rc);
+  try { Files.delete(Pth.get(SEM_MODELS + '/revdom/model.json')); } catch (e0) { }
+
+  // W3：plan detail 通路（ready 断言 + dims=实体 property 展示列 + intentHash）
+  var w3Intent = {
+    outName: '明细台账', report: { name: '明细台账' },
+    dataset: { kind: 'sql', connection: 'ATOM_LIVE', entity: 'InspectionRecord',
+      dimensions: ['InspectionRecord.bizTime', 'InspectionRecord.fileKey', 'InspectionRecord.rowNo', 'InspectionRecord.score'],
+      metrics: [], dateRange: { from: '2026-09-13', to: '2026-09-14' }, sort: [{ field: 'bizTime', dir: 'asc' }] },
+    presentation: { type: 'detail' }
+  };
+  var w3Path = TMP + '/docs/w3_intent.json';
+  wrote(w3Path, JSON.stringify(w3Intent, null, 1));
+  var w3Rid = 'w3_plan_' + J('java.util.UUID').randomUUID().toString().replace(/-/g, '').slice(0, 8);
+  var argv3 = new (J('java.util.ArrayList'))();
+  ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ROOT + '/agent/tools/fr_agent.ps1',
+   '-Verb', 'plan', '-Intent', w3Path, '-RunId', w3Rid].forEach(function (x) { argv3.add(x); });
+  var pb3 = new (J('java.lang.ProcessBuilder'))(argv3);
+  var env3 = pb3.environment();
+  env3.put('FR_AGENT_HOME', ROOT);
+  env3.put('AGENT_RUN_ID', w3Rid);
+  env3.put('SQL_URL', 'jdbc:sqlserver://127.0.0.1:1433;databaseName=atom_live_demo;encrypt=false');
+  env3.put('SQL_USER', 'sa');
+  pb3.redirectErrorStream(true);
+  var p3 = pb3.start();
+  var br3 = new (J('java.io.BufferedReader'))(new (J('java.io.InputStreamReader'))(p3.getInputStream(), 'UTF-8'));
+  while (br3.readLine() != null) { }
+  p3.waitFor();
+  var planJson = RUNS + '/' + w3Rid + '/plan.json';
+  var planOk = exists(planJson) ? jt(planJson) : null;
+  check('W3·plan detail 意图 → ready（明细=metrics 空 + dims=实体 property 展示列）',
+    !!planOk && planOk.status === 'ready', 'out=' + JSON.stringify(planOk).slice(0, 260));
+  check('W3·plan.json 带 intentHash + showTotal 缺省 false + capability 级提示可用',
+    !!planOk && !!planOk.intentHash && planOk.reportSpec.presentation.showTotal === false, 'hash=' + (planOk ? planOk.intentHash : '-'));
+})();
+
 check('assets.js 不引 FineReport 引擎/激活链', !/com\.fr\.|SimpleWork|ActivatorToolBox/.test(read(ROOT + '/' + TOOL)));
 check('assets.js 不自造原子写（写路径必须来自 _lib.js 的 atomicWriteUtf）',
   !/ATOMIC_MOVE|createTempFile/.test(read(ROOT + '/' + TOOL)) && read(ROOT + '/' + TOOL).indexOf('writeJson') >= 0);

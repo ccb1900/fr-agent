@@ -70,9 +70,57 @@ if (!pf.ok) {
 var idx = ModelRegistry.index(model);
 load(ROOT + '/semantic/planner/termnorm.js');
 function resolveTerm(t) { return ModelResolver.resolve(idx, String(t)); }
+// W9（走查 P2-9）：能力级提示前置——intent 涉及运行期交互（params/分页/筛选类字段）时，在 plan 阶段直接给账本级提示，
+//   不等 spec 校验回头解释（与铁律"语义未决必须问"配套：能力缺口也是"未决"）。
+function capabilityLevelQuestions(intent) {
+  var out = [];
+  var isDetail = !!(intent.presentation && intent.presentation.type === 'detail');
+  if (isDetail) out.push('明细表（presentation.type=detail）=行级直读：metrics 必须为空、所有列放 dimensions 作展示列、showTotal 需明确 false（编译器在 detail 下也不输出合计）');
+  var hasParams = !!(intent.params != null && (Array.isArray(intent.params) ? intent.params.length : 1)) ||
+    !!(intent.presentation && Array.isArray(intent.presentation.params) && intent.presentation.params.length) ||
+    (isDetail === false && String(JSON.stringify(intent)).indexOf('"page"') >= 0);
+  if (hasParams) out.push('运行期参数控件（params.panel）当前 capabilityManifest=unavailable(webInteraction)：可给编译期固定值（如 dateRange/params 默认值），Web 改参重查询不在承诺内——需要请用户先选此折中或放弃该形态');
+  var wantsFilter = !!(intent.dataset && Array.isArray(intent.dataset.filters) && intent.dataset.filters.length);
+  if (wantsFilter) out.push('dataset.filters=编译期固定筛选（sql 路）；运行期筛选控件不可用（webInteraction）——同样需要向用户言明边界');
+  if (String(JSON.stringify(intent)).indexOf('topN') >= 0 && !((intent.dataset || {}).sort || []).length) out.push('dataset.topN 需要 dataset.sort 提供确定序（否则编译拒）');
+  return out;
+}
 if (intent.dataset && intent.dataset.kind === 'sql') {
-  if (Array.isArray(intent.dataset.dimensions)) intent.dataset.dimensions = TermNorm.normalizeList(intent.dataset.dimensions, resolveTerm);
-  if (Array.isArray(intent.dataset.metrics)) intent.dataset.metrics = TermNorm.normalizeList(intent.dataset.metrics, resolveTerm);
+  var isDetailIntent = !!(intent.presentation && intent.presentation.type === 'detail');
+  if (isDetailIntent) {
+    // W3：detail=明细表——metrics 必空（fail-closed）；dims 走 property/column 归一（W4：候选可与 Intent 语法同形）
+    if (Array.isArray(intent.metrics) && intent.metrics.length) {
+      writeJson(runDir + '/plan.json', { tool: 'plan', runId: runId, status: 'rejected', reason: 'DETAIL_WITH_METRICS', issues: [{ code: 'INVALID_SHAPE', message: '明细表不需要 metrics——把业务列全部放 dimensions 作展示列（行级直读无聚合）' }], unresolvedQuestions: capabilityLevelQuestions(intent), intentPath: intentPath });
+      print('{"ok":false,"runId":"' + runId + '","status":"rejected","result":"logs/agent/runs/' + runId + '/plan.json"}');
+      System.exit(1);
+    }
+    // W4（走查 P1-4）：实体上下文过滤——Intent 已声明 entity，属性候选优先命中该实体
+    //   （否则 fileKey 之类会同时命中多实体的同名属性，照抄候选必然再歧义）。
+    var entNameS = intent.dataset && intent.dataset.entity;
+    var resolveTermS = function (t) {
+      var r = resolveTerm(t);
+      if (r && Array.isArray(r.candidates) && entNameS) {
+        var scoped = r.candidates.filter(function (c) { return c && c.ref && String(c.ref).indexOf(String(entNameS) + '.') === 0; });
+        if (scoped.length === 1) return { term: r.term, status: 'resolved', candidates: scoped, requiresConfirmation: false };
+        if (scoped.length > 1) return { term: r.term, status: 'ambiguous', candidates: scoped, requiresConfirmation: true };
+      }
+      return r;
+    };
+    var dres = TermNorm.normalizeDetailColumns(intent.dataset.dimensions, resolveTermS);
+    if (!dres.ok || !dres.dims.length) {
+      writeJson(runDir + '/plan.json', { tool: 'plan', runId: runId, status: 'rejected', reason: 'AMBIGUOUS_DETAIL_COLUMNS', issues: dres.ambiguous.concat(dres.unknown.map(function (u) { return { code: 'UNKNOWN_REF', term: u }; })),
+        unresolvedQuestions: capabilityLevelQuestions(intent).concat(dres.ambiguous.length ? ['明细列存在歧义候选（见 issues）: ' + dres.ambiguous.map(function (a) { return a.term; }).join(', ')] : [], dres.unknown.length ? ['明细列在模型中未找到（不编造）: ' + dres.unknown.join(', ')] : []), intentPath: intentPath });
+      print('{"ok":false,"runId":"' + runId + '","status":"rejected","result":"logs/agent/runs/' + runId + '/plan.json"}');
+      System.exit(1);
+    }
+    intent.dataset.dimensions = dres.dims;   // [{term,label?...}] —— refOverrides 吃 label，展示文案可定制
+    if (!Array.isArray(intent.dataset.metrics)) intent.dataset.metrics = [];
+    if (intent.presentation.showTotal == null) { intent.presentation.showTotal = false; }   // 明细无聚合：缺省置 false（assumption 留痕，见下方 ready 装配）
+    intent._detailAssumption = 'detail 明细表无聚合：presentation.showTotal 已缺省置 false；dims=展示列（实体 property/列可直上报表）';
+  } else {
+    if (Array.isArray(intent.dataset.dimensions)) intent.dataset.dimensions = TermNorm.normalizeList(intent.dataset.dimensions, resolveTerm);
+    if (Array.isArray(intent.dataset.metrics)) intent.dataset.metrics = TermNorm.normalizeList(intent.dataset.metrics, resolveTerm);
+  }
 }
 var ctx = {
   model: model,
@@ -86,6 +134,21 @@ var res = ReportPlanner.plan(intent, ctx);
 res.tool = 'plan';
 res.runId = runId;
 res.intentPath = intentPath;
+// W8（走查 P2-8）：intentHash=意图文件字节的 MD5——同 Intent 重试可对拍；同 RunId 复跑零集成（零引擎 verb 幂等，产物覆盖）
+try {
+  var mdI = J('java.security.MessageDigest').getInstance('MD5');
+  var digI = mdI.digest(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(absOf(intentPath))));
+  var hexI = '';
+  for (var di2 = 0; di2 < digI.length; di2++) { var bb2 = digI[di2] & 255; hexI += (bb2 < 16 ? '0' : '') + J('java.lang.Integer').toHexString(bb2); }
+  res.intentHash = hexI.toUpperCase();
+} catch (eH) { }
+// W9：能力级问题（detail/参数/分页/筛选）连同 planner 未决问题一起透出
+var capQ = capabilityLevelQuestions(intent);
+if (capQ.length) res.unresolvedQuestions = (res.unresolvedQuestions || []).concat(capQ);
+if (intent._detailAssumption) {
+  res.assumptions = (res.assumptions || []).concat([intent._detailAssumption]);
+  delete intent._detailAssumption;
+}
 writeJson(runDir + '/plan.json', res);
 var ok = res.status === 'ready';
 print('{"ok":' + ok + ',"runId":"' + runId + '","status":"' + res.status + '","result":"logs/agent/runs/' + runId + '/plan.json"}');

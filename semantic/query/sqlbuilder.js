@@ -31,7 +31,9 @@ var SqlBuilder = (function () {
   }
 
   // 主入口：model + 选择（entity + 维度名[] + 指标名[] + 可选日期范围{from,to}）→ 受控查询规格
-  function build(model, sel) {
+  function build(model, sel, opts) {
+    opts = opts || {};
+    var DETAIL = (opts && opts.detail === true) || (!!sel && sel.detail === true);   // W3：detail=明细（行级 DISTINCT，不 GROUP BY；spec_compiler 放 sel，直调走 opts；null-safe）
     var errs = [];
     if (!isObj(model) || !isObj(sel)) { E(errs, 'INVALID_TYPE', 'sel', 'build(model,sel) 均需对象'); return { errors: errs }; }
     var ent = null;
@@ -61,9 +63,15 @@ var SqlBuilder = (function () {
     // I5.4：先解析全部维度（只做 JOIN 集合判定 + 收集 {table,column,alias,rule}），不在此阶段拼 SQL，
     //   再统一按 hasJoin 决定列限定 → 消除"维度顺序决定哪些列被限定"的顺序依赖。
     var dimSpecs = [], dateDim = null;
-    (sel.dimensions || []).forEach(function (dn, i) {
-      var d = dimsByName[dn];
+    (sel.dimensions || []).forEach(function (dn, i) {   // detail 模式也走同一路：property 与模型维度名册共用 resolve 逻辑（detail 更按 property 定位）
       var path = 'dimensions[' + i + ']';
+      var d = dimsByName[dn];
+      if (!d && DETAIL) {
+        // W3：detail 展示列=实体 property（`Entity.prop` 前缀可剥；裸物理列名也直取）——不走维度名册、不进 GROUP BY
+        var pn = String(dn).replace(/^[A-Za-z_][A-Za-z0-9_]*\./, '');
+        var pm = props[pn] || props[dn];
+        if (pm) d = { name: pn, table: table, column: pm.column, rule: null };
+      }
       if (!d) { E(errs, 'UNKNOWN_REF', path, '维度不在模型: ' + dn); return; }
       var leaf = String(d.column || '').split('.').pop();
       var colTable = (!d.table || d.table === table) ? table : d.table;
@@ -118,6 +126,20 @@ var SqlBuilder = (function () {
     var where = [];
     Object.keys(measures).forEach(function (mc) { where.push('TRY_CAST(' + qualOf(table, mc) + ' AS float) IS NOT NULL'); });
     if (sel.dateRange && (sel.dateRange.from || sel.dateRange.to)) {
+      if (!dateDim && DETAIL) {
+        // W3：detail 直读行的日期区间——dims 未选 dateNormalize 维度时允许按实体文本日期列直筛
+        //   （biz_date/biz_time 存'YYYY-MM-DD[ HH:mm]'，文本序等价日期序：BETWEEN 直接可比）
+        var candList = dimSpecs.length ? dimSpecs : [];
+        var pickCol = null;
+        if (candList.length) pickCol = { table: candList[0].table, column: candList[0].column };
+        else {
+          Object.keys(props).forEach(function (pk) {
+            var pv = props[pk];
+            if (!pickCol && pv.column && (/date|time/i.test(pk) || /date|time/i.test(String(pv.type || '')))) pickCol = { table: table, column: pv.column };
+          });
+        }
+        if (pickCol) dateDim = pickCol;
+      }
       if (!dateDim) E(errs, 'INVALID_SHAPE', 'dateRange', 'dateRange 需选中 dateNormalize 维度');
       else {
         var dr = IsoDate.range(sel.dateRange);
@@ -194,21 +216,23 @@ var SqlBuilder = (function () {
     //   无 sort → ORDER BY 1（首列）+ 其余 GROUP 列（单列组时即 ORDER BY 1，保持历史文本）；
     //   有 sort → sort 主序 + 全部 GROUP 列 tie-breaker（冗余排序键合法且消抖）。
     var order;
-    if (orderBits.length) {
+    if (DETAIL) { order = orderBits.length ? orderBits.join(', ') : (groupBits.length > 1 ? ('1, ' + groupBits.slice(1).join(', ')) : '1'); } else if (orderBits.length) {
       order = orderBits.join(', ');
       if (groupBits.length) order += ', ' + groupBits.join(', ');
     } else {
       order = groupBits.length > 1 ? ('1, ' + groupBits.slice(1).join(', ')) : '1';
     }
 
-    var sql = 'SELECT' + topSql + ' ' + selectBits.join(', ') + ' FROM ' + table +
+    // W3：detail=明细（行级直读）——DISTINCT + 无 GROUP BY；groupDims=[]（真值粒度『一行一条』）。
+    //   ORDER BY 规则照常（全部列均已 SELECT，MSSQL DISTINCT 合法性成立）。
+    var sql = 'SELECT' + (DETAIL ? ' DISTINCT' : '') + topSql + ' ' + selectBits.join(', ') + ' FROM ' + table +
       (joins.length ? ' ' + joins.join(' ') : '') +
       (where.length ? ' WHERE ' + where.join(' AND ') : '') +
-      (groupBits.length ? ' GROUP BY ' + groupBits.join(', ') : '') +
+      (groupBits.length && !DETAIL ? ' GROUP BY ' + groupBits.join(', ') : '') +
       ' ORDER BY ' + order;
     // 单点自检：受控 SQL 必单语句、无 ;（配 ir.js SQL_READONLY），违约即拒（不产脏 SQL）
     if (/;/.test(sql) || !/^(SELECT|WITH)\b/i.test(sql)) { E(errs, 'SQL_READONLY', 'sql', '生成的 SQL 违单语句/只读约束'); return { errors: errs }; }
-    return { sql: sql, baseAliases: baseAliases, derived: derived, groupDims: (sel.dimensions || []).slice(), errors: [] };
+    return { sql: sql, baseAliases: baseAliases, derived: derived, groupDims: (DETAIL ? [] : (sel.dimensions || []).slice()), detail: DETAIL, errors: [] };
   }
 
   return { build: build };

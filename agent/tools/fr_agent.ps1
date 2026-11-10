@@ -16,7 +16,7 @@
 # NOTE: ASCII-only. Paths/policy from config.ps1.
 param(
   [Parameter(Mandatory = $true)][ValidateSet('discover', 'resolve', 'plan', 'plan2spec', 'compile', 'create', 'patch', 'modify', 'validate', 'preview', 'list_reports', 'inspect_template', 'sample_data', 'promote', 'restore', 'assets', 'semantic')][string]$Verb,
-  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish', 'deprecate', 'impact')][string]$Action = 'list',
+  [ValidateSet('list', 'inspect', 'create', 'validate', 'publish', 'deprecate', 'impact', 'review', 'revise')][string]$Action = 'list',
   [string]$Spec = '',
   [string]$Patch = '',
   [string]$Term = '',
@@ -28,6 +28,7 @@ param(
   [string]$Sample = '',
   [string]$Doc = '',
   [string]$Domain = '',
+  [string]$ReviewBy = '',
   [string]$RunId = ''
 )
 $ErrorActionPreference = 'Continue'
@@ -368,15 +369,20 @@ switch ($inner) {
     $env:AGENT_SEMANTIC_ACTION = $Action
     if ($Domain) { $env:AGENT_SEMANTIC_DOMAIN = $Domain }
     if ($Target) { $env:AGENT_SEMANTIC_DOMAIN = $Target }   # -Target alias (same as inspect_template)
-    if ($Action -eq 'create') {
-      if (-not $Doc) { Write-Output '{"ok":false,"error":"-Doc required for semantic -Action create (path to a model.json draft)","nextActions":["write the domain model draft","semantic -Action create -Doc <file>"]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+    if ($Action -eq 'create' -or $Action -eq 'revise') {
+      if (-not $Doc) { Write-Output '{"ok":false,"error":"-Doc required for semantic -Action create or revise (path to a model.json draft)","nextActions":["write the domain model draft","semantic -Action create|revise -Doc <file>"]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
       $env:AGENT_SEMANTIC_DOC = $Doc
+    }
+    if ($Action -eq 'review') {
+      if (-not $ReviewBy) { Write-Output '{"ok":false,"error":"-ReviewBy required for semantic -Action review (the human reviewer name)","nextActions":["the business owner runs: fr_agent.ps1 -Verb semantic -Action review -Target <domain> -ReviewBy \"<name>\""]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+      $env:AGENT_SEMANTIC_REVIEW_BY = $ReviewBy
     }
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/semantic.js')
     $rc = $LASTEXITCODE
     Remove-Item env:AGENT_SEMANTIC_ACTION -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_SEMANTIC_DOMAIN -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_SEMANTIC_DOC -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_SEMANTIC_REVIEW_BY -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) "logs/agent/runs/$RunId/semantic.json"
     exit $rc

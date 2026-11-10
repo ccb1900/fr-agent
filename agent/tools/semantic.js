@@ -51,7 +51,10 @@ function scanModels() {
     try { model = JSON.parse(readUtf(modelPath)); } catch (eJ) { diagnostics.push({ code: 'UNREADABLE_MODEL', path: modelPath, message: String(eJ) }); continue; }
     if (!model || typeof model !== 'object') { diagnostics.push({ code: 'UNREADABLE_MODEL', path: modelPath, message: 'not a JSON object' }); continue; }
     domains.push({
-      domain: dn, modelVersion: model.modelVersion || null, label: model.domain || dn,
+      domain: dn,                                  // 目录域（资产寻址权威：models/<domain>/）
+      modelDomain: model.domain || null,           // 模型文件内部 domain 字段（内部域命名，≠目录域——走查 P2-7 双轨如实双列）
+      domainMismatch: !!(model.domain && model.domain !== dn),
+      modelVersion: model.modelVersion || null, label: model.domain || dn,
       source: model.source || null,
       entityCount: (model.entities || []).length,
       metricCount: (model.metrics || []).length,
@@ -106,8 +109,11 @@ if (action === 'inspect') {
   var warnings = (datasetRefCheck && !datasetRefCheck.ok) ? [datasetRefCheck.reason] : [];
   var depFlag = model.status === 'deprecated';
   if (depFlag) warnings.push('DEPRECATED: ' + ((isObj(model.deprecation) && isStr(model.deprecation.reason)) ? model.deprecation.reason : 'no reason recorded'));
+  if (model.domain && model.domain !== domain) warnings.push('DOMAIN_MISMATCH_HINT: model internal domain="' + model.domain + '" differs from directory domain="' + domain + '" — addressing uses the DIRECTORY domain (models/<dir>/model.json)');
   finish(0, { tool: 'semantic', action: 'inspect', runId: runId, ok: true, zeroEngine: true,
-    domain: domain, modelVersion: model.modelVersion, source: model.source,
+    domain: domain, modelDomain: model.domain || null,   // 走查 P2-7：目录域 vs 模型内部域双列，防 -Target 传错
+    domainMismatch: !!(model.domain && model.domain !== domain),
+    modelVersion: model.modelVersion, source: model.source,
     deprecated: depFlag, deprecation: model.deprecation || null,
     warnings: warnings,
     entities: (model.entities || []).map(function (e) { return { name: e.name, label: e.label, table: e.table, key: e.key || [], properties: (e.properties || []).map(function (p) { return { name: p.name, column: p.column, type: p.type }; }) }; }),
@@ -251,11 +257,12 @@ if (action === 'publish') {
     bail('PUBLISHED_WITHOUT_VERSION', 'model.json must carry modelVersion (snapshot versions/<modelVersion>.json derives from it)',
       ['set modelVersion (e.g. "1") before publish']);
   // 人审闸（与 Dataset 契约 D1.6 同规）：published 必须 review.{by,at} 双全且 at 合 ISO——review 只能是人填的
-  if (!(isObj(pModel.review) && isStr(pModel.review.by) && pModel.review.by))
-    bail('PUBLISHED_WITHOUT_REVIEW', 'model.json must carry review.{by,at} set by the business owner');
+if (!(isObj(pModel.review) && isStr(pModel.review.by) && pModel.review.by))
+    bail('PUBLISHED_WITHOUT_REVIEW', 'model.json must carry review.{by,at} set by the business owner',
+      ['run: fr_agent.ps1 -Verb semantic -Action review -Target ' + pd + ' -ReviewBy "<business owner name>" (run by the human, not the agent)', 'or the human can set review.{by,at} in model.json directly'], { reviewEntry: 'semantic -Action review' });
   if (!isStr(pModel.review.at) || !ISO_AT_RE.test(pModel.review.at))
     bail('BAD_REVIEW_AT', 'review.at must be a valid ISO-8601 date (dataset contract parity), got: ' + pModel.review.at,
-      ['set review.at (e.g. "2026-11-10T10:00:00Z") when the business owner signs off']);
+      ['re-run semantic -Action review (the tool stamps a fresh valid ISO at)'], { reviewEntry: 'semantic -Action review' });
   var snapDirP = modelsRoot + '/' + pd + '/versions';
   Files.createDirectories(Pth.get(snapDirP));
   var snapNameP = String(pModel.modelVersion).replace(/[\\/:*?"<>|]/g, '_') + '.json';   // 版本号做文件名消毒（'1/2' 类防路径注入）
@@ -356,4 +363,56 @@ if (action === 'impact') {
       : ['SCAN INCOMPLETE: fix unreadable entries (see scanDiagnostics) and re-run — the zero-consumer conclusion is NOT actionable in this state'] });
 }
 
-bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, deprecate or impact']);
+// ---------- W1/W2（走查 P0-1/P0-2）：人的动作有了工具面——review（登记人审）+ revise（合法版本 bump 入口） ----------
+if (action === 'review') {
+  var rdom = genv('AGENT_SEMANTIC_DOMAIN');
+  if (!rdom) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for review', ['fr_agent.ps1 -Verb semantic -Action review -Target <domain> -ReviewBy "<owner>"']);
+  var rby = genv('AGENT_SEMANTIC_REVIEW_BY');
+  if (!rby) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_REVIEW_BY required (-ReviewBy "<business owner name>")',
+    ['the review is recorded by whoever runs this command — the business owner should run it or explicitly hand you the name; never invent a name'], { reviewEntry: 'semantic -Action review -ReviewBy "<owner>"' });
+  var rPath = modelsRoot + '/' + rdom + '/model.json';
+  var rModel = null;
+  try { rModel = JSON.parse(readUtf(rPath)); } catch (eR) { bail('MODEL_NOT_FOUND', rdom + '/model.json unreadable'); }
+  if (rModel.status === 'deprecated') bail('DEPRECATED', 'deprecated model cannot take a new review');
+  var nowIso = new Date().toISOString();
+  rModel.review = { by: rby, at: nowIso };
+  writeJson(rPath, rModel);
+  finish(0, { tool: 'semantic', action: 'review', runId: runId, ok: true, zeroEngine: true, domain: rdom, review: rModel.review,
+    nextActions: ['run semantic -Action publish to publish version ' + (rModel.modelVersion || '?'),
+      'NOTE: rerunning review NOW overwrites the previous review (equivalent to re-reviewing) — prior snapshot review.at still guards version-bump gates'] });
+}
+
+if (action === 'revise') {
+  var rvd = genv('AGENT_SEMANTIC_DOMAIN');
+  if (!rvd) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for revise', ['write the bumped model.json draft, then: fr_agent.ps1 -Verb semantic -Action revise -Target <domain> -Doc <draft.json>']);
+  var draftPathRv = genv('AGENT_SEMANTIC_DOC');
+  if (!draftPathRv) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOC required for revise', ['write the bumped model.json draft first', 'semantic -Action revise -Doc <file> -Target <domain>']);
+  var revTarget = modelsRoot + '/' + rvd + '/model.json';
+  var revCur = null;
+  try { revCur = JSON.parse(readUtf(revTarget)); } catch (eC) { bail('MODEL_NOT_FOUND', rvd + '/model.json unreadable'); }
+  var revNew = null;
+  try { revNew = JSON.parse(readUtf(absOf(draftPathRv))); } catch (eJ2) { bail('SEMANTIC_USAGE', 'revise draft unreadable: ' + draftPathRv, ['check UTF-8 JSON']); }
+  if (!revNew || typeof revNew !== 'object' || Array.isArray(revNew)) bail('SEMANTIC_USAGE', 'not a JSON object');
+  revNew.domain = rvd; revNew.source = revNew.source || revCur.source;
+  var curNum = parseInt(revCur.modelVersion, 10) || 0, newNum = parseInt(revNew.modelVersion, 10) || 0;
+  if (!(newNum > curNum)) bail('VERSION_NOT_BUMPED', 'revise requires modelVersion > current (' + revCur.modelVersion + '), got: ' + revNew.modelVersion,
+    ['bump modelVersion in the draft then re-run revise'], { currentVersion: revCur.modelVersion, draftVersion: revNew.modelVersion });
+  if (isObj(revNew.review)) bail('REVIEW_IN_DRAFT', 'revise draft carries review.{by,at}; re-review happens after revise, via semantic -Action review',
+    ['remove review from the draft and re-run revise']);
+  var revSchemaName = 'schema_' + (revNew.source || rvd) + '.json';
+  var revSchemaPathRv = ROOT + '/data/' + revSchemaName;
+  if (!Files.exists(Pth.get(revSchemaPathRv))) bail('SCHEMA_MISSING', revSchemaName + ' missing');
+  var revSchema = JSON.parse(readUtf(revSchemaPathRv));
+  var revErrs = ModelValidator.validate(revNew, revSchema, { requireCompleteness: false, uniqueKeyEvidence: semUniqEv(revNew, revSchema).uniqueKeyEvidence || {} });
+  if (revErrs.length) bail('MODEL_VALIDATION_FAILED', revErrs.map(function (e) { return e.code + '@' + e.path; }).join(', '),
+    ['fix the draft against ' + revSchemaName], { diagnostics: revErrs.slice(0, 20) });
+  // 内容全等也不拦（允许"白 bump"占位占版本号，可以 go；但给出提醒）：
+  var priorRev = revCur.review ? revCur.review.at : null;
+  writeJson(revTarget, revNew);
+  finish(0, { tool: 'semantic', action: 'revise', runId: runId, ok: true, zeroEngine: true, domain: rvd,
+    modelVersion: revNew.modelVersion, previousVersion: revCur.modelVersion,
+    nextActions: ['business owner reviews the changed model: semantic -Action review -Target ' + rvd + ' -ReviewBy "<owner>"',
+      'then semantic -Action publish (review.at must be later than prior snapshot review.at' + (priorRev ? ' ' + priorRev : '') + ')'] });
+}
+
+bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, review, revise, deprecate or impact']);

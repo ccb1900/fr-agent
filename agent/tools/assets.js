@@ -390,6 +390,52 @@ if (action === 'publish') {
   finish(0, base);
 }
 
+// ---------- W1/W2（走查 P0-1/P0-2，semantic 同规镜像）：assets review + revise ----------
+if (action === 'review') {
+  var aud = genv('AGENT_ASSETS_ID');
+  if (!aud) bail('ASSETS_USAGE', 'AGENT_ASSETS_ID required for review', ['fr_agent.ps1 -Verb assets -Action review -Target <datasetId> -ReviewBy "<owner>"']);
+  var aby = genv('AGENT_ASSETS_REVIEW_BY');
+  if (!aby) bail('ASSETS_USAGE', 'AGENT_ASSETS_REVIEW_BY required (-ReviewBy "<business owner name>")',
+    ['the review is recorded by whoever runs this command - the business owner should run it (never invent a name)']);
+  var aEntry = null;
+  for (var ari = 0; ari < accepted.length; ari++) if (accepted[ari].doc.id === aud) { aEntry = accepted[ari]; break; }
+  if (!aEntry) bail('ASSET_NOT_FOUND', 'dataset id not found: ' + aud, ['run assets -Action list'], { requestedId: aud });
+  if (aEntry.doc.status === 'deprecated') bail('DEPRECATED', 'deprecated assets cannot take a new review');
+  var aNow = new Date().toISOString();
+  aEntry.doc.review = { by: aby, at: aNow };
+  writeJson(aEntry.abs, aEntry.doc);
+  finish(0, { tool: 'assets', action: 'review', runId: runId, ok: true, zeroEngine: true, reviewedId: aud, review: aEntry.doc.review,
+    nextActions: ['run assets -Action publish -Target ' + aud] });
+}
+if (action === 'revise') {
+  var rud = genv('AGENT_ASSETS_ID');
+  var radoc = genv('AGENT_ASSETS_DOC');
+  if (!rud) bail('ASSETS_USAGE', 'AGENT_ASSETS_ID required for revise', ['fr_agent.ps1 -Verb assets -Action revise -Target <datasetId> -Doc <draft.json>']);
+  if (!radoc) bail('ASSETS_USAGE', 'AGENT_ASSETS_DOC required for revise', ['write the bumped dataset JSON draft first', 'fr_agent.ps1 -Verb assets -Action revise -Target <datasetId> -Doc <draft.json>']);
+  var rrEntry = null;
+  for (var rui = 0; rui < accepted.length; rui++) if (accepted[rui].doc.id === rud) { rrEntry = accepted[rui]; break; }
+  if (!rrEntry) bail('ASSET_NOT_FOUND', 'dataset id not found: ' + rud, ['run assets -Action list'], { requestedId: rud });
+  if (rrEntry.doc.status === 'deprecated') bail('DEPRECATED', 'deprecated assets cannot be revised');
+  if (rrEntry.doc.status === 'published') bail('ALREADY_PUBLISHED', 'published assets are immutable - revise happens on a NEW version draft here only while NOT yet published', ['deprecate first, then create a new id']);
+  var rNew = tryJson(absOf(radoc));
+  if (!rNew || typeof rNew !== 'object' || Array.isArray(rNew)) bail('ASSETS_USAGE', 'draft unreadable / not a JSON object: ' + radoc);
+  rNew.id = rud; rNew.domain = rrEntry.doc.domain;
+  var rCurV = parseInt(rrEntry.doc.datasetVersion, 10) || 0, rNewV = parseInt(rNew.datasetVersion, 10) || 0;
+  if (!(rNewV > rCurV)) bail('VERSION_NOT_BUMPED', 'revise requires datasetVersion > current (' + rrEntry.doc.datasetVersion + '), got: ' + rNew.datasetVersion, ['bump datasetVersion in the draft then re-run revise'], { currentVersion: rrEntry.doc.datasetVersion, draftVersion: rNew.datasetVersion });
+  if (rNew.review != null) delete rNew.review;   // review 只能由人经 review 动作登记
+  rNew.status = 'draft';
+  var rExp = DatasetDef.expectedPath(rNew);
+  var rAudit = DatasetDef.audit(rNew, rExp);
+  var rBind = DatasetDef.bindDrift(rNew, rrEntry.model);
+  if (rAudit.length || rBind.length) bail('CONTRACT_AUDIT_FAILED', rAudit.concat(rBind).join(', '), ['fix contract violations before revising'], {});
+  writeJson(rrEntry.abs, rNew);
+  var rBack = tryJson(rrEntry.abs);
+  var rRe = DatasetDef.audit(rBack, rrEntry.relPath);
+  if (rRe.length) bail('WRITE_ROUNDTRIP_FAILED', rRe.join(', '), ['inspect the written file manually; tool defect'], {});
+  finish(0, { tool: 'assets', action: 'revise', runId: runId, ok: true, zeroEngine: true, revisedId: rud, datasetVersion: rNew.datasetVersion,
+    nextActions: ['assets -Action validate to regenerate evidence for the new version', 'human review via assets -Action review, then publish'] });
+}
+
 // ---------- S4 deprecate：validated/published → deprecated（带原因；不可逆） ----------
 if (action === 'deprecate') {
   var did = genv('AGENT_ASSETS_ID');
