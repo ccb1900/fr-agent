@@ -78,6 +78,7 @@ var ModelValidator = (function () {
     var errs = [];
     options = options || {};
     var uniqEvidence = options.uniqueKeyEvidence || {};
+    var requireCompleteness = options.requireCompleteness !== false;   // S1 拆分：默认 true（生产）；草稿/测试传 false 只查通用合法性
     if (!isObj(model)) { E(errs, 'INVALID_TYPE', 'model', '模型必须是对象'); return errs; }
     var idx = schemaIndex(schema);
     if (!isStr(schema) && (!isObj(schema) || !Array.isArray(schema.tables))) { E(errs, 'INVALID_TYPE', 'schema', '回溯性校验需 I2 schema（{tables:[{name,columns}]}）'); return errs; }
@@ -107,7 +108,7 @@ var ModelValidator = (function () {
     // metrics（先收集名字集合，供 ratio 前向/后向引用）
     var metricNames = {};
     (Array.isArray(model.metrics) ? model.metrics : []).forEach(function (m) { if (m && m.name) metricNames[m.name] = 1; });
-    if (!Array.isArray(model.metrics) || model.metrics.length < 5) E(errs, 'REQUIRED', 'metrics', 'metrics 至少 5 个（r2 §3 验收）');
+    if (requireCompleteness && (!Array.isArray(model.metrics) || model.metrics.length < 5)) E(errs, 'REQUIRED', 'metrics', 'metrics 至少 5 个（r2 §3 验收）');
     else model.metrics.forEach(function (m, i) {
       var mp = 'metrics[' + i + ']';
       if (!isObj(m)) { E(errs, 'INVALID_TYPE', mp, '指标须对象'); return; }
@@ -116,7 +117,7 @@ var ModelValidator = (function () {
     });
 
     // dimensions
-    if (!Array.isArray(model.dimensions) || model.dimensions.length < 3) E(errs, 'REQUIRED', 'dimensions', 'dimensions 至少 3 个');
+    if (requireCompleteness && (!Array.isArray(model.dimensions) || model.dimensions.length < 3)) E(errs, 'REQUIRED', 'dimensions', 'dimensions 至少 3 个');
     else model.dimensions.forEach(function (d, i) {
       var dp = 'dimensions[' + i + ']';
       if (!isObj(d)) { E(errs, 'INVALID_TYPE', dp, '维度须对象'); return; }
@@ -125,7 +126,7 @@ var ModelValidator = (function () {
     });
 
     // relationships（≥3；端点回溯；naming-derived 必 requiresConfirmation）
-    if (!Array.isArray(model.relationships) || model.relationships.length < 3) E(errs, 'REQUIRED', 'relationships', 'relationships 至少 3 个');
+    if (requireCompleteness && (!Array.isArray(model.relationships) || model.relationships.length < 3)) E(errs, 'REQUIRED', 'relationships', 'relationships 至少 3 个');
     else model.relationships.forEach(function (r, i) {
       var rp = 'relationships[' + i + ']';
       if (!isObj(r)) { E(errs, 'INVALID_TYPE', rp, '关系须对象'); return; }

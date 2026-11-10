@@ -363,15 +363,20 @@ switch ($inner) {
     exit $rc
   }
   'semantic' {
-    # S2 Semantic model read-only management (list/inspect). Zero engine, no mutex.
-    if ($Action -ne 'list' -and $Action -ne 'inspect') { Write-Output ('{"ok":false,"error":"semantic -Action ' + $Action + ' not implemented (S2 = list/inspect only)","nextActions":["use -Action list or -Action inspect"]}'); Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+    # S2/S-track Semantic model management: list/inspect (read-only) + create/validate/publish (asset lifecycle).
+    # Zero engine, no mutex. create validates against ModelValidator + schema snapshot before writing.
     $env:AGENT_SEMANTIC_ACTION = $Action
     if ($Domain) { $env:AGENT_SEMANTIC_DOMAIN = $Domain }
     if ($Target) { $env:AGENT_SEMANTIC_DOMAIN = $Target }   # -Target alias (same as inspect_template)
+    if ($Action -eq 'create') {
+      if (-not $Doc) { Write-Output '{"ok":false,"error":"-Doc required for semantic -Action create (path to a model.json draft)","nextActions":["write the domain model draft","semantic -Action create -Doc <file>"]}'; Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue; exit 2 }
+      $env:AGENT_SEMANTIC_DOC = $Doc
+    }
     & $java '-cp' $jar 'jdk.nashorn.tools.Shell' ($ROOT + '/agent/tools/semantic.js')
     $rc = $LASTEXITCODE
     Remove-Item env:AGENT_SEMANTIC_ACTION -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_SEMANTIC_DOMAIN -ErrorAction SilentlyContinue
+    Remove-Item env:AGENT_SEMANTIC_DOC -ErrorAction SilentlyContinue
     Remove-Item env:AGENT_RUN_ID -ErrorAction SilentlyContinue
     Emit ($rc -eq 0) "logs/agent/runs/$RunId/semantic.json"
     exit $rc
