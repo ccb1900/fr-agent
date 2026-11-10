@@ -297,6 +297,12 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
   Files.createDirectories(Pth.get(evFile).getParent());
   wrote(evFile, JSON.stringify({ rowCount: 10, columns: ['bizDate', 'planned', 'done'], validatedAt: '2026-11-10T10:00:00Z' }));
 
+  // 负控·已 validated 再 validate → ALREADY_VALIDATED（冗余条目拒绝）
+  var rvAlready = runTool('validate', { AGENT_ASSETS_ID: 'production.lifecycle' });
+  check('负控·已 validated 再 validate → ALREADY_VALIDATED（re-run 不追加冗余条目）',
+    rvAlready.rc === 1 && !!rvAlready.result && (rvAlready.result.error || {}).code === 'ALREADY_VALIDATED',
+    JSON.stringify(rvAlready.result).slice(0, 180));
+
   // publish：需要 review（模拟业务负责人确认后的资产文件）+ versions/ 快照
   var withReview = jt(ASSETS + '/lifecycle.json');
   withReview.review = { by: '业务负责人', at: '2026-11-10T12:00:00Z' };

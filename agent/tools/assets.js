@@ -206,6 +206,9 @@ if (action === 'validate') {
     ['fix the contract violations before validating'], { diagnostics: diagnostics });
   if (vDoc.status === 'published') bail('ALREADY_PUBLISHED', 'published assets are immutable; deprecate first');
   if (vDoc.status === 'deprecated') bail('DEPRECATED', 'deprecated assets cannot be re-validated');
+  if (vDoc.status === 'validated' && isObj(vDoc.validation) && isArr(vDoc.validation.samples) && vDoc.validation.samples.length > 0)
+    bail('ALREADY_VALIDATED', 'validated assets have data evidence; re-validation appends redundant entries',
+      ['run assets -Action publish to proceed to publication', 'or edit the asset file to clear validation.samples and re-validate']);
   var vBuilt = SqlBuilder.build(model, DatasetDef.selectionArgs(vDoc));
   if ((vBuilt.errors || []).length) bail('SQL_BUILD_FAILED', vBuilt.errors.map(function (x) { return x.code + '@' + x.path; }).join(', '),
     ['fix selection terms'], { diagnostics: diagnostics });
