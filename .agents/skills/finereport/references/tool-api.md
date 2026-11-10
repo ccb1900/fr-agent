@@ -39,7 +39,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File agent/tools/fr_agent.ps1 `
 |---|---|---|---|---|
 | `discover` | — | `discover.json` | 否 | 模型实体/维度/指标/关系 + `capabilities` + `capabilityManifest` + `agentAvailable` |
 | `resolve` | `-Term` | `resolve.json` | 否 | 三态 `resolved`/`ambiguous`/`unknown`；`ambiguous` exit 0 但需反问 |
-| `plan` | `-Intent` | `plan.json` | 否 | `ready`/`ambiguous`/`rejected` + `reportSpec`/`assumptions`/`unresolvedQuestions`/`validationWarnings` |
+| `plan` | `-Intent` | `plan.json`（带 intentHash=意图 MD5） | 否 | `ready`/`ambiguous`/`rejected` + `reportSpec`/`assumptions`/`unresolvedQuestions`（含能力级提示）/`validationWarnings`；失败可同 RunId 直接重跑（零引擎幂等） |
 | `plan2spec` | `-RunId` | `reportSpec.json` | 否 | 把同 run 的 ready plan 落盘为 `-Spec` 文件 |
 | `compile` / `create` | `-Spec` | `compile.json` + `artifact.json` + `runresult.json` + `grid.txt` | 是 | ReportSpec→CPT/PNG/PDF；`compile.json` 带 `cptPath`/`pngPath`/`pdfPath` |
 | `validate` | `-ExpectTotals` | `validate.json`（刷新 `artifact.json`） | 否 | 11 阶段 + 产物存在 + 栅格自洽 + 可选真值对拍 |

@@ -78,6 +78,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $f -Verb validate -RunId <ru
 
 ## 3. 创建：G3（参数面板 + 条件高亮 + 图表 + 页脚）
 
+> 账本口径（写之前先对齐）：`params` 的默认参数值过滤 **agentAvailable=true**（rows 路单条 filter）；**参数面板 Web 改参重查询=unavailable(webInteraction)**，manifest 是唯一真相源（`discover` 输出），不要把 layerEvidence 说过 fullE2e。
+
 文件：`verify/fixtures/golden/g3_intent.json`（链路 `ge20261108082641-e5ede7`，PNG 红字 1411 像素）。新增：
 
 ```json
@@ -97,6 +99,32 @@ powershell -NoProfile -ExecutionPolicy Bypass -File $f -Verb validate -RunId <ru
 
 - 条件高亮跨列判断用 **`when.formula` 相对公式**（`=E3<75`，本格锚 + 行自动偏移）；`when.column` 只对本格值求值，写错会全列染色或全空。
 - `params` 里的 date 控件是**默认参数值**，不是运行期交互筛选；Web 端改参重查询不承诺（README #62）。
+
+## 3.5 明细表（G4：presentation.type=detail，W3 新通路）
+
+**用户**："给我一张检测明细台账，按时间正序，每条记录一行。"
+
+```json
+{
+  "specVersion": "1",
+  "outName": "检测明细台账",
+  "report": { "name": "检测明细台账" },
+  "dataset": {
+    "kind": "sql", "connection": "ATOM_LIVE", "entity": "InspectionRecord",
+    "dimensions": ["InspectionRecord.bizTime", "InspectionRecord.fileKey", "InspectionRecord.rowNo", "InspectionRecord.score"],
+    "metrics": [],
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-14" },
+    "sort": [{ "field": "bizTime", "dir": "asc" }]
+  },
+  "presentation": { "type": "detail", "showTotal": false }
+}
+```
+
+三条纪律：
+
+- **metrics 必须为空数组**（明细无聚合；非空会被 `INVALID_SHAPE` 结构化拒）；展示列全部放 dimensions，实体 property（`Entity.prop` 或裸列名）可直上报表
+- **showTotal 必须 false**（无聚合总计；v2 校验器按 allowNoFormula 通道放行无公式格）
+- 粒度=一行一条记录（行级 DISTINCT 直读；`grain` 概念不进 spec，属 Dataset 资产侧）
 
 ## 4. 能力咨询（正确与错误示范）
 

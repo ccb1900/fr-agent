@@ -5,7 +5,7 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 
 # fr-agent 报表创作（官方 Agent 入口）
 
-这个技能教 Agent **如何把一句自然语言需求变成一张可验证、可交付的 FineReport 报表**。工具已经存在且经过全链验证；Agent 的职责是理解需求、追问歧义、按流程调用、如实交付，而不是重新实现报表构造。
+这个技能教 Agent **如何把一句自然语言需求变成一张可验证、可交付的 FineReport 报表**。工具已经存在且其拒绝面是结构化的（2026-11-10 D3.6 实测口径：分组合计/明细/参数面板/条件高亮等各形态的可用与不可用以 `discover` 的 capabilityManifest 为准，明细表 presentation.type=detail 已通 plan→create 全链）；Agent 的职责是理解需求、追问歧义、按流程调用、如实交付，而不是重新实现报表构造。能力墙不是工具坏了——遇到 UNSUPPORTED_CAPABILITY/维度不在模型/明细歧义列 这类结构化拒，如实转述给用户并给替代，不要把 unavailable 说成 supported。
 
 唯一执行入口是 `agent/tools/fr_agent.ps1`（17 个 verb）。**不要**绕过它去直接跑 `run.ps1`、`make_api.js`、`lib/*` 或编 CPT XML——Runtime 的单实例互斥、RunId 隔离、失败非零退出都在这条壳层里，绕过即失去保护。
 
@@ -32,6 +32,10 @@ description: 用 fr-agent 创建、修改、核验 FineReport 报表的官方工
 **C 能力咨询**：`discover` → 只看 `capabilityManifest` / `agentAvailable` 名单 → 说明支持状态、限制与替代。`agentAvailable=true` 表示"可按账本承诺"，不等于每项都跑过全生命周期（看 `evidenceGrade.fullE2e`）。
 
 **D 资产缺口（语义/数据集）**：用户要的词不在模型里、或需要新数据集时——**不要**改 `model.json`、不要手写 Dataset。产出一份变更申请 JSON（`logs/agent/runs/<runId>/semanticRequest.json`），字段：`type`（add_metric/add_dimension/confirm_relation/add_dataset/new_dataset_metric…）、`term`、`proposed`、`evidence`（schema 快照 + `sample_data` 采样 + 真值文件）、`businessOwnerQuestion`（要人确认的口径一句话）。交人确认后再进入资产变更流程。理由：模型与 Dataset 是**业务事实的权威源**，Agent 有提议权、无自确认权。
+
+## RunId 卫生（走查 P2-8 落地口径）
+
+- **失败/歧义的 plan 可以同 RunId 直接重跑**：plan/resolve/discover 都是零引擎幂等 verb，同 RunId 重跑=产物覆盖，不会撞 `RUNID_EXISTS`（那把锁只管引擎 verb）。`plan.json` 带 `intentHash`（意图文件 MD5）——同 hash 说明意图没变，重跑结果可直接复用；改了 Intent 建议换新 RunId，旧的留给 postmortem，不需要作废机制。
 
 ## 铁律（每条都有原因）
 
