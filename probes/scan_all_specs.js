@@ -51,11 +51,39 @@ var exs = exDir.exists() ? exDir.listFiles() : [];
 var exNames = [];
 for (var ei = 0; ei < exs.length; ei++) if (exs[ei].isFile() && /\.json$/.test(exs[ei].getName())) exNames.push(exs[ei].getName());
 exNames.sort();
+// D3 catalog 预 resolve：dataset.kind='catalog' 的 spec 在 make_api 里会经 DatasetResolver 前变换为 kind:'sql'，
+//   这里同规（否则 catalog spec 在 scan 里永远 fail，阻断 catalog 路 adoption）。目录按 ref 前缀域寻址（审查轮 P1-1）。
 exNames.forEach(function (fn) {
   var rel = 'examples/report-spec/' + fn;
   var txt = String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(ROOT + '/' + rel)), 'UTF-8')).replace(/^﻿/, '');
   var rs = null;
   try { rs = JSON.parse(txt); } catch (e0) { bad++; print('SPEC JSON FAIL ' + rel + ': ' + e0); return; }
+  if (rs.dataset && rs.dataset.kind === 'catalog' && rs.dataset.ref) {
+    load(ROOT + '/semantic/model/vocab.js');
+    load(ROOT + '/semantic/dataset/definition.js');
+    load(ROOT + '/semantic/dataset/registry.js');
+    load(ROOT + '/semantic/dataset/resolver.js');
+    var refDomain = rs.dataset.ref.split('.')[0];
+    try {
+      var md = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(J('java.nio.file.Paths').get(ROOT + '/models/' + refDomain + '/model.json')), 'UTF-8')));
+      var entries = [];
+      var dsStream = J('java.nio.file.Files').newDirectoryStream(J('java.nio.file.Paths').get(ROOT + '/models/' + refDomain + '/datasets'), '*.json');
+      try { var dit = dsStream.iterator(); while (dit.hasNext()) {
+        var f = dit.next(); try {
+          var ds = JSON.parse(String(new (J('java.lang.String'))(J('java.nio.file.Files').readAllBytes(f), 'UTF-8')));
+          if (ds && typeof ds === 'object' && !Array.isArray(ds)) entries.push({ relPath: String(f).replace(/\\/g, '/'), doc: ds });
+        } catch (eJ2) { }
+      } } finally { try { dsStream.close(); } catch (eC2) { } }
+      var reg2 = DatasetRegistry.build(entries);
+      var scope2 = {}; ['dateRange', 'sort', 'topN'].forEach(function (k) { if (rs.dataset[k] != null) scope2[k] = rs.dataset[k]; });
+      var resolved = DatasetResolver.resolve(reg2, rs.dataset.ref, scope2, md);
+      if (resolved.ok) { rs.dataset = resolved.dataset; print('DATASET RESOLVED ' + rel); }
+      else if (resolved.errors.some(function (e) { return e.indexOf('NOT_PUBLISHED') === 0; })) {
+        skipped++; print('SKIP ' + rel + ' (catalog ref not published yet: ' + resolved.errors.join(', ') + ')'); return;
+      }
+      else { bad++; print('DATASET RESOLVE FAIL ' + rel + ': ' + resolved.errors.join(', ')); return; }
+    } catch (eRes) { bad++; print('DATASET SCAN FAIL ' + rel + ': ' + eRes); return; }
+  }
   var errs = [];
   try { errs = SpecValidator.validate(rs); } catch (e1) { bad++; print('SPEC VALIDATOR THREW ' + rel + ': ' + e1); return; }
   if (errs.length) {

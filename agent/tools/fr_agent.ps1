@@ -345,8 +345,8 @@ switch ($inner) {
     # D2 Dataset asset management. Zero engine, no FineReport mutex: pure file reads/writes
     #   over models/*/datasets + pure DatasetDef/DatasetRegistry/SqlBuilder functions.
     #   validate needs JDBC (same as sample_data: plain JVM + WEB-INF/lib driver + dbpass).
-    $cpAssets = $jar; $cpNote = ''
-    if ($Action -eq 'validate') { $cpAssets = "$jar;$FR\webapps\webroot\WEB-INF\lib\*"; $cpNote = ' (SQL classpath)' }
+    $cpAssets = $jar
+    if ($Action -eq 'validate') { $cpAssets = "$jar;$FR\webapps\webroot\WEB-INF\lib\*" }
     $env:AGENT_ASSETS_ACTION = $Action
     if ($Target) { $env:AGENT_ASSETS_ID = $Target }
     if ($Action -eq 'create') {

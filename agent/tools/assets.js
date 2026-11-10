@@ -1,7 +1,7 @@
 // agent/tools/assets.js — D2 Dataset 资产管理入口（Nashorn；零 FR 引擎、不进 FR 实例锁）
-//   Action: list | inspect | create | validate | publish。
+//   Action: list | inspect | create | validate | publish | deprecate | impact。
 //   工具层只做：IO（原子写 via _lib.js）+ 调 DatasetDef/DatasetRegistry/SqlBuilder 纯函数 + 生成真实证据。
-//   不引第二套校验器、不自造写路径、不做语义管理（S1–S4）。
+//   不引第二套校验器、不自造写路径、不做语义管理。
 //   validate 需 JDBC（sample_data 同规：plain JVM + WEB-INF/lib 驱动 + dbpass 凭据 + setReadOnly）。
 //   契约与验收：docs/architecture/dataset-semantic-plan.md §8、verify/fast_assets_read.js。
 var J = function (n) { return Java.type(n); };
@@ -315,13 +315,14 @@ if (action === 'publish') {
   if (!(isObj(pDoc.review) && isStr(pDoc.review.by) && pDoc.review.by && isStr(pDoc.review.at) && pDoc.review.at))
     bail('PUBLISHED_WITHOUT_REVIEW', 'business review missing (review.by + review.at must be set by a human)',
       ['have the business owner confirm the metric definitions and set review.{by,at} in the asset file']);
-  pDoc.status = 'published';
-  writeJson(pEntry.abs, pDoc);
-  // S4 发布快照：versions/<datasetVersion>.json 不可变副本（同版本重 publish 不可能因已发布门拦截）
+  // S4 发布快照：先写不可变副本（此刻 status 仍为 validated，快照如实记录发布前状态），再翻转主文件。
+  //   顺序保证幂等性：crash 在这中间 → 主文件仍 validated → 重试 publish 重新走全链门 + 快照幂等存在跳过。
   var snapDir = pEntry.abs.replace(/[\\/][^\\/]+$/, '') + '/versions';
   Files.createDirectories(Pth.get(snapDir));
   var snapFile = snapDir + '/' + (pDoc.datasetVersion || '1') + '.json';
   if (!exists(snapFile)) writeJson(snapFile, pDoc);
+  pDoc.status = 'published';
+  writeJson(pEntry.abs, pDoc);
   var pBack = tryJson(pEntry.abs);
   var pRe = DatasetDef.audit(pBack, pEntry.relPath);
   if (pRe.length) bail('WRITE_ROUNDTRIP_FAILED', pRe.join(', '),
@@ -373,7 +374,15 @@ if (action === 'impact') {
         if (!/\.json$/.test(fn)) continue;
         var txt = '';
         try { txt = readUtf(String(f).replace(/\\/g, '/')); } catch (eR) { continue; }
-        if (txt.indexOf('"' + iid + '"') >= 0) affected.push(String(f).replace(/\\/g, '/'));
+        if (txt.indexOf('"' + iid + '"') >= 0) {
+          // 排除自身与 versions/ 快照：impact 是"谁引用了我"，不是"我在哪"
+          var fp = String(f).replace(/\\/g, '/');
+          if (fp.indexOf('/datasets/') >= 0) {
+            var selfDoc = null; try { selfDoc = JSON.parse(txt); } catch (eJ) { }
+            if (selfDoc && selfDoc.id === iid) continue;   // 自身资产文件
+          }
+          affected.push(fp);
+        }
       } } finally { try { ds.close(); } catch (eC2) { } }
     }
   });

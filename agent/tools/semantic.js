@@ -74,17 +74,24 @@ if (action === 'inspect') {
   if (!hit) bail('MODEL_NOT_FOUND', 'domain not found: ' + domain,
     ['run semantic -Action list for available domains'], { requestedDomain: domain });
   var model = JSON.parse(readUtf(hit.abs));
-  // S3：datasetRef 交叉验证——模型引用的 Dataset 必须存在且已发布（读时检查，不改模型）
+  // S3：datasetRef 交叉验证——模型引用的 Dataset 必须存在且已发布且模型版本一致（读时检查，不改模型）
   var datasetRefCheck = null;
   if (model.datasetRef) {
     var dsRefParts = model.datasetRef.split('.');
-    var dsRefPath = modelsRoot + '/' + dsRefParts[0] + '/datasets/' + dsRefParts[1] + '.json';   // P2-1：与扫描根一致
-    if (!Files.exists(Pth.get(dsRefPath))) datasetRefCheck = { ok: false, reason: 'DATASET_NOT_FOUND@' + model.datasetRef };
+    if (dsRefParts.length !== 2) datasetRefCheck = { ok: false, reason: 'BAD_DATASET_REF@' + model.datasetRef + ' (expected <domain>.<name>)' };
     else {
-      var dsDoc = null;
-      try { dsDoc = JSON.parse(readUtf(dsRefPath)); } catch (eDs) { }
-      if (!dsDoc || dsDoc.status !== 'published') datasetRefCheck = { ok: false, reason: 'DATASET_NOT_PUBLISHED@' + model.datasetRef + ' (status=' + (dsDoc ? dsDoc.status : 'unreadable') + ')' };
-      else datasetRefCheck = { ok: true, datasetId: dsDoc.id, datasetVersion: dsDoc.datasetVersion, modelVersionMatch: dsDoc.model && dsDoc.model.modelVersion === model.modelVersion };
+      var dsRefPath = modelsRoot + '/' + dsRefParts[0] + '/datasets/' + dsRefParts[1] + '.json';   // P2-1：与扫描根一致
+      if (!Files.exists(Pth.get(dsRefPath))) datasetRefCheck = { ok: false, reason: 'DATASET_NOT_FOUND@' + model.datasetRef };
+      else {
+        var dsDoc = null;
+        try { dsDoc = JSON.parse(readUtf(dsRefPath)); } catch (eDs) { }
+        if (!dsDoc || dsDoc.status !== 'published') datasetRefCheck = { ok: false, reason: 'DATASET_NOT_PUBLISHED@' + model.datasetRef + ' (status=' + (dsDoc ? dsDoc.status : 'unreadable') + ')' };
+        else {
+          var mvMatch = !!dsDoc.model && dsDoc.model.modelVersion === model.modelVersion;
+          datasetRefCheck = { ok: mvMatch, datasetId: dsDoc.id, datasetVersion: dsDoc.datasetVersion, modelVersionMatch: mvMatch };
+          if (!mvMatch) datasetRefCheck.reason = 'MODEL_VERSION_MISMATCH@' + model.datasetRef + ' (dataset expects ' + (dsDoc.model ? dsDoc.model.modelVersion : '?') + ', model is ' + model.modelVersion + ')';
+        }
+      }
     }
   }
   // S3 修复（审查轮 P1-2）：datasetRefCheck 不通过时不能被 ok:true 吞掉——以 warnings 显式透出

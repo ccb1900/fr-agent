@@ -1,0 +1,14 @@
+{
+  "specVersion": "1",
+  "report": { "name": "生产日报（Dataset Catalog 引用样例）", "description": "引用 models/production/datasets/inspection_records.json 的 catalog 形态样例；make_api D3 resolver 将其解析为 kind:sql。日期区间固定（README #62）。" },
+  "outName": "生产日报_Catalog样例",
+  "dataset": {
+    "kind": "catalog",
+    "ref": "production.inspection_records",
+    "dateRange": { "from": "2026-09-13", "to": "2026-09-22" }
+  },
+  "presentation": {
+    "type": "table",
+    "showTotal": true
+  }
+}
