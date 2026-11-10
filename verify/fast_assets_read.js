@@ -528,6 +528,57 @@ check('本套件已登记进 fast 聚合门（run-fast-tests）',
       rcPre.rc === 1 && (rcPre.result.error || {}).code === 'REVIEW_IN_DRAFT', 'rc=' + rcPre.rc + ' out=' + JSON.stringify(rcPre.result).slice(0, 140));
   })();
 
+  // A1 收口（2026-11-10）：semantic deprecate/impact（assets 同规镜像：reason 人填写进文件，工具只盖 status/at；
+  //   deprecate 不可逆——再 deprecate/validate/publish 全拒；inspect 透出 deprecated；impact 列引用面）。
+  (function () {
+    var depDom = SEM_MODELS + '/depdom';
+    var depModel = JSON.parse(JSON.stringify(salesDraft));   // naming-derived、5/3/3——无证据依赖
+    depModel.domain = 'depdom';
+    depModel.review = { by: '业务负责人', at: '2026-11-10T09:00:00Z' };
+    Files.createDirectories(Pth.get(depDom));
+    wrote(depDom + '/model.json', JSON.stringify(depModel, null, 1));   // direct write = 人途（create 现在校 REVIEW_IN_DRAFT）
+    var dpz = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('A1·depdom 前置 publish rc=0（完整档 naming-derived 过）', dpz.rc === 0, 'rc=' + dpz.rc + ' out=' + JSON.stringify(dpz.result).slice(0, 140));
+
+    var d1 = runSem('deprecate', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('负控·A1·缺 deprecation.reason → DEPRECATION_REASON_REQUIRED 拒（工具不代写理由）',
+      d1.rc === 1 && (d1.result.error || {}).code === 'DEPRECATION_REASON_REQUIRED', 'rc=' + d1.rc + ' out=' + JSON.stringify(d1.result).slice(0, 140));
+
+    var human = jt(depDom + '/model.json');   // 模拟业务人补 reason
+    human.deprecation = { reason: '口径并入 production 域，depdom 退役' };
+    wrote(depDom + '/model.json', JSON.stringify(human, null, 1));
+    var d2 = runSem('deprecate', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('A1·deprecate 带 reason → rc=0 + status deprecated + at 盖章',
+      d2.rc === 0 && (d2.result || {}).status === 'deprecated', 'rc=' + d2.rc + ' out=' + JSON.stringify(d2.result).slice(0, 140));
+
+    var d3 = runSem('deprecate', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('负控·A1·已 deprecated 再 deprecate → ALREADY_DEPRECATED（不可逆、幂等不重做）',
+      d3.rc === 1 && (d3.result.error || {}).code === 'ALREADY_DEPRECATED', 'rc=' + d3.rc + ' out=' + JSON.stringify(d3.result).slice(0, 140));
+
+    var d4 = runSem('validate', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('负控·A1·deprecated validate → DEPRECATED 拒（assets 同规镜像）',
+      d4.rc === 1 && (d4.result.error || {}).code === 'DEPRECATED', 'rc=' + d4.rc + ' out=' + JSON.stringify(d4.result).slice(0, 140));
+
+    var d5 = runSem('publish', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('负控·A1·deprecated publish → DEPRECATED 拒',
+      d5.rc === 1 && (d5.result.error || {}).code === 'DEPRECATED', 'rc=' + d5.rc + ' out=' + JSON.stringify(d5.result).slice(0, 140));
+
+    var d6 = runSem('inspect', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('A1·inspect deprecated → deprecated:true + warnings 含 DEPRECATED 理由',
+      d6.rc === 0 && (d6.result || {}).deprecated === true && JSON.stringify(d6.result.warnings || []).indexOf('DEPRECATED:') >= 0, 'rc=' + d6.rc + ' out=' + JSON.stringify(d6.result).slice(0, 160));
+
+    var d7 = runSem('impact', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('A1·impact 零引用 → rc=0 count=0（零引用也是合法答案）',
+      d7.rc === 0 && (d7.result || {}).count === 0, 'rc=' + d7.rc + ' out=' + JSON.stringify(d7.result).slice(0, 140));
+
+    var consDir = SEM_MODELS + '/depcons/datasets';
+    Files.createDirectories(Pth.get(consDir));
+    wrote(consDir + '/cons1.json', JSON.stringify({ id: 'production.depcons1', model: { ref: 'models/depdom/model.json', modelVersion: '1' }, status: 'published' }));
+    var d8 = runSem('impact', { AGENT_SEMANTIC_DOMAIN: 'depdom' });
+    check('A1·impact 带引用 → count>=1 列出 datasetId（库里新造引用件实证扫描真干活）',
+      d8.rc === 0 && (d8.result || {}).count >= 1 && JSON.stringify(d8.result.consumers).indexOf('depcons1') >= 0, 'rc=' + d8.rc + ' out=' + JSON.stringify(d8.result).slice(0, 160));
+  })();
+
   // 负控·缺 schema 快照的域 validate → SCHEMA_MISSING
   var orphanModel = JSON.parse(JSON.stringify(salesDraft));
   orphanModel.source = 'nonexistent_db';

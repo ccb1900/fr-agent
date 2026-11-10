@@ -1,8 +1,12 @@
 // agent/tools/semantic.js — Semantic 模型生命周期管理（Nashorn；零引擎、不进 FR 实例锁）
-//   Action: list | inspect（只读） + create | validate | publish（S 轨生命周期）。
-//   publish 纪律（审查轮 2026-11-10 收口）：完整档校验 + review.{by,at} 人填（create 拒自带 review 的草稿）
+//   Action: list | inspect（只读） + create | validate | publish | deprecate | impact（S 轨生命周期，A1 收口）。
+//   publish 纪律（2026-11-10 审查轮收口）：完整档校验 + review.{by,at} 人填（create 拒自带 review 的草稿）
 //   + 同版本内容变更必拒（MODEL_VERSION_NOT_BUMPED）+ 新版本必须配新 review.at（MODEL_REVIEW_NOT_RENEWED）
-//   + versions/<modelVersion>.json 不可变快照。不引第二套校验器（ModelValidator 两档复用）。
+//   + versions/<modelVersion>.json 不可变快照 + 幂等再发布快照不动。
+//   deprecate（assets 同规镜像）：deprecation.reason 人填写进 model.json 后才可调（工具只盖 status/at 时间，
+//   不代写理由）；deprecated 不可逆——再 deprecate/validate/publish 全拒；inspect 透出 deprecated 标记。
+//   impact：扫 models/*/*/datasets 里 model.ref 指向 <domain>/model.json 的 Dataset 资产（零引用也是合法答案）。
+//   不引第二套校验器（ModelValidator 两档复用）。
 var J = function (n) { return Java.type(n); };
 var Files = J('java.nio.file.Files'), Pth = J('java.nio.file.Paths');
 var System = J('java.lang.System');
@@ -100,8 +104,11 @@ if (action === 'inspect') {
   }
   // S3 修复（审查轮 P1-2）：datasetRefCheck 不通过时不能被 ok:true 吞掉——以 warnings 显式透出
   var warnings = (datasetRefCheck && !datasetRefCheck.ok) ? [datasetRefCheck.reason] : [];
+  var depFlag = model.status === 'deprecated';
+  if (depFlag) warnings.push('DEPRECATED: ' + ((isObj(model.deprecation) && isStr(model.deprecation.reason)) ? model.deprecation.reason : 'no reason recorded'));
   finish(0, { tool: 'semantic', action: 'inspect', runId: runId, ok: true, zeroEngine: true,
     domain: domain, modelVersion: model.modelVersion, source: model.source,
+    deprecated: depFlag, deprecation: model.deprecation || null,
     warnings: warnings,
     entities: (model.entities || []).map(function (e) { return { name: e.name, label: e.label, table: e.table, key: e.key || [], properties: (e.properties || []).map(function (p) { return { name: p.name, column: p.column, type: p.type }; }) }; }),
     dimensions: (model.dimensions || []).map(function (d) { return { name: d.name, label: d.label, table: d.table, column: d.column, rule: d.rule || null }; }),
@@ -204,6 +211,8 @@ if (action === 'validate') {
   if (!vd) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for validate');
   var vModel = null;
   try { vModel = JSON.parse(readUtf(modelsRoot + '/' + vd + '/model.json')); } catch (eV) { bail('MODEL_NOT_FOUND', vd + '/model.json unreadable'); }
+  if (vModel.status === 'deprecated') bail('DEPRECATED', 'deprecated model cannot be re-validated (retirement is irreversible)',   // assets 同规镜像
+    ['inspect shows the deprecation reason', 'start a fresh domain if the model is being reworked']);
   load(ROOT + '/semantic/model/validator.js');
   var vSchemaName = 'schema_' + (vModel.source || vd) + '.json';
   var vSchemaPath = ROOT + '/data/' + vSchemaName;
@@ -220,6 +229,8 @@ if (action === 'publish') {
   var pModelPath = modelsRoot + '/' + pd + '/model.json';
   var pModel = null;
   try { pModel = JSON.parse(readUtf(pModelPath)); } catch (eP) { bail('MODEL_NOT_FOUND', pd + '/model.json unreadable'); }
+  if (pModel.status === 'deprecated') bail('DEPRECATED', 'deprecated model cannot be published (retirement is irreversible)',
+    ['inspect shows the deprecation reason', 'start a fresh domain if the model is being reworked']);
   load(ROOT + '/semantic/model/validator.js');
   var pSchemaName = 'schema_' + (pModel.source || pd) + '.json';
   var pSchemaPath = ROOT + '/data/' + pSchemaName;
@@ -277,4 +288,66 @@ if (action === 'publish') {
     domain: pd, modelVersion: pModel.modelVersion, snapshot: snapFileP, publishedAt: pModel.review.at });
 }
 
-bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate or publish']);
+// ---------- S4-A1 deprecate（assets 同规镜像：reason 人填于文件，工具只盖 status/at；不可逆） ----------
+if (action === 'deprecate') {
+  var ddomD = genv('AGENT_SEMANTIC_DOMAIN');
+  if (!ddomD) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for deprecate');
+  var depModelPath = modelsRoot + '/' + ddomD + '/model.json';
+  var depModel = null;
+  try { depModel = JSON.parse(readUtf(depModelPath)); } catch (eD2) { bail('MODEL_NOT_FOUND', ddomD + '/model.json unreadable'); }
+  if (depModel.status === 'deprecated') bail('ALREADY_DEPRECATED', 'already deprecated (idempotent no-op refused; retirement is irreversible)',
+    ['inspect shows the deprecation reason']);
+  if (!isObj(depModel.deprecation) || !isStr(depModel.deprecation.reason) || !depModel.deprecation.reason)
+    bail('DEPRECATION_REASON_REQUIRED', 'deprecation.reason required (set in model.json before calling deprecate)',
+      ['edit the model JSON to add deprecation:{reason:"..."} then re-run deprecate',
+       'the reason is human-authored; the tool never writes prose']);
+  depModel.status = 'deprecated';
+  depModel.deprecation.at = new Date().toISOString();   // 工具只盖时间戳（ISO-8601 Z），理由不代写
+  writeJson(depModelPath, depModel);
+  finish(0, { tool: 'semantic', action: 'deprecate', runId: runId, ok: true, zeroEngine: true,
+    domain: ddomD, status: 'deprecated', deprecation: depModel.deprecation });
+}
+
+// ---------- S4-A1 impact：谁引用这个域的模型（models/*/*/datasets 里 model.ref == models/<d>/model.json） ----------
+if (action === 'impact') {
+  var idomD = genv('AGENT_SEMANTIC_DOMAIN');
+  if (!idomD) bail('SEMANTIC_USAGE', 'AGENT_SEMANTIC_DOMAIN required for impact');
+  var modelRef = 'models/' + idomD + '/model.json';   // dataset 契约存仓库相对形（与 modelsRoot override 无关）
+  var consumers = [];
+  var scanRoot = Pth.get(modelsRoot);
+  if (Files.exists(scanRoot) && Files.isDirectory(scanRoot)) {
+    var rootStream = null;
+    try { rootStream = Files.newDirectoryStream(scanRoot); } catch (eR) { }
+    try {
+      if (rootStream) {
+        var rit = rootStream.iterator();
+        while (rit.hasNext()) {
+          var domDir = rit.next();
+          if (!Files.isDirectory(domDir)) continue;
+          var dn2 = String(domDir.getFileName());
+          if (dn2.charAt(0) === '.') continue;
+          var datasetsDir = modelsRoot + '/' + dn2 + '/datasets';
+          if (!Files.isDirectory(Pth.get(datasetsDir))) continue;
+          var fileStream = null;
+          try { fileStream = Files.newDirectoryStream(Pth.get(datasetsDir), '*.json'); } catch (eF) { continue; }
+          try {
+            var fit2 = fileStream.iterator();
+            while (fit2.hasNext()) {
+              var fn2 = String(fit2.next().getFileName());
+              var refDoc = null;
+              try { refDoc = JSON.parse(readUtf(datasetsDir + '/' + fn2)); } catch (eJ2) { continue; }   // 不可读条目不入名单（诊断在 assets list 侧有）
+              if (refDoc && isObj(refDoc.model) && String(refDoc.model.ref) === modelRef)
+                consumers.push({ datasetId: refDoc.id || null, relPath: 'models/' + dn2 + '/datasets/' + fn2, status: refDoc.status || null });
+            }
+          } finally { try { fileStream.close(); } catch (eC2) { } }
+        }
+      }
+    } finally { try { if (rootStream) rootStream.close(); } catch (eC3) { } }
+  }
+  consumers.sort(function (a, b) { return (a.relPath < b.relPath ? -1 : (a.relPath > b.relPath ? 1 : 0)); });
+  finish(0, { tool: 'semantic', action: 'impact', runId: runId, ok: true, zeroEngine: true,
+    domain: idomD, modelRef: modelRef, consumers: consumers, count: consumers.length,
+    nextActions: consumers.length ? ['review each consumer dataset before retiring the model'] : ['no dataset references this model (safe to retire)'] });
+}
+
+bail('SEMANTIC_USAGE', 'unknown action: ' + action, ['use -Action list, inspect, create, validate, publish, deprecate or impact']);

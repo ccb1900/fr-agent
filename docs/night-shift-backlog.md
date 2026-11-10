@@ -202,12 +202,7 @@
 
 ### S 审查轮挂账（2026-11-10，酣畅审查第 5 轮安抚清账）
 
-#### A1（P3）：semantic deprecate/impact 未做（S4 行已如实拆实）
-- 证据：agent/tools/semantic.js 仅 list/inspect/create/validate/publish；plan §8 S4 行原把 assets 轨的 deprecate/impact 写成 semantic 完成。
-- 影响：语义模型没有退役入口；published 模型只能改写或弃用，没有带 reason 的生命周期末端。
-- 范围估计：semantic.js +80 行（deprecate 写 model.json deprecation 块 + inspect 透出 + fixt 负控）、文档。
-- 验收：deprecate 带 reason → 快照后的 model.json 有 deprecation 块（inspect diagnostics 透出）；缺 reason 拒；deprecated 后 publish 拒。
-- 外部依赖：无。夜间可直接做。
+#### ~~A1：semantic deprecate/impact 未做~~（2026-11-10 完成——semantic.js 七动作 + deprecated 三处拒面 + inspect 透出 + impact 引用面；fast_assets_read 92 项含 A1 九查；plan §8 S4 行终态）
 
 #### A2（P3·技术债待议）：modelVersion 参与 ModelEvidence 身份指纹——升版即证据全失
 - 证据：semantic/model/evidence.js canonicalModel 绑 modelVersion/domain/source/relationships；模型升版（关系未变）→ modelFingerprint 漂移 → i55 数据证据被判不匹配 → 本次发布必须重跑探针。

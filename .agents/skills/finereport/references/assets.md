@@ -31,10 +31,13 @@
 
 ```powershell
 ... -Verb semantic -Action list                                  # 多域清单（models/*/*/model.json）
-... -Verb semantic -Action inspect  -Target production           # 结构 + datasetRef 交叉验证（warnings 透出）
-... -Verb semantic -Action create   -Doc <model-draft.json>      # 草稿档校验（完整性阈值放宽）落 models/<domain>/model.json
-... -Verb semantic -Action validate -Target <domain>             # 离线校验，不改文件
-... -Verb semantic -Action publish  -Target <domain>             # 完整档（指标≥5 等）+ review.{by,at} + versions/<modelVersion>.json 快照
+... -Verb semantic -Action inspect  -Target production           # 结构 + datasetRef 交叉验证（warnings 透出）+ deprecated 标记
+... -Verb semantic -Action create   -Doc <model-draft.json>      # 草稿档校验（完整性阈值放宽）落 models/<domain>/model.json（自带 review 拒）
+... -Verb semantic -Action validate -Target <domain>             # 离线校验，不改文件；deprecated 拒
+... -Verb semantic -Action publish  -Target <domain>             # 完整档 + review.{by,at} ISO + versions/<modelVersion>.json 快照
+                                                                  #   同版本内容变更拒、版本升高必须配新 review.at
+... -Verb semantic -Action deprecate -Target <domain>            # 先在 model.json 写 deprecation:{reason}（人填）再调；不可逆
+... -Verb semantic -Action impact    -Target <domain>            # 列出引用该域模型的 Dataset 资产（零引用也是合法答案）
 ```
 
 confirmed 关系的唯一性证据核对在语义层即**全强度**执行：连接身份与 plan.js 同源（`SQL_DRIVER`/`SQL_URL` env，规范默认=生产连接；纯指纹核对零 JDBC）。换库（env 覆盖）→ 源指纹必不匹配 → 拒——**数据侧证据不跨库消费**。新域可先以 `naming-derived`（需 `requiresConfirmation:true`）登记待确认关系。

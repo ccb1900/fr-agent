@@ -2108,3 +2108,11 @@ F8 写库/凭据授权；web 交互类 12 项的验证口径政策（是否将 s
 - 未验证：canonicalModel 拆分（A2 待议）；semantic deprecate/impact（A1 未做，如实）。
 
 - （补记）e2e 第三洞（门咬门）：make_api 任何 spec 复写仓库根 demo_api.cpt（ABR-1 单点）→ e2e 两次非默认 spec 后铁证 1556CDCF、fast_baseline 红两次（11:12 首绿、11:47 复审再红，11:44 mtime 实证写入者=e2e 复跑窗口）。修：e2e 尾段默认 spec 自复位 + MD5 断言；runId UUID 化（否则下轮撞 compile.json RUNID_EXISTS）；部署产物 cpt/png/pdf 用后即净。e2e 复跑 6/6、独立复核 CBEB42E3；fast 22/22 GREEN 收官。
+
+
+### A1 干活 + 冻结宣告（2026-11-10，第 5.5 轮=终轮）
+- 目标：用户拍板"干 干 收束"——A1 清账、S 轨冻结不再开审。
+- 实施：semantic.js 新增 deprecate/impact（assets 同规镜像）+ deprecated 状态三拒面（validate/publish/再 deprecate）+ inspect deprecated 透出；九查入 fast_assets_read（92 项）；Skill assets.md/agent-tools.md 同步；plan §8 S4 行终写；backlog A1 归档。
+- 验证：CLI 九发矩阵逐发实测（含 cli 抓出 fit2.next() 漏调用一处）→ fast 22/22 / suite 92/0 / scan 128/0 / 边界 / 集成全绿。
+- 冻结条款：assets/semantic 面不再周期审；审=变更边界（动闸的 diff 自带负控）；发现项走 backlog 记档。
+- Commit：本轮 git log。下一项：主管道（A2 决策 / 生产 publish 人审 / 新报表验收）。
